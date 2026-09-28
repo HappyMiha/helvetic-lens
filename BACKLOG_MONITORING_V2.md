@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Recurring public-web research — 28 September 2026: VERIFYING (scoped stage 4c / release 1.18).**
+**Recurring public-web research — 28 September 2026: DONE (scoped stage 4c / release 1.18).**
 Scoped MV2-019/021/023 continuation after verified 1.17: a current dossier editor
 explicitly saves one public question, daily or weekly cadence and standing consent.
 Works for author drafts, invited teams and workspace dossiers without requiring
@@ -104,6 +104,14 @@ native/Sites production verification. Independent professional quality evaluatio
 private hybrid indexing and full native visual migration remain separate open
 work; all nine Monitoring sections and customs deferrals stay unchanged.
 See [architecture and acceptance](docs/PRODUCT_WEB_RESEARCH.md).
+Scoped acceptance: 188 native cases covered, including 25 recurring-search cases;
+both final clients pass 105 tests/lint/types/builds. Functional native
+`git-0bc8dfe0a5f8` and Sites21/21 are verified: 105 HTTP/auth/guide checks and 47
+exact assets per product, 49 native module hashes, migration04, policy/occurrence
+containment, 60-second scheduling, five scheduler hashes, four workers/runtime
+containers and healthy Laya. No authenticated production workflow or paid provider
+probe was executed; local fixtures and production code/health proofs are distinct.
+The full specifications and broader parent task gates remain IN PROGRESS.
 
 **Watched-page research — 28 September 2026: DONE (scoped stage 4b2 / release 1.17).**
 Scoped MV2-019/021/023 continuation after verified 1.16: an explicit policy choice
@@ -1573,7 +1581,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c production verification | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c DONE; private semantic search next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2440,8 +2448,8 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-**Current product stage, 28 September:** stage 4c recurring public-web research is
-VERIFYING under the scope, dependencies, readiness and acceptance above.
+**Completed product stage, 28 September:** stage 4c recurring public-web research is
+DONE under the scope, dependencies, readiness and acceptance above.
 
 **Completed product stage, 28 September:** watched-page research (4b2) is DONE under the
 explicit scope, dependencies, source readiness and acceptance recorded above.

@@ -227,8 +227,8 @@ restriction. Exact typed receipts, old/new version references and bounded change
 excerpts connect the same private extraction and independent comparison engine.
 See [architecture and scoped acceptance](PRODUCT_WATCHED_PAGE_RESEARCH.md).
 
-Stage 4c recurring public-web discovery is VERIFYING for release 1.18; local
-acceptance passes and exact production verification is pending. An
+Stage 4c recurring public-web discovery is DONE within scoped release 1.18
+local and exact native/both-client production acceptance. An
 explicit question/cadence/standing policy schedules the same durable coordinator
 for author drafts, invited teams and workspace dossiers. Private text never expands
 the query, uncertain paid work is not automatically retried, and unchanged source

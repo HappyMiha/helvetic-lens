@@ -137,4 +137,5 @@ standing public question and daily/weekly cadence in both products. Separate
 revisioned policy/occurrence receipts, shared query reservations and current-role
 fences drive the existing private investigation engine. Unchanged captured bodies
 and excerpts skip analysis; new evidence is independently compared with prior
-findings. Local and exact production acceptance remain distinct.
+findings. Local functional checks and exact native/both-client production
+acceptance pass within the linked scoped release; the full specifications remain open.

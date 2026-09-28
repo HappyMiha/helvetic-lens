@@ -1,6 +1,7 @@
 # Recurring public-web research — stage 4c
 
-Status: VERIFYING. Release 1.18, scoped MV2-019/021/023 continuation.
+Status: DONE within scoped release 1.18 production acceptance.
+This completes stage 4c only; the full specifications remain IN PROGRESS.
 
 An editor deliberately submits a public-search question and daily or weekly
 cadence. A separate standing policy works for private drafts, member teams and
@@ -49,8 +50,21 @@ gate also passes (three final cases, 17.39 seconds). Exact API Ruff passes.
 Both clients pass 105 tests, required lint/types and final Sites builds. The ten
 shared feature files match between clients. All three actual configured decision
 credentials are absent from 137 built and 190 source files in each client.
-Source and production publication remain pending. Exact native migration/schema,
-49 source-module hashes, scheduler configuration and both Sites assets/auth
-boundaries will be verified after normal deployment.
+Functional core `0bc8dfe0a5f8c50c0399f03487f6167d69ac5b60` activated at
+00:09:41 UTC on 28 September. Exact Pharma `12ce8c0837f01d06a40d24fd1ba93d9f3b710e78`
+and Loyer `6189455c500e7a53737305754e24c07dd71eec4f` were immediately pushed to GitHub
+main and saved/deployed as Sites versions 21. Deployments succeeded at
+00:10:44 / 00:11:19 UTC. Both corresponding GitHub CI runs succeeded.
+
+Each custom origin passed 105 HTTP/auth/gateway/guide checks and 47 exact
+JS/CSS asset hashes. Native runtime verification matched 49 module hashes,
+migration `04d495bef125`, policy/occurrence composite containment and uniqueness,
+daily/weekly constraints, the one-minute monitoring-control schedule, five
+scheduler module hashes, four required runtime containers, parser fixture and
+healthy local Laya. This is production code/schema/health proof, distinct from
+local authenticated scheduling/provider fixtures. No production user records,
+paid provider probes or browser/human visual QA were performed.
+
+[Exact release receipt](product-releases/2026-09-28-1.18.0.json).
 The full dynamic dossier, semantic-search quality and native visual specifications
 remain IN PROGRESS.
