@@ -413,6 +413,15 @@ def operations(router, service, actor):
             domain_fields = brief_fields(row)
             if domain_fields:
                 fields += [("Dossier subject", "User-provided context; not verified source facts.")] + domain_fields
+            from .dossier_templates import payload as template_payload
+
+            template = template_payload(row)
+            if template["saved"]:
+                chosen = template["selection"]
+                fields += ([("Dossier template", f'{chosen["title"]} · version {chosen["version"]}'),
+                            ("Research guidance", chosen["description"]),
+                            ("Questions to investigate", "\n".join(chosen["questions"]))] if chosen else
+                           [("Dossier template", "Saved format unavailable; retained in private JSON export.")])
             facts = ''.join(f'<dt>{esc(a)}</dt><dd>{esc(b)}</dd>' for a, b in fields)
             cards = []
             for action in actions:

@@ -7,7 +7,8 @@ This describes inspected code, not completion of the target architecture.
 Post-audit additions on 28 September are recorded separately in
 [domain-aware setup](../PRODUCT_DOMAIN_SETUP.md),
 [readable dossier](../PRODUCT_DOSSIER_CLARITY.md) and
-[structured subject context](../PRODUCT_STRUCTURED_CONTEXT.md). The baseline
+[structured subject context](../PRODUCT_STRUCTURED_CONTEXT.md) and
+[versioned templates](../PRODUCT_DOSSIER_TEMPLATES.md). The baseline
 commits and frozen audit hashes below remain historical; current bounded changes
 are reflected in the [gap matrix](core-gap-analysis.md).
 

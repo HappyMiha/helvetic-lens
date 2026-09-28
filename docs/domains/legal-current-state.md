@@ -11,6 +11,9 @@ adds optional Legal subject fields, including jurisdictions, parties, laws/cases
 procedural stage and relevant dates. Saved schemas and before/after history are
 retained under current dossier roles. These remain human-provided context, not
 an applicability decision or verified authority classification.
+[Release 1.32](../PRODUCT_DOSSIER_TEMPLATES.md) adds optional Legal Question,
+Legislative Monitor and Case / Dispute templates with versioned research guidance
+and explicit editor-controlled selection history on that same dossier.
 
 Helvetic Lens Legal already uses the common product Dossier API, persistent
 investigation/claim models, source readers, monitoring policies and collaborative

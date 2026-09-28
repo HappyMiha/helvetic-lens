@@ -27,7 +27,10 @@ Implementation update, 28 September: [release 1.31](../PRODUCT_STRUCTURED_CONTEX
 persists optional, versioned Pharma subject fields on the shared dossier with
 readable details, explicit editing and change history. Values are user-provided;
 they do not resolve entities, alter monitoring or imply source coverage. Exact
-product/substance IDs, aliases, applicability and template identity remain open.
+product/substance IDs, aliases and applicability remain open.
+[Release 1.32](../PRODUCT_DOSSIER_TEMPLATES.md) adds explicit versioned Market Access,
+Regulatory Monitor and Safety template selection with retained guidance and
+history. It does not establish source readiness or the proving journey below.
 
 The first validated template is **Market Access Dossier**. The proving example is
 **Semaglutide — Switzerland**; Wegovy is a possible product context from the

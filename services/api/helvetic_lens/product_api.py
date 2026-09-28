@@ -14,7 +14,7 @@ from fastapi.responses import FileResponse
 from pydantic import Field, StrictBool, field_validator
 from sqlalchemy import case, func, select
 
-from . import domain_packs, legal_profiles, monitoring_topics
+from . import domain_packs, dossier_templates, legal_profiles, monitoring_topics
 from .analysis import InferenceBudget
 from .config import DomainError
 from .db import utcnow
@@ -29,7 +29,7 @@ MAX_FILE = 10 * 1024 * 1024
 
 
 class Create(legal_profiles.CreateInput):
-    pass
+    template: dossier_templates.TemplateReference | None = None
 
 
 class EntryInput(legal_profiles.Input):
@@ -115,7 +115,8 @@ def payload(session, row, profile, *, detail=True):
     from .product_sources import document_statuses
 
     result = {"id": row.id, "product": row.product, "created_at": iso(row.created_at),
-              "profile": legal_profiles.payload(session, profile, detail=detail), "work": work_payload(session, row)}
+              "profile": legal_profiles.payload(session, profile, detail=detail), "work": work_payload(session, row),
+              "template": dossier_templates.payload(row)}
     from .product_access import current_user_id, summary
 
     user_id = current_user_id()
@@ -164,6 +165,8 @@ def product_router(service):
 
     @router.post("/dossiers", status_code=201)
     def create(product: Product, data: Create, request: Request):
+        from .product_templates import check_creation_replay, record
+
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, service.organization_id)
@@ -172,13 +175,18 @@ def product_router(service):
                 row, profile = dossier(session, product, row.id, identity.user_id)
                 if profile.created_by_user_id != identity.user_id:
                     fail("This creation key is already used.", 409)
+                check_creation_replay(session, row, data.template)
                 return payload(session, row, profile)
+            selection = dossier_templates.snapshot(product, data.template) if data.template else None
             profile = LegalMonitoringProfile(created_by_user_id=identity.user_id, creation_key=str(uuid4()),
                 config_json=data.config.model_dump(mode="json"), step=data.step)
             session.add(profile)
             session.flush()
             row = ProductDossier(product=product, profile_id=profile.id, creation_key=str(data.creation_key))
             session.add(row)
+            if selection:
+                session.flush()
+                record(session, row, identity.user_id, selection, "dossier_template:creation")
             session.commit()
             return payload(session, row, profile)
 
@@ -447,6 +455,7 @@ def product_router(service):
             result["exported_at"] = iso(utcnow())
             result["schema"] = "helveticlens.product-dossier/v1"
             result["domain_context"] = row.domain_context_json or {}
+            result["template_snapshot"] = row.template_json or {}
             result["entries"] = [entry_payload(session, x) for x in session.scalars(select(DossierEntry)
                 .where(DossierEntry.dossier_id == row.id).order_by(DossierEntry.created_at, DossierEntry.id).limit(10001))]
             if len(result["entries"]) > 10000:
@@ -507,6 +516,9 @@ def product_router(service):
     from .product_domain_context import routes as domain_context_routes
 
     domain_context_routes(router, service, actor)
+    from .product_templates import routes as template_routes
+
+    template_routes(router, service, actor)
     from .product_guest_api import routes as guest_routes
     from .product_research import research_routes
     from .product_team_api import routes as team_routes

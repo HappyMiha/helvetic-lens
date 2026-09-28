@@ -26,12 +26,15 @@ class DomainPack:
     scientific_literature: bool = False
 
     def descriptor(self):
+        from .dossier_templates import available
+
         return {"id": self.id, "version": self.version, "domain": self.domain,
-                "label": self.label, "focus": self.focus, "context_schema_id": self.context_schema_id}
+                "label": self.label, "focus": self.focus, "context_schema_id": self.context_schema_id,
+                "template_ids": [item.id for item in available(self.domain)]}
 
 
 LEGAL = DomainPack(
-    id="LegalPack", version="1.1.0", domain="LEGAL", label="Legal monitoring",
+    id="LegalPack", version="1.2.0", domain="LEGAL", label="Legal monitoring",
     focus="Legal developments, proceedings and regulatory changes relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct legal monitoring topics for the supplied context and feedback. "
@@ -41,7 +44,7 @@ LEGAL = DomainPack(
     topic_task="legal_profile_topics", context_schema_id="legal-context/v1",
 )
 PHARMA = DomainPack(
-    id="PharmaPack", version="1.1.0", domain="PHARMA", label="Pharmaceutical monitoring",
+    id="PharmaPack", version="1.2.0", domain="PHARMA", label="Pharmaceutical monitoring",
     focus="Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct pharmaceutical monitoring topics for the supplied context and feedback. "
