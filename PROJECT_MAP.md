@@ -16,7 +16,8 @@ domain acceptance remain open. The first bounded implementation is
 [readable dossier chapters](docs/PRODUCT_DOSSIER_CLARITY.md) and
 [structured subject context](docs/PRODUCT_STRUCTURED_CONTEXT.md) and
 [versioned dossier templates](docs/PRODUCT_DOSSIER_TEMPLATES.md) and
-[readable source coverage](docs/PRODUCT_DOSSIER_COVERAGE.md). Existing product client repositories and working
+[readable source coverage](docs/PRODUCT_DOSSIER_COVERAGE.md) and
+[iterative dossier research](docs/PRODUCT_ITERATIVE_RESEARCH.md). Existing product client repositories and working
 native workflows are preserved during incremental migration.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.

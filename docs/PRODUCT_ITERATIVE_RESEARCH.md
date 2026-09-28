@@ -1,6 +1,6 @@
 # Iterative dossier research — 1.34
 
-Status: VERIFYING production activation. Scope recorded before implementation, 28 September 2026.
+Status: DONE within the bounded 1.34 implementation/release scope. Scope recorded before implementation, 28 September 2026.
 Normative owner input: [Investigation Engine](INVESTIGATION_ENGINE_SPEC.md), exact
 attachment SHA-256: 79bffc35f960a4709ed1a499a2f17ff808dfd1b2307fe486f890f2e466112675.
 This is the first vertical slice in sections 42–43, not full global coverage or
@@ -60,7 +60,7 @@ independent planned branches do not imply simultaneous expensive model execution
 
 ## Evidence
 
-Implementation and controlled execution checks are recorded below. Publication/activation is still pending; this is not yet a production completion claim.
+Implementation, controlled execution checks and verified production publication are recorded below. Live-provider quality and human acceptance remain open.
 
 ## Implementation report (sections 42–43 and final-report checklist)
 
@@ -126,4 +126,28 @@ the protected-value scan passed across Core, both clients and emitted artifacts.
 Two actual native worker traces with controlled external adapters are retained.
 No production private dossier, browser interaction, paid inference probe or
 independent model-quality evaluation was performed. Exact production activation
-and assets are the next gate.
+and assets were subsequently verified below.
+
+
+## Verified publication
+
+Core implementation `05b105ca52481b3aa0e0beeaf72928b28b602940` was immediately pushed to main
+and activated normally as `git-05b105ca5248`. Both clients were
+immediately pushed and published as existing Sites version 37: Pharma
+`3005402fa0050ff9d6bcc49f037bdccb1010e628`, Legal `5644800999f4477746ec96a1c85b1003ef99b4c2`.
+
+Each canonical product origin passed 33 public/access checks and 47 exact asset
+SHA-256 comparisons. Native readiness, 23 runtime module hashes, five containers,
+nine Monitoring navigation routes and additive migration `09d495bef125` passed.
+The new research state column, retained context/template columns, shared domain
+assignment and anonymous access boundaries are active. The retired public Loyer
+hostname remains unavailable. The new compiled research UI and reading styles
+match the validated build. The frozen [release receipt](product-releases/2026-09-28-1.34.0.json)
+records exact sources, archive identities and checks. Final documentation
+activation is observed separately without republishing unchanged clients.
+
+This verifies deployment and access behavior. The saved controlled-worker traces
+verify the iterative orchestration, including a second search and a contradicted
+claim. Neither substitutes for live-provider relevance evaluation, browser QA,
+professional human acceptance or completion of all boxes in the target diagrams.
+Those gates remain OPEN, as do parent MV2-002/020/023.
