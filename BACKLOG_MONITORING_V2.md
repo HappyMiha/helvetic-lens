@@ -60,6 +60,15 @@ guidance on the existing shared dossier. Core and both products are published
 and verified; 116 API checks and 179 client tests each passed. See [scope and acceptance](docs/PRODUCT_DOSSIER_TEMPLATES.md).
 This does not complete source readiness or the Market Access proving journey.
 
+## Research continuation — 1.38 captured-source relationships
+
+VERIFYING publication; recorded before code. MV2-002/020: explain matching captured content,
+same-address versions and unknown source independence beside exact paired quotes
+in Changes over time. Capture time is distinct from publication/effective time.
+Reuse existing comparisons, source snapshots, visibility, review and client basis
+rendering. No provider call, schema change or automatic claim merge. See
+[scope, source readiness and acceptance](docs/PRODUCT_SOURCE_RELATIONSHIPS.md).
+
 ## Research continuation — 1.37 conservative local rejection
 
 DONE within uncertainty repair, evaluation and verified publication; recorded before code. MV2-002/020/023/051: preserve uncertain
@@ -2070,7 +2079,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — source relationships 1.38 VERIFYING — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -2088,7 +2097,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — source relationships 1.38 VERIFYING — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
@@ -2240,6 +2249,12 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Scoped continuation 1.38 — VERIFYING, recorded before code:** concrete source
+relationship and observation-time provenance for existing cross-run comparisons.
+Reuse exact source/evidence pairs and current audience; preserve original claims
+and editor decisions. No new source access or inference. See
+[scope and acceptance](docs/PRODUCT_SOURCE_RELATIONSHIPS.md).
 
 **Scoped continuation 1.37 — DONE within uncertainty repair/evaluation/publication:**
 Core git-09ab8bcfff5f is verified live; 65 affected tests passed. Final uncertain
@@ -3029,6 +3044,12 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-020"></a>
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
+
+**Scoped continuation 1.38 — VERIFYING, recorded before code:** concrete source
+relationship and observation-time provenance for existing cross-run comparisons.
+Reuse exact source/evidence pairs and current audience; preserve original claims
+and editor decisions. No new source access or inference. See
+[scope and acceptance](docs/PRODUCT_SOURCE_RELATIONSHIPS.md).
 
 **Scoped continuation 1.37 — DONE within uncertainty repair/evaluation/publication:**
 Core git-09ab8bcfff5f is verified live; 65 affected tests passed. Final uncertain

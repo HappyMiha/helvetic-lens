@@ -17,6 +17,7 @@ from .product_investigation_models import (
 )
 from .product_investigations import ACTIVE, event, plan, scope
 from .product_public_research import eligible, sources_visible
+from .product_source_relationships import compare as compare_sources
 
 MAX_CLAIMS = 24
 KINDS = {
@@ -163,12 +164,16 @@ def payload(session, change):
     def finding(claim, evidence_id=None):
         return {"id": claim.id, "investigation_id": claim.investigation_id, "statement": claim.statement,
             "status": claim.status, "revision": claim.revision, "evidence": evidence_payload(session, claim, evidence_id)}
+    previous_finding = finding(previous, change.previous_evidence_id)
+    current_finding = finding(current, change.evidence_id)
+    sources = compare_sources(previous_finding["evidence"], current_finding["evidence"])
     return {"id": change.id, "kind": change.kind, "explanation": change.explanation,
         "status": change.status, "revision": change.revision, "created_at": iso(change.created_at),
         "updated_at": iso(change.updated_at), "previous_revision": change.previous_revision,
-        "previous_status": change.previous_status, "previous": finding(previous, change.previous_evidence_id),
-        "current": finding(current, change.evidence_id), "history": change.history,
-        "basis": "Machine-linked source comparison, not independent verification. Inspect both quotations; editors can dismiss an incorrect relationship."}
+        "previous_status": change.previous_status, "previous": previous_finding,
+        "current": current_finding, "history": change.history, "source_relationship": sources,
+        "basis": "Machine-linked source comparison, not independent verification. Inspect both quotations; editors can dismiss an incorrect relationship. "
+            + sources["basis"] + " " + sources["temporal_basis"]}
 
 
 def page(session, dossier_id, publication=None, *, offset=0, status="active"):
