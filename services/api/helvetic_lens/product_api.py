@@ -558,5 +558,8 @@ def product_router(service):
     from .product_reuse import reuse_routes
 
     following_routes(router, service, actor)
+    from .product_private_following import routes as private_following_routes
+
+    private_following_routes(router, service, actor)
     reuse_routes(router, service, actor)
     return router

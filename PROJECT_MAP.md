@@ -145,3 +145,9 @@ meaning search and model-free word search to retained passages and claim citatio
 in both products. Current dossier and paired-source permissions precede counts,
 ranking and paging; direct semantic windows retain uncertain candidates rather
 than hiding evidence behind an uncalibrated classifier threshold.
+
+[Personal research updates](docs/PRODUCT_RESEARCH_NOTIFICATIONS.md) project
+completed source-bearing investigations into the existing Pharma/Loyer Following
+journey, with opt-in private subscriptions, public living-research markers,
+current-audience history and exact source/comparison links. Native source review
+and consented external delivery remain separate.

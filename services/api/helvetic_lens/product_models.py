@@ -317,6 +317,26 @@ class PublicDossierFollow(Base):
     following: Mapped[bool] = mapped_column(Boolean, default=True)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     seen_marker: Mapped[str] = mapped_column(String(64))
+    research_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class PrivateDossierFollow(Base):
+    """Personal preference, contained by the dossier; always filter its owner."""
+    __tablename__ = "product_private_follows"
+    __table_args__ = (
+        ForeignKeyConstraint(["dossier_id", "organization_id"],
+            ["product_dossiers.id", "product_dossiers.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("owner_user_id", "dossier_id", name="uq_private_follow_owner"),
+    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    organization_id: Mapped[str] = mapped_column(String(36), index=True)
+    dossier_id: Mapped[str] = mapped_column(String(36), index=True)
+    owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    following: Mapped[bool] = mapped_column(Boolean, default=True)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    seen_marker: Mapped[str] = mapped_column(String(64))
+    research_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

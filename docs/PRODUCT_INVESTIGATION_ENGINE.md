@@ -236,3 +236,13 @@ captures skip extraction. Independent later evidence uses stage 4a comparison.
 See [bounds and acceptance](PRODUCT_WEB_RESEARCH.md). Broader private semantic
 indexing, independent professional evaluation and full native visual migration
 remain separate open outcomes.
+
+Stage 4d private saved-evidence search is DONE within scoped release 1.19;
+[bounded local comparison and exact citations](PRODUCT_EVIDENCE_SEARCH.md) keep
+uncertain candidates visible and preserve the conditional MV2-063 index gate.
+
+Stage 4e personal research updates are IN PROGRESS for release 1.20. Existing
+completion/evidence records feed private/public following, current-permission
+history and personal read markers in both clients. See the pre-implementation
+[scope and acceptance contract](PRODUCT_RESEARCH_NOTIFICATIONS.md). This does not
+complete native email/noise controls, source review or either full specification.

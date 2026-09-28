@@ -49,11 +49,11 @@ def request_grant(path=None, method=None):
     product, identifier, suffix = match.groups()
     suffix = suffix or ""
     if method != "GET":
-        post_routes = r"(?:evidence-search|web-research|monitoring-research|entries|files|discovery-references|discussion(?:/[^/]+/(?:replies|accept|research))?|investigations(?:/[^/]+/control)?|evidence-changes/[^/]+/review|sources/[^/]+/(?:reviews|monitor)|source-advice|improve|improvements/apply|searches|review|actions|publication(?:/(?:preview|withdraw))?|team/(?:enable|invitations(?:/[^/]+/revoke)?|members/[^/]+/remove))"
+        post_routes = r"(?:follow(?:/read)?|evidence-search|web-research|monitoring-research|entries|files|discovery-references|discussion(?:/[^/]+/(?:replies|accept|research))?|investigations(?:/[^/]+/control)?|evidence-changes/[^/]+/review|sources/[^/]+/(?:reviews|monitor)|source-advice|improve|improvements/apply|searches|review|actions|publication(?:/(?:preview|withdraw))?|team/(?:enable|invitations(?:/[^/]+/revoke)?|members/[^/]+/remove))"
         put_routes = r"(?:work|actions/[^/]+|team/members/[^/]+)"
         if not ((method == "POST" and re.fullmatch(post_routes, suffix)) or (method == "PUT" and re.fullmatch(put_routes, suffix))):
             return None
-    if method == "GET" or suffix == "evidence-search":
+    if method == "GET" or suffix in {"evidence-search", "follow", "follow/read"}:
         action = "read"
     elif suffix.startswith(("team", "publication")):
         action = "owner"
