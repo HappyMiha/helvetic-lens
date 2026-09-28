@@ -237,3 +237,7 @@ and both product readers. Existing Brandbook surfaces, typography and accessible
 buttons are reused; failure removes retained evidence until a successful current
 read. All five native locales carry recovery copy. See PRODUCT_READ_RECOVERY.md
 for scoped automated and production acceptance. Full visual/human gates stay open.
+
+Release 1.28 production acceptance passes: both Sites 31, 47 exact assets each,
+48 native assets / 60 native HTTP checks and the unchanged verified runtime.
+See [release receipt](product-releases/2026-09-28-1.28.0.json). Full visual and human gates remain open.

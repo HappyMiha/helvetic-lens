@@ -1,6 +1,6 @@
 # Evidence read recovery — release 1.28
 
-Status: VERIFYING production. Scope recorded before implementation on 28 September 2026.
+Status: DONE within the verified 1.28 scope. Scope recorded before implementation on 28 September 2026.
 This is a bounded contribution to MV2-002 and MV2-020, not completion of either
 parent or the Dynamic Dossier / Visual Language specifications.
 
@@ -76,3 +76,24 @@ native completion flow intentionally trades one scoped re-read for authoritative
 profile/runtime freshness. Server markup, synthetic fixtures and transport
 contracts are verified; browser interaction and human acceptance are unclaimed.
 Exact source/artifact hashes and production activation remain required below.
+
+## Verified production acceptance — 28 September 2026
+
+DONE within release 1.28 scope. Native implementation `e4c8a99845fbcdea1953b87f52b84668fcee60b1`
+activated normally at `2026-09-28T10:26:39+00:00`. Both existing public Sites
+published version 31: Pharma `d5d1145655dc4883b5317365efd7480ce45c1be2` and
+Legal `075847285e65910e23bb3ec3540542803c3e6093`. Exact GitHub CI completed successfully for both.
+Each archive's 136 members matched validated output. Connector-reported archive
+hashes and local transport/member hashes remain separate evidence.
+
+Pharma passed 28 public route/auth/guide checks and Legal passed
+55; each origin served 47 exact asset hashes. All Legal assets also
+matched on the legacy hostname. Native proof covers
+48 exact web assets and 60 HTTP checks,
+five locales, all nine navigation directions, 62 exact API modules, four healthy
+runtimes, five scheduler modules, unchanged migration `06d495bef125`, healthy Laya
+and the pinned local retrieval service with synthetic input only.
+
+[Immutable release receipt](product-releases/2026-09-28-1.28.0.json) records the
+complete scoped proof. The hourly heartbeat remains ACTIVE. Full investigation,
+visual and independent professional/human acceptance gates remain IN PROGRESS.

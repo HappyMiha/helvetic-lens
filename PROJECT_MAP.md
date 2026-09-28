@@ -200,4 +200,4 @@ and historical release receipts retain their original spelling. Both slices
 are DONE within scope with exact production evidence in release 1.27; full
 investigation/visual specifications remain IN PROGRESS.
 
-[Evidence read recovery](docs/PRODUCT_READ_RECOVERY.md) is the active 1.28 slice: scoped retry, request ownership and server-authoritative comparison results. Full specifications remain IN PROGRESS.
+[Evidence read recovery](docs/PRODUCT_READ_RECOVERY.md) is DONE within verified 1.28 scope: scoped retry, request ownership and server-authoritative comparison results. Full specifications remain IN PROGRESS.
