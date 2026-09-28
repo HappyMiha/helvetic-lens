@@ -15,7 +15,8 @@ Implementation update, 28 September 2026: [domain-aware setup 1.29](../PRODUCT_D
 [readable dossier 1.30](../PRODUCT_DOSSIER_CLARITY.md) and
 [structured subject context 1.31](../PRODUCT_STRUCTURED_CONTEXT.md) and
 [versioned templates 1.32](../PRODUCT_DOSSIER_TEMPLATES.md) and
-[readable coverage 1.33](../PRODUCT_DOSSIER_COVERAGE.md) extend the
+[readable coverage 1.33](../PRODUCT_DOSSIER_COVERAGE.md) and
+[reviewed entity mentions 1.39](../PRODUCT_ENTITY_IDENTITY.md) extend the
 Phase 0 baseline. Rows below identify those bounded additions; the frozen audit
 receipt remains historical. Full target and human acceptance remain open.
 
@@ -31,13 +32,13 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C03 | Typed domain context (§5.2,33,45) | PARTIAL | 1.31 adds optional validated Legal/Pharma context, pinned schemas, editor authorization and before/after history through `product_domain_context.py`. Legacy work context remains intact; resolved entity identities and applicability remain open |
 | C04 | Public/private/shared audience (§6,41,42,61) | EXISTS | Product publication projections, current dossier membership, guest grants and scoped research; preserve separate publication consent |
 | C05 | Organisation enterprise mode (§6) | PARTIAL | Organizations, roles and tenant scope exist; internal connectors and full enterprise policy/audit coverage remain separate |
-| C06 | Evidence graph (§7) | PARTIAL | ClaimEvidence, DossierEntity/Relationship and ClaimChange use relational containment. No unified Finding/Review/Note graph projection |
+| C06 | Evidence graph (§7) | PARTIAL | ClaimEvidence, DossierEntity/Relationship and ClaimChange use relational containment. 1.39 adds contained cross-run pair reviews without merging originals; no unified Finding/Review/Note graph projection |
 | C07 | Versioned evidence and originals (§8,9,60) | PARTIAL | Version/regulatory versions/artifacts and InvestigationSource snapshots exist; no one typed evidence/source/version reference across every representation |
 | C08 | Retained native versions and comparisons (§9,20) | EXISTS | `models.Version`, `RegulatoryDocumentVersion`, `NativeDocumentComparison`, `product_document_history.py`, `law_history.py` |
 | C09 | Durable structured claims (§10) | PARTIAL | DossierClaim/ClaimEvidence persist assertion and evidence links. Typed subject/predicate/object, validity and separate acceptance axis are absent |
 | C10 | Domain claim types / fact versus interpretation (§11,39) | TODO | Current claim schema has statement/evidence status, not Legal/Pharma claim-type registries |
 | C11 | Finding lifecycle (§12) | PARTIAL | Research answer findings and ClaimChange are useful precursors; no durable general Finding with target review/materiality lifecycle |
-| C12 | Human Review service (§13,50) | PARTIAL | Answer, source, relationship and native match reviews exist; missing common target revision and source/skill/model references plus atomic finding acceptance |
+| C12 | Human Review service (§13,50) | PARTIAL | Answer, source, relationship and native match reviews exist. 1.39 records append-only editor decisions for exact cited entity pairs with evidence fingerprints and reviewer erasure; common Finding acceptance and source/skill/model review contracts remain open |
 | C13 | Accepted finding creates/updates claim (§13,71.4) | TODO | Existing relationship dismissal is not a transaction that accepts a finding and produces a reviewed claim |
 | C14 | Source Registry / adapter interface (§14) | PARTIAL | SourceCapability, SourcePackDefinition, connectors and subscriptions exist. Unify discovery/document/version/health capabilities and domain membership |
 | C15 | Skill Registry (§15,37,48) | PARTIAL | Explicit deterministic functions and reviewed AI capability profiles exist; no general versioned domain task registry with input/output contracts |
@@ -65,7 +66,7 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C37 | Legal authority classification (§38,39) | PARTIAL | Authority/document kind/official source metadata exist; target binding/guidance/argument/AI taxonomy is not consistently attached to claims or trust UI |
 | C38 | Legal change-to-reviewed-claim journey (§40,73,76) | PARTIAL | Native monitoring and product investigation operate; typed applicability plus Finding acceptance are needed |
 | C39 | Pharma uses existing Core (§44) | EXISTS | Existing Pharma client uses ProductDossier and shared investigation/search/monitoring engine |
-| C40 | Pharma product/substance/indication identity (§45,48) | PARTIAL | 1.31 separates user-provided product/substance/indication/country names and regulatory/market-access/trial identifiers. Exact identity, deterministic aliases and uncertain match review remain open |
+| C40 | Pharma product/substance/indication identity (§45,48) | PARTIAL | 1.31 separates user-provided product/substance/indication/country names and regulatory/market-access/trial identifiers. 1.39 permits source-cited exact-namespace pair suggestions and explicit same/different/unresolved editor review within one dossier/audience; a canonical identity registry and general alias resolution remain open |
 | C41 | Pharma monitoring-first workflow (§46) | PARTIAL | Saved page, topic and recurring-web research exist; template-driven domain findings/review are incomplete |
 | C42 | Configurable verified Pharma source pack (§47,51) | PARTIAL | Europe PMC discovery and suggested public Swissmedic/EMA/FDA page watches exist. Dedicated BAG/SL and domain-specific authoritative source contracts are not verified here |
 | C43 | Registered Pharma skills (§48) | TODO | No typed substance/label/reimbursement/safety skill registration with task evaluations |
@@ -80,7 +81,7 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C52 | Full historical dossier reconstruction (§65) | PARTIAL | Retained versions, snapshots, plan/claim/publication histories exist; not one tested “everything known at date X” query across all object types |
 | C53 | Observability (§67) | PARTIAL | Jobs, scan health, inference measurements and history exist; consistent scan→finding→review→claim aggregate metrics are missing |
 | C54 | Incremental performance (§68) | PARTIAL | Hash/dedup, bounded jobs, source cache and E5 cache exist; proposed unified flows need no-op/duplicate/cost regression tests |
-| C55 | Safe incremental migration (§69) | PARTIAL | 1.31/1.32 add context/template columns in migrations 07d495bef125 and 08d495bef125 with empty defaults, preserved legacy content, revision fences and refusal of destructive downgrade after saved data exists. Broader target migrations/flags/rollback coverage remain open |
+| C55 | Safe incremental migration (§69) | PARTIAL | 1.31/1.32 add context/template columns in migrations 07d495bef125 and 08d495bef125 with empty defaults, preserved legacy content, revision fences and refusal of destructive downgrade after saved data exists. 1.39 adds the contained entity review table in 0ad495bef125, preserving originals and refusing destructive downgrade of retained reviews. Broader target migrations/flags/rollback coverage remain open |
 | C56 | Guaranteed professional correctness/certification (§66) | NOT_NEEDED | Explicitly outside the target promise. Implement human review (C12/C45); neither fixtures nor HTTP success confer professional certification |
 | C57 | New graph DB, copied engines, fixed lens services (§7,56,78) | NOT_NEEDED | Relational contained models and common engine already provide the foundation |
 

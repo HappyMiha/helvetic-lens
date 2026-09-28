@@ -1,0 +1,33 @@
+{
+  "recorded_at": "2026-09-28T21:00:17.232925+00:00",
+  "scope": "PRODUCT_ENTITY_IDENTITY.md",
+  "status": "validated; activation pending",
+  "core_checks": {
+    "distinct_passed": 61,
+    "new_identity": 25,
+    "existing_evolution": 34,
+    "existing_dossier_export": 1,
+    "backlog_invariant": 1,
+    "exact_api_lint": "passed"
+  },
+  "clients": {
+    "tests_each": 203,
+    "new_cases_each": 6,
+    "lint": "passed both",
+    "types": "passed both",
+    "build": "passed both",
+    "legal_sha": "406e2230e4fe7592227e5b9bbfeaaf53d201ec5b",
+    "pharma_sha": "ee9692fb8822180b0c645965b50260551580ff8f"
+  },
+  "migration": "0ad495bef125",
+  "model_calls": 0,
+  "private_production_dossiers": 0,
+  "browser_checks": 0,
+  "limits": {
+    "suggestion_entities": 120,
+    "suggestion_pairs": 30,
+    "saved_page_size": 20,
+    "review_history": 100
+  },
+  "acceptance_boundary": "Reviewed exact-namespace pairs only; canonical registry, dependency chains, professional/live quality and human acceptance remain open."
+}

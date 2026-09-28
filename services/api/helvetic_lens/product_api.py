@@ -486,6 +486,15 @@ def product_router(service):
             if len(changes) > 2000:
                 fail("This dossier exceeds the interactive evidence-change export limit.")
             result["evidence_changes"] = [change_payload(session, change) for change in changes]
+            from .product_entity_identity import review_payload as identity_payload
+            from .product_entity_identity import reviews as identity_reviews
+            from .product_investigation_models import EntityIdentityReview
+
+            identities = list(session.scalars(identity_reviews(row.id)
+                .order_by(EntityIdentityReview.created_at, EntityIdentityReview.id).limit(2001)))
+            if len(identities) > 2000:
+                fail("This dossier exceeds the interactive entity-review export limit.")
+            result["entity_identity_reviews"] = [identity_payload(session, value) for value in identities]
             from .product_investigation_models import MonitoringResearchPolicy, MonitoringResearchTrigger
             from .product_monitoring_research import payload as monitoring_payload
             from .product_monitoring_research import trigger_payload
@@ -576,6 +585,9 @@ def product_router(service):
     from .product_claim_evolution_api import routes as evidence_change_routes
 
     evidence_change_routes(router, service, actor)
+    from .product_entity_identity_api import routes as entity_identity_routes
+
+    entity_identity_routes(router, service, actor)
     from .product_following import following_routes
     from .product_reuse import reuse_routes
 

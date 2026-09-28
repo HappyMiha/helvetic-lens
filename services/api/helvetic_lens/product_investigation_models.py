@@ -195,6 +195,38 @@ class DossierRelationship(ResearchRecord, Base):
     evidence: Mapped[dict] = mapped_column(JSON)
 
 
+class EntityIdentityReview(ResearchRecord, Base):
+    """Append-only decisions about two mentions; never a merged entity."""
+    __tablename__ = "product_entity_identity_reviews"
+    __table_args__ = (research_scope(),
+        *[ForeignKeyConstraint([entity, run, "dossier_id", "organization_id"],
+            ["product_dossier_entities.id", "product_dossier_entities.investigation_id",
+             "product_dossier_entities.dossier_id", "product_dossier_entities.organization_id"], ondelete="CASCADE")
+          for entity, run in (("entity_id", "investigation_id"), ("previous_entity_id", "previous_investigation_id"))],
+        *[ForeignKeyConstraint([source, run, "dossier_id", "organization_id"],
+            ["product_investigation_sources.id", "product_investigation_sources.investigation_id",
+             "product_investigation_sources.dossier_id", "product_investigation_sources.organization_id"], ondelete="CASCADE")
+          for source, run in (("source_id", "investigation_id"), ("previous_source_id", "previous_investigation_id"))],
+        UniqueConstraint("entity_id", "previous_entity_id", "revision", name="uq_entity_identity_revision"),
+        UniqueConstraint("dossier_id", "request_key", name="uq_entity_identity_request"),
+        CheckConstraint("entity_id < previous_entity_id", name="ck_entity_identity_order"),
+        CheckConstraint("investigation_id <> previous_investigation_id", name="ck_entity_identity_other_run"),
+        CheckConstraint("decision IN ('same','different','unresolved')", name="ck_entity_identity_decision"),
+        CheckConstraint("revision BETWEEN 1 AND 100", name="ck_entity_identity_revision"))
+    entity_id: Mapped[str] = mapped_column(String(36), index=True)
+    previous_entity_id: Mapped[str] = mapped_column(String(36), index=True)
+    previous_investigation_id: Mapped[str] = mapped_column(String(36))
+    source_id: Mapped[str] = mapped_column(String(36))
+    previous_source_id: Mapped[str] = mapped_column(String(36))
+    decision: Mapped[str] = mapped_column(String(16))
+    reason: Mapped[str] = mapped_column(String(500))
+    revision: Mapped[int] = mapped_column(Integer)
+    evidence_fingerprint: Mapped[str] = mapped_column(String(64))
+    reviewed_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    request_key: Mapped[str] = mapped_column(String(36))
+    request_fingerprint: Mapped[str] = mapped_column(String(64))
+
+
 class InvestigationEvent(ResearchRecord, Base):
     __tablename__ = "product_investigation_events"
     __table_args__ = (research_scope(), UniqueConstraint("investigation_id", "sequence"))
