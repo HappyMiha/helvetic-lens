@@ -1,8 +1,8 @@
 # Private saved-evidence search — product release 1.19
 
-**Status: VERIFYING.** Scoped MV2-021 stage 4d; full dynamic dossier and visual
+**Status: DONE within this scoped release.** Scoped MV2-021 stage 4d; full dynamic dossier and visual
 specifications remain IN PROGRESS. Native and both client production acceptance
-must be recorded before this scope is DONE. MV2-063 remains DEFERRED.
+are recorded below. MV2-063 remains DEFERRED.
 
 ## User outcome
 
@@ -64,7 +64,7 @@ changes and unmount fence late responses.
 - At most twelve local decisions per search window, a 32-second comparison
   deadline and the adapter's existing per-request timeout. No automatic retry.
 - At most 2,400 quotation, 600 claim, 300 title and 300 question characters per
-  local request, within the existing service's state/body limits.
+  local request, subject to the existing service's additional state/body limits.
 - Six semantic searches per user per minute and thirty platform-wide per minute,
   through the native Redis-backed limiter; production protection fails closed.
 - PostgreSQL reads have a three-second statement deadline; transactions are not
@@ -117,5 +117,21 @@ visibility gap; the final affected regression verifies its fix. Both clients pas
 The actual PostgreSQL generated query and JSON-passage projection pass using
 random nonexistent dossier/organization scopes; no user records were returned.
 Three protected provider values are absent from each client's 192 source files
-and 137 built files and all 1,776 core source files. Exact production activation
-remains pending at this source checkpoint.
+and 137 built files and all 1,776 core source files. Exact production acceptance is recorded below.
+
+
+Production acceptance, 28 September 2026: native functional
+`58d0d99890ee5b0a1ad5ca6c34dbc9cf0dfbd491` activated at 01:11:40 UTC.
+Pharma `6503a026f14096f9c014a012f0f4f26fa39a52b6` and Loyer
+`9e1a4ecf209674e3625f94e1ddca9b73c75516c1` are active as their existing public
+Sites version 22, completed at 01:12:36 and 01:13:08 UTC respectively. Both
+exact-source GitHub CI runs passed (36364780422 and 36364797173). Each custom
+origin passes 110 HTTP/auth/gateway/guide checks and 47 exact JS/CSS asset checks.
+Read-only runtime verification matches fifty module hashes, unchanged migration
+04d495bef125, paired-source SQL projection, four required runtime containers,
+five scheduler module hashes, the existing minute scheduler, parser fixture and
+healthy local Laya. The [sanitized production receipt](product-releases/2026-09-28-1.19.0.json)
+retains exact versions, deployment identities, commits and scope. No production
+user records were created or inspected, no paid provider query was made, and
+browser/human visual or authenticated production workflow acceptance is not
+claimed. The full specifications and independent quality evaluation remain open.

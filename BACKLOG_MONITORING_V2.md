@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Private saved-evidence search — 28 September 2026: VERIFYING (scoped stage 4d / release 1.19).**
+**Private saved-evidence search — 28 September 2026: DONE (scoped stage 4d / release 1.19).**
 
 Scope recorded before implementation: search the current private dossier's retained
 source passages and source-linked claims in both products. Offer explicit local
@@ -107,7 +107,12 @@ API Ruff and read-only PostgreSQL query/projection checks pass. A paired-page
 visibility gap found by the tests is fixed in the shared derived-source predicate.
 The synthetic five-language trial ranks the relevant item first in 10/10 pairs,
 but its 13/20 binary classification result is not independent accuracy; all ranked
-candidates remain visible. Exact native/client activation is pending. Details:
+candidates remain visible. Native functional `git-58d0d99890ee` activated at
+01:11:40 UTC; both Sites22 succeeded at 01:12:36/01:13:08 UTC. Each custom origin
+passes 110 HTTP/auth/guide/gateway checks and 47 exact assets. Fifty native module
+hashes, paired-source SQL projection, unchanged 04 migration, runtime containers,
+scheduler and local Laya pass. Exact-source client CI passed 36364780422 and
+36364797173. Full specifications remain open. Details:
 [private saved-evidence search](docs/PRODUCT_EVIDENCE_SEARCH.md).
 
 **Recurring public-web research — 28 September 2026: DONE (scoped stage 4c / release 1.18).**
@@ -1619,7 +1624,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c DONE; private evidence search 4d VERIFYING | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c DONE; stage 4d DONE; useful research notifications next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2487,7 +2492,7 @@ above supersedes the River-only count limitation for readable Today queues.
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
 **Active product stage, 28 September:** private saved-evidence search (4d) is
-VERIFYING under the explicit scope, dependencies, readiness and acceptance above.
+DONE under the explicit scope, dependencies, readiness and acceptance above.
 Direct local semantic batches and literal ledger search preserve MV2-063's gate.
 
 **Completed product stage, 28 September:** stage 4c recurring public-web research is

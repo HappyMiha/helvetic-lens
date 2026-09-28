@@ -1,0 +1,158 @@
+{
+  "release": "1.19.0",
+  "scope": "MV2-021 stage 4d private saved-evidence search",
+  "core": {
+    "release": "git-58d0d99890ee",
+    "deployed_at": "2026-09-28T01:11:40+00:00",
+    "runtime": "evidence-1.19.0-runtime.json",
+    "sha": "58d0d99890ee5b0a1ad5ca6c34dbc9cf0dfbd491"
+  },
+  "clients": {
+    "pharma": {
+      "sha": "6503a026f14096f9c014a012f0f4f26fa39a52b6",
+      "project_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+      "domain": "https://pharma.helveticlens.ch",
+      "version": {
+        "id": "appgprj_6ab8226587a88191b5af66fdc998f7fd~appgver_968b052fa4608191b9d71efbce91118d",
+        "project_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+        "version_number": 22,
+        "source": {
+          "commit_sha": "6503a026f14096f9c014a012f0f4f26fa39a52b6"
+        },
+        "archive_storage": {
+          "archive_format": "tar",
+          "sediment_file_id": "file_00000000bb6482109583bc7aff3df664",
+          "content_hash": "sha256:59e08a645335475dc455d8a70f76e7c9ad7df4628b1d36bf56167c3904c1b3ca",
+          "size_bytes": 3287040,
+          "file_count": 137
+        },
+        "screenshot_url": null,
+        "deployment_id": null
+      },
+      "deployment": {
+        "id": "appgdep_6ab9bef089a88191a6689a527596ef5c",
+        "project_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+        "title": "HelveticLens Pharma",
+        "version_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd~appgver_968b052fa4608191b9d71efbce91118d",
+        "type": "publish",
+        "status": "succeeded",
+        "url": "https://helveticlens-pharma.m-shavritskiy.chatgpt.site",
+        "has_mcp": null,
+        "screenshot_asset_pointer": null,
+        "provider_deployment_id": "site---6ab8226587a88191b5af66fdc998f7fd",
+        "failure_message": null,
+        "env_set_revision": 0,
+        "updated_at": "2026-09-28T01:12:36.634146+00:00"
+      },
+      "github_ci": 36364780422
+    },
+    "loyer": {
+      "sha": "9e1a4ecf209674e3625f94e1ddca9b73c75516c1",
+      "project_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+      "domain": "https://loyer.helveticlens.ch",
+      "version": {
+        "id": "appgprj_6ab822dc86708191b2562a8d66c65bc9~appgver_b38315a7d0a08191b86dc87d00550127",
+        "project_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+        "version_number": 22,
+        "source": {
+          "commit_sha": "9e1a4ecf209674e3625f94e1ddca9b73c75516c1"
+        },
+        "archive_storage": {
+          "archive_format": "tar",
+          "sediment_file_id": "file_0000000046808210a351b1110cc05bd9",
+          "content_hash": "sha256:3c4391780f1511d2647993a873920bf0f92cadbd4b3ce42af0886d20712d7c23",
+          "size_bytes": 3287040,
+          "file_count": 137
+        },
+        "screenshot_url": null,
+        "deployment_id": null
+      },
+      "deployment": {
+        "id": "appgdep_6ab9bf108fe08191945d288d93962422",
+        "project_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+        "title": "HelveticLens Loyer",
+        "version_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9~appgver_b38315a7d0a08191b86dc87d00550127",
+        "type": "publish",
+        "status": "succeeded",
+        "url": "https://helveticlens-loyer.m-shavritskiy.chatgpt.site",
+        "has_mcp": null,
+        "screenshot_asset_pointer": null,
+        "provider_deployment_id": "site---6ab822dc86708191b2562a8d66c65bc9",
+        "failure_message": null,
+        "env_set_revision": 0,
+        "updated_at": "2026-09-28T01:13:08.085939+00:00"
+      },
+      "github_ci": 36364797173
+    }
+  },
+  "verification": {
+    "verified_at": "2026-09-28T01:14:26.502223+00:00",
+    "products": [
+      {
+        "product": "pharma",
+        "http_checks": 110,
+        "exact_assets": 47
+      },
+      {
+        "product": "loyer",
+        "http_checks": 110,
+        "exact_assets": 47
+      }
+    ],
+    "native_modules": 50,
+    "migration": "04d495bef125",
+    "native_workers": [
+      {
+        "container": "helvetic-lens-worker-cpu-1",
+        "running": true,
+        "health": "healthy"
+      },
+      {
+        "container": "helvetic-lens-scheduler-1",
+        "running": true,
+        "health": "not_configured"
+      },
+      {
+        "container": "helvetic-lens-worker-ai-1",
+        "running": true,
+        "health": "not_configured"
+      },
+      {
+        "container": "helvetic-lens-api-1",
+        "running": true,
+        "health": "healthy"
+      }
+    ],
+    "laya": "healthy",
+    "evidence_limits": [
+      12,
+      2400,
+      32
+    ],
+    "paired_page_scope": "passed",
+    "tests": {
+      "new_native_cases": 25,
+      "final_affected_regression": 102,
+      "earlier_regression": {
+        "passed": 137,
+        "failed": 2,
+        "resolved": true
+      },
+      "client_tests_each": 111,
+      "lint_types_builds": "passed",
+      "backlog_smoke": "passed",
+      "ruff": "passed",
+      "secrets": "evidence-1.19.0-secret-scan.json"
+    }
+  },
+  "limits": {
+    "browser_qa": "not_performed",
+    "authenticated_production_records_created": false,
+    "paid_provider_queries": 0,
+    "independent_accuracy": "not_evaluated",
+    "full_dynamic_specification": "IN PROGRESS",
+    "full_visual_specification": "IN PROGRESS",
+    "mv2_063": "DEFERRED"
+  },
+  "development_relevance_trial": "../product-evaluations/2026-09-28-private-evidence-search.json"
+}
