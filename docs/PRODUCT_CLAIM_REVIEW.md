@@ -1,6 +1,6 @@
 # Source-pinned human claim review — 1.40
 
-Status: IMPLEMENTED / VERIFYING publication. Scope recorded before product code on 29 September 2026.
+Status: DONE within bounded review and verified publication scope. Scope recorded before product code on 29 September 2026.
 Contributes to MV2-002/020/024; full target and human acceptance remain OPEN.
 
 ## Audit, dependencies and source readiness
@@ -99,7 +99,7 @@ native output element. All 52 distinct affected Core checks passed: 26 claim-rev
 entity-review compatibility cases and the active backlog invariant. Exact API
 lint passed. The final accessible output-tag adjustment passed all 66 affected
 client render checks again per product. Controlled fixtures never establish live
-domain accuracy; production activation remains pending until recorded below.
+domain accuracy; initial production activation is verified below.
 
 The Core cases include actual controlled coordinator extraction→comparison→human
 review for both product aliases, all three decisions on the same claim, retained
@@ -112,3 +112,25 @@ an invalid uppercase workspace role and then attempted account erasure without
 an eligible workspace administrator; the fixture now exercises viewer access and
 restores its own administrator role for the existing account-erasure flow. No
 production permission or erasure gate was loosened. No external inference ran.
+
+## Verified publication
+
+Core `cd4f3021954d33321e62567398807d4a397a3718` activated normally as
+`git-cd4f3021954d` at 2026-09-28T22:57:52Z. Migration `0bd495bef125`, the
+contained claim/reviewer/revision constraints, 34 exact runtime module hashes,
+five running containers and all nine native Monitoring routes are verified.
+Both canonical origins passed 43 HTTP/access checks and 47 exact asset hashes.
+
+- Legal `18f71364f84b8a72de58638112362c19fb175b5a`, existing Sites 40,
+  activated at 2026-09-28T22:58:34.355432Z.
+- Pharma `d7e0e2f060c3d4ab6da3dda75846ad9ab5910210`, existing Sites 40,
+  activated at 2026-09-28T22:59:13.091339Z.
+
+See the [frozen release receipt](product-releases/2026-09-29-1.40-claim-review.json).
+All three main checkouts were freshly fetched, clean and aligned. The final
+English evidence-only Core commit follows normal automatic deployment; its
+activation is recorded in the parent checkpoint/final receipt. Clients remain at
+the exact verified build and are not republished for documentation. Backups still
+pause API/tunnel; zero downtime is not claimed. No browser, private production
+dossier or inference probe was used. Full architecture/live domain quality/human
+acceptance remain OPEN; the existing local evaluation and validation stay frozen.
