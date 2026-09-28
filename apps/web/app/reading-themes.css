@@ -94,6 +94,7 @@ body {
 :is(input, textarea, select) {
   color: var(--foreground);
   background-color: var(--card);
+  border-color: var(--input-border);
 }
 :is(input, textarea)::placeholder {
   color: var(--muted-foreground);

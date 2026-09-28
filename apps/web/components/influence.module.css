@@ -16,7 +16,7 @@
 .page select,
 .page input,
 .page textarea {
-  border: 1px solid var(--line);
+  border: 1px solid var(--input-border);
   border-radius: 7px;
   background: var(--card);
   color: var(--ink);

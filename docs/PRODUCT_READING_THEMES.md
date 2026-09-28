@@ -67,3 +67,9 @@ is 3.586:1. These numbers describe the authored pairs, not browser-computed,
 disabled-state or whole-page accessibility certification. Remaining fixed colors
 outside palette definitions are retained companion artwork and existing upstream
 UI primitives; reading surfaces and graph/source-history colors now use tokens.
+The final authored-control review also routes legacy form/button boundaries,
+input utility colors and native controls through the tested input-border token.
+Subtle evidence/container dividers keep their separate structural token. This
+closes the distinction between a passing control palette and controls that still
+referenced the weaker separator color. The native build/served-asset checks are
+repeated for that correction; both unchanged Sites 26 remain reusable.
