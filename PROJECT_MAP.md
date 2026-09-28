@@ -131,3 +131,10 @@ account authority, bounded usage and exact production acceptance remain explicit
 standing private research policy with an explicit scope choice, exact retained
 page versions, paired change excerpts and revision-safe source readers in both
 products. Its scoped acceptance remains separate from recurring open-web discovery.
+
+[Recurring public-web research](docs/PRODUCT_WEB_RESEARCH.md) adds an explicit
+standing public question and daily/weekly cadence in both products. Separate
+revisioned policy/occurrence receipts, shared query reservations and current-role
+fences drive the existing private investigation engine. Unchanged captured bodies
+and excerpts skip analysis; new evidence is independently compared with prior
+findings. Local and exact production acceptance remain distinct.

@@ -78,3 +78,8 @@ selector and retry instructions are historical evidence, not work to resume.
 Preserve retained databases, volumes, credentials, consent and source approvals;
 retirement does not authorize deleting or transferring private data.
 See `monitoring-v2/DEPLOYMENT_STATUS.md` for verified main-site releases.
+
+[Recurring public-web research](PRODUCT_WEB_RESEARCH.md) uses explicit account
+standing authority, current dossier roles and revision-pinned public questions.
+The existing one-minute monitoring-control scheduler also queues due web research;
+private findings keep the chosen audience and never imply publication.

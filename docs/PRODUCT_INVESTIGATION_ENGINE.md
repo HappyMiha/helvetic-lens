@@ -226,3 +226,13 @@ authorizations stay unchanged; members-only dossiers retain their page-watch
 restriction. Exact typed receipts, old/new version references and bounded change
 excerpts connect the same private extraction and independent comparison engine.
 See [architecture and scoped acceptance](PRODUCT_WATCHED_PAGE_RESEARCH.md).
+
+Stage 4c recurring public-web discovery is VERIFYING for release 1.18; local
+acceptance passes and exact production verification is pending. An
+explicit question/cadence/standing policy schedules the same durable coordinator
+for author drafts, invited teams and workspace dossiers. Private text never expands
+the query, uncertain paid work is not automatically retried, and unchanged source
+captures skip extraction. Independent later evidence uses stage 4a comparison.
+See [bounds and acceptance](PRODUCT_WEB_RESEARCH.md). Broader private semantic
+indexing, independent professional evaluation and full native visual migration
+remain separate open outcomes.

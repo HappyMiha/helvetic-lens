@@ -81,6 +81,12 @@ def access(session, identity, product, dossier_id, *, write=False, action="edit"
 
 
 def worker_access(session, run, product):
+    from .product_web_research import trigger_for as web_trigger_for
+    from .product_web_research import worker_access as web_access
+
+    web_trigger = web_trigger_for(session, run)
+    if web_trigger:
+        return web_access(session, run, web_trigger)
     from .product_monitoring_research import trigger_for
     from .product_monitoring_research import worker_access as monitoring_access
 
@@ -146,6 +152,10 @@ def plan(session, run, reason, *, trigger=None):
                     "sources_per_branch": MAX_SOURCES, "saved_snapshots": MAX_SOURCES,
                     "comparison_requests": 1, "claims_per_comparison_side": 24},
                 "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached."}
+    from .product_web_research import trigger_for as web_trigger_for
+
+    if web_trigger_for(session, run):
+        document["budgets"].update(public_branches=1, saved_snapshots=0)
     session.add(InvestigationPlan(**scope(run), version=run.plan_version, reason=reason, document=document))
     event(session, run, "plan_updated", version=run.plan_version, reason=reason, trigger=trigger)
 
@@ -277,8 +287,13 @@ def payload(session, run):
         return {**summary(run), "evidence_unavailable": True, "monitoring_trigger": trigger_payload(session, trigger),
             "original": None, "evidence_basis": "The retained page evidence is no longer accessible.", "coverage": "Unavailable",
             **{key: [] for key in ("plans", "branches", "sources", "claims", "evidence", "entities", "relationships", "activity")}}
+    from .product_web_research import trigger_for as web_trigger_for
+
+    web_trigger = web_trigger_for(session, run)
     changes = projection(session, run)
-    return {**summary(run), "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
+    return {**summary(run), "web_research_trigger": {
+        "id": web_trigger.id, "policy_revision": web_trigger.policy_revision,
+        "scheduled_for": iso(web_trigger.scheduled_for)} if web_trigger else None, "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
         "original": original(session, run.trigger_entry_id),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],

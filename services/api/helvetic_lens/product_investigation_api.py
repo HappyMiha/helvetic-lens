@@ -100,8 +100,10 @@ def routes(router, service, actor):
                 fail("The investigation changed. Refresh before applying this action.", 409)
             if data.action in {"resume", "retry"}:
                 from .product_monitoring_research import retry_authority
+                from .product_web_research import retry_authority as web_retry_authority
 
                 retry_authority(session, run)
+                web_retry_authority(session, run)
                 if data.action == "retry":
                     from .product_contributions import retry
 

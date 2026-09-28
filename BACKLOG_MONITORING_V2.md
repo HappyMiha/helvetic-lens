@@ -72,6 +72,39 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Recurring public-web research — 28 September 2026: VERIFYING (scoped stage 4c / release 1.18).**
+Scoped MV2-019/021/023 continuation after verified 1.17: a current dossier editor
+explicitly saves one public question, daily or weekly cadence and standing consent.
+Works for author drafts, invited teams and workspace dossiers without requiring
+native topic monitoring. No implicit authorization from a saved search recipe.
+Dependencies: current dossier roles, durable investigation/outbox checkpoints,
+existing Search1API/Europe PMC retrieval with Jev/TypeSafe and Laya fallback,
+permitted source reader and independent evidence comparison. Source readiness:
+configured search/decision and analysis providers, anonymous permitted public
+sources only; existing robots, size, exclusions and audience rules apply.
+One scheduled search per cadence, at most two starts/retries per UTC day and
+one public query per start; no automatic entity-query expansion. Three bounded
+source reads, at most three extractions and one comparison per start. Shared
+platform query reservations remain authoritative; monetary cost is unknown where
+unmetered. Commit occurrence receipts before network work; never automatically
+repeat an uncertain paid step or catch up missed occurrences in a burst. Settings,
+authorizing role/account and audience changes fence late results. Public queries
+contain only the explicitly submitted question; findings remain in the selected
+private dossier audience and do not create subscriptions or publications.
+Successful source reads retain exact captures. Compare URL, body and selected
+excerpt fingerprints with the latest successfully analysed capture for this
+question; unchanged captures skip extraction, changed/reappearing versions remain
+visible. Empty successful searches differ from provider failure. Both clients
+show explicit scope/cadence, last/next check, usage, history and investigation
+links. Acceptance: both products and draft/team/workspace fixtures; recurring
+new/unchanged/changed evidence and comparison, no private query leak, authority
+and source races, budgets, interruption recovery, strict consent and replay,
+migration preservation/containment/export; required API/client gates and exact
+native/Sites production verification. Independent professional quality evaluation,
+private hybrid indexing and full native visual migration remain separate open
+work; all nine Monitoring sections and customs deferrals stay unchanged.
+See [architecture and acceptance](docs/PRODUCT_WEB_RESEARCH.md).
+
 **Watched-page research — 28 September 2026: DONE (scoped stage 4b2 / release 1.17).**
 Scoped MV2-019/021/023 continuation after verified 1.16: an explicit policy choice
 adds future retained changes from dossier-linked workspace page watches to private
@@ -1540,7 +1573,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4b2 DONE; recurring discovery next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c production verification | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2406,6 +2439,9 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Current product stage, 28 September:** stage 4c recurring public-web research is
+VERIFYING under the scope, dependencies, readiness and acceptance above.
 
 **Completed product stage, 28 September:** watched-page research (4b2) is DONE under the
 explicit scope, dependencies, source readiness and acceptance recorded above.

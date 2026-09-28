@@ -254,5 +254,44 @@ class MonitoringResearchTrigger(Contained, Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-SCOPED = (MonitoringResearchPolicy, MonitoringResearchTrigger, Investigation, InvestigationPlan, InvestigationBranch, InvestigationSource,
+class WebResearchPolicy(Contained, Base):
+    __tablename__ = "product_web_research_policies"
+    __table_args__ = (contained(), UniqueConstraint("dossier_id"),
+        UniqueConstraint("id", "dossier_id", "organization_id"),
+        CheckConstraint("cadence_hours IN (24,168)", name="ck_web_research_cadence"),
+        Index("ix_web_research_due", "enabled", "next_check_at", "id"))
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    question: Mapped[str] = mapped_column(String(300), default="")
+    cadence_hours: Mapped[int] = mapped_column(Integer, default=24)
+    authorized_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    audience_fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    budget_day: Mapped[str] = mapped_column(String(10), default="")
+    budget_used: Mapped[int] = mapped_column(Integer, default=0)
+    next_run_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    next_check_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    reason: Mapped[str] = mapped_column(String(500), default="Recurring public search is off.")
+    history: Mapped[list] = mapped_column(JSON, default=list)
+    last_request_key: Mapped[str] = mapped_column(String(36), default="")
+    last_request_fingerprint: Mapped[str] = mapped_column(String(64), default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class WebResearchTrigger(Contained, Base):
+    __tablename__ = "product_web_research_triggers"
+    __table_args__ = (contained(), research_scope(),
+        ForeignKeyConstraint(["policy_id", "dossier_id", "organization_id"],
+            ["product_web_research_policies.id", "product_web_research_policies.dossier_id",
+             "product_web_research_policies.organization_id"], ondelete="CASCADE"),
+        UniqueConstraint("investigation_id"),
+        UniqueConstraint("policy_id", "policy_revision", "scheduled_for", name="uq_web_research_occurrence"))
+    policy_id: Mapped[str] = mapped_column(String(36))
+    policy_revision: Mapped[int] = mapped_column(Integer)
+    investigation_id: Mapped[str] = mapped_column(String(36))
+    question: Mapped[str] = mapped_column(String(300))
+    scheduled_for: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+SCOPED = (WebResearchPolicy, WebResearchTrigger, MonitoringResearchPolicy, MonitoringResearchTrigger, Investigation, InvestigationPlan, InvestigationBranch, InvestigationSource,
           DossierClaim, ClaimEvidence, ClaimChange, DossierEntity, DossierRelationship, InvestigationEvent)

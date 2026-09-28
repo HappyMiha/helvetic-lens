@@ -484,6 +484,17 @@ def product_router(service):
                 fail("This dossier exceeds the interactive monitoring history export limit.")
             result["monitoring_research"] = monitoring_payload(session, row, policy, False)
             result["monitoring_research"]["items"] = [trigger_payload(session, trigger) for trigger in triggers]
+            from .product_investigation_models import WebResearchPolicy, WebResearchTrigger
+            from .product_web_research import payload as web_payload
+            from .product_web_research import trigger_payload as web_trigger_payload
+
+            web_policy = session.scalar(select(WebResearchPolicy).where(WebResearchPolicy.dossier_id == row.id))
+            web_triggers = list(session.scalars(select(WebResearchTrigger).where(WebResearchTrigger.dossier_id == row.id)
+                .order_by(WebResearchTrigger.created_at, WebResearchTrigger.id).limit(2001)))
+            if len(web_triggers) > 2000:
+                fail("This dossier exceeds the interactive recurring-search history export limit.")
+            result["web_research"] = web_payload(session, row, web_policy, False, service.settings)
+            result["web_research"]["items"] = [web_trigger_payload(session, trigger) for trigger in web_triggers]
             return result
 
     from .product_operations import operations
@@ -502,6 +513,9 @@ def product_router(service):
     from .product_monitoring_research_api import routes as monitoring_research_routes
 
     monitoring_research_routes(router, service, actor)
+    from .product_web_research_api import routes as web_research_routes
+
+    web_research_routes(router, service, actor)
     from .product_decision_search import decision_search_routes
 
     decision_search_routes(router, service, actor)

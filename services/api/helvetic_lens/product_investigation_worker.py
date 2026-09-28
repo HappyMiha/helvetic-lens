@@ -60,6 +60,12 @@ def excluded(session, parent):
 
 
 def seed(session, run, parent, settings):
+    from .product_web_research import seed as web_seed
+    from .product_web_research import trigger_for as web_trigger_for
+
+    web_trigger = web_trigger_for(session, run)
+    if web_trigger:
+        return web_seed(session, run, web_trigger)
     from .product_monitoring_research import seed as monitoring_seed
     from .product_monitoring_research import trigger_for
 
@@ -114,7 +120,7 @@ def settle(branch, state):
     if branch.phase == "read" and state.get("read_index", 0) >= len(state.get("items", [])):
         branch.phase = "extract"
     if branch.phase == "extract" and state.get("extract_index", 0) >= len(state.get("source_ids", [])):
-        branch.status = "completed" if state.get("analysed", 0) and not state.get("failed_extract_indices") else "failed"
+        branch.status = "completed" if (state.get("analysed", 0) or state.get("unchanged", 0) or state.get("empty_search")) and not state.get("failed_extract_indices") else "failed"
     branch.checkpoint = deepcopy(state)
 
 
@@ -150,9 +156,10 @@ def authorize_or_pause(session, run, parent):
         return True
     except DomainError as exc:
         from .product_monitoring_research import trigger_for
+        from .product_web_research import trigger_for as web_trigger_for
 
         run.status = "paused"
-        run.stop_reason = (exc.message[:500] if trigger_for(session, run)
+        run.stop_reason = (exc.message[:500] if trigger_for(session, run) or web_trigger_for(session, run)
             else "Access or session changed. An authorized member must resume.")
         event(session, run, "investigation_paused", reason=run.stop_reason)
         return False
@@ -327,17 +334,29 @@ async def execute(service, job_id, worker):
                 state["items"] = [v for v in result.get("items", []) if v["url"] not in blocked][:MAX_SOURCES]
                 state["coverage"] = {"retrieval": result.get("retrieval"), "scope": result.get("coverage"),
                     "selected_engine": result.get("selected_engine"), "latency_ms": result.get("latency_ms"),
-                    "engines": [{k: v.get(k) for k in ("engine", "latency_ms", "estimated_cost_usd", "error")}
+                    "engines": [{k: v.get(k) for k in ("engine", "models", "latency_ms", "estimated_cost_usd", "cost_basis", "cost_scope", "input_tokens", "output_tokens", "mean_selected_probability", "mean_confidence", "confidence_definition", "error")}
                                 for v in result.get("engines", [])]}
+                state["coverage"]["error"] = result.get("error")
                 if not state["items"]:
-                    failed = True
+                    if state.get("recurring_web") and result.get("retrieval") and not result.get("error"):
+                        state["empty_search"] = True
+                        branch.phase = "extract"
+                    else:
+                        failed = True
                 else:
                     branch.phase = "read"
             elif work["phase"] == "read":
                 if result.get("status") != "complete" or not result.get("excerpts"):
                     failed = True
                 else:
-                    if work.get("public_file_id"):
+                    if state.get("recurring_web"):
+                        from .product_web_research import capture as web_capture
+
+                        source, fresh = web_capture(session, run, {**result, "title": work["item"]["title"],
+                            "retrieval_queries": [work["query"]]})
+                        if source.snapshot.get("unchanged_from"):
+                            state["unchanged"] = state.get("unchanged", 0) + 1
+                    elif work.get("public_file_id"):
                         source, fresh = snapshot(session, run, {**result, "kind": "public_file",
                             "title": work["file"]["title"], "url": "", "key": work["public_file_id"],
                             "allow_discovery": False}, captured=True)
@@ -369,6 +388,8 @@ async def execute(service, job_id, worker):
                 except DomainError:
                     failed = True
                 if not failed:
+                    if state.get("recurring_web"):
+                        source.snapshot = {**source.snapshot, "analysis_completed": True}
                     next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
         if failed:

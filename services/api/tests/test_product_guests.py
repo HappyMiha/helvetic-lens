@@ -199,7 +199,9 @@ def test_guest_schema_migration_and_erasure_preserve_native_cascade(signed):
     with service.db.engine.connect() as connection:
         with pytest.raises(RuntimeError, match="guest grants"):
             command.downgrade(config(connection), "fdc495bef124")
-        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == "03d495bef125"
+        from alembic.script import ScriptDirectory
+
+        assert connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar() == ScriptDirectory.from_config(config(connection)).get_current_head()
     with service.db.session(include_all_organizations=True) as session:
         native = DossierMember(dossier_id=doc["id"], organization_id=identity["organization"]["id"], user_id=native_id, role="EDITOR")
         session.add(native)
