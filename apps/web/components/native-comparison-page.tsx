@@ -18,6 +18,21 @@ import {
   type NativeComparisonPage,
   type NativeSnapshot,
 } from "@/lib/native-baseline";
+import {
+  baselineCommand,
+  chooseBaseline,
+  comparisonSelection,
+  nativeSnapshotHref,
+  type BaselineDraft,
+  type CommittedBaseline,
+} from "@/lib/comparison-selection";
+import { comparisonReadingCopy } from "@/lib/comparison-reading-copy";
+import { sourceTimestamp } from "@/lib/source-reading";
+import {
+  SavedComparisonSummary,
+  ComparisonPassages,
+} from "./native-comparison-reading";
+import styles from "./comparison-reading.module.css";
 import { useAuth } from "./auth-gate";
 import { ErrorNote, Loading } from "./common";
 import { Shell } from "./shell";
@@ -36,6 +51,7 @@ export function NativeComparisonWorkspace({ eventId }: { eventId: string }) {
 function Workspace({ eventId }: { eventId: string }) {
   const { locale, t, dateTime, number } = useI18n();
   const copy = nativeBaselineCopy[locale];
+  const reading = comparisonReadingCopy[locale];
   const { canManage, session } = useAuth();
   const [returnRoute, setReturnRoute] = useState("/registry");
   useEffect(() => {
@@ -75,20 +91,20 @@ function Workspace({ eventId }: { eventId: string }) {
       candidatePages.at(-1) || "",
     ),
   );
-  const [draft, setDraft] = useState<NativeSnapshot | null>(null);
+  const [selection, setSelection] = useState<BaselineDraft | null>(null);
+  const [committed, setCommitted] = useState<CommittedBaseline | null>(null);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [message, setMessage] = useState("");
   const generation = useRef(0),
     writing = useRef(false);
-  const loadedChoice = useRef("");
-  const data = page.data;
-  useEffect(() => {
-    if (data && loadedChoice.current !== `${data.after.id}:${data.revision}`) {
-      loadedChoice.current = `${data.after.id}:${data.revision}`;
-      setDraft(data.before);
-    }
-  }, [data]);
+  const data = page.error ? null : page.data;
+  const selected = comparisonSelection(
+    data,
+    canManage ? selection : null,
+    committed,
+  );
+  const draft = selected.value;
   useEffect(
     () => () => {
       generation.current++;
@@ -101,15 +117,26 @@ function Workspace({ eventId }: { eventId: string }) {
   if (data?.before && !choices.some((item) => item.id === data.before?.id))
     choices.unshift(data.before);
   const describe = (snapshot: NativeSnapshot) =>
-    `${snapshot.version_key} · ${copy.savedAt} ${dateTime(snapshot.saved_at)} · ${snapshot.id.slice(0, 8)}`;
+    `${snapshot.version_key} · ${copy.savedAt} ${sourceTimestamp(snapshot.saved_at) ? dateTime(snapshot.saved_at) : reading.unknown} · ${snapshot.id.slice(0, 8)}`;
   const valid =
     !page.error &&
     !page.loading &&
+    !candidates.error &&
+    !candidates.loading &&
+    !selected.conflict &&
+    !selected.pending &&
     data &&
     candidates.data?.after_version_id === data.after.id;
 
   async function save(clear = false) {
-    if (!data || !canManage || !valid || writing.current) return;
+    const command = baselineCommand(
+      data,
+      selection,
+      committed,
+      !!(canManage && valid),
+      clear,
+    );
+    if (!data || !command || writing.current) return;
     const token = generation.current,
       epoch = resourceScopeEpoch("session");
     writing.current = true;
@@ -117,13 +144,12 @@ function Workspace({ eventId }: { eventId: string }) {
     setError("");
     setMessage("");
     try {
-      await api(`/registry/events/${encodeURIComponent(eventId)}/comparison`, {
+      const receipt = await api<{
+        revision: number;
+        comparison_id: string | null;
+      }>(`/registry/events/${encodeURIComponent(eventId)}/comparison`, {
         method: "PUT",
-        body: JSON.stringify({
-          before_version_id: clear ? null : draft?.id,
-          after_version_id: data.after.id,
-          expected_revision: data.revision,
-        }),
+        body: JSON.stringify(command),
       });
       if (
         token !== generation.current ||
@@ -131,8 +157,9 @@ function Workspace({ eventId }: { eventId: string }) {
       )
         return;
       setView({ offset: 0, material: view.material, pin: "" });
-      setDraft(clear ? null : draft);
-      setMessage(clear ? copy.cleared : copy.saved);
+      setCommitted({ after: data.after.id, ...receipt, previous: data });
+      setSelection(null);
+      setMessage(clear ? copy.cleared : reading.saved);
       // A committed write is not a failed save if the following read fails.
       void invalidateResources(resourceTag(`native-baseline:${eventId}`)).catch(
         () => {},
@@ -164,7 +191,11 @@ function Workspace({ eventId }: { eventId: string }) {
   }
   return (
     <Shell section={copy.title}>
-      <div className="[&_button]:min-h-11 [&_button]:whitespace-normal min-w-0">
+      <div
+        className={
+          styles.workspace + " [&_button]:min-h-11 [&_button]:whitespace-normal"
+        }
+      >
         <Link className="back-link" href={returnRoute}>
           {t("registryReturn.back")}
         </Link>
@@ -183,14 +214,13 @@ function Workspace({ eventId }: { eventId: string }) {
           </Button>
         </div>
         <ErrorNote message={page.error || error} />
-        {message && <p role="status">{message}</p>}
+        {message && (
+          <p role="status">{selected.pending ? reading.pending : message}</p>
+        )}
         {page.loading && !data && <Loading text={t("evidence.opening")} />}
         {data && (
           <>
-            <section
-              className="panel p-4 sm:p-6 min-w-0 mb-5"
-              data-native-baseline
-            >
+            <section className={styles.editor} data-native-baseline>
               <h2 className="break-words" lang={data.language}>
                 {data.title}
               </h2>
@@ -198,12 +228,14 @@ function Workspace({ eventId }: { eventId: string }) {
                 <div className="min-w-0">
                   <h3>{copy.after}</h3>
                   <p className="break-words text-sm">{describe(data.after)}</p>
-                  <Link
-                    href={data.after.evidence_url}
-                    className="inline-flex min-h-11 items-center underline"
-                  >
-                    {t("common.evidence")}
-                  </Link>
+                  {nativeSnapshotHref(data.after) && (
+                    <Link
+                      href={nativeSnapshotHref(data.after)!}
+                      className="inline-flex min-h-11 items-center underline"
+                    >
+                      {t("common.evidence")}
+                    </Link>
+                  )}
                 </div>
                 <div className="min-w-0">
                   <label
@@ -216,11 +248,21 @@ function Workspace({ eventId }: { eventId: string }) {
                     id="native-baseline"
                     className="w-full min-h-11 max-w-full"
                     value={draft?.id || ""}
-                    disabled={!canManage || busy || !!page.error}
+                    disabled={
+                      !canManage ||
+                      busy ||
+                      selected.pending ||
+                      selected.conflict ||
+                      !!page.error
+                    }
                     onChange={(event) =>
-                      setDraft(
-                        choices.find((row) => row.id === event.target.value) ||
-                          null,
+                      setSelection(
+                        chooseBaseline(
+                          data,
+                          choices.find(
+                            (row) => row.id === event.target.value,
+                          ) || null,
+                        ),
                       )
                     }
                   >
@@ -269,10 +311,10 @@ function Workspace({ eventId }: { eventId: string }) {
                         {copy.more}
                       </Button>
                     )}
-                    {draft && (
+                    {draft && nativeSnapshotHref(draft) && (
                       <Link
                         className="inline-flex min-h-11 items-center underline"
-                        href={draft.evidence_url}
+                        href={nativeSnapshotHref(draft)!}
                       >
                         {t("common.evidence")}
                       </Link>
@@ -280,13 +322,30 @@ function Workspace({ eventId }: { eventId: string }) {
                   </div>
                 </div>
               </div>
+              {canManage && selected.dirty && (
+                <aside className={styles.choiceNotice} data-baseline-draft>
+                  <p role="status">
+                    {selected.conflict ? reading.conflict : reading.unsaved}
+                  </p>
+                  <Button
+                    variant="outline"
+                    disabled={busy}
+                    onClick={() => {
+                      setSelection(null);
+                      setError("");
+                    }}
+                  >
+                    {reading.useSaved}
+                  </Button>
+                </aside>
+              )}
               {canManage ? (
                 <div className="flex flex-wrap gap-3 mt-4" aria-busy={busy}>
                   <Button
                     data-native-save
                     className="hl-primary-action"
                     onClick={() => void save()}
-                    disabled={!draft || !valid || busy}
+                    disabled={!draft || !selected.dirty || !valid || busy}
                   >
                     {busy ? copy.saving : copy.save}
                   </Button>
@@ -304,20 +363,22 @@ function Workspace({ eventId }: { eventId: string }) {
               )}
               <p className="text-sm muted mb-0">{copy.notice}</p>
             </section>
-            {data.status !== "ready" ? (
+            {selected.pending ? null : data.status !== "ready" ? (
               <p role="status" className="panel p-5">
                 {data.status === "stale" ? copy.stale : copy.unselected}
               </p>
             ) : (
               <section
-                className="panel min-w-0"
+                className={styles.diff}
                 data-native-diff
                 aria-busy={page.loading}
               >
-                <div className="panel-header flex-wrap gap-3">
-                  <h2>
-                    {copy.material} · {number(data.material_count || 0)}
-                  </h2>
+                <SavedComparisonSummary
+                  data={data}
+                  locale={locale}
+                  formatDate={dateTime}
+                />
+                <div className="flex flex-wrap gap-3 pb-4">
                   <label className="flex gap-2 items-center min-h-11">
                     <input
                       data-native-all
@@ -342,36 +403,19 @@ function Workspace({ eventId }: { eventId: string }) {
                   <article
                     data-native-change={item.id}
                     key={item.id}
-                    className="border-t p-4 sm:p-5 min-w-0"
+                    className={styles.change}
                   >
                     <h3 className="text-sm">
                       {item.classification === "unchanged"
                         ? copy.unchanged
                         : t(`materialPage.${item.classification}`)}
                     </h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {(["old", "new"] as const).map((side) => (
-                        <div key={side} className="min-w-0">
-                          <h4 className="text-sm muted">
-                            {side === "old" ? copy.before : copy.after}
-                          </h4>
-                          <p
-                            lang={item[side] ? data.language : undefined}
-                            className={`whitespace-pre-wrap break-words ${item.kind === "unchanged" ? "bg-muted/30" : side === "old" ? "hl-tone-danger" : "hl-tone-success"}`}
-                          >
-                            {item[side]?.text || copy.none}
-                          </p>
-                          {item[side] && (
-                            <Link
-                              className="inline-flex min-h-11 items-center underline text-sm"
-                              href={`${side === "old" ? data.before?.evidence_url : data.after.evidence_url}?passage=${encodeURIComponent(item[side]!.id)}`}
-                            >
-                              {t("common.evidence")}
-                            </Link>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+                    <ComparisonPassages
+                      data={data}
+                      item={item}
+                      locale={locale}
+                      evidenceLabel={t("common.evidence")}
+                    />
                   </article>
                 ))}
                 <div

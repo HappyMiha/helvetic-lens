@@ -72,6 +72,41 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Saved comparison clarity and selection safety — 28 September 2026:
+IN PROGRESS (scoped visual continuation / release 1.26).** Scope: MV2-002/020/024.
+Make native saved-version comparison and both product saved-page change readers
+clear about the exact pair, capture identities, real retained counts and preview
+limits. Separate the editor's unsaved baseline selection from the persisted
+comparison. Retain a local choice across background reads; if its source revision
+changes, require an explicit return to the current saved choice before another
+write. After a committed mutation, withhold the old comparison until the server receipt is acknowledged by a current read. Hide retained source text when its current read fails.
+
+Dependencies: existing NativeComparisonWorkspace, native_comparison_views and
+revisioned native selection writes; both MonitoringTriggerRow/PageChange readers,
+DocumentHistory's expected_revision links, installed primitives and release 1.25
+source metadata helpers. Source readiness: current native API already returns
+saved version IDs/times, material counts, comparison identity, paged exact text
+and stale/unselected states. Existing product page payload already returns exact
+old/new revisions, hashes, full saved-text character counts and bounded excerpts;
+matched_at is the watched page version's capture time. No new API/schema/provider,
+model, credential, source rights, publication or delivery change is required.
+
+Acceptance: distinguish the saved pair from a draft; revision conflicts cannot
+silently rebase a choice, and a committed write cannot display an older result
+as its new comparison. Preserve explicit clear/save, read-only roles, current
+source withdrawal, exact passage/source/PDF readers, candidate/result paging,
+registry return and account boundaries. Show actual counts, with unknown distinct
+from zero; partial previews never imply complete changes or legal/factual impact.
+Both clients expose source version/revision/capture/fingerprint details and exact
+revision-pinned full-reader actions. Reuse neutral Brandbook typography, readable
+measure and responsive paired text; no synthetic Lens or truth score. Cover five
+native locales, pure selection and actual SSR behaviors, required client tests/
+lint/types, native checks/types, final builds, backlog smoke, protected-value scan,
+immediate main pushes and exact existing production/runtime verification.
+Browser/human language/visual and professional/full-spec acceptance stay separate.
+Evidence: docs/PRODUCT_SAVED_COMPARISONS.md.
+
+
 
 **Source reading and inspectable provenance — 28 September 2026:
 DONE (scoped production contribution / release 1.25).** Scope: MV2-002/020/024.
@@ -1861,7 +1896,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — scoped source reading/global Ask/themes DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — saved comparison active; source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1879,11 +1914,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — scoped source reading DONE; broader evidence workflow open | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — saved comparison active; source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — scoped source reading/global Ask/identity DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — saved comparison active; source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -2031,6 +2066,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Active scoped continuation, 28 September:** saved comparison clarity and
+selection safety, with source readiness, dependencies and acceptance recorded in
+the Product decision above. Source reading remains DONE within release 1.25;
+the broader task and full specifications remain IN PROGRESS.
 
 **Completed scoped continuation, 28 September:** source reading and inspectable
 provenance are DONE under the recorded Product decision and exact
@@ -2746,6 +2786,11 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+**Active scoped continuation, 28 September:** saved comparison clarity and
+selection safety, with source readiness, dependencies and acceptance recorded in
+the Product decision above. Source reading remains DONE within release 1.25;
+the broader task and full specifications remain IN PROGRESS.
+
 **Completed scoped continuation, 28 September:** source reading and inspectable
 provenance are DONE under the recorded Product decision and exact
 [production acceptance](docs/PRODUCT_SOURCE_READING.md). Existing global Ask,
@@ -2963,6 +3008,11 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+**Active scoped continuation, 28 September:** saved comparison clarity and
+selection safety, with source readiness, dependencies and acceptance recorded in
+the Product decision above. Source reading remains DONE within release 1.25;
+the broader task and full specifications remain IN PROGRESS.
 
 **Completed scoped continuation, 28 September:** source reading and inspectable
 provenance are DONE under the recorded Product decision and exact

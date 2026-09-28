@@ -201,3 +201,13 @@ Scoped exact production acceptance is DONE: both Sites 28, 130 origin checks
 and 47 exact assets each, plus 46 native assets and 51 native HTTP
 checks. All 391 native frontend, 142 cases per client and 55 affected API cases
 pass. Full visual/human acceptance stays IN PROGRESS.
+
+## Saved comparison clarity and selection safety — 1.26
+
+The [saved-comparison migration](PRODUCT_SAVED_COMPARISONS.md) separates an editable
+baseline from the persisted native comparison. Actual counts, capture times and
+exact version identities precede readable paired quotations. Both product watch
+readers distinguish full retained-text counts from bounded excerpts and expose
+revision-pinned old/new versions. Brandbook hierarchy, neutral surfaces, 16/26 body
+type, responsive pairs and progressive details are used. Local gates and exact
+production verification remain pending; full visual/human acceptance stays open.
