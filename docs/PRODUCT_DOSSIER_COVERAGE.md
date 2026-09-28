@@ -1,6 +1,6 @@
 # Dossier source coverage — release 1.33
 
-Status: VERIFYING production activation. Recorded before code on 28 September 2026.
+Status: DONE within the bounded 1.33 implementation/release scope. Recorded before code on 28 September 2026.
 Bounded C14/C23/C24 contribution; MV2-002/020/024. Reuses verified 1.30
 reading chapters and current page watches, source capabilities, topic revisions
 and recurring public-search records. No new source rights or adapters.
@@ -79,4 +79,25 @@ assertion was narrowed from matching the explanatory subtitle to the actual
 successful-status label; all client checks then passed. Six common client files
 are identical. Protected-value scans and exact API Ruff passed. Affected API
 regression passed: 99 checks in 691.75 seconds, including the backlog
-invariant. Production publication remains pending; this release is not yet DONE.
+invariant. Production publication and exact runtime/assets are verified below.
+
+
+## Verified publication
+
+Core implementation `4a2215f8c8b9c9168fc0569e8f244b05c4089e6a` was immediately pushed to main
+and activated normally as `git-4a2215f8c8b9`. Both clients were immediately
+pushed and published as existing Sites version 36: Pharma `33f7f56dd8c175a5a12a06144f0366157afe13d6`,
+Legal `9988c91a25fd7afeb656865faebef1d62bb60deb`.
+
+Each canonical origin passed 31 public/access checks and 47 exact asset SHA-256
+comparisons. Native readiness, fourteen runtime module hashes, five containers,
+nine Monitoring routes, unchanged migration 08d495bef125 and anonymous coverage
+boundaries (Pharma/Legal/legacy alias) passed. The former public Loyer hostname
+remains retired. The source-reader guide and compiled UI/style were verified.
+The frozen [release receipt](product-releases/2026-09-28-1.33.0.json) records the
+exact sources, archive identities and production checks. Final documentation
+activation is observed separately without republishing unchanged clients.
+
+Full historical scan manifests, normalized source/version contracts, the validated
+Market Access journey and human/professional acceptance remain open. These checks
+are anonymous/read-only and do not claim browser or private production workflow QA.
