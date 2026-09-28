@@ -420,7 +420,7 @@ function NativeAskDialog({
                         </article>
                       ))}
                       {group.next &&
-                        (group.id === "pharma" || group.id === "loyer" ? (
+                        (group.id === "pharma" || group.id === "legal" ? (
                           <a
                             href={group.next}
                             target="_blank"

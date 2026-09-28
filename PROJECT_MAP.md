@@ -188,3 +188,13 @@ separates native baseline drafts from persisted evidence and makes both product
 page-change captures inspectable. Server receipts and exact saved-version actions
 retain existing access and revision boundaries. Scoped exact production acceptance
 passes; full visual and professional review gates remain open.
+
+## Saved document context and Legal naming (1.27)
+
+The owner confirmed **Helvetic Lens Legal**, canonical `legal.helveticlens.ch`,
+repository `HappyMiha/helveticlens-legal`. Legacy Loyer URLs and the internal
+`loyer` key remain compatible with the same records and rights. See
+[Legal rename](docs/PRODUCT_LEGAL_RENAME.md) and
+[saved document context](docs/PRODUCT_VERSION_CONTEXT.md). Supplied specifications
+and historical release receipts retain their original spelling. Both slices
+remain IN PROGRESS until exact production verification.

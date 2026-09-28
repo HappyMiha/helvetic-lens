@@ -1,4 +1,4 @@
-"""Native Pharma/Loyer dossiers: profiles, evidence, collaboration and reviewed learning."""
+"""Native Pharma/Legal dossiers: profiles, evidence, collaboration and reviewed learning."""
 
 import hashlib
 import json
@@ -23,7 +23,8 @@ from .legal_profile_models import LegalMonitoringProfile
 from .models import DocumentWatch, User
 from .product_models import DossierEntry, ProductDossier, ResearchThread
 
-Product = Literal["pharma", "loyer"]
+# Public Legal paths resolve to the historical key before authorization.
+Product = Literal["pharma", "legal", "loyer"]
 MAX_FILE = 10 * 1024 * 1024
 
 

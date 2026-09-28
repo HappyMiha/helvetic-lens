@@ -13,6 +13,7 @@ from .legal_profile_models import LegalMonitoringProfile
 from .legal_profiles import Input, ProfileConfig
 from .product_api import Product, dossier, fail, iso
 from .product_community import participant
+from .product_identity import public_product_slug
 from .product_models import DossierEntry, ProductDossier, PublicDossierCopy, PublicReuseReceipt
 from .product_provenance import canonical, principal, signature
 from .product_publications import LIFETIME, public_payload
@@ -47,7 +48,7 @@ def preview_value(product, identifier, data, snapshot, expires):
 
 
 def source_url(product, identifier):
-    return f"https://{product}.helveticlens.ch/public-dossiers/{identifier}"
+    return f"https://{public_product_slug(product)}.helveticlens.ch/public-dossiers/{identifier}"
 
 
 def reuse_routes(router, service, actor):

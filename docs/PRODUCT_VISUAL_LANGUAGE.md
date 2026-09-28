@@ -2,7 +2,7 @@
 
 The owner's [complete brief](VISUAL_LANGUAGE_SPEC.md) governs the visual direction.
 Release 1.9 applies its shared foundation and first reference dossier to both
-Pharma and Loyer without replacing the existing application stack. The full
+Pharma and Legal without replacing the existing application stack. The full
 native-platform page migration remains incremental; this is not a claim that all
 legacy platform screens or the dynamic dossier specification are complete.
 
@@ -213,3 +213,14 @@ type, responsive pairs and progressive details are used. All 403 native frontend
 pass. Scoped exact production acceptance is DONE: both Sites 29, 131 origin
 checks/47 assets each, 47 native assets/54 HTTP checks and 60-module
 runtime proof. Full visual/human acceptance stays open.
+
+### 1.27 saved document context and product naming
+
+IN PROGRESS: native comparison versions/report references and both clients'
+saved-document history/reader follow the Brandbook's readable typography,
+progressive metadata and mobile reading treatment. Exact identity, source origin,
+dates and capture fingerprints remain available; unknown values are explicit.
+The owner confirmed the legal product name **Helvetic Lens Legal**. Current
+product navigation and search use its canonical origin while preserving prior
+links and all existing dossier access. See PRODUCT_VERSION_CONTEXT.md and
+PRODUCT_LEGAL_RENAME.md for scoped acceptance, not whole-specification completion.

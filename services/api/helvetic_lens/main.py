@@ -696,6 +696,12 @@ def create_app(
                 round((time.perf_counter() - started) * 1000),
             )
 
+    # Last-added ASGI middleware runs first, before all authentication, role,
+    # public-reader and guest-organization decisions on the historical key.
+    from .product_identity import ProductAliasMiddleware
+
+    app.add_middleware(ProductAliasMiddleware)
+
     def set_auth_cookies(response: JSONResponse, session_token: str, csrf_token: str):
         max_age = settings.session_ttl_days * 86400
         response.set_cookie(

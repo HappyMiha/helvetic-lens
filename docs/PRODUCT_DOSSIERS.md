@@ -1,5 +1,11 @@
 # Pharma and Loyer monitoring dossiers
 
+Current legal product name: **Helvetic Lens Legal**, confirmed by the owner on
+28 September 2026. Use https://legal.helveticlens.ch and
+https://github.com/HappyMiha/helveticlens-legal. Historical release evidence below
+retains its original Loyer spelling; see [rename compatibility](PRODUCT_LEGAL_RENAME.md).
+
+
 ## Public discussion cycle — 27 September 2026
 
 **Verified 1.4.0 release:** both custom domains passed 42 HTTP/SSR/route checks

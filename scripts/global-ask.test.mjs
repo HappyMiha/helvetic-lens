@@ -231,8 +231,8 @@ test("untrusted search links cannot navigate to another origin or another native
   );
   assert.equal(nativeSearchHref("/public-dossiers/../admin", "pharma"), null);
   assert.equal(
-    nativeSearchHref("/public-dossiers/a", "loyer"),
-    "https://loyer.helveticlens.ch/public-dossiers/a",
+    nativeSearchHref("/public-dossiers/a", "legal"),
+    "https://legal.helveticlens.ch/public-dossiers/a",
   );
 });
 test("collection failure remains explicit while another collection can still answer", async () => {

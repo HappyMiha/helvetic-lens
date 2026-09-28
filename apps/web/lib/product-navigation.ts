@@ -1,7 +1,7 @@
-export type ProductName = "pharma" | "loyer" | "platform";
+export type ProductName = "pharma" | "legal" | "platform";
 export const productDestinations = [
   { id: "pharma", name: "Pharma", href: "https://pharma.helveticlens.ch/" },
-  { id: "loyer", name: "Loyer", href: "https://loyer.helveticlens.ch/" },
+  { id: "legal", name: "Legal", href: "https://legal.helveticlens.ch/" },
   { id: "platform", name: "Monitoring", href: "https://helveticlens.ch/" },
 ] as const;
 export const productNavigationCopy = {

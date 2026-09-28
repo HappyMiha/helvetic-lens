@@ -69,7 +69,10 @@ Deploy and verify this shared core on **helveticlens.ch on HappySnowman**, inclu
 Monitoring features, from main. Never develop in serving checkouts. The owner's
 26 September 2026 instruction also authorizes independent Pharma and Loyer clients
 in their own public repositories and Sites projects at `pharma.helveticlens.ch` and
-`loyer.helveticlens.ch`; see [publication evidence](PRODUCT_DOSSIERS.md).
+`legal.helveticlens.ch` following the owner’s 28 September rename to Legal;
+use `helveticlens-legal` for its checkout and repository. Historical Loyer/API
+aliases remain compatible; see [rename](PRODUCT_LEGAL_RENAME.md) and
+[publication evidence](PRODUCT_DOSSIERS.md).
 
 The user retired the separate monitoring.helveticlens.ch site on 12 September
 2026. Do not recreate or restart its HappyDucky02 deployment, Windows scheduled

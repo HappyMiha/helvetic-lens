@@ -1,6 +1,6 @@
 export type NativeSearchMode = "sources" | "public";
 export type NativeSearchGroup = {
-  id: "monitored" | "events" | "pharma" | "loyer";
+  id: "monitored" | "events" | "pharma" | "legal";
   failed: boolean;
   items: {
     title: string;
@@ -28,7 +28,10 @@ const record = (value: unknown): RecordValue => {
 const string = (value: unknown) => (typeof value === "string" ? value : "");
 
 /** Only links to the existing evidence readers or a canonical public dossier. */
-export function nativeSearchHref(value: unknown, product?: "pharma" | "loyer") {
+export function nativeSearchHref(
+  value: unknown,
+  product?: "pharma" | "legal",
+) {
   if (
     typeof value !== "string" ||
     !value.startsWith("/") ||
@@ -68,10 +71,10 @@ export async function searchNativeAsk(
   const ids =
     mode === "sources"
       ? (["monitored", "events"] as const)
-      : (["pharma", "loyer"] as const);
+      : (["pharma", "legal"] as const);
   const groups = await Promise.all(
     ids.map(async (id): Promise<NativeSearchGroup> => {
-      const product = id === "pharma" || id === "loyer" ? id : undefined;
+      const product = id === "pharma" || id === "legal" ? id : undefined;
       const params = new URLSearchParams({ q: query });
       if (!product) {
         params.set("view", id);

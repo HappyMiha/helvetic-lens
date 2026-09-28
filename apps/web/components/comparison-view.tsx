@@ -72,6 +72,8 @@ import { useAuth } from "./auth-gate";
 import { storedLocale, translate, type Locale, useI18n } from "@/lib/i18n";
 import { articleSelectionCopy } from "@/lib/article-selection-copy";
 import { ArticleScope } from "./article-scope";
+import { VersionContext, ReportVersionReferences } from "./version-context";
+import { savedEvidenceHref } from "@/lib/saved-evidence-link";
 
 const PAGE_SIZE = 40;
 const JOB_TERMINAL_STATES = new Set(["succeeded", "failed", "cancelled"]);
@@ -1761,29 +1763,20 @@ function ComparisonCitations({
 function VersionCard({ version, side }: { version: Version; side: string }) {
   const { locale, t, dateTime } = useI18n();
   return (
-    <div className="version-card">
-      <div className="flex justify-between gap-2">
-        <span className="eyebrow">{side}</span>
-        <span className="text-xs muted">{version.id.slice(0, 8)}</span>
-      </div>
-      <strong>{version.declared_date || t("law.versionDateUnknown")}</strong>
-      <p>
-        {translate(locale, `status.${version.origin}`) || label(version.origin)}{" "}
-        ·{" "}
-        {version.declared_date
-          ? version.date_provenance === "fedlex"
-            ? articleSelectionCopy[locale].officialDate
-            : t("compare.dateSupplied")
-          : t("compare.noPublicationDate")}
-        {version.synthetic ? ` · ${t("law.syntheticDemo")}` : ""}
-      </p>
-      <p>{t("law.firstSaved", { date: dateTime(version.created_at) })}</p>
-      <Link href={"/evidence/" + version.id} className="text-link">
-        <FileText size={12} />
-        {t("compare.readEvidence")}
-        <ArrowUpRight size={12} />
-      </Link>
-    </div>
+    <VersionContext
+      version={version}
+      side={side}
+      locale={locale}
+      formatDate={dateTime}
+      originLabel={translate(locale, `status.${version.origin}`) || label(version.origin)}
+      dateLabel={version.declared_date
+        ? version.date_provenance === "fedlex"
+          ? articleSelectionCopy[locale].officialDate
+          : t("compare.dateSupplied")
+        : t("compare.noPublicationDate")}
+      syntheticLabel={t("law.syntheticDemo")}
+      readingLabel={t("compare.readEvidence")}
+    />
   );
 }
 
@@ -1799,6 +1792,7 @@ function DiffSide({
   const { locale, t } = useI18n();
   const passage = side === "old" ? item.old : item.new;
   const parts = side === "old" ? item.old_parts : item.new_parts;
+  const passageHref = passage ? savedEvidenceHref(version.id, passage.id) : null;
   return (
     <div
       className={"diff-side diff-side-" + side}
@@ -1813,9 +1807,9 @@ function DiffSide({
             `status.${item.classification || item.change_type || item.kind}`,
           ) || label(item.classification || item.change_type || item.kind)}
         </span>
-        {passage && (
+        {passage && passageHref && (
           <Link
-            href={"/evidence/" + version.id + "?passage=" + passage.id}
+            href={passageHref}
             target="_blank"
           >
             {passage.page
@@ -2146,8 +2140,13 @@ function ReportProvenance({
         <div>
           <dt>{t("compare.versions")}</dt>
           <dd>
-            {comparison.old_version.id.slice(0, 8)} →{" "}
-            {comparison.new_version.id.slice(0, 8)}
+            <ReportVersionReferences
+              before={comparison.old_version.id}
+              after={comparison.new_version.id}
+              beforeLabel={t("compare.beforeUpper")}
+              afterLabel={t("compare.afterUpper")}
+              unknown={t("compare.notRecorded")}
+            />
           </dd>
         </div>
         <div>

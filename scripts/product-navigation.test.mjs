@@ -54,7 +54,7 @@ const { productNavigationCopy } = require(
 test("product navigation preserves the current tab and never carries private context to another origin", () => {
   const destinations = {
     pharma: "https://pharma.helveticlens.ch/",
-    loyer: "https://loyer.helveticlens.ch/",
+    legal: "https://legal.helveticlens.ch/",
     platform: "https://helveticlens.ch/",
   };
   for (const current of Object.keys(destinations)) {

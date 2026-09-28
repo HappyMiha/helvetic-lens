@@ -13,7 +13,7 @@ export const nativeAskCopy = {
       "Opens a draft in your current Marvin context. Review it before sending.",
     signIn: "Sign in to search your saved sources and ask about this page.",
     privacy:
-      "Word search of saved sources and author-published knowledge. New web research is available in Pharma and Loyer. Typing sends nothing.",
+      "Word search of saved sources and author-published knowledge. New web research is available in Pharma and Legal. Typing sends nothing.",
     conflict:
       "Marvin already has a different draft. Open it to continue; your new question stays here.",
     unavailable:
@@ -49,7 +49,7 @@ export const nativeAskCopy = {
     signIn:
       "Melden Sie sich an, um gespeicherte Quellen zu durchsuchen und zu dieser Seite zu fragen.",
     privacy:
-      "Wortsuche in gespeicherten Quellen und ausdrücklich veröffentlichtem Wissen. Neue Webrecherche ist in Pharma und Loyer verfügbar. Beim Tippen wird nichts gesendet.",
+      "Wortsuche in gespeicherten Quellen und ausdrücklich veröffentlichtem Wissen. Neue Webrecherche ist in Pharma und Legal verfügbar. Beim Tippen wird nichts gesendet.",
     conflict:
       "Marvin hat bereits einen anderen Entwurf. Öffnen Sie ihn; Ihre neue Frage bleibt hier.",
     unavailable:
@@ -86,7 +86,7 @@ export const nativeAskCopy = {
     signIn:
       "Connectez-vous pour rechercher vos sources enregistrées et poser une question sur cette page.",
     privacy:
-      "Recherche par mots dans les sources enregistrées et les connaissances publiées par leurs auteurs. La recherche web est disponible dans Pharma et Loyer. La saisie n’envoie rien.",
+      "Recherche par mots dans les sources enregistrées et les connaissances publiées par leurs auteurs. La recherche web est disponible dans Pharma et Legal. La saisie n’envoie rien.",
     conflict:
       "Marvin contient déjà un autre brouillon. Ouvrez-le pour continuer ; votre nouvelle question reste ici.",
     unavailable:
@@ -122,7 +122,7 @@ export const nativeAskCopy = {
     signIn:
       "Accedi per cercare nelle fonti salvate e fare domande su questa pagina.",
     privacy:
-      "Ricerca per parole nelle fonti salvate e nelle conoscenze pubblicate dagli autori. La ricerca web è disponibile in Pharma e Loyer. Digitare non invia nulla.",
+      "Ricerca per parole nelle fonti salvate e nelle conoscenze pubblicate dagli autori. La ricerca web è disponibile in Pharma e Legal. Digitare non invia nulla.",
     conflict:
       "Marvin contiene già una bozza diversa. Aprila per continuare; la nuova domanda rimane qui.",
     unavailable:
@@ -158,7 +158,7 @@ export const nativeAskCopy = {
     signIn:
       "S’annunziai per tschertgar funtaunas memorisadas e far dumondas davart questa pagina.",
     privacy:
-      "Tschertga da pleds en funtaunas memorisadas e savida publitgada dals auturs. La retschertga web è disponibla en Pharma e Loyer. Il tippar na trametta nagut.",
+      "Tschertga da pleds en funtaunas memorisadas e savida publitgada dals auturs. La retschertga web è disponibla en Pharma e Legal. Il tippar na trametta nagut.",
     conflict:
       "Marvin ha gia in auter sboz. Avri el per cuntinuar; la nova dumonda resta qua.",
     unavailable:

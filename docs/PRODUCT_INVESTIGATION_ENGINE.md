@@ -1,5 +1,11 @@
 # Dynamic dossier investigation implementation
 
+Current legal product name: **Helvetic Lens Legal**, confirmed by the owner on
+28 September 2026. Use https://legal.helveticlens.ch and
+https://github.com/HappyMiha/helveticlens-legal. Historical release evidence below
+retains its original Loyer spelling; see [rename compatibility](PRODUCT_LEGAL_RENAME.md).
+
+
 Status: IN PROGRESS. User direction received 27 September 2026.
 Authoritative product specification: [complete supplied document](DYNAMIC_DOSSIER_SPEC.md).
 

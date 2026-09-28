@@ -20,9 +20,12 @@ host-alias, task-branch and separate Monitoring integration workflow.
 - Routine tested commits, pushes and normal automatic deployments are already
   authorized. Continue the next ready feature while a previous deployment runs;
   never duplicate, interrupt or restart active checks or deployment jobs.
-- The shared core is `helveticlens.ch` on HappySnowman. On 26 September 2026 the
-  owner authorized separate Pharma and Loyer clients at `pharma.helveticlens.ch`
-  and `loyer.helveticlens.ch`, with their own public repositories and Sites projects;
+- The shared core is `helveticlens.ch` on HappySnowman. The owner authorized
+  separate product clients on 26 September 2026 and renamed Loyer to Legal on
+  28 September. Current clients are `pharma.helveticlens.ch` and
+  `legal.helveticlens.ch`, with their own public repositories and existing Sites projects;
+  use `helveticlens-legal` locally and on GitHub. Preserve legacy Loyer links and
+  the historical storage key as described in `docs/PRODUCT_LEGAL_RENAME.md`;
   see `docs/PRODUCT_DOSSIERS.md`. The user
   retired `monitoring.helveticlens.ch` on 12 September 2026. Do not recreate or
   restart the HappyDucky02 Monitoring deployment, its Windows task, Docker project
