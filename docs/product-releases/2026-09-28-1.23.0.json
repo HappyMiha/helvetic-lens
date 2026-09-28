@@ -1,0 +1,2882 @@
+{
+  "version": "1.23.0",
+  "scope": "Scoped native Brandbook reading themes and shared device-local preferences. Full specifications remain IN PROGRESS.",
+  "verified_at": "2026-09-28T05:41:23.177543+00:00",
+  "core": {
+    "sha": "8ea723c934b8afd338a110b1211777e09f53e99b",
+    "release": "git-8ea723c934b8",
+    "activated_at": "2026-09-28T05:40:19+00:00",
+    "initial": {
+      "sha": "30be24fbfb5b1b1bca55e40d44348fe056b411a8",
+      "release": "git-30be24fbfb5b",
+      "activated_at": "2026-09-28T05:24:27+00:00"
+    }
+  },
+  "products": [
+    {
+      "product": "pharma",
+      "id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+      "sha": "6f313aef2173484071ba3af918e76c5f829767b0",
+      "site": {
+        "id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+        "access_mode": "public",
+        "current_live_url": "https://pharma.helveticlens.ch"
+      },
+      "version": {
+        "id": "appgprj_6ab8226587a88191b5af66fdc998f7fd~appgver_0c6037e049508191be3f753694dfe210",
+        "project_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+        "version_number": 26,
+        "source": {
+          "commit_sha": "6f313aef2173484071ba3af918e76c5f829767b0"
+        },
+        "archive_storage": {
+          "archive_format": "tar",
+          "sediment_file_id": "file_000000004f2081f4affbf567749327ad",
+          "content_hash": "sha256:f197aa7305bf96d956fe5edb13bdecedee3a37fd4a4774f9a7925ed80e2fa3de",
+          "size_bytes": 3328000,
+          "file_count": 137
+        },
+        "screenshot_url": null,
+        "deployment_id": null
+      },
+      "deployment": {
+        "id": "appgdep_6ab9f9f8f3388191bcb06c6c0cccb3d5",
+        "project_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd",
+        "title": "HelveticLens Pharma",
+        "version_id": "appgprj_6ab8226587a88191b5af66fdc998f7fd~appgver_0c6037e049508191be3f753694dfe210",
+        "type": "publish",
+        "status": "succeeded",
+        "url": "https://helveticlens-pharma.m-shavritskiy.chatgpt.site",
+        "has_mcp": null,
+        "screenshot_asset_pointer": null,
+        "provider_deployment_id": "site---6ab8226587a88191b5af66fdc998f7fd",
+        "failure_message": null,
+        "env_set_revision": 0,
+        "updated_at": "2026-09-28T05:24:29.726015+00:00"
+      }
+    },
+    {
+      "product": "loyer",
+      "id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+      "sha": "5b115962867cff306cbfa5e154e1e8a269f8d3d4",
+      "site": {
+        "id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+        "access_mode": "public",
+        "current_live_url": "https://loyer.helveticlens.ch"
+      },
+      "version": {
+        "id": "appgprj_6ab822dc86708191b2562a8d66c65bc9~appgver_ee600dc0d7d88191be0c4817e465a997",
+        "project_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+        "version_number": 26,
+        "source": {
+          "commit_sha": "5b115962867cff306cbfa5e154e1e8a269f8d3d4"
+        },
+        "archive_storage": {
+          "archive_format": "tar",
+          "sediment_file_id": "file_0000000018908243a213fa03e7f53fe1",
+          "content_hash": "sha256:92f4c42e0a68b0b23e56301c44568fc636e5f3577571f1f1d838de3a59bfb80c",
+          "size_bytes": 3328000,
+          "file_count": 137
+        },
+        "screenshot_url": null,
+        "deployment_id": null
+      },
+      "deployment": {
+        "id": "appgdep_6ab9fa1554948191a7938e7da327dc0c",
+        "project_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9",
+        "title": "HelveticLens Loyer",
+        "version_id": "appgprj_6ab822dc86708191b2562a8d66c65bc9~appgver_ee600dc0d7d88191be0c4817e465a997",
+        "type": "publish",
+        "status": "succeeded",
+        "url": "https://helveticlens-loyer.m-shavritskiy.chatgpt.site",
+        "has_mcp": null,
+        "screenshot_asset_pointer": null,
+        "provider_deployment_id": "site---6ab822dc86708191b2562a8d66c65bc9",
+        "failure_message": null,
+        "env_set_revision": 0,
+        "updated_at": "2026-09-28T05:24:56.875502+00:00"
+      }
+    }
+  ],
+  "local_validation": {
+    "native_frontend_cases": 367,
+    "native_localization_types_build": "passed",
+    "native_format_gate": "passed",
+    "client_tests_each": 129,
+    "client_lint_types_portable_builds": "passed",
+    "backlog_smoke": "passed",
+    "provider_value_scan": {
+      "verified_at": "2026-09-28T05:17:06.540163+00:00",
+      "results": [
+        {
+          "repository": "helvetic-lens",
+          "files_checked": 5356,
+          "protected_values_checked": 3,
+          "credential_scan": "passed",
+          "diff_check": "passed"
+        },
+        {
+          "repository": "helveticlens-pharma",
+          "files_checked": 337,
+          "protected_values_checked": 3,
+          "credential_scan": "passed",
+          "diff_check": "passed"
+        },
+        {
+          "repository": "helveticlens-loyer",
+          "files_checked": 337,
+          "protected_values_checked": 3,
+          "credential_scan": "passed",
+          "diff_check": "passed"
+        }
+      ],
+      "client_theme_source_parity": "passed"
+    },
+    "native_control_correction": {
+      "scope": "native control-boundary correction",
+      "files_scanned": 5466,
+      "protected_values": 3,
+      "matches": 0,
+      "format": "passed",
+      "diff": "passed"
+    },
+    "native_control_correction_shell_cases": 41,
+    "native_control_correction_build": "passed",
+    "authored_contrast": "../product-evaluations/2026-09-28-reading-themes-contrast.json"
+  },
+  "github_ci": {
+    "pharma": {
+      "id": 36381379602,
+      "conclusion": "success"
+    },
+    "loyer": {
+      "id": 36381381303,
+      "conclusion": "success"
+    }
+  },
+  "production": {
+    "verified_at": "2026-09-28T05:41:23.177543+00:00",
+    "core": {
+      "release": "git-8ea723c934b8",
+      "status": "ready"
+    },
+    "products": [
+      {
+        "product": "pharma",
+        "url": "https://pharma.helveticlens.ch",
+        "source_sha": "6f313aef2173484071ba3af918e76c5f829767b0",
+        "checks": [
+          {
+            "path": "/",
+            "status": 200,
+            "title": "HelveticLens Pharma"
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "title": "Product guide | HelveticLens Pharma"
+          },
+          {
+            "path": "/api/products/pharma/dossiers",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/workbench",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover?q=neutral",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/discussion?q=renal&status=answered&offset=30",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/discussion/unknown",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/discussion/unknown/research-preview",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/references?q=neutral&decision=include&offset=30",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/references/unknown",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/searches",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/sources/unknown/reviews",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/documents/unknown/versions",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/documents/unknown/versions/unknown?offset=0&expected_revision=1",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/discussion/unknown/research/unknown/sources/S1/document",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/actions",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/brief",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/export",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/files/unknown",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/auth/session",
+            "status": 200,
+            "authenticated": false,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/workbench",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/discussion?q=neutral",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/documents/unknown/versions",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/admin/settings",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/auth/login",
+            "method": "POST",
+            "cross_origin_denied": true,
+            "status": 403
+          },
+          {
+            "path": "/api/products/pharma/discover/engines",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/runs",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/runs/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/expand",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/decision",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/runs/00000000-0000-0000-0000-000000000000/labels",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/runs/00000000-0000-0000-0000-000000000000/inspect",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/expand",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/discover/expand/extra",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/discover/provider-key",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/discover/decision",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/pharma/discover/expand",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "query_bundle_guide": true
+          },
+          {
+            "path": "/public-dossiers",
+            "status": 200,
+            "anonymous_reader": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations/00000000-0000-0000-0000-000000000000/events?wait=0",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations/00000000-0000-0000-0000-000000000000/control",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "investigation_guide": true
+          },
+          {
+            "path": "/",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/public-dossiers",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/following",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "contribution_guide": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/team",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/team/enable",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/team/invitations",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/team/invitations/00000000-0000-0000-0000-000000000000/revoke",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/team/members/00000000-0000-0000-0000-000000000000",
+            "method": "PUT",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/team/members/00000000-0000-0000-0000-000000000000/remove",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossier-invitations",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossier-invitations/00000000-0000-0000-0000-000000000000/accept",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossier-invitations",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/dossier-invitations/00000000-0000-0000-0000-000000000000/promote",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/dossier-invitations/00000000-0000-0000-0000-000000000000/accept",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "team_access_guide": true
+          },
+          {
+            "path": "/api/products/pharma/shared-dossiers",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/matches",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/assignees",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/public-knowledge?q=helveticlens-release-fixture-20260927",
+            "method": "GET",
+            "status": 200
+          },
+          {
+            "path": "/public-dossiers?q=helveticlens-release-fixture-20260927",
+            "method": "GET",
+            "status": 200
+          },
+          {
+            "path": "/public-dossiers/unpublished-release-fixture-20260927",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/research",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/events?wait=0",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/files/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/workspace",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/control",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/files",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/public-knowledge",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/private",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/files",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "public_research_guide": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes?offset=20&status=all",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/workspace",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/00000000-0000-0000-0000-000000000000/review",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/evidence-changes",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/00000000-0000-0000-0000-000000000000/review",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/private",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/00000000-0000-0000-0000-000000000000/review",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "evidence_evolution_guide": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research?offset=20",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "monitoring_research_guide": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "watched_page_research_guide": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/web-research?offset=20",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "recurring_web_research_guide": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "private_evidence_search_guide": true
+          },
+          {
+            "path": "/api/products/pharma/followed-private-dossiers",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/follow/read",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/follow/updates",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/follow/updates",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/follow/updates/private",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "personal_research_guide": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "fixed_public_destination_links": [
+              "https://helveticlens.ch/",
+              "https://loyer.helveticlens.ch/"
+            ],
+            "retains_current_tab": true,
+            "no_referrer_or_opener": true
+          },
+          {
+            "path": "/",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          },
+          {
+            "path": "/public-dossiers",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          },
+          {
+            "path": "/following",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          }
+        ],
+        "assets": [
+          {
+            "path": "/_next/static/chunks/Button-BH8ttj2X.js",
+            "status": 200,
+            "sha256": "21bfec768f2783931005d379cc3180cc788ed36a33c511764be17611ca5b68ae",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/Icon-DVasT6WL.js",
+            "status": 200,
+            "sha256": "f3426f714786f25ed8a9e72c49b02957d2ff43e926a6c25381c556ef6b2d96d7",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/Input-DX-LYKge.js",
+            "status": 200,
+            "sha256": "ff3fc826b0cf17bbae461a8987b3ba8bd53f9ffd8f831a5eadb9824a6df8616b",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-elements-H_Dr48wG.js",
+            "status": 200,
+            "sha256": "d8ccfb80cfa806cf9cae4413268bee663723cbdf183b3f078e93c82c27a6ff88",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-route-prefetch-policy-DZSBLGqv.js",
+            "status": 200,
+            "sha256": "ba08384dd6e3a31f60f2c210908600ffe17498cacaefdb8b0e942f1f4aab7c4f",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-rsc-cache-busting-Lx49s6Nj.js",
+            "status": 200,
+            "sha256": "6796803e3ca72161ea1f9c783a822e66c642bb3a79d846ab3935bbc2febbedc9",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+            "status": 200,
+            "sha256": "b9db37ffe7d7e3f76c7e6bdffc078b9da7b799d56513d9bb5387f887b4d658dc",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-shell-BtHjPivR.js",
+            "status": 200,
+            "sha256": "c47a3b56ee4ebd8634c037c462b3d40ac94f5e52a15bcb171400ee728d4075ad",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/auth-dialog-c8SUuRNx.js",
+            "status": 200,
+            "sha256": "fa90bcc01fb150a4a7e6807444b691d2d4e31e1aa8ba163071a866f1807bb6f9",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/claim-evolution-DKnD60Ie.js",
+            "status": 200,
+            "sha256": "655e65d09f4157f536a7a86b42307f2ae69d4e1055902b4cf49f678a1add735f",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/deployment-id-DFhHa9wO.js",
+            "status": 200,
+            "sha256": "cff727c88395e970914fe0fd68f0d2f78c51dc9ec13c7b6e6db8e5104ecb240b",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/dossier-navigation-Bu8FaY82.js",
+            "status": 200,
+            "sha256": "aba444ac869e88ba9f99089b13cd0539fafe5cc519959f4abbc8741976abdaee",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/framework-D_rUT4EX.js",
+            "status": 200,
+            "sha256": "939d0fabebb3b2f01753bb866b067d8d3384fb06da19f0e6557609d3b1a9f4f7",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/hash-Cp347hhd.js",
+            "status": 200,
+            "sha256": "fba69692645d8206561e12edf1653f0f7931d0f14f8f753ec3be5031dfd004d1",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/headers-C_MtfdF4.js",
+            "status": 200,
+            "sha256": "d84532fc42b9a35aa8ebc1a2659d97cfecc4fc341718a0cf9f7c42f763ced4be",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/index-DFjfzQbd.js",
+            "status": 200,
+            "sha256": "42563c292dddd1bc136bb2992afd194902c9224191306ca1a0b896fabe92c25c",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/layout-segment-context-BwEepvma.js",
+            "status": 200,
+            "sha256": "ec3b3936832cf1d31a7b3d2f275d6459bb0dac8e838ab91b88ba02c90ed2ab50",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/link-khlRmh7R.js",
+            "status": 200,
+            "sha256": "83ad7cdb9f3d2a3c2a22b15c16e83e28a925e3c44e8c5e96ad34ebb4eb74f3a0",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+            "status": 200,
+            "sha256": "8079365b302385be914b5750316813c78cdbb88f897349ecec72f5998fb65500",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/owner-Cpa5fgIK.js",
+            "status": 200,
+            "sha256": "1c28ed2a1a5e9ff594e2a79c30561477fbde70e87ae2aa0072d32ff55494037d",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/pagination-CwdkSFKj.js",
+            "status": 200,
+            "sha256": "767ce84cde8430f087f51fb34f2ab21f317f27f5979032f9b45785b08a39aa9c",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/product-CcqGlB-c.js",
+            "status": 200,
+            "sha256": "7e35671e18f2068f3bafdd1e7542bfe14506dd92a15399489f8df94cad7816a8",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/protocol-headers-B9-bVeat.js",
+            "status": 200,
+            "sha256": "9b15d2c8452ddb9df5d6f2cfb3a23dd576a10dc0450fb72565d9f293abab0edd",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/query-X6ocnqQC.js",
+            "status": 200,
+            "sha256": "0a1973f3c6175c2655da2d796c0b590a07352ee8c22aed1a49cd90513fa34b02",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/record-uXSNv6cl.js",
+            "status": 200,
+            "sha256": "b9bdb7b7d0e4844d241dba61104d18111d61ef92af3f137d15749531d276f9cf",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/research-following-DG97q9Z-.js",
+            "status": 200,
+            "sha256": "aed12acbb54d4f1ccbd6a2decb7e450a0788c662299467ee73c4700305537291",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+            "status": 200,
+            "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/universal-ask-search-CkXBywOb.js",
+            "status": 200,
+            "sha256": "aeddd2e9d6b5ab8d54dd5fdd09e31286a036bc246ea894c79e2830609fd87267",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/use-resource-syvaECQW.js",
+            "status": 200,
+            "sha256": "de92b792ead94b30f3a91ee570cb25634eba4ec7338267fd024705af1bcec0d7",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/useCompositeListItem-BYOpY-fr.js",
+            "status": 200,
+            "sha256": "16b5f739af72590107a2945e2c1b70b80e6571b419f61ef59714423c4ecfc75c",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/useOpenInteractionType-q3PDbsLk.js",
+            "status": 200,
+            "sha256": "f87aacaff8526a6fce58213a3aaed12c55d9df5b2df5d4d47f7309385d8485b4",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/workspace-DBsd0G2h.js",
+            "status": 200,
+            "sha256": "ae07e406762d23711c26509d3675453252130dd4aca9a4d85486276677fa92c2",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/index.ByPDm9BR.css",
+            "status": 200,
+            "sha256": "4f20e8bafa2f62506aea85cf441ae490ce9ec04b313c06510d8ed19dc0da0663",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/page.DzXDogor.css",
+            "status": 200,
+            "sha256": "015ea46a0d913e7880804a84c6c7081653dea25162804bcd2541d19500c0b67a",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/research-following.B7OP9hLy.css",
+            "status": 200,
+            "sha256": "7524dd53ffccd001c2a1e3a9a901d432cc43772f0ec6a5e0888123dfed3aaeed",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/favicon.svg",
+            "status": 200,
+            "sha256": "21fb2276fbb6a9654900950872ed2feaf06b5605b6a945a2c0805b2320a8df58",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/479d842b-2712-48e9-a13c-295952a1f6b2/_buildManifest.js",
+            "status": 200,
+            "sha256": "47f02b34be6dc481257b6efce4c19e19111f37ef5c437f8ffed44f0da97fa9bb",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/479d842b-2712-48e9-a13c-295952a1f6b2/_ssgManifest.js",
+            "status": 200,
+            "sha256": "653f3e53e89b4f8548ff86c19e92bb3c6b84b6be7485a320b1e00893ed877479",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/hybrid-client-route-owner-C4wYVy04.js",
+            "status": 200,
+            "sha256": "355ef52d8f6f732bd3cd3fcb20baa99cbfd1ed5d94de115ac25d0f71a5dded2a",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/public-discussion-CMnl8fRD.js",
+            "status": 200,
+            "sha256": "708dc6bcf3862ade45e012d8dcb6c5ec26dcf88e217de34678b783b5c9f6630a",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/public-following-DB_kSX3n.js",
+            "status": 200,
+            "sha256": "4b8cc96b6762b2aad761f15de53ccf57b8741db53d62da85af0448f7434e06f4",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/public-research-BehrOUv2.js",
+            "status": 200,
+            "sha256": "45f5db788e639da3215f48f1eaac1c1da8139e7eab9bd6cf938b3e1610c8bcc8",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/select-DaLp4vbN.js",
+            "status": 200,
+            "sha256": "ce442783074e7e9a90bbdcc6ec8a98bd08826a7b82fda26233552d865e01cead",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/streamed-icons-UTkAHgKb.js",
+            "status": 200,
+            "sha256": "7eb2a6b44b9c0faa7300c8dd36b0fae7a35d9f65e139dd9046b3df193aa83bc8",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/use-public-session-BI8j5kDW.js",
+            "status": 200,
+            "sha256": "c3cd6a0a16a210a6fe4faf210075c22bd1cf17f298749f1aaa6017f93208c8ad",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/page.DkNtHoOV.css",
+            "status": 200,
+            "sha256": "e5064096b96beab7a2cc3db6a19d0eea4f9f02792ab303cec460161679449b79",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/public.B7OP9hLy.css",
+            "status": 200,
+            "sha256": "7524dd53ffccd001c2a1e3a9a901d432cc43772f0ec6a5e0888123dfed3aaeed",
+            "matches_validated_build": true
+          }
+        ],
+        "guest_ui": {
+          "scoped_readers": true,
+          "brandbook_v1": true,
+          "browser_qa": false
+        },
+        "team_ui": {
+          "roles_invites_handover_and_activation_disclosure": true,
+          "private_monitoring_and_page_watch_boundary": true,
+          "browser_qa": false
+        },
+        "contribution_ui": {
+          "composer_original_and_retry_present": true,
+          "browser_qa": false
+        },
+        "visual_system": {
+          "authored_tokens_present": true,
+          "reduced_motion_rule_present": true,
+          "checkpoint_activity_and_source_reader_styles_present": true,
+          "browser_qa": false
+        },
+        "public_research": {
+          "explicit_author_opt_in": true,
+          "anonymous_typed_search": true,
+          "live_reader_and_originals": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "evidence_evolution": {
+          "anonymous_reading": true,
+          "private_review_auth_boundary": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "monitoring_research": {
+          "private_policy_auth_boundary": true,
+          "explicit_standing_authority": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "watched_page_research": {
+          "explicit_scope": true,
+          "paired_excerpts_and_readers": true,
+          "bounds_disclosed": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "recurring_web_research": {
+          "private_policy_auth_boundary": true,
+          "explicit_standing_authority": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "private_evidence_search": {
+          "private_reader_auth_boundary": true,
+          "local_only_search_controls": true,
+          "whole_permitted_ledger_controls": true,
+          "resumable_preparation": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "personal_research_updates": {
+          "native_auth_boundaries": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "reading_preferences": {
+          "first_paint_routes": 4,
+          "shared_contract_tests": 8,
+          "browser_qa": false
+        }
+      },
+      {
+        "product": "loyer",
+        "url": "https://loyer.helveticlens.ch",
+        "source_sha": "5b115962867cff306cbfa5e154e1e8a269f8d3d4",
+        "checks": [
+          {
+            "path": "/",
+            "status": 200,
+            "title": "HelveticLens Loyer"
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "title": "Product guide | HelveticLens Loyer"
+          },
+          {
+            "path": "/api/products/loyer/dossiers",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/workbench",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover?q=neutral",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/discussion?q=renal&status=answered&offset=30",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/discussion/unknown",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/discussion/unknown/research-preview",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/references?q=neutral&decision=include&offset=30",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/references/unknown",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/searches",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/sources/unknown/reviews",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/documents/unknown/versions",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/documents/unknown/versions/unknown?offset=0&expected_revision=1",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/discussion/unknown/research/unknown/sources/S1/document",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/actions",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/brief",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/export",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/unknown/files/unknown",
+            "status": 401,
+            "expected": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/auth/session",
+            "status": 200,
+            "authenticated": false,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/workbench",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/discussion?q=neutral",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/pharma/dossiers/unknown/documents/unknown/versions",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/admin/settings",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/auth/login",
+            "method": "POST",
+            "cross_origin_denied": true,
+            "status": 403
+          },
+          {
+            "path": "/api/products/loyer/discover/engines",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/runs",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/runs/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/expand",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/decision",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/runs/00000000-0000-0000-0000-000000000000/labels",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/discover/runs/00000000-0000-0000-0000-000000000000/inspect",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/discover/expand",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/discover/expand/extra",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/discover/provider-key",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/discover/decision",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/loyer/discover/expand",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "query_bundle_guide": true
+          },
+          {
+            "path": "/public-dossiers",
+            "status": 200,
+            "anonymous_reader": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/investigations/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/investigations/00000000-0000-0000-0000-000000000000/events?wait=0",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/investigations/00000000-0000-0000-0000-000000000000/control",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/investigations",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "investigation_guide": true
+          },
+          {
+            "path": "/",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/public-dossiers",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/following",
+            "status": 200,
+            "global_ask_and_theme": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "contribution_guide": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/team",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/team/enable",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/team/invitations",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/team/invitations/00000000-0000-0000-0000-000000000000/revoke",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/team/members/00000000-0000-0000-0000-000000000000",
+            "method": "PUT",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/team/members/00000000-0000-0000-0000-000000000000/remove",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossier-invitations",
+            "method": "GET",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossier-invitations/00000000-0000-0000-0000-000000000000/accept",
+            "method": "POST",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/pharma/dossier-invitations",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/dossier-invitations/00000000-0000-0000-0000-000000000000/promote",
+            "status": 404,
+            "expected": 404
+          },
+          {
+            "path": "/api/products/loyer/dossier-invitations/00000000-0000-0000-0000-000000000000/accept",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "team_access_guide": true
+          },
+          {
+            "path": "/api/products/loyer/shared-dossiers",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/matches",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/assignees",
+            "status": 401,
+            "private_no_store": true
+          },
+          {
+            "path": "/api/products/loyer/public-knowledge?q=helveticlens-release-fixture-20260927",
+            "method": "GET",
+            "status": 200
+          },
+          {
+            "path": "/public-dossiers?q=helveticlens-release-fixture-20260927",
+            "method": "GET",
+            "status": 200
+          },
+          {
+            "path": "/public-dossiers/unpublished-release-fixture-20260927",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/research",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/events?wait=0",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/files/00000000-0000-0000-0000-000000000000",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/workspace",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/control",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/files",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/pharma/public-knowledge",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/research/00000000-0000-0000-0000-000000000000/private",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/files",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "public_research_guide": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes?offset=20&status=all",
+            "method": "GET",
+            "status": 404
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/workspace",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/00000000-0000-0000-0000-000000000000/review",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/evidence-changes",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/00000000-0000-0000-0000-000000000000/review",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/private",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-changes/00000000-0000-0000-0000-000000000000/review",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "evidence_evolution_guide": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research?offset=20",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/monitoring-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "monitoring_research_guide": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "watched_page_research_guide": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/web-research?offset=20",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/web-research",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "recurring_web_research_guide": true
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/evidence-search",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "private_evidence_search_guide": true
+          },
+          {
+            "path": "/api/products/loyer/followed-private-dossiers",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/follow/read",
+            "method": "POST",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/follow/updates",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/follow/updates",
+            "method": "GET",
+            "status": 401
+          },
+          {
+            "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "status": 403,
+            "cross_origin_denied": true
+          },
+          {
+            "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/follow",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/api/products/loyer/public-dossiers/00000000-0000-0000-0000-000000000000/follow/updates/private",
+            "status": 404,
+            "gateway_scope": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "personal_research_guide": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "fixed_public_destination_links": [
+              "https://helveticlens.ch/",
+              "https://pharma.helveticlens.ch/"
+            ],
+            "retains_current_tab": true,
+            "no_referrer_or_opener": true
+          },
+          {
+            "path": "/",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          },
+          {
+            "path": "/guide",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          },
+          {
+            "path": "/public-dossiers",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          },
+          {
+            "path": "/following",
+            "status": 200,
+            "exact_early_theme_script": true,
+            "global_theme_control": true
+          }
+        ],
+        "assets": [
+          {
+            "path": "/_next/static/chunks/Button-BH8ttj2X.js",
+            "status": 200,
+            "sha256": "21bfec768f2783931005d379cc3180cc788ed36a33c511764be17611ca5b68ae",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/Icon-DVasT6WL.js",
+            "status": 200,
+            "sha256": "f3426f714786f25ed8a9e72c49b02957d2ff43e926a6c25381c556ef6b2d96d7",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/Input-DX-LYKge.js",
+            "status": 200,
+            "sha256": "ff3fc826b0cf17bbae461a8987b3ba8bd53f9ffd8f831a5eadb9824a6df8616b",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-elements-H_Dr48wG.js",
+            "status": 200,
+            "sha256": "d8ccfb80cfa806cf9cae4413268bee663723cbdf183b3f078e93c82c27a6ff88",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-route-prefetch-policy-DCsnhc2x.js",
+            "status": 200,
+            "sha256": "226ea0610788ba6bba2fd8643159c469799a676f55edd9265f475fb4756d82cb",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-rsc-cache-busting-DRYj7wAi.js",
+            "status": 200,
+            "sha256": "56d9c067939aeb5082f3b8c03d7860e1d4472cdb482470c7d84177c1c4bb25d7",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-rsc-render-mode-CvTCGruk.js",
+            "status": 200,
+            "sha256": "b9db37ffe7d7e3f76c7e6bdffc078b9da7b799d56513d9bb5387f887b4d658dc",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/app-shell-CogljUKs.js",
+            "status": 200,
+            "sha256": "244681af0b8baeeae76148a52f8cd288f7692a439fa555ac7378480f9c0f1993",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/auth-dialog-DNZXkagJ.js",
+            "status": 200,
+            "sha256": "6fd2a45c3eae0da0a1f8005bf6d571fb02eac56a8b8a19c8b86dbeeb68ee5f05",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/claim-evolution-CWn6DqyK.js",
+            "status": 200,
+            "sha256": "aa0d3abfd34e01a9af13086b1da115caf0a963ce17341aac88441869b433dee9",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/deployment-id-DFhHa9wO.js",
+            "status": 200,
+            "sha256": "cff727c88395e970914fe0fd68f0d2f78c51dc9ec13c7b6e6db8e5104ecb240b",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/dossier-navigation-Bu8FaY82.js",
+            "status": 200,
+            "sha256": "aba444ac869e88ba9f99089b13cd0539fafe5cc519959f4abbc8741976abdaee",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/framework-D_rUT4EX.js",
+            "status": 200,
+            "sha256": "939d0fabebb3b2f01753bb866b067d8d3384fb06da19f0e6557609d3b1a9f4f7",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/hash-Cp347hhd.js",
+            "status": 200,
+            "sha256": "fba69692645d8206561e12edf1653f0f7931d0f14f8f753ec3be5031dfd004d1",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/headers-C_MtfdF4.js",
+            "status": 200,
+            "sha256": "d84532fc42b9a35aa8ebc1a2659d97cfecc4fc341718a0cf9f7c42f763ced4be",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/index-CSPUdEpU.js",
+            "status": 200,
+            "sha256": "1ff0a8e8a058c57f389e06bd0601411c884e9846877eb3e810dc5db9913beee0",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/layout-segment-context-Dh3lCFt2.js",
+            "status": 200,
+            "sha256": "6ab58b339e901cb349f6a678e2ba294922b571536e72d20aadd5464afbf6bf8c",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/link-BEMLmWeO.js",
+            "status": 200,
+            "sha256": "f69795bb4388bdd07bbd7bf5894229efd680275355a24fe17666867d61bef8a0",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/navigation-errors-D5LMQqDL.js",
+            "status": 200,
+            "sha256": "8079365b302385be914b5750316813c78cdbb88f897349ecec72f5998fb65500",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/owner-Cpa5fgIK.js",
+            "status": 200,
+            "sha256": "1c28ed2a1a5e9ff594e2a79c30561477fbde70e87ae2aa0072d32ff55494037d",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/pagination-S-rWdcl3.js",
+            "status": 200,
+            "sha256": "925bb6b3ab4a2b33b4b2cfe1c52257e12db09400abed710c63ce46fabbabc940",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/product-BGLNkKbr.js",
+            "status": 200,
+            "sha256": "e3ab6a58eb65d86b2640a22af9c326e5a0339c665a91b4b2830b222a803a093d",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/protocol-headers-B9-bVeat.js",
+            "status": 200,
+            "sha256": "9b15d2c8452ddb9df5d6f2cfb3a23dd576a10dc0450fb72565d9f293abab0edd",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/query-X6ocnqQC.js",
+            "status": 200,
+            "sha256": "0a1973f3c6175c2655da2d796c0b590a07352ee8c22aed1a49cd90513fa34b02",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/record-uXSNv6cl.js",
+            "status": 200,
+            "sha256": "b9bdb7b7d0e4844d241dba61104d18111d61ef92af3f137d15749531d276f9cf",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/research-following-C94HDHzx.js",
+            "status": 200,
+            "sha256": "801f6f559330e92057cbb53f277eff84f2b533079d5ed437efb118b53b794337",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/rolldown-runtime-C60lm6uB.js",
+            "status": 200,
+            "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/universal-ask-search-ib6hkwFI.js",
+            "status": 200,
+            "sha256": "b41606a131c21df315a12211d58462f2314949a0ef3e4faa13b8074c221df8d2",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/use-resource-j3QfbTlS.js",
+            "status": 200,
+            "sha256": "d10df7b92e55cc6f5caab5c502f0e98ff1b7b412b3d99521aced6cb3d260fb8c",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/useCompositeListItem-Zj2lnHb9.js",
+            "status": 200,
+            "sha256": "8ea73bca2c92eea932c883d86e862dab9c393540ec87d2034963568a8634eb11",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/useOpenInteractionType-Bjpt6Vu5.js",
+            "status": 200,
+            "sha256": "0e784f692a793c3d8e1483c0be744a618465d1f04eef592dabeff5d4cdf5f641",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/workspace-B8tXqH6K.js",
+            "status": 200,
+            "sha256": "7b74a1673e31ee6f3c2b0e00b83d1a5267a899a312a8dbe60a1a4b89ca3bd890",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/index.ByPDm9BR.css",
+            "status": 200,
+            "sha256": "4f20e8bafa2f62506aea85cf441ae490ce9ec04b313c06510d8ed19dc0da0663",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/page.DzXDogor.css",
+            "status": 200,
+            "sha256": "015ea46a0d913e7880804a84c6c7081653dea25162804bcd2541d19500c0b67a",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/research-following.B7OP9hLy.css",
+            "status": 200,
+            "sha256": "7524dd53ffccd001c2a1e3a9a901d432cc43772f0ec6a5e0888123dfed3aaeed",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/favicon.svg",
+            "status": 200,
+            "sha256": "21fb2276fbb6a9654900950872ed2feaf06b5605b6a945a2c0805b2320a8df58",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/4f04c590-2c1f-458a-a859-a5a0e8f5a218/_buildManifest.js",
+            "status": 200,
+            "sha256": "47f02b34be6dc481257b6efce4c19e19111f37ef5c437f8ffed44f0da97fa9bb",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/4f04c590-2c1f-458a-a859-a5a0e8f5a218/_ssgManifest.js",
+            "status": 200,
+            "sha256": "653f3e53e89b4f8548ff86c19e92bb3c6b84b6be7485a320b1e00893ed877479",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/hybrid-client-route-owner-Bbk-z6zm.js",
+            "status": 200,
+            "sha256": "b09109b2d87c07739d643917562ab7f05170508665eed819bd3d597862e46231",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/public-discussion-mTdE4v6E.js",
+            "status": 200,
+            "sha256": "d0ac265df386b4a70e73331ec3f6397fb49ea22f1a8c84ad9570bb34d944620c",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/public-following-DK0kzSh0.js",
+            "status": 200,
+            "sha256": "4833fb9ce22c5c793e5031edbfdf6e7e1ffcb175b79e3d45dc7a317efa81af2b",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/public-research-BG8NWl5e.js",
+            "status": 200,
+            "sha256": "d516fbbc1adeff797103d9c473922ccbd20dfa10a5b19e272a31ae2b43c67d20",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/select-B0C8oPz4.js",
+            "status": 200,
+            "sha256": "ecf1bee4118d98c5673e95fa98728aa22eb4c166218daf1de955954b9db30bec",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/streamed-icons-UTkAHgKb.js",
+            "status": 200,
+            "sha256": "7eb2a6b44b9c0faa7300c8dd36b0fae7a35d9f65e139dd9046b3df193aa83bc8",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/chunks/use-public-session-Bhi-FFDg.js",
+            "status": 200,
+            "sha256": "22c7a926ad9ac9bf7d8745db6699832745398870cd05079046f570b737e3bc6b",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/page.DkNtHoOV.css",
+            "status": 200,
+            "sha256": "e5064096b96beab7a2cc3db6a19d0eea4f9f02792ab303cec460161679449b79",
+            "matches_validated_build": true
+          },
+          {
+            "path": "/_next/static/css/public.B7OP9hLy.css",
+            "status": 200,
+            "sha256": "7524dd53ffccd001c2a1e3a9a901d432cc43772f0ec6a5e0888123dfed3aaeed",
+            "matches_validated_build": true
+          }
+        ],
+        "guest_ui": {
+          "scoped_readers": true,
+          "brandbook_v1": true,
+          "browser_qa": false
+        },
+        "team_ui": {
+          "roles_invites_handover_and_activation_disclosure": true,
+          "private_monitoring_and_page_watch_boundary": true,
+          "browser_qa": false
+        },
+        "contribution_ui": {
+          "composer_original_and_retry_present": true,
+          "browser_qa": false
+        },
+        "visual_system": {
+          "authored_tokens_present": true,
+          "reduced_motion_rule_present": true,
+          "checkpoint_activity_and_source_reader_styles_present": true,
+          "browser_qa": false
+        },
+        "public_research": {
+          "explicit_author_opt_in": true,
+          "anonymous_typed_search": true,
+          "live_reader_and_originals": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "evidence_evolution": {
+          "anonymous_reading": true,
+          "private_review_auth_boundary": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "monitoring_research": {
+          "private_policy_auth_boundary": true,
+          "explicit_standing_authority": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "watched_page_research": {
+          "explicit_scope": true,
+          "paired_excerpts_and_readers": true,
+          "bounds_disclosed": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "recurring_web_research": {
+          "private_policy_auth_boundary": true,
+          "explicit_standing_authority": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "private_evidence_search": {
+          "private_reader_auth_boundary": true,
+          "local_only_search_controls": true,
+          "whole_permitted_ledger_controls": true,
+          "resumable_preparation": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "personal_research_updates": {
+          "native_auth_boundaries": true,
+          "exact_assets_verified": true,
+          "browser_qa": false,
+          "authenticated_production_records_created": false
+        },
+        "reading_preferences": {
+          "first_paint_routes": 4,
+          "shared_contract_tests": 8,
+          "browser_qa": false
+        }
+      }
+    ],
+    "scope": "Read-only HTTP/auth/guide and exact JS/CSS/early-theme-script checks. No browser QA, private production records or paid provider calls."
+  },
+  "native_frame": {
+    "verified_at": "2026-09-28T05:40:50.612727+00:00",
+    "release": "git-8ea723c934b8",
+    "immutable_web_image": "helvetic-lens-web:git-8ea723c934b8",
+    "web_image_digest": "sha256:724f2205461c9695078065f478f22a7e9b5c5c11b0a2e3947e1c532f4ac1a472",
+    "web_health": "healthy",
+    "compiled_contracts": {
+      "assets": [
+        {
+          "path": "/_next/static/chunks/048bxfyh5iks6.js",
+          "sha256": "2082003439974fca5ff514e2d67ad165ac04657e8b7c5791dc55b6c12e987aae",
+          "bytes": 17289
+        },
+        {
+          "path": "/_next/static/chunks/09u0w7zdgs70p.js",
+          "sha256": "5064bf6219ebf10ab9f0c6834d42ec2712ebf88b3e6013a9789f690335b44560",
+          "bytes": 27696
+        },
+        {
+          "path": "/_next/static/chunks/0c55j7cl7onpo.js",
+          "sha256": "2198e59f7e8b6e36ca1a2ae76e5627c5bfbd488844a4546cc3a086f6e8bad9b8",
+          "bytes": 31305
+        },
+        {
+          "path": "/_next/static/chunks/0lqrn0j8-g0h8.js",
+          "sha256": "0ff0874f771e5317277d1fb2e3428ac85b2d9adcfdb7240e07c6503a2634c8f3",
+          "bytes": 39552
+        },
+        {
+          "path": "/_next/static/chunks/0nu3v1hu50rqg.js",
+          "sha256": "b21047eac68e7d602b05ec9f3e2e58917c3024ce5157e29d3852d661b0078977",
+          "bytes": 48257
+        },
+        {
+          "path": "/_next/static/chunks/101jl99rneqos.js",
+          "sha256": "c1a5ec14b73b18d195fc06ab328ea58ed1dd67f898ab778cebc5b90f8d506186",
+          "bytes": 18387
+        },
+        {
+          "path": "/_next/static/chunks/12jgyz6v6b1--.js",
+          "sha256": "2582945eae21a2046788b1917973c8dc9888ac2c01ef9652fc46dafbd6d78d68",
+          "bytes": 47918
+        },
+        {
+          "path": "/_next/static/chunks/13ba75wkhfx65.js",
+          "sha256": "5bb2c7f03ee4da4b8a88063049217f6b454de57a768c0a549903a7a44f60ecac",
+          "bytes": 23606
+        },
+        {
+          "path": "/_next/static/chunks/16sgre2n9ge06.js",
+          "sha256": "8e1d1880a8203cded3efdb230c5b1eae8d88d549235119995dde04ad03cc2030",
+          "bytes": 20389
+        },
+        {
+          "path": "/_next/static/chunks/1bz0ot81m-wgo.js",
+          "sha256": "36ab49717defd5ec27655a465d86f10bf1f600b45cc5326e676d01a9fad9f925",
+          "bytes": 52113
+        },
+        {
+          "path": "/_next/static/chunks/1dm8rkv5y23s0.js",
+          "sha256": "3983c34c994b09eaef2182352243d32e17e7f2eb0c59fe94592f87d0d2f94e6e",
+          "bytes": 27955
+        },
+        {
+          "path": "/_next/static/chunks/1ejk9kd0a31te.js",
+          "sha256": "c98fd25d7ceecc7bb6c94613a7b15042c3bfe0ccec4c6d7dbcc7c86015e6d80d",
+          "bytes": 76537
+        },
+        {
+          "path": "/_next/static/chunks/1g-n4dpgfwqn7.js",
+          "sha256": "95e6281988e128645c7ad47810bbce1a3615aee50a90b7fbcc329c124343e3aa",
+          "bytes": 30564
+        },
+        {
+          "path": "/_next/static/chunks/1nnmyu_d0f8nx.js",
+          "sha256": "6bb2c2d88092e06f277e3eff36b168fe8ccf31636da9bdc06c6969f13df83735",
+          "bytes": 30407
+        },
+        {
+          "path": "/_next/static/chunks/1tjlmkmaodmdf.js",
+          "sha256": "fce4257442f712b6f4d2642283501e4288a4c67ed58d84891e9bc8a265e395c1",
+          "bytes": 11331
+        },
+        {
+          "path": "/_next/static/chunks/1z82u0wsawa77.js",
+          "sha256": "8eb7be19f04bb253c2f6be914d66f9ba2bccde8f389b7c8240083a70c5c8e97e",
+          "bytes": 21175
+        },
+        {
+          "path": "/_next/static/chunks/23j73939ig159.js",
+          "sha256": "a51e34015b2178afb79bcfd031806141f1b6c97967d55d3dd5be1c71ae2f35e8",
+          "bytes": 18536
+        },
+        {
+          "path": "/_next/static/chunks/24390ydffgpq_.js",
+          "sha256": "18060b0a90a2a88575865202f1719d59cfe76894a2677c6f8772acd07fad1df9",
+          "bytes": 29908
+        },
+        {
+          "path": "/_next/static/chunks/24dnxorbcj1p8.js",
+          "sha256": "5d2d54409278aba79aa209e6700d257cbfac56dd737da2616b9c604f944fa853",
+          "bytes": 37321
+        },
+        {
+          "path": "/_next/static/chunks/278fm__thfe9b.js",
+          "sha256": "bbf0d0d2dbbe37d6bd9d615a6368a572c3d5b6f0294df03d58d4f2cb004a0c0a",
+          "bytes": 17804
+        },
+        {
+          "path": "/_next/static/chunks/290yhr03ypp1b.js",
+          "sha256": "ad8e3c72832d7456942f1b97800104dedf29fcfc5745ebeeae981cb8a16c2ed1",
+          "bytes": 266425
+        },
+        {
+          "path": "/_next/static/chunks/2a45ixq94873j.js",
+          "sha256": "7791c19df47020afb10c50d24d15f3007a8ff1c255dc90996b0263dc300dfaac",
+          "bytes": 51625
+        },
+        {
+          "path": "/_next/static/chunks/2bgy8w-24jt19.js",
+          "sha256": "3691c6949d41cbbb074f27c1df979599f3112845fe0d126a932837f61ea45ee0",
+          "bytes": 35370
+        },
+        {
+          "path": "/_next/static/chunks/2d6wld9dnpdsg.js",
+          "sha256": "1a5e05d9456a1c916a69566ed42f30d05e3b649b557ce89442f7e43e8e75eec0",
+          "bytes": 32103
+        },
+        {
+          "path": "/_next/static/chunks/2dur1cgb7xtm7.css",
+          "sha256": "974713e39cddf6e380650c759703704233440068ae48d544423baa0d775b8086",
+          "bytes": 110489
+        },
+        {
+          "path": "/_next/static/chunks/2eleewa_sw4b7.js",
+          "sha256": "e1042605351e629b374aacfe5037a425106d156796881cc40ebaef2b5b845400",
+          "bytes": 27850
+        },
+        {
+          "path": "/_next/static/chunks/2his3typzs_cp.js",
+          "sha256": "3f9d8390a525e66593b6c5485a09671fdff9bbce12ae59428f36a90e7fff5abd",
+          "bytes": 29075
+        },
+        {
+          "path": "/_next/static/chunks/2q-it3ww_dhgh.js",
+          "sha256": "a41831e172c9cdfe8de6caf06a1f971c990aa43551515a643f24beb793c15ccd",
+          "bytes": 772706
+        },
+        {
+          "path": "/_next/static/chunks/2uj21pymwmc21.js",
+          "sha256": "46cb801c00d618687d57bf73e98b462f616be082604abf21a9f321674afd8986",
+          "bytes": 36849
+        },
+        {
+          "path": "/_next/static/chunks/2vh6h7y_5pz37.js",
+          "sha256": "5430871542eeddf481555c1ed6f85e800ef2da114d4f1573f88c8410eb3946a7",
+          "bytes": 31154
+        },
+        {
+          "path": "/_next/static/chunks/35w_d3c72jl2g.js",
+          "sha256": "ba261f26f928c4dea901f35ca269e42c8404f542f6478ebe4f1b06630495dd4d",
+          "bytes": 42927
+        },
+        {
+          "path": "/_next/static/chunks/3e6m66i5kvubt.js",
+          "sha256": "c7b4c04d3b1bd2ac97485222acaa23c2f42a4eced9e0d5715aedea27bef5d0e8",
+          "bytes": 26036
+        },
+        {
+          "path": "/_next/static/chunks/3g-3y99z5u-ss.js",
+          "sha256": "00806a54aa2fd03a15e7ef13817ec5895a74de22630c5274d8871e1e58797937",
+          "bytes": 16080
+        },
+        {
+          "path": "/_next/static/chunks/3iosqcevbrubf.js",
+          "sha256": "6064a405720b561e51863ba73ce55bda4f243a3acfe1e22ff1f766c92dfeba66",
+          "bytes": 176382
+        },
+        {
+          "path": "/_next/static/chunks/3iy_s-c7ipti5.js",
+          "sha256": "db869880e0745c0d604b651aa155661a773aff75b5b0da8f4eab622ddef8d12d",
+          "bytes": 49248
+        },
+        {
+          "path": "/_next/static/chunks/3uels_7xmub5b.css",
+          "sha256": "c2ebd56992872e766d6fed3dbae7cfd0a3666a4405a897a0100c5104d4403537",
+          "bytes": 55056
+        },
+        {
+          "path": "/_next/static/chunks/3ut0bfq7bp-jr.js",
+          "sha256": "4ad1dfc8b6a12b6362b8c04c4b6d7ee6b034bc32c1bf0d571dac675860ce1edb",
+          "bytes": 43492
+        },
+        {
+          "path": "/_next/static/chunks/3wstj6fjb254x.css",
+          "sha256": "34cbe36657063ddc127be2bbc63acff26a1b84fa1c3dff77d4c4fdcb282d39d7",
+          "bytes": 9468
+        },
+        {
+          "path": "/_next/static/chunks/4395dwb7ctptd.js",
+          "sha256": "a100880c339c618862d69075afbde66ff13a76d759adfcb9d6f94a3b7eac7b49",
+          "bytes": 47915
+        },
+        {
+          "path": "/_next/static/chunks/43h9uiw_x82a7.js",
+          "sha256": "78ef38b53af2db27dba78fc8a130bd18d985be751f89a8e0925c206127b3ca89",
+          "bytes": 27702
+        }
+      ],
+      "destinations": true,
+      "native_locales": true,
+      "nine_navigation_routes": true,
+      "new_tab": true,
+      "theme_preferences": true,
+      "reading_palettes": true,
+      "h_monogram": true,
+      "frame_tokens": true
+    },
+    "checks": [
+      {
+        "path": "/_next/static/chunks/048bxfyh5iks6.js",
+        "status": 200,
+        "sha256": "2082003439974fca5ff514e2d67ad165ac04657e8b7c5791dc55b6c12e987aae",
+        "bytes": 17289
+      },
+      {
+        "path": "/_next/static/chunks/09u0w7zdgs70p.js",
+        "status": 200,
+        "sha256": "5064bf6219ebf10ab9f0c6834d42ec2712ebf88b3e6013a9789f690335b44560",
+        "bytes": 27696
+      },
+      {
+        "path": "/_next/static/chunks/0c55j7cl7onpo.js",
+        "status": 200,
+        "sha256": "2198e59f7e8b6e36ca1a2ae76e5627c5bfbd488844a4546cc3a086f6e8bad9b8",
+        "bytes": 31305
+      },
+      {
+        "path": "/_next/static/chunks/0lqrn0j8-g0h8.js",
+        "status": 200,
+        "sha256": "0ff0874f771e5317277d1fb2e3428ac85b2d9adcfdb7240e07c6503a2634c8f3",
+        "bytes": 39552
+      },
+      {
+        "path": "/_next/static/chunks/0nu3v1hu50rqg.js",
+        "status": 200,
+        "sha256": "b21047eac68e7d602b05ec9f3e2e58917c3024ce5157e29d3852d661b0078977",
+        "bytes": 48257
+      },
+      {
+        "path": "/_next/static/chunks/101jl99rneqos.js",
+        "status": 200,
+        "sha256": "c1a5ec14b73b18d195fc06ab328ea58ed1dd67f898ab778cebc5b90f8d506186",
+        "bytes": 18387
+      },
+      {
+        "path": "/_next/static/chunks/12jgyz6v6b1--.js",
+        "status": 200,
+        "sha256": "2582945eae21a2046788b1917973c8dc9888ac2c01ef9652fc46dafbd6d78d68",
+        "bytes": 47918
+      },
+      {
+        "path": "/_next/static/chunks/13ba75wkhfx65.js",
+        "status": 200,
+        "sha256": "5bb2c7f03ee4da4b8a88063049217f6b454de57a768c0a549903a7a44f60ecac",
+        "bytes": 23606
+      },
+      {
+        "path": "/_next/static/chunks/16sgre2n9ge06.js",
+        "status": 200,
+        "sha256": "8e1d1880a8203cded3efdb230c5b1eae8d88d549235119995dde04ad03cc2030",
+        "bytes": 20389
+      },
+      {
+        "path": "/_next/static/chunks/1bz0ot81m-wgo.js",
+        "status": 200,
+        "sha256": "36ab49717defd5ec27655a465d86f10bf1f600b45cc5326e676d01a9fad9f925",
+        "bytes": 52113
+      },
+      {
+        "path": "/_next/static/chunks/1dm8rkv5y23s0.js",
+        "status": 200,
+        "sha256": "3983c34c994b09eaef2182352243d32e17e7f2eb0c59fe94592f87d0d2f94e6e",
+        "bytes": 27955
+      },
+      {
+        "path": "/_next/static/chunks/1ejk9kd0a31te.js",
+        "status": 200,
+        "sha256": "c98fd25d7ceecc7bb6c94613a7b15042c3bfe0ccec4c6d7dbcc7c86015e6d80d",
+        "bytes": 76537
+      },
+      {
+        "path": "/_next/static/chunks/1g-n4dpgfwqn7.js",
+        "status": 200,
+        "sha256": "95e6281988e128645c7ad47810bbce1a3615aee50a90b7fbcc329c124343e3aa",
+        "bytes": 30564
+      },
+      {
+        "path": "/_next/static/chunks/1nnmyu_d0f8nx.js",
+        "status": 200,
+        "sha256": "6bb2c2d88092e06f277e3eff36b168fe8ccf31636da9bdc06c6969f13df83735",
+        "bytes": 30407
+      },
+      {
+        "path": "/_next/static/chunks/1tjlmkmaodmdf.js",
+        "status": 200,
+        "sha256": "fce4257442f712b6f4d2642283501e4288a4c67ed58d84891e9bc8a265e395c1",
+        "bytes": 11331
+      },
+      {
+        "path": "/_next/static/chunks/1z82u0wsawa77.js",
+        "status": 200,
+        "sha256": "8eb7be19f04bb253c2f6be914d66f9ba2bccde8f389b7c8240083a70c5c8e97e",
+        "bytes": 21175
+      },
+      {
+        "path": "/_next/static/chunks/23j73939ig159.js",
+        "status": 200,
+        "sha256": "a51e34015b2178afb79bcfd031806141f1b6c97967d55d3dd5be1c71ae2f35e8",
+        "bytes": 18536
+      },
+      {
+        "path": "/_next/static/chunks/24390ydffgpq_.js",
+        "status": 200,
+        "sha256": "18060b0a90a2a88575865202f1719d59cfe76894a2677c6f8772acd07fad1df9",
+        "bytes": 29908
+      },
+      {
+        "path": "/_next/static/chunks/24dnxorbcj1p8.js",
+        "status": 200,
+        "sha256": "5d2d54409278aba79aa209e6700d257cbfac56dd737da2616b9c604f944fa853",
+        "bytes": 37321
+      },
+      {
+        "path": "/_next/static/chunks/278fm__thfe9b.js",
+        "status": 200,
+        "sha256": "bbf0d0d2dbbe37d6bd9d615a6368a572c3d5b6f0294df03d58d4f2cb004a0c0a",
+        "bytes": 17804
+      },
+      {
+        "path": "/_next/static/chunks/290yhr03ypp1b.js",
+        "status": 200,
+        "sha256": "ad8e3c72832d7456942f1b97800104dedf29fcfc5745ebeeae981cb8a16c2ed1",
+        "bytes": 266425
+      },
+      {
+        "path": "/_next/static/chunks/2a45ixq94873j.js",
+        "status": 200,
+        "sha256": "7791c19df47020afb10c50d24d15f3007a8ff1c255dc90996b0263dc300dfaac",
+        "bytes": 51625
+      },
+      {
+        "path": "/_next/static/chunks/2bgy8w-24jt19.js",
+        "status": 200,
+        "sha256": "3691c6949d41cbbb074f27c1df979599f3112845fe0d126a932837f61ea45ee0",
+        "bytes": 35370
+      },
+      {
+        "path": "/_next/static/chunks/2d6wld9dnpdsg.js",
+        "status": 200,
+        "sha256": "1a5e05d9456a1c916a69566ed42f30d05e3b649b557ce89442f7e43e8e75eec0",
+        "bytes": 32103
+      },
+      {
+        "path": "/_next/static/chunks/2dur1cgb7xtm7.css",
+        "status": 200,
+        "sha256": "974713e39cddf6e380650c759703704233440068ae48d544423baa0d775b8086",
+        "bytes": 110489
+      },
+      {
+        "path": "/_next/static/chunks/2eleewa_sw4b7.js",
+        "status": 200,
+        "sha256": "e1042605351e629b374aacfe5037a425106d156796881cc40ebaef2b5b845400",
+        "bytes": 27850
+      },
+      {
+        "path": "/_next/static/chunks/2his3typzs_cp.js",
+        "status": 200,
+        "sha256": "3f9d8390a525e66593b6c5485a09671fdff9bbce12ae59428f36a90e7fff5abd",
+        "bytes": 29075
+      },
+      {
+        "path": "/_next/static/chunks/2q-it3ww_dhgh.js",
+        "status": 200,
+        "sha256": "a41831e172c9cdfe8de6caf06a1f971c990aa43551515a643f24beb793c15ccd",
+        "bytes": 772706
+      },
+      {
+        "path": "/_next/static/chunks/2uj21pymwmc21.js",
+        "status": 200,
+        "sha256": "46cb801c00d618687d57bf73e98b462f616be082604abf21a9f321674afd8986",
+        "bytes": 36849
+      },
+      {
+        "path": "/_next/static/chunks/2vh6h7y_5pz37.js",
+        "status": 200,
+        "sha256": "5430871542eeddf481555c1ed6f85e800ef2da114d4f1573f88c8410eb3946a7",
+        "bytes": 31154
+      },
+      {
+        "path": "/_next/static/chunks/35w_d3c72jl2g.js",
+        "status": 200,
+        "sha256": "ba261f26f928c4dea901f35ca269e42c8404f542f6478ebe4f1b06630495dd4d",
+        "bytes": 42927
+      },
+      {
+        "path": "/_next/static/chunks/3e6m66i5kvubt.js",
+        "status": 200,
+        "sha256": "c7b4c04d3b1bd2ac97485222acaa23c2f42a4eced9e0d5715aedea27bef5d0e8",
+        "bytes": 26036
+      },
+      {
+        "path": "/_next/static/chunks/3g-3y99z5u-ss.js",
+        "status": 200,
+        "sha256": "00806a54aa2fd03a15e7ef13817ec5895a74de22630c5274d8871e1e58797937",
+        "bytes": 16080
+      },
+      {
+        "path": "/_next/static/chunks/3iosqcevbrubf.js",
+        "status": 200,
+        "sha256": "6064a405720b561e51863ba73ce55bda4f243a3acfe1e22ff1f766c92dfeba66",
+        "bytes": 176382
+      },
+      {
+        "path": "/_next/static/chunks/3iy_s-c7ipti5.js",
+        "status": 200,
+        "sha256": "db869880e0745c0d604b651aa155661a773aff75b5b0da8f4eab622ddef8d12d",
+        "bytes": 49248
+      },
+      {
+        "path": "/_next/static/chunks/3uels_7xmub5b.css",
+        "status": 200,
+        "sha256": "c2ebd56992872e766d6fed3dbae7cfd0a3666a4405a897a0100c5104d4403537",
+        "bytes": 55056
+      },
+      {
+        "path": "/_next/static/chunks/3ut0bfq7bp-jr.js",
+        "status": 200,
+        "sha256": "4ad1dfc8b6a12b6362b8c04c4b6d7ee6b034bc32c1bf0d571dac675860ce1edb",
+        "bytes": 43492
+      },
+      {
+        "path": "/_next/static/chunks/3wstj6fjb254x.css",
+        "status": 200,
+        "sha256": "34cbe36657063ddc127be2bbc63acff26a1b84fa1c3dff77d4c4fdcb282d39d7",
+        "bytes": 9468
+      },
+      {
+        "path": "/_next/static/chunks/4395dwb7ctptd.js",
+        "status": 200,
+        "sha256": "a100880c339c618862d69075afbde66ff13a76d759adfcb9d6f94a3b7eac7b49",
+        "bytes": 47915
+      },
+      {
+        "path": "/_next/static/chunks/43h9uiw_x82a7.js",
+        "status": 200,
+        "sha256": "78ef38b53af2db27dba78fc8a130bd18d985be751f89a8e0925c206127b3ca89",
+        "bytes": 27702
+      },
+      {
+        "path": "/login",
+        "status": 200,
+        "exact_early_theme_script": true
+      },
+      {
+        "path": "/monitoring",
+        "status": 200,
+        "exact_early_theme_script": true
+      },
+      {
+        "path": "/icon.svg",
+        "status": 200,
+        "sha256": "f1c6c26601142f54faf7b711574ccf924c3b1f9069fe698770134ae9ea726cd5"
+      }
+    ],
+    "scope": "Read-only immutable web-image inspection, all CSS and selected navigation/theme JS hashes, exact head bootstrap/favicon and anonymous entry HTTP. No browser, visual QA or private records."
+  },
+  "runtime": {
+    "verified_at": "2026-09-28T05:40:53.700414+00:00",
+    "vector_schema": true,
+    "vector_empty_scope_query": "passed",
+    "embedding_probe": {
+      "model": "intfloat/multilingual-e5-small@614241f622f53c4eeff9890bdc4f31cfecc418b3",
+      "dimensions": 384,
+      "input_tokens": 14,
+      "truncated": false,
+      "local_only": true
+    },
+    "personal_follow_schema": true,
+    "research_update_queries": "passed",
+    "evidence_empty_scope_query": "passed",
+    "evidence_limits": [
+      12,
+      2400,
+      32
+    ],
+    "web_scope": true,
+    "page_schema": true,
+    "monitoring_scope": true,
+    "monitoring_schedule": true,
+    "evolution_schema": true,
+    "public_scope": true,
+    "hashes": {
+      "evidence_embeddings": "895284679c4ef95bd0d5856e5c64bf7bb168badf427ff5ab55b16081ccd79872",
+      "product_corpus_search": "75219e32d847ece0bc8bb4f54e9a6978e42dd3c0304c44c625baa0d7c5cf6871",
+      "product_retrieval_models": "0227d5f1a6f0f05bfaf0a005681ac49ae856f0246809a7a786c45776d81434f8",
+      "config": "ce677845889bae0869b2c5e81d1ac260092f20e93fced355a36a962dc403e0a9",
+      "product_following": "4b19fda9915c07f4976175f1af4d79515d1f994ac2c77fa2ef22bc7a29e1d79d",
+      "product_private_following": "56657816e7336750ac064408939da0111b5ee9475aa8e9c155d9627b2c2f908f",
+      "product_research_updates": "894b6b791d04efb400083bb2641448529e48d8416c1d7d58ea451aa5f1a384fc",
+      "product_evidence_search": "157b0a4427f5bc51550e74384c75cab1ebf1dbeb5a8b40b72c31ca5b0e978bbe",
+      "product_web_research": "1daf2b48fa54f60d1bedaf653c8aa174c3e983a115ac672515ef2887a9186a4e",
+      "product_web_research_api": "8c78c9114fe1f80a2bf1675cbe5f01b9bf6e022c72b614c69bee4b9eeeb32194",
+      "product_page_research": "dc1c90304d321e86bd9e616763391487a8a31be421ee9a903f36cdf3d31de5d7",
+      "product_monitoring_research": "901e696ba61a1994dbf811ae92620d0fc36832b23df53e2827445acf3070941f",
+      "product_monitoring_research_api": "b7dac83d8cfb6a4cce3637de283d5056a4eb25327457f9e039675d74031ef0a6",
+      "celery_app": "557f10ccca59fd754bb6a9d01eace279d987935a4d11f764b6ccada27d6dae7f",
+      "monitoring_queues": "e49eadef35c59c4dd5d68289b837a097df03cf0f42f2fc5c2246871147a1f081",
+      "product_claim_evolution": "3e5f2777950efa9e9d296b94af2fbc79841397874b17c63738eeb709c1138c92",
+      "product_claim_evolution_api": "da5a9ca5670312aeec78cb781423d27f0df9b462aee5846cb4200a3ac2b8f335",
+      "maintenance": "80c9a15de2cc35d074a29b7b5dec0cc83f7805783409501a9e677b19e974452c",
+      "account_deletion": "434b07b9a8a0f8b8911a6292231a25b2d95c315ce0190d67d62c7ab6b52721b1",
+      "product_publications": "ea9c13b1edf210f5f1d217737dc6e548abfbabd1070a3bfe1518fbfe4dc2b793",
+      "product_community": "3a57acd427094047bc1224220e2102b30bcc6dd412e349c9e974abbd2819b094",
+      "product_public_research": "0318443be71cfe505cfb7fa123b6785470eb69ca8a49eefcf7b742ee63ad34f6",
+      "product_public_research_api": "4e12f6e128479f8d3a33aed5c6ef4eaa91269f7071a37d9178ab1d0e0d5f2e6f",
+      "product_public_search": "37257ea4f7d570a0851f203e244191a56ddfc75c9b60609041f8c97f3f45ff5a",
+      "product_investigation_models": "7531d79b09c4f7ac1bd5cf082a8ded617daf131ad93853e1046b78dc4f989108",
+      "product_investigations": "00f9540093fc023e99e8bba6466ad1ee2641967625a995e874f7291c0a7eebde",
+      "product_investigation_api": "e80487870705aa5d99db2743e6a771525388d2566edb64eebe67590c44cd8be2",
+      "product_investigation_worker": "22184bcf3ab983a29ea7944f34738190783f3f9d017aa92a90c95412a58140ed",
+      "product_search_budget": "84626c6f39a4c6634250b7ba272635e758e90f9dfaf67fccdd0d6a9c38741e63",
+      "product_decision_search": "cdbb96dcfb5b8a656ff681d8a93ee23f40ec348a8b17b86d79181772d8743f26",
+      "product_guest_access": "ab0be689523fefeea87e1229eaa60ff0747f39fdf94021667b6236f8b211dc0a",
+      "product_guest_api": "aea9c1d7ff688a0c2a1b6a3dc78a1b113b29f302f747e4c3dd74f2b94da0c686",
+      "product_document_history": "c6b2ec6b4d3dc2942e160cbf75f875fdd39fe175ae300c2aa8662c4f3501d66b",
+      "product_topic_access": "c4a356b2b74ab299f33c551a743545ac43ed4e5d46cad7647bc8591c4a84da2a",
+      "db": "58b51a2e718daa7ba2aa63a8e08276bf90e30c32ef02f9a7e557bcc773b8fd65",
+      "interest_feed": "7b0c70757c43ee5f54c39930e475f5c9f7524b899cee34430abacad2367b94de",
+      "interest_admission": "581be9a8a921e0b15fde9c1cfc5bb2b69e6a4eeba40386c370098d2d285fee19",
+      "digests": "02b01bd4ec9ba0671584ec624cf9aac2c3db8b102f14df901aa2d2b89dc433a0",
+      "product_api": "2775056260cad294b18d099d7919843e3ca550fa3a077edb397c5aa233f4022c",
+      "service": "dec5be9eb73787a54bc2d41972ff9a16102e67a77b361a48318d34b1a8482b2c",
+      "jobs": "2ced6e61e9ec67e7f34101a9595542becc2cbb380ced5daaec8d21a98c807548",
+      "main": "e20544d9f0cb98d6121b4240dca39605b0b74a8d4c3b748ef3e52bee8459f478",
+      "models": "21ec98c4208c2510538b8ee8d080929f696e4c70a296ade55f42f7f0682de500",
+      "product_contributions": "f83f5a3eb4727f3e157043c9fe36d116cf51c49090cdf78a7507820ea5642519",
+      "product_contribution_extract": "557046acb8b7f9b381dddbbfed035358ba5d9fb8e362a479aad804a96f55d3c1",
+      "product_models": "cb10c7c95d6651375f7c73700cbf34edeb8b3b6a3547d383842a3db6dc6500a0",
+      "product_access": "b6ff62b3561cebf178aec038082ef3e08ef035c9771a88c2c2c58f6ba759ec07",
+      "product_team_api": "27f21735f0868e4631ae82ea9c48592f394e88fb25f089454ff6b2fc8f40328b",
+      "product_provenance": "1ba0d461fedf30ca785171b401f00918667205ad8889cb61893cdadcdea09028",
+      "product_operations": "961c509bc4946b044cb4bb57b7c56d950e4af0e850873adeb791203c24979582",
+      "product_research": "2053cbcf20e3a3e34f47765eecb7f8f434296b5467e132da212431678ad68252",
+      "legal_profiles": "eb2ddd34c79b4de6a99eca4a754ba19a3639f488107874e2fa11b535c396e131",
+      "monitoring_topics": "ff76609729a42185992f166d6b737cbc998cab3b037a3833c0d87242f3009555",
+      "topic_reviews": "2f84db726b9514e6bf9e8c3833e4f0a690f40c1cc36bb86647d22ede6aecd8f4",
+      "auth": "c4665f7bfb7b017562551f3d8da6b1356ba1f47250f476be1d379148a67a5f98",
+      "account_deletion_plan": "5164bdc637f14136498958872f56c7c33c6ed29c5891fa8d035dc6c81237179e",
+      "account_erasure_store": "6ba5b3578bd70e0d57b5859ebb0234ce149d3c620427e4e56805a0c4a598a3de"
+    },
+    "migration": "06d495bef125",
+    "guest_scope": true,
+    "private_scope": true,
+    "team_scope": true,
+    "contribution_scope": true,
+    "research_tables_present": true,
+    "native_workers": [
+      {
+        "container": "helvetic-lens-worker-cpu-1",
+        "running": true,
+        "health": "healthy"
+      },
+      {
+        "container": "helvetic-lens-scheduler-1",
+        "running": true,
+        "health": "not_configured"
+      },
+      {
+        "container": "helvetic-lens-worker-ai-1",
+        "running": true,
+        "health": "not_configured"
+      },
+      {
+        "container": "helvetic-lens-api-1",
+        "running": true,
+        "health": "healthy"
+      }
+    ],
+    "scheduler_module_hashes": {
+      "celery_app": "557f10ccca59fd754bb6a9d01eace279d987935a4d11f764b6ccada27d6dae7f",
+      "monitoring_queues": "e49eadef35c59c4dd5d68289b837a097df03cf0f42f2fc5c2246871147a1f081",
+      "product_monitoring_research": "901e696ba61a1994dbf811ae92620d0fc36832b23df53e2827445acf3070941f",
+      "product_page_research": "dc1c90304d321e86bd9e616763391487a8a31be421ee9a903f36cdf3d31de5d7",
+      "product_web_research": "1daf2b48fa54f60d1bedaf653c8aa174c3e983a115ac672515ef2887a9186a4e"
+    },
+    "local_laya": "healthy",
+    "local_retrieval": {
+      "source_hashes": {
+        "server.py": "43c588a4cbebea363ee9490d3fcf605f06fb5f284d58c5c20682cdb0096a853f",
+        "THIRD_PARTY_NOTICES.md": "3409394bd7d424c2eb9805dce3af41e27b791a1047d1ee53a6964000c2f5eb59"
+      },
+      "weight_sha256": "1a55775f53449dac10a2bcbc312469fac40b96d53198c407081a831f81c98477",
+      "health": {
+        "status": "ok",
+        "model": "intfloat/multilingual-e5-small@614241f622f53c4eeff9890bdc4f31cfecc418b3",
+        "dimensions": 384,
+        "max_tokens": 512,
+        "max_batch": 16
+      },
+      "unauthenticated_status": 401,
+      "image_digest": "sha256:afb31c1fb6a2f9d6155f28164918599622727fc4c7638ee18116f32c8ba05619",
+      "readonly": true,
+      "cpu_limit": 2,
+      "memory_bytes": 3221225472,
+      "published_ports": false,
+      "network": "helvetic-lens_model-control"
+    },
+    "worker_local_parser_fixture": "passed",
+    "scope": "Read-only source hashes, schema, container health and synthetic stdin-only worker parser fixture. Authenticated embedding probe uses only public synthetic input. No production user records or paid research requests."
+  },
+  "limits": {
+    "api_schema_models": "unchanged",
+    "native_global_ask_search": "incomplete",
+    "browser_interaction_qa": false,
+    "human_visual_or_language_acceptance": false,
+    "professional_research_accuracy_acceptance": false,
+    "private_production_records_read_or_created": false,
+    "paid_provider_requests": false,
+    "messages_or_email": false,
+    "full_dynamic_and_visual_specifications": "IN PROGRESS",
+    "MV2_002_and_MV2_024": "IN PROGRESS"
+  }
+}

@@ -169,5 +169,10 @@ comparisons, graph, dialogs, navigation and login. Both clients share the same
 first-paint and persistent-preference contract, retaining an in-memory choice
 when saving is unavailable. Theme changes preserve current research and drafts.
 Native universal Ask/Search, full visual hierarchy/interaction review and human
-acceptance remain open. Local frontend/type/lint, all three final production builds and authored contrast
-checks pass. Exact production acceptance is pending in the linked record.
+acceptance remain open. Local frontend/type/lint, all three final production
+builds and 84 authored contrast pairs pass. Scoped production acceptance is DONE:
+both Sites 26 pass 125 origin checks and 47 exact assets each; corrected native
+git-8ea723c934b8 serves 40 matching reading/navigation assets and passes 43 HTTP
+checks. The final control-boundary correction uses the stronger tested input
+token. Exact source, publication evidence and remaining gates are in the linked
+reading-theme record. The full visual specification remains IN PROGRESS.

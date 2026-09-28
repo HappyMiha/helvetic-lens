@@ -74,7 +74,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 
 **Native reading themes and shared preference resilience — 28 September 2026:
-IN PROGRESS (scoped visual continuation / release 1.23).** Scope: MV2-002/024.
+DONE (scoped production contribution / release 1.23).** Scope: MV2-002/024.
 Deliver dark/light/system reading themes across the existing native page
 surfaces, forms, tables, source/evidence readers, dialogs, login and all nine
 Monitoring directions. Reuse the existing Brandbook shell and both product
@@ -104,7 +104,11 @@ final backlog smoke and protected-value scans; immediately push tested main,
 exact native and existing Sites publication, origin/auth/compiled-asset checks.
 No browser/human visual or language acceptance is implied by this background
 cycle. Both parent tasks and full specifications remain IN PROGRESS. Detailed
-implementation and acceptance will be recorded in docs/PRODUCT_READING_THEMES.md.
+implementation and exact production acceptance are recorded in
+[Reading themes](docs/PRODUCT_READING_THEMES.md): native 367 cases, 129 client
+tests each, all builds, 84 authored contrast pairs, corrected native production
+git-8ea723c934b8 with 40 assets/43 HTTP checks, and both Sites 26 with 125 origin
+checks/47 assets each. The final backlog smoke and protected-value scans pass.
 
 **Shared product navigation and native identity — 28 September 2026: DONE
 (scoped visual continuation / release 1.22).** Scope: MV2-002/024. Give anonymous
@@ -1779,7 +1783,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — shared navigation DONE; reading themes active | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — shared navigation and reading themes DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1801,7 +1805,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence/configuration; scoped whole-dossier retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — native identity DONE; reading themes active | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — native identity and reading themes DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -1950,9 +1954,10 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-002 — Validate first-value journeys and shared navigation
 
-**Active scoped continuation, 28 September:** native reading themes and resilient
-shared preferences, with scope/dependencies/readiness/acceptance recorded in the
-Product decision above. Existing navigation acceptance remains DONE.
+**Completed scoped continuation, 28 September:** native reading themes and
+resilient shared preferences are DONE under the recorded scope and exact
+production acceptance in [Reading themes](docs/PRODUCT_READING_THEMES.md).
+Existing navigation remains DONE; the broader journey/human gates stay open.
 
 
 **Completed scoped product contribution, 28 September:** shared product
@@ -2859,9 +2864,10 @@ contract. Broader draft/generative/human acceptance remains open.
 
 ### MV2-024 — Clear guidance, accessibility and five languages
 
-**Active scoped continuation, 28 September:** native reading themes and resilient
-shared preferences, with scope/dependencies/readiness/acceptance recorded in the
-Product decision above. Existing navigation acceptance remains DONE.
+**Completed scoped continuation, 28 September:** native reading themes and
+resilient shared preferences are DONE under the recorded scope and exact
+production acceptance in [Reading themes](docs/PRODUCT_READING_THEMES.md).
+Existing navigation remains DONE; browser/human/language gates stay open.
 
 
 **Completed scoped product contribution, 28 September:** shared product
