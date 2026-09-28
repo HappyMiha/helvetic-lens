@@ -1,6 +1,7 @@
 # Conservative research rejection — 1.37
 
-Status: implementation/evaluation complete; VERIFYING normal production publication.
+Status: DONE within uncertainty repair, bounded evaluation and verified publication.
+The experimental rejection guard failed selection and is not enabled.
 Scope and criteria were recorded before implementation.
 Parents MV2-002/020/023/051 and full architecture/professional acceptance remain OPEN.
 
@@ -142,4 +143,14 @@ before selection. No private production workflow or paid call was used.
 A report can inspect the historical frozen runtime contract without new inference;
 collect/resume still requires exact current code/prompt hashes. The original 1.35
 runner retains its default 120-call budget and existing receipts unchanged.
-Normal Core activation and unchanged-client/source checks remain the release gate.
+Core `09ab8bcfff5f4e6940bd22c6802f327696ac2b16` was pushed to main and
+activated normally as `git-09ab8bcfff5f` at 2026-09-28T17:51:47Z. Native health,
+25 module hashes, five running containers, nine navigation directions and schema
+09d495bef125 passed. Both canonical clients passed fresh home/guide/anonymous
+research GET checks; their exact 1.36 source and asset receipts remain unchanged.
+All three main checkouts were freshly fetched, clean and aligned with origin.
+No validation inference, paid call, private production dossier or client
+republication was used. The [release receipt](product-releases/2026-09-28-1.37-research-gate-policy.json)
+freezes this observation; the parent checkpoint tracks later documentation-only
+activation separately. Full architecture and professional/human acceptance remain
+OPEN; the failed policy selection must not be represented as an accuracy gain.
