@@ -1,6 +1,7 @@
 # Shared product navigation and native identity
 
-Status: IN PROGRESS — scoped visual continuation / release 1.22. Scope,
+Status: DONE — scoped visual continuation / release 1.22, with local and exact
+production acceptance. Scope,
 dependencies, readiness and acceptance were recorded before implementation in
 BACKLOG_MONITORING_V2.md under MV2-002/024. Both parent tasks and the full dynamic
 and visual specifications remain IN PROGRESS.
@@ -53,8 +54,8 @@ Local checks pass: 359 native frontend cases across the existing shell, resource
 report, help and graph gates plus the new rendering contracts; localization and
 strict native types; 121 tests, lint and strict types in each product. Native and
 both portable production builds complete. The exact API code and database schema
-are unchanged. The Monitoring backlog smoke gate passes. Source/asset integrity,
-secret scanning and exact production acceptance are recorded after publication.
+are unchanged. The Monitoring backlog smoke gate passes. Source/asset integrity, protected provider-value scanning and exact production
+acceptance pass within the boundary below.
 
 Eleven authored navigation palette pairs meet the 4.5:1 normal-text threshold;
 minimum 5.06:1. The glass calculation uses 94% Obsidian over the light canvas.
@@ -68,3 +69,29 @@ completed scoped investigation, contribution, team/guest, living-public,
 evolution, monitoring and retrieval releases. This navigation work changes none
 of their authority or research contracts and does not replace the remaining
 combined acceptance or independent professional-quality work.
+
+## Exact production acceptance — 28 September 2026
+
+Native functional `747df306ea17e284a8c389dbe7957e3d5fa52240` activated at
+04:12:40 UTC. The immutable web image is healthy; all 37 selected compiled
+navigation/identity/style assets match the actual bytes served over HTTPS.
+Forty native HTTP checks include those assets, public login/Monitoring entries
+and a favicon identical to the reviewed H source. Compiled navigation retains
+all nine direction routes, five locale contracts and fixed destination links.
+Read-only native verification also matches 57 existing backend modules, migration
+06d495bef125, the retained source/access schemas, four API/worker/scheduler
+runtimes, five scheduler modules and both healthy local model services.
+
+Both existing public Sites published version 25 from exact validated commits and
+archives: Pharma `04d3e746417d516405c127470c81154b769470e5`, Loyer
+`c2a0041d8b405693efb971654b2e7e67866e886b`. Each custom origin passed 121 HTTP,
+auth, gateway, guide and navigation checks plus 47 exact JS/CSS asset hashes.
+Actual guide markup identifies the current product, links only to the two other
+fixed public origins and preserves new-tab/opener/referrer attributes. Exact
+client GitHub CI runs 36376371457 and 36376372701 passed.
+
+The three actual protected provider values are absent from 5,363 native source/
+runtime-build files and 334 source/build files per client. No model/API changes,
+private records, browser interaction or human visual/language acceptance are
+implied. Broader native page migration and full product specifications remain
+IN PROGRESS. [Sanitized release receipt](product-releases/2026-09-28-1.22.0.json).

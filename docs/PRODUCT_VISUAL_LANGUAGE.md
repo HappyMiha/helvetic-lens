@@ -155,4 +155,7 @@ Both product command surfaces and sidebars retain their Brandbook themes. The
 native H identity, neutral reading frame and structural glass sidebar are the
 first bounded native visual migration; all nine directions remain directly
 navigable. Existing native evidence pages and the full dark/light migration
-remain open. Local checks pass; exact production acceptance is pending here.
+remain open. Local and exact production acceptance pass: Sites 25 on both
+products, 121 origin checks and 47 exact assets each; the native immutable web
+image serves 37 matching navigation/frame assets and the new H favicon. See the
+linked scoped acceptance and release receipt.
