@@ -189,3 +189,13 @@ existing accessible dialogs are reused. Scoped exact production acceptance is DO
 and 47 exact assets each; corrected native release serves 46 matching assets
 and passes 49 HTTP checks. Browser/human and full-specification gates remain
 open, as detailed in the linked command acceptance record.
+
+
+## Source reading and inspectable provenance — 1.25
+
+The [source-reading migration](PRODUCT_SOURCE_READING.md) applies Brandbook type,
+reading measure and progressive provenance to native saved/corpus evidence and
+both product source readers. Retained counts, capture/document dates and unknown
+source classification stay distinct. Exact references and authority are retained.
+Scoped local and production verification is pending; full visual acceptance stays
+IN PROGRESS.

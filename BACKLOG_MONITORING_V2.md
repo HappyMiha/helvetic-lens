@@ -73,6 +73,44 @@ two independent builds/repositories and verified production URLs. Evidence:
 ## Product decision
 
 
+**Source reading and inspectable provenance — 28 September 2026:
+IN PROGRESS (scoped visual continuation / release 1.25).** Scope: MV2-002/020/024.
+Give the native saved/corpus evidence reader a clear source-first hierarchy,
+readable retained-text measure, distinct source and capture dates, actual saved
+record counts and inspectable capture identity. In both product clients, make
+captured excerpts, source usage and preservation boundaries legible in the same
+source card/reader journey. Keep unknown classification/publication dates honest.
+
+Dependencies: existing native EvidenceView/evidencePage and product SourceCard/
+SourceMetadata/SourcePreview, installed UI primitives, shared Brandbook themes
+and completed global Ask. Source readiness: authorized retained versions and
+investigation snapshots already returned by existing APIs; current access and
+source withdrawal remain backend decisions. Inspection found that the bounded
+native evidence-page projection omits the already stored content hash. Return
+that scalar under the same existing authorization query, without hydrating full
+versions or making another request. No acquisition, provider, account, secret,
+schema, publication, model or notification change is required. The existing
+product HTTPS-only source-link policy remains in place; native legacy HTTP(S)
+references retain their existing scheme policy while rejecting user-info URLs.
+
+Acceptance: source origin is a safe HTTP(S) reference without embedded credentials;
+saved capture time and stated/publication date stay separate; true zero counts
+remain distinct from unknown; only real SHA-256 identities are labelled as such;
+retained excerpts are not represented as a complete original. Preserve exact
+passage targets, PDF page/source anchors, original downloads, previous/next pages,
+source language, synthetic/import notices, permission/error states and current
+registry return position. Show context and provenance without a new widget grid
+or simulated Lens. Reuse semantic themes, accessible disclosure and responsive
+reading layout, with complete five-locale native copy. Run helper/real SSR cases,
+existing frontend/localization/types/format and both client lint/tests/types,
+final native/Sites builds, exact API Ruff gate and affected bounded-reader/auth/
+document-history cases, backlog smoke, protected-value scans, immediate main
+pushes and exact production readiness/origin/asset/runtime verification. Browser,
+human language/visual and professional/full-spec gates remain separate.
+Evidence: docs/PRODUCT_SOURCE_READING.md.
+
+
+
 **Global Ask/Search and retained command drafts — 28 September 2026:
 DONE (scoped production contribution / release 1.24).** Scope: MV2-002/023/024.
 Deliver a persistent native global entry, including login/history routes, with
@@ -1819,7 +1857,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — scoped global Ask/navigation/themes DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — source reading active; scoped global Ask/themes DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1837,11 +1875,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — source reading active; broader evidence workflow open | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — scoped global Ask/identity/themes DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — source reading active; scoped global Ask/identity DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -1989,6 +2027,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+**Active scoped continuation, 28 September:** source reading and inspectable
+provenance, with scope/dependencies/readiness/acceptance recorded in the Product
+decision above. Completed global Ask, reading themes and product research stages
+remain DONE within their scopes; this does not close the broader task.
 
 **Completed scoped continuation, 28 September:** global Ask/Search and retained
 command drafts are DONE under the recorded Product decision and exact
@@ -2698,7 +2741,12 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Status:** PLANNED · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
+**Active scoped continuation, 28 September:** source reading and inspectable
+provenance, with scope/dependencies/readiness/acceptance recorded in the Product
+decision above. Completed global Ask, reading themes and product research stages
+remain DONE within their scopes; this does not close the broader task.
+
+**Status:** IN PROGRESS · **Priority:** P1 · **Owner:** Frontend + Backend · **Size:** L
 
 **Dependencies:** [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014). **Requirements:** §§21,30.
 
@@ -2909,6 +2957,11 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+**Active scoped continuation, 28 September:** source reading and inspectable
+provenance, with scope/dependencies/readiness/acceptance recorded in the Product
+decision above. Completed global Ask, reading themes and product research stages
+remain DONE within their scopes; this does not close the broader task.
 
 **Completed scoped continuation, 28 September:** global Ask/Search and retained
 command drafts are DONE under the recorded Product decision and exact

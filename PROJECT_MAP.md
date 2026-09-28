@@ -177,3 +177,8 @@ saved readers, author-published product knowledge and conflict-safe preparation
 in existing Marvin context. Both product commands retain dismissed questions and
 share safe keyboard ownership. Context transitions reset only the command; full
 visual/product acceptance remains separate.
+
+[Source reading and inspectable provenance](docs/PRODUCT_SOURCE_READING.md) aligns
+native saved/corpus evidence and both product readers with Brandbook hierarchy.
+Exact release verification remains pending; broader source-editor and visual
+acceptance stays open.

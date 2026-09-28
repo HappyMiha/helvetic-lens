@@ -40,6 +40,7 @@ def test_large_evidence_exact_target_and_sql_pages_without_full_orm_load(harness
     client, service, model, version_id, _, url = seed(harness, native)
     with service.db.session() as session:
         version = session.get(model, version_id)
+        saved_hash = version.content_hash
         version.passages = [
             {"id": f"p{i}", "text": f"Saved legal passage {i} " + "x" * 200, "page": i // 20 + 1}
             for i in range(10001)
@@ -57,11 +58,13 @@ def test_large_evidence_exact_target_and_sql_pages_without_full_orm_load(harness
         response = client.get(url, params={"passage": "p9999"})
         assert response.status_code == 200, response.text
         data = response.json()
+        assert data["content_hash"] == saved_hash
         assert data["pagination"]["offset"] == 9950 and data["pagination"]["total"] == 10001
         assert data["pagination"]["target_found"] and len(data["passages"]) == 50
         assert data["passages"][-1]["id"] == "p9999" and len(response.content) < 20000
         assert "text" not in data and data["plain_text"] is None
         tail = client.get(url, params={"offset": data["pagination"]["next_offset"]}).json()
+        assert tail["content_hash"] == saved_hash
         assert [p["id"] for p in tail["passages"]] == ["p10000"] and tail["pagination"]["next_offset"] is None
         missing = client.get(url, params={"passage": "not-saved"}).json()
         assert missing["pagination"]["target_found"] is False
@@ -119,4 +122,6 @@ def test_private_page_and_bad_parameters_fail_without_evidence(harness, native):
         else:
             session.get(Version, version_id).owner_organization_id = "other-page"
         session.commit()
-    assert client.get(url, params={"passage": "p0"}).status_code == 404
+    denied = client.get(url, params={"passage": "p0"})
+    assert denied.status_code == 404
+    assert "content_hash" not in denied.json()
