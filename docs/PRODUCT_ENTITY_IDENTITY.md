@@ -1,6 +1,6 @@
 # Reviewed entity mentions — 1.39
 
-Status: IMPLEMENTED / VERIFYING. Scope and acceptance recorded before product code.
+Status: DONE within the tested pair-review and verified release scope. Scope and acceptance recorded before product code.
 Contributes to MV2-002/020/024; broader architecture and human acceptance OPEN.
 
 ## Existing contracts and dependencies
@@ -93,10 +93,32 @@ access failure, paired quotes, stale labels and isolated proxy paths. Both clien
 passed 203 tests, lint, types and the exact production build. Existing duplicate
 search regression remains covered. All 61 distinct affected Core checks and the exact API lint passed: 25 new
 identity cases, 34 retained comparison cases, one existing dossier/export journey
-and the backlog invariant. Release activation is VERIFYING. Full canonical registry, professional and human
+and the backlog invariant. Initial Core and both client activations are verified below. Full canonical registry, professional and human
 acceptance remain OPEN.
 
 The active backlog reached its existing 512 KiB parsing bound. Completed 1.37
 protocol commentary was archived verbatim in `BACKLOG_MONITORING_V2_RELEASE_HISTORY.md`;
 task definitions, statuses and deferred work remain in the authoritative queue.
 The byte-limit safeguard was not raised. Its invariant passed after the move.
+
+## Verified publication
+
+Core `5b03c488e5bf17fafa098c0f44063abfe111672c` activated normally as
+`git-5b03c488e5bf` at 2026-09-28T21:05:51Z. Migration `0ad495bef125`, 32 exact
+runtime module hashes, five running containers and all nine native Monitoring
+navigation routes were verified. The contained review table, nullable reviewer
+and source/revision constraints are active. The two products each passed 38
+anonymous HTTP/access checks and 47 exact static asset SHA-256 comparisons.
+
+- Legal source `406e2230e4fe7592227e5b9bbfeaaf53d201ec5b`, existing Sites version 39,
+  activated at 2026-09-28T21:07:17.311248Z.
+- Pharma source `ee9692fb8822180b0c645965b50260551580ff8f`, existing Sites version 39,
+  activated at 2026-09-28T21:07:50.459478Z.
+
+See [the frozen public release receipt](product-releases/2026-09-28-1.39-entity-identity.json).
+All three main checkouts were freshly fetched, clean and aligned at verification.
+The final evidence-only Core commit follows the same normal native deployment;
+its activation is recorded in the parent workspace checkpoint/final receipt.
+Native backups still pause API/tunnel; zero downtime is not claimed. No private
+production dossier, browser or inference was used. 1.37 selection remains null
+and its validation dataset remains unopened.
