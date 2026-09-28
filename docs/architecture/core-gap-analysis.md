@@ -14,7 +14,8 @@ These statuses are not new live-source or professional-acceptance results.
 Implementation update, 28 September 2026: [domain-aware setup 1.29](../PRODUCT_DOMAIN_SETUP.md),
 [readable dossier 1.30](../PRODUCT_DOSSIER_CLARITY.md) and
 [structured subject context 1.31](../PRODUCT_STRUCTURED_CONTEXT.md) and
-[versioned templates 1.32](../PRODUCT_DOSSIER_TEMPLATES.md) extend the
+[versioned templates 1.32](../PRODUCT_DOSSIER_TEMPLATES.md) and
+[readable coverage 1.33](../PRODUCT_DOSSIER_COVERAGE.md) extend the
 Phase 0 baseline. Rows below identify those bounded additions; the frozen audit
 receipt remains historical. Full target and human acceptance remain open.
 
@@ -47,8 +48,8 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C20 | Incremental monitoring (§19) | PARTIAL | Native scheduler, connector cursors, page watches and product policy/trigger workers exist; unify scan-to-Finding lifecycle and complete manifest |
 | C21 | Deterministic change detection (§20) | EXISTS | `diffing.py`, retained content hashes and native version comparisons; no inference needed for identity/hash/basic diff |
 | C22 | All target change types/materiality (§20,57) | PARTIAL | Native change/event and evidence-comparison types exist; domain explainable materiality and unified typed findings need work |
-| C23 | Coverage Manifest (§21) | PARTIAL | `topic_coverage.snapshot`, watched-page states and retrieval lanes; no durable complete configured-source manifest for one dossier scan |
-| C24 | Source Health (§22) | PARTIAL | Connector health, last success/error, page schedules and search failures exist. Normalize all target states without dropping unsupported sources |
+| C23 | Coverage Manifest (§21) | PARTIAL | 1.33 `product_coverage` composes current topic revisions, selected pack state, watched pages and recurring-search metadata in both dossier readers. This is saved operational state; durable historical per-scan manifests remain open |
+| C24 | Source Health (§22) | PARTIAL | 1.33 exposes last attempt/success separately and retains missing/inactive selected packs and unsupported stream IDs. Page, feed and search states remain separate. Full normalized rate-limit/auth/source-version states remain open |
 | C25 | Audit / Provenance (§23) | PARTIAL | DossierEntry audits, immutable publication revisions, InvestigationEvent and review histories; unify target-reference/version semantics |
 | C26 | Universal dossier Ask / Search (§24,59) | PARTIAL | Shared product Ask, saved local retrieval and external search exist. Accepted-claim priority and cross-source coverage integration are incomplete |
 | C27 | Structured dossier memory (§25) | PARTIAL | Claims/entities/evidence/history/preferences persist outside chat; durable cross-run aliases, accepted claims and generic dismissed Findings need work |

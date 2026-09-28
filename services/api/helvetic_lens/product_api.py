@@ -535,6 +535,9 @@ def product_router(service):
     from .product_web_research_api import routes as web_research_routes
 
     web_research_routes(router, service, actor)
+    from .product_coverage import routes as coverage_routes
+
+    coverage_routes(router, service, actor)
     from .product_evidence_search import routes as evidence_search_routes
 
     evidence_search_routes(router, service, actor)

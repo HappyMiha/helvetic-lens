@@ -30,7 +30,8 @@ def snapshot(session: Session, pack_ids: list[str], *, now: datetime, organizati
         raise ValueError("Topic coverage accepts at most twenty source packs.")
     definitions = list(session.execute(select(
         SourcePackDefinition.id, SourcePackDefinition.name_json, SourcePackDefinition.filters_json,
-    ).where(SourcePackDefinition.id.in_(pack_ids), SourcePackDefinition.active.is_(True))
+        SourcePackDefinition.active,
+    ).where(SourcePackDefinition.id.in_(pack_ids))
       .order_by(SourcePackDefinition.position, SourcePackDefinition.id)))
     subscriptions = {row.pack_id: row for row in session.execute(select(
         SourcePackSubscription.pack_id, SourcePackSubscription.enabled, SourcePackSubscription.state,
@@ -48,7 +49,7 @@ def snapshot(session: Session, pack_ids: list[str], *, now: datetime, organizati
         latest_status.label("last_run_status"),
     ).where(tuple_(schedule.connector, schedule.stream).in_(keys)))} if keys else {}
     states = { (row.connector, row.stream): row for row in session.execute(select(
-        state.connector, state.stream, state.health, state.last_success_at,
+        state.connector, state.stream, state.health, state.last_success_at, state.last_started_at,
     ).where(tuple_(state.connector, state.stream).in_(keys)))} if keys else {}
     items = []
     for definition in definitions:
@@ -63,6 +64,7 @@ def snapshot(session: Session, pack_ids: list[str], *, now: datetime, organizati
                 "connector": key[0], "stream": key[1], "publisher": capability.publisher,
                 "localized_copy": capability.localized_copy,
                 "catalogue_state": capability.catalogue_state,
+                "known_gaps": list(capability.known_gaps),
                 "configured": configured is not None,
                 "enabled": bool(configured and configured.enabled),
                 "interval_seconds": configured.interval_seconds if configured else None,
@@ -73,16 +75,26 @@ def snapshot(session: Session, pack_ids: list[str], *, now: datetime, organizati
                 "next_attempt_past_due": bool(configured and configured.enabled
                     and configured.next_run_at and _aware(configured.next_run_at) < _aware(now)),
                 "last_reported_health": recorded.health if recorded else "unknown",
+                "last_attempt_at": _iso(recorded.last_started_at) if recorded else None,
                 "last_success_at": _iso(recorded.last_success_at) if recorded else None,
                 "last_run_status": configured.last_run_status if configured else None,
             })
         items.append({
             "id": definition.id, "name": definition.name_json,
+            "definition_state": "active" if definition.active else "inactive",
             "subscription_enabled": bool(subscription and subscription.enabled),
             "subscription_state": subscription.state if subscription else "inactive",
             "unknown_stream_count": len(pack_keys[definition.id]) - len(streams),
+            "unsupported_streams": [{"connector": key[0], "stream": key[1]}
+                                    for key in sorted(pack_keys[definition.id]) if key not in SOURCE_CAPABILITY_INDEX],
             "streams": streams,
         })
+    present = {item["id"] for item in items}
+    for identifier in dict.fromkeys(pack_ids):
+        if identifier not in present:
+            items.append({"id": identifier, "name": {}, "definition_state": "missing",
+                          "subscription_enabled": False, "subscription_state": "unknown",
+                          "unknown_stream_count": 0, "unsupported_streams": [], "streams": []})
     return {"captured_at": _iso(now), "timezone": "Europe/Zurich", "items": items,
             "enabled_pack_count": sum(item["subscription_enabled"] for item in items),
             "scope": "selected_packs_saved_operational_state", "ai_calls": 0}
