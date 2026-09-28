@@ -72,7 +72,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Personal research updates — 28 September 2026: VERIFYING (scoped stage 4e / release 1.20).**
+**Personal research updates — 28 September 2026: DONE (scoped stage 4e / release 1.20).**
 MV2-021/022 scope, dependencies, source readiness and acceptance were recorded
 before implementation in [Personal dossier research updates](docs/PRODUCT_RESEARCH_NOTIFICATIONS.md).
 Deliver explicit private/public following, real completed-research updates with
@@ -81,8 +81,14 @@ personal read markers in both clients. No email, automatic subscriptions, source
 review or publication is implied. All full-spec and human/source-quality gates
 remain open. Local gates pass: 25 new native cases within 157 affected regressions;
 115 tests per client, lint/types and final portable builds; exact API Ruff,
-backlog smoke and read-only PostgreSQL projection checks. Production activation
-and exact client publication are pending.
+backlog smoke and read-only PostgreSQL projection checks. Native functional
+`51f4a2840dd3` activated at 02:14:30 UTC; both public Sites 23 deployments pass
+120 HTTP/auth/gateway/guide checks plus 47 exact assets each. Runtime matches
+53 native modules and migration `05d495bef125`, personal follow/cascade/read
+positions, permission-safe SQL, existing schema/scheduler/worker checks and Laya
+health. [Exact receipt](docs/product-releases/2026-09-28-1.20.0.json).
+Full specifications remain IN PROGRESS; independent retrieval quality and
+corpus-scale semantic search are next. MV2-063 remains conditionally deferred.
 
 **Private saved-evidence search — 28 September 2026: DONE (scoped stage 4d / release 1.19).**
 
@@ -1636,8 +1642,8 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stages 4c/4d DONE; personal research updates 4e VERIFYING | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
-| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates VERIFYING | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stages 4c/4d DONE; personal research updates 4e DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
@@ -2504,7 +2510,7 @@ above supersedes the River-only count limitation for readable Today queues.
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
 **Active product stage, 28 September:** personal research updates (4e) are
-VERIFYING under the scope, dependencies, source readiness and acceptance in
+DONE within the scope, dependencies, source readiness and acceptance in
 [Personal dossier research updates](docs/PRODUCT_RESEARCH_NOTIFICATIONS.md).
 Completed research and source comparisons share personal following/read markers;
 native Monitoring review state remains distinct and authoritative.
@@ -2575,11 +2581,12 @@ decisions, atomic conflict handling and no external actions. See
 
 ### MV2-022 — Notifications and Digests from the same developments
 
-**Active scoped feature, 28 September 2026:** Private/public personal research
+**Completed scoped feature, 28 September 2026:** Private/public personal research
 following in Pharma/Loyer, projected from actual completed investigations with
 exact evidence and current permissions, explicit personal read markers and
 bounded history. Scope/dependencies/readiness/acceptance were recorded before
 code in [Personal dossier research updates](docs/PRODUCT_RESEARCH_NOTIFICATIONS.md).
+Local and exact native/both-client production acceptance pass for this scope.
 This does not complete broader delivery/noise controls or independent acceptance.
 
 **Implemented whole-feature scope, 14 September 2026:** Manage native email preferences

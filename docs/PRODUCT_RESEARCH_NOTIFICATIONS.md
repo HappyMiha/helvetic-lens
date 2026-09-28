@@ -1,6 +1,6 @@
 # Personal dossier research updates
 
-Status: VERIFYING — scoped stage 4e, release 1.20 implementation and local gates pass; exact production acceptance is pending.
+Status: DONE within scoped stage 4e / release 1.20. Native and both-client production acceptance pass; the full specifications remain IN PROGRESS.
 
 ## Scope recorded before implementation
 
@@ -104,11 +104,31 @@ source comparison, guests, both-source withdrawal, migration and erasure. The fi
 28-case following regression passed; four additional permission cases are included
 in the final broader run. An earlier empty-history null-date failure was corrected
 before these passes. Both clients pass 115 tests, lint, strict types and final
-portable Sites builds. Exact API Ruff and the final backlog smoke are required
-before publication. PostgreSQL accepts both new completion projections on random
+portable Sites builds. Exact API Ruff and the final backlog smoke pass before publication. PostgreSQL accepts both new completion projections on random
 nonexistent scopes without reading user records. Three configured provider values
 are absent from 195 source and 137 built files per client and 1,782 native source
 files. No paid requests, user-record changes or browser/visual QA were performed.
 
-The scoped release still requires exact native activation and both existing Sites
-public deployments, served-asset/auth checks and a sanitized release receipt.
+## Exact production acceptance
+
+Native functional main `51f4a2840dd3290c9681d668a18ab66afb0ec4bb` activated as
+`git-51f4a2840dd3` at 02:14:30 UTC on 28 September. Both existing public Sites
+projects published exact version 23: Pharma `50d02534fdaa3584c47d3cef1267413b371050a0`
+at 02:15:41 UTC and Loyer `d17549d103a90723c181ab44fa7e1625f67e8e5f` at 02:16:07 UTC.
+Their GitHub CI runs succeeded (36368646568 and 36368647570).
+
+Each custom origin passes 120 HTTP/auth/gateway/guide checks and 47 exact served
+JS/CSS asset hashes. Read-only runtime verification matches 53 native modules,
+migration `05d495bef125`, personal ownership/cascade constraints, both read-position
+columns, private/public completion queries and the current-membership list query.
+Existing source/page/public/monitoring schema gates, five scheduler module hashes,
+the unchanged minute scheduler, four native runtime containers, worker parser
+fixture and healthy local Laya also pass. Queries use nonexistent random scopes;
+no private production records or paid requests are involved.
+
+[Sanitized exact release receipt](product-releases/2026-09-28-1.20.0.json).
+The full dynamic/visual specifications, independently measured relevance,
+corpus-scale semantic indexing and remaining native visual migration remain
+IN PROGRESS. Existing hourly work continues. This acceptance proves tested native
+behavior and exact deployed code/assets/auth boundaries, not an authenticated
+production walkthrough, browser screenshots or independent professional quality.

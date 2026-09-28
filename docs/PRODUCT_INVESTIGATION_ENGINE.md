@@ -241,7 +241,8 @@ Stage 4d private saved-evidence search is DONE within scoped release 1.19;
 [bounded local comparison and exact citations](PRODUCT_EVIDENCE_SEARCH.md) keep
 uncertain candidates visible and preserve the conditional MV2-063 index gate.
 
-Stage 4e personal research updates are IN PROGRESS for release 1.20. Existing
+Stage 4e personal research updates are DONE within scoped release 1.20, with
+local and exact native/both-client production acceptance. Existing
 completion/evidence records feed private/public following, current-permission
 history and personal read markers in both clients. See the pre-implementation
 [scope and acceptance contract](PRODUCT_RESEARCH_NOTIFICATIONS.md). This does not
