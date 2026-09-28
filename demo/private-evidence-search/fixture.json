@@ -1,0 +1,150 @@
+{
+  "validation_kind": "assistant_authored_synthetic_relevance_trial",
+  "independent_quality_review": "not_performed",
+  "fixture_scope": "Fictional archive storage and unrelated meeting records; no production user data.",
+  "unique_query_passage_combinations": 14,
+  "retrieval_decision": "Do not hard-filter by the uncalibrated binary choice. Retain every successfully compared candidate; distinguish a model-positive relevance judgment from an uncertain candidate.",
+  "limitations": "Only 14 unique query/passage combinations; English cases repeat in the two-direction trial. Twenty requests are not twenty independent examples. Classification misses seven relevant presentations. This is development evidence, not professional accuracy or a production promotion gate.",
+  "rows": [
+    {
+      "language": "en",
+      "direction": "query_to_english",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A"
+    },
+    {
+      "language": "en",
+      "direction": "query_to_english",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "de",
+      "direction": "query_to_english",
+      "query": "Wie muss die Archivprobe gelagert werden?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A"
+    },
+    {
+      "language": "de",
+      "direction": "query_to_english",
+      "query": "Wie muss die Archivprobe gelagert werden?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "fr",
+      "direction": "query_to_english",
+      "query": "Comment faut-il conserver l’échantillon d’archive ?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A"
+    },
+    {
+      "language": "fr",
+      "direction": "query_to_english",
+      "query": "Comment faut-il conserver l’échantillon d’archive ?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "it",
+      "direction": "query_to_english",
+      "query": "Come deve essere conservato il campione di archivio?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A"
+    },
+    {
+      "language": "it",
+      "direction": "query_to_english",
+      "query": "Come deve essere conservato il campione di archivio?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "uk",
+      "direction": "query_to_english",
+      "query": "За яких умов слід зберігати архівний зразок?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A"
+    },
+    {
+      "language": "uk",
+      "direction": "query_to_english",
+      "query": "За яких умов слід зберігати архівний зразок?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "en",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A"
+    },
+    {
+      "language": "en",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "de",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Die Archivprobe muss gekühlt zwischen zwei und acht Grad Celsius aufbewahrt werden. Sie darf nicht eingefroren werden.",
+      "expected": "A"
+    },
+    {
+      "language": "de",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "fr",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Conserver l’échantillon d’archive au réfrigérateur entre deux et huit degrés Celsius. Ne pas congeler.",
+      "expected": "A"
+    },
+    {
+      "language": "fr",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "it",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Conservare il campione di archivio in frigorifero tra due e otto gradi Celsius. Non congelare.",
+      "expected": "A"
+    },
+    {
+      "language": "it",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    },
+    {
+      "language": "uk",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Архівний зразок потрібно тримати в холодильнику за температури від двох до восьми градусів Цельсія. Не заморожувати.",
+      "expected": "A"
+    },
+    {
+      "language": "uk",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B"
+    }
+  ]
+}

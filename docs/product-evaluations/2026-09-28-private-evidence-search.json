@@ -1,0 +1,483 @@
+{
+  "validation_kind": "assistant_authored_synthetic_relevance_trial",
+  "independent_quality_review": "not_performed",
+  "fixture_scope": "Fictional archive storage and unrelated meeting records; no production user data.",
+  "unique_query_passage_combinations": 14,
+  "retrieval_decision": "Do not hard-filter by the uncalibrated binary choice. Retain every successfully compared candidate; distinguish a model-positive relevance judgment from an uncertain candidate.",
+  "limitations": "Only 14 unique query/passage combinations; English cases repeat in the two-direction trial. Twenty requests are not twenty independent examples. Classification misses seven relevant presentations. This is development evidence, not professional accuracy or a production promotion gate.",
+  "rows": [
+    {
+      "language": "en",
+      "direction": "query_to_english",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.4436,
+          "B": 0.5564
+        },
+        "confidence": 0.0092,
+        "selected_probability": 0.5564,
+        "latency_ms": 317.74,
+        "input_tokens": 127,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "en",
+      "direction": "query_to_english",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0118,
+          "B": 0.9882
+        },
+        "confidence": 0.9072,
+        "selected_probability": 0.9882,
+        "latency_ms": 288.43,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "de",
+      "direction": "query_to_english",
+      "query": "Wie muss die Archivprobe gelagert werden?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "A",
+        "probabilities": {
+          "A": 0.5805,
+          "B": 0.4195
+        },
+        "confidence": 0.0188,
+        "selected_probability": 0.5805,
+        "latency_ms": 286.52,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "de",
+      "direction": "query_to_english",
+      "query": "Wie muss die Archivprobe gelagert werden?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0033,
+          "B": 0.9967
+        },
+        "confidence": 0.9683,
+        "selected_probability": 0.9967,
+        "latency_ms": 287.35,
+        "input_tokens": 131,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "fr",
+      "direction": "query_to_english",
+      "query": "Comment faut-il conserver l’échantillon d’archive ?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.4098,
+          "B": 0.5902
+        },
+        "confidence": 0.0236,
+        "selected_probability": 0.5902,
+        "latency_ms": 296.51,
+        "input_tokens": 133,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "fr",
+      "direction": "query_to_english",
+      "query": "Comment faut-il conserver l’échantillon d’archive ?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0183,
+          "B": 0.9817
+        },
+        "confidence": 0.8682,
+        "selected_probability": 0.9817,
+        "latency_ms": 307.05,
+        "input_tokens": 135,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "it",
+      "direction": "query_to_english",
+      "query": "Come deve essere conservato il campione di archivio?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "A",
+        "probabilities": {
+          "A": 0.7259,
+          "B": 0.2741
+        },
+        "confidence": 0.1528,
+        "selected_probability": 0.7259,
+        "latency_ms": 304.91,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "it",
+      "direction": "query_to_english",
+      "query": "Come deve essere conservato il campione di archivio?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0219,
+          "B": 0.9781
+        },
+        "confidence": 0.848,
+        "selected_probability": 0.9781,
+        "latency_ms": 302.41,
+        "input_tokens": 131,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "uk",
+      "direction": "query_to_english",
+      "query": "За яких умов слід зберігати архівний зразок?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "A",
+        "probabilities": {
+          "A": 0.5911,
+          "B": 0.4089
+        },
+        "confidence": 0.0241,
+        "selected_probability": 0.5911,
+        "latency_ms": 305.72,
+        "input_tokens": 133,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "uk",
+      "direction": "query_to_english",
+      "query": "За яких умов слід зберігати архівний зразок?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0243,
+          "B": 0.9757
+        },
+        "confidence": 0.8348,
+        "selected_probability": 0.9757,
+        "latency_ms": 311.92,
+        "input_tokens": 135,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "en",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Keep the archive sample refrigerated between two and eight degrees Celsius. Do not freeze it.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.4436,
+          "B": 0.5564
+        },
+        "confidence": 0.0092,
+        "selected_probability": 0.5564,
+        "latency_ms": 306.58,
+        "input_tokens": 127,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "en",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0118,
+          "B": 0.9882
+        },
+        "confidence": 0.9072,
+        "selected_probability": 0.9882,
+        "latency_ms": 290.82,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "de",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Die Archivprobe muss gekühlt zwischen zwei und acht Grad Celsius aufbewahrt werden. Sie darf nicht eingefroren werden.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.3262,
+          "B": 0.6738
+        },
+        "confidence": 0.089,
+        "selected_probability": 0.6738,
+        "latency_ms": 301.51,
+        "input_tokens": 136,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "de",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0118,
+          "B": 0.9882
+        },
+        "confidence": 0.9072,
+        "selected_probability": 0.9882,
+        "latency_ms": 296.25,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "fr",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Conserver l’échantillon d’archive au réfrigérateur entre deux et huit degrés Celsius. Ne pas congeler.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.3415,
+          "B": 0.6585
+        },
+        "confidence": 0.0738,
+        "selected_probability": 0.6585,
+        "latency_ms": 316.19,
+        "input_tokens": 134,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "fr",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0118,
+          "B": 0.9882
+        },
+        "confidence": 0.9072,
+        "selected_probability": 0.9882,
+        "latency_ms": 302.22,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "it",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Conservare il campione di archivio in frigorifero tra due e otto gradi Celsius. Non congelare.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.3552,
+          "B": 0.6448
+        },
+        "confidence": 0.0614,
+        "selected_probability": 0.6448,
+        "latency_ms": 311.34,
+        "input_tokens": 130,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "it",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0118,
+          "B": 0.9882
+        },
+        "confidence": 0.9072,
+        "selected_probability": 0.9882,
+        "latency_ms": 306.04,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    },
+    {
+      "language": "uk",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "Архівний зразок потрібно тримати в холодильнику за температури від двох до восьми градусів Цельсія. Не заморожувати.",
+      "expected": "A",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.247,
+          "B": 0.753
+        },
+        "confidence": 0.1936,
+        "selected_probability": 0.753,
+        "latency_ms": 322.28,
+        "input_tokens": 143,
+        "output_tokens": 0
+      },
+      "correct": false
+    },
+    {
+      "language": "uk",
+      "direction": "english_to_passage",
+      "query": "How should the archive sample be stored?",
+      "quotation": "The annual meeting approved the dividend. A new director was appointed for a three-year term.",
+      "expected": "B",
+      "literal_match": false,
+      "decision": {
+        "engine": "laya",
+        "model": "laya-multilingual@e4e9ddf21a7b1903b7acffd8814ad4307bf63a67",
+        "choice": "B",
+        "probabilities": {
+          "A": 0.0118,
+          "B": 0.9882
+        },
+        "confidence": 0.9072,
+        "selected_probability": 0.9882,
+        "latency_ms": 305.0,
+        "input_tokens": 129,
+        "output_tokens": 0
+      },
+      "correct": true
+    }
+  ],
+  "local_requests": 20,
+  "private_or_hosted_requests": 0,
+  "cases": 20,
+  "correct": 13,
+  "literal_correct": 10,
+  "mean_latency_ms": 303.34,
+  "max_latency_ms": 322.28,
+  "positive_at_rank_one": 10,
+  "retrieval_pairs": 10,
+  "estimated_cost_usd": null,
+  "cost_scope": "Local compute unmetered; unknown, not zero.",
+  "pgvector_enabled": false,
+  "embedding_requests": 0
+}

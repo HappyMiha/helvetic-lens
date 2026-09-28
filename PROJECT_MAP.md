@@ -139,3 +139,9 @@ fences drive the existing private investigation engine. Unchanged captured bodie
 and excerpts skip analysis; new evidence is independently compared with prior
 findings. Local functional checks and exact native/both-client production
 acceptance pass within the linked scoped release; the full specifications remain open.
+
+[Private saved-evidence search](docs/PRODUCT_EVIDENCE_SEARCH.md) brings local Laya
+meaning search and model-free word search to retained passages and claim citations
+in both products. Current dossier and paired-source permissions precede counts,
+ranking and paging; direct semantic windows retain uncertain candidates rather
+than hiding evidence behind an uncalibrated classifier threshold.

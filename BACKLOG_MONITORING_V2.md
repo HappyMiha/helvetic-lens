@@ -72,6 +72,44 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
+**Private saved-evidence search — 28 September 2026: VERIFYING (scoped stage 4d / release 1.19).**
+
+Scope recorded before implementation: search the current private dossier's retained
+source passages and source-linked claims in both products. Offer explicit local
+Laya semantic comparison over successive, newest-first batches and a model-free
+all-word search over the same permission-filtered ledger. Show exact quotations,
+source hashes/locators, claim status and investigation navigation. This is a
+bounded direct-context retrieval trial, not a full vector index or independently
+validated professional relevance model. MV2-063 remains DEFERRED.
+
+Dependencies/readiness: completed stages 1–4c, current principal/team/guest access,
+retained-page/source exclusion predicates, the existing local System One adapter,
+native SQLite/PostgreSQL JSON support and shared Brandbook components are ready.
+No hosted inference consent, new collector, corpus transfer or publication is
+implied. Existing Jev/Laya open-web search remains unchanged.
+
+Acceptance before scoped DONE: (1) no lexical prefilter for semantic batches;
+literal mode covers current matching records with honest counts/pagination;
+(2) current tenant, product, role, session and source permissions before reading,
+before each local call and before returning results; late revocation fails closed;
+(3) bounded local calls/time/characters/rate, explicit lexical recovery on local
+failure, real latency and unknown cost/accuracy retained; (4) no query in URLs or
+durable/browser storage and no private material sent to public search or Jev;
+(5) both product workflows offer exact evidence navigation, accessible loading,
+empty/failure states and older-batch traversal; (6) native integration/privacy/
+failure tests, both client gates, local non-confidential multilingual relevance
+trial, exact native/Sites activation and production health/asset verification.
+The trial must distinguish fixture functionality from independently reviewed
+accuracy; full-spec quality and corpus-wide semantic indexing remain open.
+Local evidence: all 25 new search cases pass in the final 102-case affected
+regression, both clients pass 111 tests plus lint/types/final builds, and exact
+API Ruff and read-only PostgreSQL query/projection checks pass. A paired-page
+visibility gap found by the tests is fixed in the shared derived-source predicate.
+The synthetic five-language trial ranks the relevant item first in 10/10 pairs,
+but its 13/20 binary classification result is not independent accuracy; all ranked
+candidates remain visible. Exact native/client activation is pending. Details:
+[private saved-evidence search](docs/PRODUCT_EVIDENCE_SEARCH.md).
+
 **Recurring public-web research — 28 September 2026: DONE (scoped stage 4c / release 1.18).**
 Scoped MV2-019/021/023 continuation after verified 1.17: a current dossier editor
 explicitly saves one public question, daily or weekly cadence and standing consent.
@@ -1581,7 +1619,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
 | [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | PLANNED | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
-| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c DONE; private semantic search next | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
+| [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — stage 4c DONE; private evidence search 4d VERIFYING | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — native evidence and configuration drafts implemented | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
@@ -2447,6 +2485,10 @@ above supersedes the River-only count limitation for readable Today queues.
 <a id="mv2-021"></a>
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
+
+**Active product stage, 28 September:** private saved-evidence search (4d) is
+VERIFYING under the explicit scope, dependencies, readiness and acceptance above.
+Direct local semantic batches and literal ledger search preserve MV2-063's gate.
 
 **Completed product stage, 28 September:** stage 4c recurring public-web research is
 DONE under the scope, dependencies, readiness and acceptance above.

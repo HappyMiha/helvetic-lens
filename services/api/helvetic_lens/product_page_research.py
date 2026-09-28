@@ -56,6 +56,36 @@ def readable(session, parent, source):
         for version_id in ids)
 
 
+def results_visible(run):
+    """SQL counterpart of readable(), before derived counts and pagination.
+
+    The retained snapshot alone has only the new version. Its paired previous
+    version and canonical/current source URLs are pinned in the trigger receipt.
+    """
+    from .product_models import ProductDossier
+
+    trigger, parent = aliased(Trigger), aliased(ProductDossier)
+    review, newer = aliased(DossierEntry), aliased(DossierEntry)
+    page = trigger.source_json["page"]
+    ids = (page["version_id"].as_string(), page["previous"]["version_id"].as_string())
+    has_newer = exists(select(newer.id).where(newer.dossier_id == review.dossier_id,
+        newer.kind == "source_review", newer.url == review.url,
+        (newer.data_json["revision"].as_integer() > review.data_json["revision"].as_integer()) |
+        ((newer.data_json["revision"].as_integer() == review.data_json["revision"].as_integer()) & (newer.id > review.id))))
+    excluded = exists(select(review.id).where(review.dossier_id == trigger.dossier_id,
+        review.kind == "source_review", review.data_json["decision"].as_string() == "exclude", ~has_newer,
+        or_(review.url == trigger.source_json["url"].as_string(),
+            review.url == page["previous"]["source_url"].as_string(),
+            review.url.in_(select(Law.url).where(Law.id == page["document_id"].as_string())),
+            review.url.in_(select(Version.source_url).where(Version.id.in_(ids))))))
+    unavailable = exists(select(trigger.id).join(parent, parent.id == trigger.dossier_id)
+        .where(trigger.investigation_id == run.id, trigger.source_kind == "watched_page",
+            or_(parent.monitoring_audience == "team", excluded,
+                *(~retained_visible(trigger.dossier_id, trigger.organization_id,
+                    page["document_id"].as_string(), identifier) for identifier in ids))))
+    return ~unavailable
+
+
 def readiness(session, parent):
     allowed = parent.monitoring_audience != "team"
     query = watches(parent)
