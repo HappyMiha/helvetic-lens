@@ -1,6 +1,6 @@
 # Structured dossier context — release 1.31
 
-Status: IN PROGRESS. Scope recorded before code on 28 September 2026.
+Status: DONE within the bounded 1.31 scope. Recorded before code on 28 September 2026.
 This continues C03/C33 of the Unified Target Architecture and MV2-002/020/023.
 
 ## User outcome
@@ -71,10 +71,21 @@ retained and leave the rest of the dossier readable. Private print/export retain
 context, while public projections and copied public dossiers exclude it.
 
 Local client validation: 173 tests each (five new subject checks), lint, types and
-Sites production builds passed. Eight actual rendered/helper checks include the
-existing dossier reading regressions. API regression passed: 105 checks (104 integration, including 22 new context
+Sites production builds passed, including the existing dossier reading
+regressions. API regression passed: 105 checks (104 integration, including 22 new context
 cases, and one backlog smoke check), 550.77 seconds. Exact API Ruff and
-protected-value/source-parity checks passed. Production activation and exact
-artifact verification remain pending.
+protected-value/source-parity checks passed.
+
+Core implementation d6aaff19d574d98c19d50f2824fa8223d2c6de7f was pushed to main
+and activated normally as git-d6aaff19d574 at 13:02:35 UTC on 28 September.
+Pharma 596564f1c66fd93de4351d3c4fc8a4ad7a04c929 and Legal
+f10e6f6260c37ab88eade291e59f80fe043adcd7 were pushed to main and published as
+existing Sites version 34. Each canonical origin passed 28 public/access checks
+and all 47 exact static asset hashes. Native readiness, all five containers,
+nine actual module hashes, nine navigation directions and schema migration
+07d495bef125 were verified. The retired Loyer public hostname remains unavailable.
+See the [frozen release receipt](product-releases/2026-09-28-1.31.0.json).
+No browser interaction, authenticated production workflow, private production
+record or paid model request was used for this release verification.
 Full architecture, source readiness and human professional/usability acceptance
 remain open.

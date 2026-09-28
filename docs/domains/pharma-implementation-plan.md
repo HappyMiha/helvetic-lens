@@ -23,6 +23,12 @@ coverage, current product status or complete market-access research.
 
 ## First template and typed context
 
+Implementation update, 28 September: [release 1.31](../PRODUCT_STRUCTURED_CONTEXT.md)
+persists optional, versioned Pharma subject fields on the shared dossier with
+readable details, explicit editing and change history. Values are user-provided;
+they do not resolve entities, alter monitoring or imply source coverage. Exact
+product/substance IDs, aliases, applicability and template identity remain open.
+
 The first validated template is **Market Access Dossier**. The proving example is
 **Semaglutide — Switzerland**; Wegovy is a possible product context from the
 specification, not a factual reimbursement/authorization assertion in this plan.

@@ -11,6 +11,12 @@ Implementation proposal: [target map](target-architecture.md).
 `NOT_NEEDED` means the specification excludes the addition from this migration.
 These statuses are not new live-source or professional-acceptance results.
 
+Implementation update, 28 September 2026: [domain-aware setup 1.29](../PRODUCT_DOMAIN_SETUP.md),
+[readable dossier 1.30](../PRODUCT_DOSSIER_CLARITY.md) and
+[structured subject context 1.31](../PRODUCT_STRUCTURED_CONTEXT.md) extend the
+Phase 0 baseline. Rows below identify those bounded additions; the frozen audit
+receipt remains historical. Full target and human acceptance remain open.
+
 ## Component matrix
 
 Paths below are relative to `services/api/helvetic_lens` unless stated otherwise.
@@ -19,8 +25,8 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | ID | Target component / specification sections | State | Current evidence and remaining work |
 |---|---|---|---|
 | C01 | Shared Legal/Pharma Dossier service (§0,4,5,54) | EXISTS | `product_api.py`, `product_models.ProductDossier`: same routes, schema and persistence for both products |
-| C02 | Full common GENERAL/LEGAL/PHARMA model (§5,69) | PARTIAL | Product dossiers share profiles; native Influence dossiers remain separate. Domain/template/version metadata and explicit general-workflow adaptation are missing |
-| C03 | Typed domain context (§5.2,33,45) | PARTIAL | `product_operations.Context` validates four strings. Add optional typed pack context without erasing existing work context |
+| C02 | Full common GENERAL/LEGAL/PHARMA model (§5,69) | PARTIAL | Product dossiers share profiles and registered Legal/Pharma packs; saved context pins pack/schema revisions. Native Influence dossiers remain separate; persisted templates and explicit GENERAL adaptation remain open |
+| C03 | Typed domain context (§5.2,33,45) | PARTIAL | 1.31 adds optional validated Legal/Pharma context, pinned schemas, editor authorization and before/after history through `product_domain_context.py`. Legacy work context remains intact; resolved entity identities and applicability remain open |
 | C04 | Public/private/shared audience (§6,41,42,61) | EXISTS | Product publication projections, current dossier membership, guest grants and scoped research; preserve separate publication consent |
 | C05 | Organisation enterprise mode (§6) | PARTIAL | Organizations, roles and tenant scope exist; internal connectors and full enterprise policy/audit coverage remain separate |
 | C06 | Evidence graph (§7) | PARTIAL | ClaimEvidence, DossierEntity/Relationship and ClaimChange use relational containment. No unified Finding/Review/Note graph projection |
@@ -50,18 +56,18 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C30 | Visual direction (§28) | PARTIAL | Brandbook tokens, themes, Lens state and global Ask delivered in scoped releases; all-page and human visual acceptance remain open |
 | C31 | Common trust panel (§29) | PARTIAL | Exact source readers, timeline, transparency and source comparisons exist; full authority/applicability/review/coverage/path composition is missing |
 | C32 | Contradictions and supersession (§30,65) | PARTIAL | SUPPORTS/CONTRADICTS and cross-run links/status/history exist; typed reviewed claim supersession must preserve both original evidence chains |
-| C33 | DomainPack contract/registry (§31,64) | TODO | No registered typed pack contract. Replace scattered product branches with a small internal registry |
+| C33 | DomainPack contract/registry (§31,64) | PARTIAL | `domain_packs.py` registers LegalPack/PharmaPack 1.1.0, domain instructions, capabilities and context schema IDs. Full GENERAL/template/skill/review-policy contract remains open |
 | C34 | Legal context and applicability (§32–35) | PARTIAL | RegulatoryDate, source metadata and organization-applicability analysis exist; no full dossier-level territory/level/subject/procedure/time contract |
 | C35 | Legal source packs (§36) | PARTIAL | Fedlex, parliamentary/court/official and Basel-Stadt connector modules; each stream has bounded readiness. Requested countries/municipalities are not implied coverage |
 | C36 | Registered Legal skills (§37) | PARTIAL | Retrieval, version comparison, citation/impact analysis functions exist; explicit skill versions and applicability/holding interpretation contracts are missing |
 | C37 | Legal authority classification (§38,39) | PARTIAL | Authority/document kind/official source metadata exist; target binding/guidance/argument/AI taxonomy is not consistently attached to claims or trust UI |
 | C38 | Legal change-to-reviewed-claim journey (§40,73,76) | PARTIAL | Native monitoring and product investigation operate; typed applicability plus Finding acceptance are needed |
 | C39 | Pharma uses existing Core (§44) | EXISTS | Existing Pharma client uses ProductDossier and shared investigation/search/monitoring engine |
-| C40 | Pharma product/substance/indication identity (§45,48) | TODO | String labels and extracted entities do not implement typed IDs, deterministic aliases or uncertain match review |
+| C40 | Pharma product/substance/indication identity (§45,48) | PARTIAL | 1.31 separates user-provided product/substance/indication/country names and regulatory/market-access/trial identifiers. Exact identity, deterministic aliases and uncertain match review remain open |
 | C41 | Pharma monitoring-first workflow (§46) | PARTIAL | Saved page, topic and recurring-web research exist; template-driven domain findings/review are incomplete |
 | C42 | Configurable verified Pharma source pack (§47,51) | PARTIAL | Europe PMC discovery and suggested public Swissmedic/EMA/FDA page watches exist. Dedicated BAG/SL and domain-specific authoritative source contracts are not verified here |
 | C43 | Registered Pharma skills (§48) | TODO | No typed substance/label/reimbursement/safety skill registration with task evaluations |
-| C44 | Market Access Dossier template (§49,55,71.7–8,77) | TODO | Client example text exists; not persisted template identity, typed context or validated Swiss Market Access workflow |
+| C44 | Market Access Dossier template (§49,55,71.7–8,77) | TODO | Client examples and optional typed subject context exist; persisted template identity and a validated Swiss Market Access workflow remain open |
 | C45 | Domain-specific mandatory review (§50) | TODO | Roles/review mechanisms exist; high impact, conflict, match uncertainty and incomplete coverage need versioned policy with enforcement |
 | C46 | Existing-system/internal evidence connections (§52,53,60) | PARTIAL | Uploaded evidence is supported; internal enterprise APIs and shortage connectors are not established by upload support |
 | C47 | Supply prediction / enterprise-system replacement (§52,53,78) | NOT_NEEDED | Not a first-slice goal; do not build an ERP replacement, parallel shortage database or prediction promise |
@@ -72,7 +78,7 @@ The linked [current-state map](current-state.md) locates the corresponding code.
 | C52 | Full historical dossier reconstruction (§65) | PARTIAL | Retained versions, snapshots, plan/claim/publication histories exist; not one tested “everything known at date X” query across all object types |
 | C53 | Observability (§67) | PARTIAL | Jobs, scan health, inference measurements and history exist; consistent scan→finding→review→claim aggregate metrics are missing |
 | C54 | Incremental performance (§68) | PARTIAL | Hash/dedup, bounded jobs, source cache and E5 cache exist; proposed unified flows need no-op/duplicate/cost regression tests |
-| C55 | Safe incremental migration (§69) | PARTIAL | Existing migrations, identity aliases and revision fences are reusable; new pack migrations/flags/rollback tests are not implemented |
+| C55 | Safe incremental migration (§69) | PARTIAL | 1.31 adds migration 07d495bef125 with empty defaults, preserved legacy context, revision fences and refusal of destructive downgrade after data exists. Broader target migrations/flags/rollback coverage remain open |
 | C56 | Guaranteed professional correctness/certification (§66) | NOT_NEEDED | Explicitly outside the target promise. Implement human review (C12/C45); neither fixtures nor HTTP success confer professional certification |
 | C57 | New graph DB, copied engines, fixed lens services (§7,56,78) | NOT_NEEDED | Relational contained models and common engine already provide the foundation |
 
@@ -118,8 +124,8 @@ review. Do not treat a keyword match as any of these outcomes.
 
 ## Next bounded scope
 
-Start with C33/C03 and the concrete cross-domain setup coupling: make dossier
-setup select a validated pack, correct domain instructions and honest source
-capabilities while retaining existing Legal and Pharma records. Record the exact
-schema/read compatibility choice before code. Do not declare the entire Core,
-LegalPack or Market Access workflow finished after that slice.
+Preserve the completed bounded setup and subject-context contracts. Continue
+Phase 1 with a versioned template contract on the same Core, including explicit
+template identity and honest source readiness. Record its complete user outcome,
+schema/read compatibility and acceptance before code. Template configuration
+alone cannot establish a validated Market Access journey or full DomainPack.

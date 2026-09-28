@@ -46,9 +46,10 @@ human discussion, AI research and original sources while preserving every workfl
 
 ## Architecture continuation — 1.31 structured dossier context
 
-IN PROGRESS; recorded before code on 28 September. C03/C33 and MV2-002/020/023
-add optional, versioned Legal/Pharma subject fields on the common dossier with
-existing roles and audit. See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md).
+DONE within the bounded 1.31 scope; recorded before code on 28 September.
+C03/C33 and MV2-002/020/023 now include optional, versioned Legal/Pharma subject
+fields on the common dossier with existing roles and audit. Both clients and the
+shared Core are published and verified; 105 API checks and 173 tests per client passed. See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md).
 This does not establish entity resolution, applicability or source coverage.
 
 ## Development and deployment
@@ -1980,7 +1981,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — structured context 1.31 in progress; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1998,10 +1999,10 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — structured context 1.31 in progress; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — structured context 1.31 in progress; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
@@ -2151,8 +2152,9 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-002 — Validate first-value journeys and shared navigation
 
-**Scoped continuation, 28 September — IN PROGRESS:** optional typed domain context
-on the common dossier, with current edit rights and source/public boundaries.
+**Scoped continuation, 28 September — DONE within 1.31 scope:** optional typed
+domain context on the common dossier, with current edit rights, before/after
+history and source/public boundaries. Both production clients and Core verified.
 See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md). Broader gates stay open.
 
 **Owner-prioritized continuation, 28 September — DONE within 1.30 scope:** readable dossier
@@ -2892,8 +2894,9 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Scoped continuation, 28 September — IN PROGRESS:** optional typed domain context
-on the common dossier, with current edit rights and source/public boundaries.
+**Scoped continuation, 28 September — DONE within 1.31 scope:** optional typed
+domain context on the common dossier, with current edit rights, before/after
+history and source/public boundaries. Both production clients and Core verified.
 See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md). Broader gates stay open.
 
 **Owner-prioritized continuation, 28 September — DONE within 1.30 scope:** readable dossier
@@ -3085,8 +3088,9 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Scoped continuation, 28 September — IN PROGRESS:** optional typed domain context
-on the common dossier, with current edit rights and source/public boundaries.
+**Scoped continuation, 28 September — DONE within 1.31 scope:** optional typed
+domain context on the common dossier, with current edit rights, before/after
+history and source/public boundaries. Both production clients and Core verified.
 See [scope and acceptance](docs/PRODUCT_STRUCTURED_CONTEXT.md). Broader gates stay open.
 
 **Scoped continuation, 28 September — DONE within 1.29 scope:** domain-aware dossier setup

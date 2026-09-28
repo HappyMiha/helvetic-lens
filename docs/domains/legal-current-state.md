@@ -6,6 +6,12 @@ Phase 0 audit, 28 September 2026; baseline commits and limits are in
 
 ## What exists
 
+Post-audit implementation update, 28 September: [release 1.31](../PRODUCT_STRUCTURED_CONTEXT.md)
+adds optional Legal subject fields, including jurisdictions, parties, laws/cases,
+procedural stage and relevant dates. Saved schemas and before/after history are
+retained under current dossier roles. These remain human-provided context, not
+an applicability decision or verified authority classification.
+
 Helvetic Lens Legal already uses the common product Dossier API, persistent
 investigation/claim models, source readers, monitoring policies and collaborative
 roles. The canonical host is `legal.helveticlens.ch`; public `legal` API routes

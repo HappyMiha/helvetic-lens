@@ -4,6 +4,13 @@ Audit date: 28 September 2026. Phase 0 of the owner's
 [Unified Target Architecture](../UNIFIED_TARGET_ARCHITECTURE_SPEC.md).
 This describes inspected code, not completion of the target architecture.
 
+Post-audit additions on 28 September are recorded separately in
+[domain-aware setup](../PRODUCT_DOMAIN_SETUP.md),
+[readable dossier](../PRODUCT_DOSSIER_CLARITY.md) and
+[structured subject context](../PRODUCT_STRUCTURED_CONTEXT.md). The baseline
+commits and frozen audit hashes below remain historical; current bounded changes
+are reflected in the [gap matrix](core-gap-analysis.md).
+
 ## Evidence boundary
 
 | Repository | Audited main commit | Role |
