@@ -24,8 +24,9 @@ host-alias, task-branch and separate Monitoring integration workflow.
   separate product clients on 26 September 2026 and renamed Loyer to Legal on
   28 September. Current clients are `pharma.helveticlens.ch` and
   `legal.helveticlens.ch`, with their own public repositories and existing Sites projects;
-  use `helveticlens-legal` locally and on GitHub. Preserve legacy Loyer links and
-  the historical storage key as described in `docs/PRODUCT_LEGAL_RENAME.md`;
+  use `helveticlens-legal` locally and on GitHub. The owner explicitly retired the former public Loyer hostname on 28 September;
+  do not recreate its DNS or Sites binding. Preserve the historical storage key
+  and API aliases as described in `docs/PRODUCT_LEGAL_RENAME.md`;
   see `docs/PRODUCT_DOSSIERS.md`. The user
   retired `monitoring.helveticlens.ch` on 12 September 2026. Do not recreate or
   restart the HappyDucky02 Monitoring deployment, its Windows task, Docker project

@@ -1,5 +1,28 @@
 # Helvetic Lens Legal rename — release 1.27
 
+## Later owner decision — retire the old public hostname
+
+On 28 September 2026 the owner explicitly requested removal of the old Loyer
+link. This supersedes the public-hostname compatibility requirements below,
+which remain a historical description of release 1.27.
+
+- Removed the loyer.helveticlens.ch binding from the existing Legal Sites project.
+- Deleted its CNAME and both provider verification TXT records; the DNS provider
+  confirms no matching records remain. legal.helveticlens.ch retains its target.
+- Changed the existing Sites slug to helveticlens-legal. Sites manages redirection
+  of its former generated URL; the custom Loyer hostname no longer serves the app.
+- Updated the existing active hourly cycle and development instructions to prevent
+  restoration of the retired hostname.
+- Internal storage identity and API compatibility continue to address existing
+  dossiers. No repository, dossier, user, source snapshot or publication was deleted.
+
+These are hosting/DNS and instruction changes, not a database migration.
+The canonical Legal origin returned HTTP 200 after retirement; the detached old
+host returned HTTP 403 during DNS propagation. See the 1.29 release receipt for
+final checks. The acceptance evidence below predates this owner decision.
+
+## Original release 1.27 scope and evidence
+
 Status: DONE within the verified 1.27 scope. Owner-requested scope addition on 28 September 2026,
 recorded before implementation. The owner confirmed Legal after reviewing naming alternatives. The new public name is **Helvetic Lens Legal**,
 the primary origin is **https://legal.helveticlens.ch**, and the existing public

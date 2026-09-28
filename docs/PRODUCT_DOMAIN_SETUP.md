@@ -1,6 +1,6 @@
 # Domain-aware dossier setup — release 1.29
 
-Status: VERIFYING production activation. Scope recorded on 28 September 2026 before implementation.
+Status: DONE within the verified 1.29 scope. Scope recorded on 28 September 2026 before implementation.
 This is the first bounded Phase 1 contribution to the Unified Target Architecture,
 not completion of DomainPack, typed contexts, templates or domain acceptance.
 
@@ -67,5 +67,22 @@ Exact API lint and all 95 affected API checks passed: 94 integration checks
 new domain-policy checks) and the backlog invariant smoke check. Wrong tenant,
 stale revision, in-flight role/revision changes, Legal aliases, native profiles,
 manual activation and pack-aware refinement passed. No production records or
-paid providers were used. Production activation remains pending; no live model
-accuracy or human evaluation is claimed.
+paid providers were used. Native code 1d3b51e1e56bc313b970e6a7f4a85a0170c80e45 activated normally at
+11:47:43 UTC. Both existing Sites projects published version 32: Pharma
+120be087f06da60030a4f803bec01baee4525397 and Legal
+49e4971ee7297b82b481177fa9c786393058bd8d. Each passed 26 live route/auth checks
+and 47 exact served asset hashes. Five changed native module hashes match the
+tested source; API, CPU/AI workers, scheduler and web use the expected release.
+All nine native navigation routes remain present. Legal/loyer API aliases retain
+authenticated access boundaries. No live model accuracy or human evaluation is
+claimed.
+
+During verification the owner explicitly retired the old public Loyer hostname.
+Its Sites binding, CNAME and two verification TXT records were removed; the
+canonical Legal domain is healthy. Sites slug is now helveticlens-legal. This
+overrides earlier public-hostname compatibility instructions, while retaining
+internal/API identity. See [owner decision](PRODUCT_LEGAL_RENAME.md).
+
+[Immutable release receipt](product-releases/2026-09-28-1.29.0.json) records checks,
+source, deployment, runtime, asset and DNS evidence. Full architecture acceptance
+remains OPEN. The owner's next priority is a readable, document-like dossier UI.
