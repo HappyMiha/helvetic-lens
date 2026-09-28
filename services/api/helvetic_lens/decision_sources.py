@@ -27,7 +27,7 @@ async def read_bytes(client, url, limit):
         return response.status_code, response.headers.get("content-type", ""), bytes(body)
 
 
-async def inspect_source(settings, query, item, mode):
+async def inspect_source(settings, query, item, mode, *, rank_passages=True, excerpt_limit=3):
     url = public_url(item["url"])
     if not url:
         raise DecisionUnavailable("unsafe_source")
@@ -78,7 +78,7 @@ async def inspect_source(settings, query, item, mode):
         errors = []
         choices = ["laya"] if mode == "laya" else ["jev"] if mode == "jev" else ["jev", "laya"]
         scores = {}
-        for name in choices:
+        for name in choices if rank_passages else []:
             try:
                 answers = await rank(engines(settings)[name], query, selected)
                 scores = {identifier: result.probabilities["A"] for identifier, result in answers}
@@ -89,17 +89,17 @@ async def inspect_source(settings, query, item, mode):
                 errors.append(name)
         return {"status": "complete", "url": url, "fetched_at": utcnow().isoformat(),
             "sha256": hashlib.sha256(body).hexdigest(), "content_type": media,
-            "excerpts": [{"text": v["summary"], "passage": v["id"], "relevance": scores.get(v["id"])} for v in selected[:3]],
+            "excerpts": [{"text": v["summary"], "passage": v["id"], "relevance": scores.get(v["id"])} for v in selected[:excerpt_limit]],
             "links": links, "engine": inspected_engine, "unavailable_engines": errors,
             "scope": "Anonymous fetch, at most 1 MB; redirects and access barriers are not followed. "
-                "Up to the first 24,000 extracted characters, eight lexical candidate passages and three verbatim excerpts. "
+                f"Up to the first 24,000 extracted characters, eight lexical candidate passages and {excerpt_limit} verbatim excerpts. "
                 "Links are present in the page, not verified citations or approved monitoring sources.",
             "text_truncated": len(document.text) > 24000, "extracted_characters": len(document.text)}
 
 
-async def safe_inspect(settings, query, item, mode):
+async def safe_inspect(settings, query, item, mode, *, rank_passages=True, excerpt_limit=3):
     try:
-        return await inspect_source(settings, query, item, mode)
+        return await inspect_source(settings, query, item, mode, rank_passages=rank_passages, excerpt_limit=excerpt_limit)
     except (DecisionUnavailable, DomainError, httpx.HTTPError, TimeoutError, ValueError):
         return {"status": "unavailable", "url": item["url"],
             "error": "This source could not be inspected within its access, format or time limits. Open the original source directly."}

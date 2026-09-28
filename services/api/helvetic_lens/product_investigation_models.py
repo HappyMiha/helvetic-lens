@@ -77,6 +77,7 @@ class Investigation(Contained, Base):
     event_sequence: Mapped[int] = mapped_column(Integer, default=0)
     job_id: Mapped[str | None] = mapped_column(ForeignKey("jobs.id", ondelete="SET NULL"))
     stop_reason: Mapped[str] = mapped_column(String(500), default="")
+    research_state: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

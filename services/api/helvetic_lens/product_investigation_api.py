@@ -11,6 +11,7 @@ from pydantic import Field, field_validator
 from sqlalchemy import func, select
 
 from . import jobs, legal_profiles
+from . import product_iterative_research as research
 from .config import DomainError
 from .membership_locks import lock_organization
 from .product_api import Product, fail, iso
@@ -22,6 +23,9 @@ class Ask(legal_profiles.Input):
     request_key: UUID
     question: str = Field(min_length=2, max_length=300)
     public_query_confirmed: Literal[True]
+    engine: Literal["bounded-v1", "iterative-v1"] = "bounded-v1"
+    decision_order: Literal["jev_first", "laya_first"] = "jev_first"
+    limits: research.Limits | None = None
 
     @field_validator("question")
     @classmethod
@@ -41,7 +45,8 @@ class Ask(legal_profiles.Input):
 
 class Control(legal_profiles.Input):
     expected_revision: int = Field(ge=1)
-    action: Literal["pause", "resume", "cancel", "retry"]
+    action: Literal["pause", "resume", "cancel", "retry", "deepen"]
+    limits: research.Limits | None = None
 
 
 def routes(router, service, actor):
@@ -56,7 +61,7 @@ def routes(router, service, actor):
             previous = session.scalar(select(Investigation).where(Investigation.dossier_id == dossier_id,
                                                                   Investigation.request_key == str(data.request_key)))
             if previous:
-                if not previous.external_discovery or previous.trigger_entry_id or previous.question != data.question or previous.created_by_user_id != identity.user_id:
+                if not previous.external_discovery or previous.trigger_entry_id or previous.question != data.question or previous.created_by_user_id != identity.user_id or previous.research_state.get("version", "bounded-v1") != data.engine or previous.research_state.get("decision_order", "jev_first") != data.decision_order or (data.limits is not None and previous.research_state.get("initial_limits") != data.limits.model_dump()):
                     fail("This request key belongs to a different investigation.", 409)
                 return payload(session, previous)
             if session.scalar(select(func.count()).select_from(Investigation).where(
@@ -64,12 +69,18 @@ def routes(router, service, actor):
                 fail("An investigation is already running in this dossier. Pause or finish it before starting another.", 409)
             run = Investigation(dossier_id=dossier_id, organization_id=service.organization_id,
                 request_key=str(data.request_key), question=data.question, created_by_user_id=identity.user_id, actor_user_id=identity.user_id,
-                session_id=identity.session_id, session_organization_id=identity.organization_id)
+                session_id=identity.session_id, session_organization_id=identity.organization_id,
+                research_state=research.initial(data.limits or research.Limits()) if data.engine == research.VERSION else {})
+            if data.limits is not None and data.engine != research.VERSION:
+                fail("Configurable budgets require iterative research.")
+            if research.enabled(run):
+                run.research_state["decision_order"] = data.decision_order
+                run.research_state["initial_limits"] = (data.limits or research.Limits()).model_dump()
             session.add(run)
             session.flush()
             enqueue(session, run)
             event(session, run, "investigation_queued", question=run.question,
-                disclosure="The question and entity names found in public sources may be sent to external search. "
+                disclosure="The submitted question and follow-up queries derived from public-source evidence may be sent to external search. "
                     "Private dossier text is never used for external queries. Saved evidence may be analysed by the configured workspace model.")
             session.commit()
             return payload(session, run)
@@ -98,13 +109,19 @@ def routes(router, service, actor):
             run = record(session, identity, product, dossier_id, identifier, write=True)
             if data.expected_revision != run.revision:
                 fail("The investigation changed. Refresh before applying this action.", 409)
-            if data.action in {"resume", "retry"}:
+            if data.limits is not None and data.action != "deepen":
+                fail("A new cumulative budget applies only to Continue research.")
+            if data.action in {"resume", "retry", "deepen"}:
                 from .product_monitoring_research import retry_authority
                 from .product_web_research import retry_authority as web_retry_authority
 
                 retry_authority(session, run)
                 web_retry_authority(session, run)
-                if data.action == "retry":
+                if data.action == "deepen":
+                    if data.limits is None:
+                        fail("Set a cumulative budget for continuation.")
+                    research.continue_research(session, run, data.limits)
+                elif data.action == "retry":
                     from .product_contributions import retry
 
                     retry(session, run)

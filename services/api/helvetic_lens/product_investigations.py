@@ -157,6 +157,10 @@ def plan(session, run, reason, *, trigger=None):
 
     if web_trigger_for(session, run):
         document["budgets"].update(public_branches=1, saved_snapshots=0)
+    if (run.research_state or {}).get("version") == "iterative-v1":
+        document.update(budgets=run.research_state["limits"], used=run.research_state["used"],
+            objective=run.research_state["objective"], completion_criteria=run.research_state["completion_criteria"],
+            questions=run.research_state["questions"])
     session.add(InvestigationPlan(**scope(run), version=run.plan_version, reason=reason, document=document))
     event(session, run, "plan_updated", version=run.plan_version, reason=reason, trigger=trigger)
 
@@ -263,7 +267,7 @@ def apply_extraction(session, run, source, data):
 
 
 def summary(run):
-    return {"id": run.id, "trigger_entry_id": run.trigger_entry_id, "external_discovery": run.external_discovery, "created_by_user_id": run.created_by_user_id, "question": run.question, "status": run.status, "revision": run.revision,
+    return {"id": run.id, "trigger_entry_id": run.trigger_entry_id, "external_discovery": run.external_discovery, "created_by_user_id": run.created_by_user_id, "engine": run.research_state.get("version", "bounded-v1"), "question": run.question, "status": run.status, "revision": run.revision,
         "plan_version": run.plan_version, "event_sequence": run.event_sequence,
         "stop_reason": run.stop_reason, "created_at": iso(run.created_at), "updated_at": iso(run.updated_at)}
 
@@ -292,15 +296,22 @@ def payload(session, run):
 
     web_trigger = web_trigger_for(session, run)
     changes = projection(session, run)
+    from .product_iterative_research import projection as research_projection
+
     return {**summary(run), "web_research_trigger": {
         "id": web_trigger.id, "policy_revision": web_trigger.policy_revision,
         "scheduled_for": iso(web_trigger.scheduled_for)} if web_trigger else None, "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
         "original": original(session, run.trigger_entry_id),
+        "research": research_projection(run),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
             "steps": b.checkpoint.get("steps", []), "error": b.checkpoint.get("error"),
-            "coverage": b.checkpoint.get("coverage")} for b in rows(session, InvestigationBranch, run)],
+            "coverage": b.checkpoint.get("coverage"),
+            "question_id": b.checkpoint.get("question_id"), "parent_branch_id": b.checkpoint.get("parent_branch_id"),
+            "depth": b.checkpoint.get("depth"), "decisions": b.checkpoint.get("decisions", []),
+            "candidate_counts": b.checkpoint.get("candidate_counts"), "model_routes": b.checkpoint.get("model_routes", []),
+            "outcome": b.checkpoint.get("outcome")} for b in rows(session, InvestigationBranch, run)],
         "sources": [{"id": s.id, "kind": s.kind, "title": s.title, "url": s.url, "sha256": s.sha256,
                      "snapshot": s.snapshot, "original": original(session, s.snapshot.get("origin_entry_id")), "created_at": iso(s.created_at)} for s in rows(session, InvestigationSource, run)],
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status, "revision": c.revision,
@@ -314,7 +325,7 @@ def payload(session, run):
         "activity": [{"sequence": e.sequence, "kind": e.kind, "detail": e.detail, "created_at": iso(e.created_at)}
                      for e in rows(session, InvestigationEvent, run)],
         "evidence_basis": "Supported means the linked source supports the statement, not independently established truth. "
-            "Machine extraction may be wrong. Contradictions remain visible. Entity mentions are not resolved identities.",
+            "Machine extraction may be wrong. Contradictions remain visible. Names alone do not establish identity; exact source identifiers may group mentions within a run, without independent verification.",
         "coverage": "Bounded investigation of accessible sources, not exhaustive internet coverage. "
             "Submitted text and supported file excerpts can be analysed; OCR and authenticated archives are unavailable. "
             "Contribution reviews never perform public discovery; source reading and file extraction have explicit bounds."}

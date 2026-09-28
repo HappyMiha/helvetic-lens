@@ -131,7 +131,15 @@ def retry(session, run):
         state = deepcopy(branch.checkpoint)
         state.pop("inflight", None)
         state.pop("error", None)
-        if branch.phase in {"search", "compare"}:
+        iterative = (run.research_state or {}).get("version") == "iterative-v1"
+        if iterative:
+            state.pop("question_finished", None)
+            state.pop("reflection_done", None)
+        if iterative and branch.phase in {"plan", "reflect"}:
+            # Retry the explicitly requested failed model phase only. Completed
+            # source reads and extractions must not be repeated for a failed plan.
+            pass
+        elif branch.phase in {"search", "compare"}:
             state.pop("comparison_done", None)
         elif state.get("source_ids"):
             # Only advance() skips a failed extraction index. Revisit unavailable

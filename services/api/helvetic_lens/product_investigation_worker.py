@@ -4,11 +4,14 @@ import json
 import re
 from copy import deepcopy
 from datetime import UTC, timedelta
+from time import perf_counter
 from uuid import uuid4
 
 from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
+from . import product_iterative_research as research
+from . import product_iterative_steps as research_steps
 from .analysis import InferenceBudget
 from .config import DomainError
 from .db import utcnow
@@ -80,6 +83,16 @@ def seed(session, run, parent, settings):
         from .product_contributions import seed as seed_contribution
 
         return seed_contribution(session, run, parent, settings)
+    if research.enabled(run):
+        research.seed(session, run)
+        saved = research_sources(session, parent, run.question, run.organization_id)[:MAX_SOURCES]
+        source_ids = [snapshot(session, run, item)[0].id for item in saved]
+        if source_ids:
+            session.add(InvestigationBranch(**scope(run), query="Saved dossier evidence", phase="extract",
+                reason="Read authorized saved evidence without using private text in public planning or search.",
+                checkpoint={"saved": True, "source_ids": source_ids, "extract_index": 0}))
+        event(session, run, "capabilities_resolved", capabilities=capabilities(settings, parent.product))
+        return
     available = capabilities(settings, parent.product)
     if run.external_discovery and any(v["available"] and v["id"] in {"public_web", "scientific_literature"} for v in available):
         session.add(InvestigationBranch(**scope(run), query=run.question,
@@ -103,6 +116,8 @@ def next_extraction(state):
 
 
 def advance(branch, state, *, interrupted=False):
+    if state.get("iterative"):
+        research_steps.failed(branch, state, interrupted=interrupted)
     if branch.phase in {"search", "compare"}:
         branch.status = "failed"
     elif branch.phase == "read":
@@ -115,12 +130,16 @@ def advance(branch, state, *, interrupted=False):
 
 
 def settle(branch, state):
+    if state.get("iterative"):
+        research_steps.settle(branch, state)
     if branch.phase == "compare" and state.get("comparison_done"):
         branch.status = "completed"
     if branch.phase == "read" and state.get("read_index", 0) >= len(state.get("items", [])):
         branch.phase = "extract"
     if branch.phase == "extract" and state.get("extract_index", 0) >= len(state.get("source_ids", [])):
         branch.status = "completed" if (state.get("analysed", 0) or state.get("unchanged", 0) or state.get("empty_search")) and not state.get("failed_extract_indices") else "failed"
+    if state.get("iterative"):
+        research_steps.settle(branch, state)
     branch.checkpoint = deepcopy(state)
 
 
@@ -134,17 +153,28 @@ def finish_or_yield(session, run, job):
 
     session.flush()
     branches = rows(session, InvestigationBranch, run)
+    if research.enabled(run):
+        for branch in branches:
+            if branch.status in {"completed", "failed"} and branch.checkpoint.get("question_id") and not branch.checkpoint.get("question_finished"):
+                research.finish_question(session, run, branch)
+                branch.checkpoint = {**branch.checkpoint, "question_finished": True}
     if schedule(session, run, branches):
         branches = rows(session, InvestigationBranch, run)
     if run.status in ACTIVE and any(b.status in ACTIVE for b in branches):
         jobs.yield_batch(session, job)
     else:
         if run.status in ACTIVE:
-            success = sum(b.status == "completed" for b in branches)
+            success = sum(b.status == "completed" and not b.checkpoint.get("research_control") for b in branches)
             run.status = "completed" if success else "failed"
             failed_steps = sum(any(s["status"] != "completed" for s in b.checkpoint.get("steps", [])) for b in branches)
             run.stop_reason = (f"Finished {success} of {len(branches)} branches within the research budget. "
                 f"{failed_steps} branches contain unavailable or interrupted steps. Coverage is not exhaustive.")
+            if research.enabled(run):
+                pending = sum(q["status"] in {"open", "investigating", "unresolved"} for q in run.research_state["questions"])
+                limits = ", ".join(run.research_state["stops"])
+                if limits:
+                    run.status = "paused"
+                run.stop_reason = (f"Research paused at its budget ({limits}). " if limits else "Bounded research finished. ") + f"{pending} questions remain open or unresolved; {failed_steps} paths include unavailable or interrupted steps. Source support is not independent verification."
             event(session, run, "investigation_finished", status=run.status, reason=run.stop_reason)
         jobs.complete(session, job.id, result_type="product_investigation", result_id=run.id,
                       result_json={"status": run.status})
@@ -197,10 +227,17 @@ async def execute(service, job_id, worker):
             finish_or_yield(session, run, job)
             session.commit()
             return {"id": job_id, "state": run.status}
-        branch = next((b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE), None)
+        candidates = [b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE]
+        if research.enabled(run):
+            candidates.sort(key=lambda b: (-b.checkpoint.get("priority", 6), b.created_at, b.id))
+        branch = next(iter(candidates), None)
         if branch:
             state = deepcopy(branch.checkpoint)
+            if research.enabled(run):
+                state["iterative"] = True
             if state.pop("inflight", None):
+                if research.enabled(run):
+                    research.elapsed(run, min(90, service.settings.job_lease_seconds - 5))
                 if state.get("steps"):
                     state["steps"][-1].update(status="interrupted", finished_at=iso(utcnow()))
                 advance(branch, state, interrupted=True)
@@ -212,11 +249,16 @@ async def execute(service, job_id, worker):
                     blocked = excluded(session, parent)
                     work = {"run_id": run.id, "branch_id": branch.id, "query": branch.query,
                         "phase": branch.phase, "product": parent.product, "generation": run.generation}
-                    if branch.phase == "search":
+                    if research.enabled(run):
+                        research_steps.prepare(session, run, branch, state, work)
+                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect"}:
+                        pass
+                    elif branch.phase == "search":
                         if not run.external_discovery:
                             raise RuntimeError("Private contribution cannot contain a discovery branch")
                         try:
-                            reserve(session, service.settings)
+                            if not research.enabled(run):
+                                reserve(session, service.settings)
                         except DomainError as error:
                             run.status, run.stop_reason = "paused", error.message
                             event(session, run, "investigation_paused", reason=run.stop_reason)
@@ -225,6 +267,7 @@ async def execute(service, job_id, worker):
                         item = state["items"][state.get("read_index", 0)]
                         work["item"] = item
                         work["skip"] = item["url"] in blocked
+
                         if state.get("contribution_entry_id"):
                             from .product_contributions import PUBLIC_READ_PURPOSE
 
@@ -253,7 +296,28 @@ async def execute(service, job_id, worker):
                                            "excerpts": source.snapshot["excerpts"]},
                                 "existing_claims": [{"id": c.id, "statement": c.statement, "status": c.status}
                                                     for c in rows(session, DossierClaim, run)][:60]})
+                    if work and research.enabled(run):
+                        if branch.phase == "extract":
+                            work["input"]["branch"] = branch.query
+                            if source.kind == "public_source":
+                                work["input"]["existing_claims"] = [{"id": c.id, "statement": c.statement, "status": c.status}
+                                    for c in research.public_existing_claims(session, run)][:60]
+                        budget_before = deepcopy(run.research_state)
+                        if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
+                            work = None
+                        elif branch.phase == "search":
+                            try:
+                                reserve(session, service.settings, units=3 if parent.product == "pharma" else 2)
+                            except DomainError as error:
+                                run.research_state = budget_before
+                                run.status, run.stop_reason = "paused", error.message
+                                event(session, run, "investigation_paused", reason=run.stop_reason)
+                                work = None
                     if work:
+                        if research.enabled(run):
+                            work["remaining_seconds"] = max(0.001, run.research_state["limits"]["active_seconds"] - run.research_state["used"].get("active_seconds", 0))
+                        if research.enabled(run) and branch.phase == "read":
+                            state.setdefault("attempted_urls", []).append(work["item"]["url"])
                         branch.status = run.status = "running"
                         state["inflight"] = str(uuid4())
                         work["token"] = state["inflight"]
@@ -269,11 +333,14 @@ async def execute(service, job_id, worker):
     # Every paid/network operation has a committed receipt before it begins.
     # The hard deadline is shorter than the lease even for small operator leases.
     result, failed = None, False
+    started = perf_counter()
     try:
-        seconds = min(90, service.settings.job_lease_seconds - 5)
+        seconds = min(90, service.settings.job_lease_seconds - 5, work.get("remaining_seconds", 90))
         async with asyncio.timeout(seconds):
             if work.get("skip"):
                 failed = True
+            elif work.get("research") and work["phase"] != "compare":
+                result = await research_steps.execute(service, work, seconds)
             elif work["phase"] == "search":
                 result = await decision_search.execute(service.settings, work["query"], "auto", "balanced", work["product"])
             elif work["phase"] == "read" and work.get("file"):
@@ -329,8 +396,17 @@ async def execute(service, job_id, worker):
             source = session.get(InvestigationSource, work["source_id"])
             if source.url in blocked:
                 failed = True
+        if research.enabled(run):
+            research.elapsed(run, perf_counter() - started)
+            if work.get("model_route") and work["phase"] == "extract":
+                state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
         if not failed:
-            if work["phase"] == "search":
+            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect"}:
+                try:
+                    research_steps.apply(session, run, branch, state, work, result)
+                except DomainError:
+                    failed = True
+            elif work["phase"] == "search":
                 state["items"] = [v for v in result.get("items", []) if v["url"] not in blocked][:MAX_SOURCES]
                 state["coverage"] = {"retrieval": result.get("retrieval"), "scope": result.get("coverage"),
                     "selected_engine": result.get("selected_engine"), "latency_ms": result.get("latency_ms"),
@@ -370,6 +446,18 @@ async def execute(service, job_id, worker):
                     else:
                         source, fresh = snapshot(session, run, {**result, "title": work["item"]["title"],
                             "retrieval_queries": work["item"].get("retrieval_queries", [work["query"]])}, public=True)
+                    if work.get("research"):
+                        source.snapshot = {**source.snapshot, "branch_id": branch.id, "research_question": work["query"],
+                            "relevance_gate": next((d for d in reversed(state.get("decisions", [])) if d["url"] == source.url and d["verdict"] == "relevant"), None)}
+                    if work.get("research") and source.kind == "public_source":
+                        duplicate = next((other for other in rows(session, InvestigationSource, run)
+                            if other.id != source.id and other.kind == "public_source" and other.sha256 == source.sha256), None)
+                        if duplicate:
+                            source.snapshot = {**source.snapshot, "duplicate_of": duplicate.id,
+                                "independence": "Identical captured document bytes; not an independent supporting source."}
+                            fresh = False
+                            state["unchanged"] = state.get("unchanged", 0) + 1
+                            event(session, run, "duplicate_document", source_id=source.id, original_source_id=duplicate.id)
                     if fresh:
                         state.setdefault("source_ids", []).append(source.id)
                     state["read_index"] = state.get("read_index", 0) + 1
@@ -384,7 +472,10 @@ async def execute(service, job_id, worker):
                     state["comparison_done"] = True
             else:
                 try:
-                    apply_extraction(session, run, source, result)
+                    if research.enabled(run):
+                        research.extract(session, run, source, result)
+                    else:
+                        apply_extraction(session, run, source, result)
                 except DomainError:
                     failed = True
                 if not failed:

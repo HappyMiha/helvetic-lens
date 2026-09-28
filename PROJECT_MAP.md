@@ -218,3 +218,7 @@ are DONE within scope with exact production evidence in release 1.27; full
 investigation/visual specifications remain IN PROGRESS.
 
 [Evidence read recovery](docs/PRODUCT_READ_RECOVERY.md) is DONE within verified 1.28 scope: scoped retry, request ownership and server-authoritative comparison results. Full specifications remain IN PROGRESS.
+
+The owner’s [Investigation Engine specification](docs/INVESTIGATION_ENGINE_SPEC.md)
+is being implemented through [iterative research 1.34](docs/PRODUCT_ITERATIVE_RESEARCH.md).
+The section 47 audit precedes additive code changes; full acceptance remains open.

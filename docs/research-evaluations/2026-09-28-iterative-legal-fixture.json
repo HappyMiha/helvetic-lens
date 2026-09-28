@@ -1,0 +1,2414 @@
+{
+  "kind": "real_native_worker_with_controlled_external_adapters",
+  "not_live_provider_validation": true,
+  "trace": {
+    "queries": [
+      "Alpine Foundation legal identity",
+      "Alpine Foundation grants report",
+      "River Trust Alpine Foundation recipient disclosure 2024 grant amount"
+    ],
+    "reads": [
+      "https://example.org/identity",
+      "https://example.org/grant",
+      "https://example.org/recipient"
+    ],
+    "models": [
+      {
+        "phase": "ResearchPlan",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch_slots": 4
+        }
+      },
+      {
+        "phase": "ResearchExtraction",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "source": {
+            "id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+            "kind": "public_source",
+            "title": "Alpine Foundation identity",
+            "excerpts": [
+              {
+                "text": "The Registry of Switzerland identifies Alpine Foundation as CH-100, a foundation established in Switzerland.",
+                "passage": "p1"
+              }
+            ]
+          },
+          "existing_claims": [],
+          "branch": "Alpine Foundation legal identity"
+        }
+      },
+      {
+        "phase": "Reflection",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "Alpine Foundation legal identity",
+          "sources": [
+            {
+              "id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+              "excerpts": [
+                {
+                  "text": "The Registry of Switzerland identifies Alpine Foundation as CH-100, a foundation established in Switzerland.",
+                  "passage": "p1"
+                }
+              ]
+            }
+          ],
+          "claims": [],
+          "previous_questions": [
+            {
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity"
+            },
+            {
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report"
+            }
+          ]
+        }
+      },
+      {
+        "phase": "ResearchExtraction",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "source": {
+            "id": "4258cd48-6286-47d4-9048-5e6917342d26",
+            "kind": "public_source",
+            "title": "Alpine Foundation grant",
+            "excerpts": [
+              {
+                "text": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+                "passage": "p1"
+              }
+            ]
+          },
+          "existing_claims": [],
+          "branch": "Alpine Foundation grants report"
+        }
+      },
+      {
+        "phase": "Reflection",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "Alpine Foundation grants report",
+          "sources": [
+            {
+              "id": "4258cd48-6286-47d4-9048-5e6917342d26",
+              "excerpts": [
+                {
+                  "text": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+                  "passage": "p1"
+                }
+              ]
+            }
+          ],
+          "claims": [
+            {
+              "id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+              "statement": "Alpine Foundation granted CHF 50,000 to River Trust in 2024.",
+              "status": "SUPPORTED"
+            }
+          ],
+          "previous_questions": [
+            {
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity"
+            },
+            {
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report"
+            }
+          ]
+        }
+      },
+      {
+        "phase": "ResearchExtraction",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "source": {
+            "id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+            "kind": "public_source",
+            "title": "Alpine Foundation recipient",
+            "excerpts": [
+              {
+                "text": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+                "passage": "p1"
+              }
+            ]
+          },
+          "existing_claims": [
+            {
+              "id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+              "statement": "Alpine Foundation granted CHF 50,000 to River Trust in 2024.",
+              "status": "SUPPORTED"
+            }
+          ],
+          "branch": "River Trust Alpine Foundation recipient disclosure 2024 grant amount"
+        }
+      },
+      {
+        "phase": "Reflection",
+        "input": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+          "sources": [
+            {
+              "id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+              "excerpts": [
+                {
+                  "text": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+                  "passage": "p1"
+                }
+              ]
+            }
+          ],
+          "claims": [
+            {
+              "id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+              "statement": "Alpine Foundation granted CHF 50,000 to River Trust in 2024.",
+              "status": "CONTESTED"
+            }
+          ],
+          "previous_questions": [
+            {
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity"
+            },
+            {
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report"
+            },
+            {
+              "question": "Does River Trust disclose the same amount for 2024?",
+              "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount"
+            }
+          ]
+        }
+      }
+    ],
+    "gates": [
+      {
+        "engine": "jev",
+        "state": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "Alpine Foundation legal identity",
+          "title": "Vaud motorway deforestation in the canton",
+          "snippet": "Public fixture candidate"
+        }
+      },
+      {
+        "engine": "jev",
+        "state": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "Alpine Foundation legal identity",
+          "title": "Alpine Foundation identity",
+          "snippet": "Public fixture candidate"
+        }
+      },
+      {
+        "engine": "jev",
+        "state": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "Alpine Foundation grants report",
+          "title": "Vaud motorway deforestation in the canton",
+          "snippet": "Public fixture candidate"
+        }
+      },
+      {
+        "engine": "jev",
+        "state": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "Alpine Foundation grants report",
+          "title": "Alpine Foundation grant",
+          "snippet": "Public fixture candidate"
+        }
+      },
+      {
+        "engine": "jev",
+        "state": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+          "title": "Vaud motorway deforestation in the canton",
+          "snippet": "Public fixture candidate"
+        }
+      },
+      {
+        "engine": "jev",
+        "state": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "branch": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+          "title": "Alpine Foundation recipient",
+          "snippet": "Public fixture candidate"
+        }
+      }
+    ]
+  },
+  "run": {
+    "id": "fc7e32ff-f233-4385-b014-c49323bee302",
+    "trigger_entry_id": null,
+    "external_discovery": true,
+    "created_by_user_id": "116956a3-e28b-4737-8f44-f028643e820a",
+    "engine": "iterative-v1",
+    "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+    "status": "completed",
+    "revision": 75,
+    "plan_version": 5,
+    "event_sequence": 74,
+    "stop_reason": "Bounded research finished. 1 questions remain open or unresolved; 0 paths include unavailable or interrupted steps. Source support is not independent verification.",
+    "created_at": "2026-09-28T15:58:30.950515+00:00",
+    "updated_at": "2026-09-28T15:58:42.567160+00:00",
+    "web_research_trigger": null,
+    "monitoring_trigger": null,
+    "original": null,
+    "research": {
+      "version": "iterative-v1",
+      "limits": {
+        "branches": 8,
+        "depth": 4,
+        "sources_per_branch": 2,
+        "candidates_per_branch": 8,
+        "search_requests": 24,
+        "source_fetches": 12,
+        "model_calls": 24,
+        "decision_calls": 128,
+        "active_seconds": 1200
+      },
+      "used": {
+        "model_calls": 7,
+        "active_seconds": 2.07,
+        "search_requests": 6,
+        "decision_calls": 12,
+        "source_fetches": 3
+      },
+      "questions": [
+        {
+          "id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+          "question": "What is the foundation's legal identity?",
+          "query": "Alpine Foundation legal identity",
+          "purpose": "Establish the legal entity from registry evidence.",
+          "priority": 5,
+          "query_key": "8166d45e938abc85d84b9f19dad320b23b82cb1385fec68f92bf2dd7f1948227",
+          "kind": "planned",
+          "parent_branch_id": null,
+          "depth": 0,
+          "trigger": null,
+          "claim_id": null,
+          "claim_revision_before": null,
+          "status": "unresolved",
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "created_at": "2026-09-28T15:58:33.265148+00:00",
+          "waiting_reason": null,
+          "outcome": "Captured cited public records; recipient amount still needs comparison.",
+          "answer_evidence_ids": [],
+          "completed_at": "2026-09-28T15:58:36.204247+00:00"
+        },
+        {
+          "id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+          "question": "Which grants does the foundation disclose?",
+          "query": "Alpine Foundation grants report",
+          "purpose": "Find documented grants and recipients.",
+          "priority": 4,
+          "query_key": "c3ca052c911e6ebb873a2874cba78d290d1c08ffb0ab9661f9303c0323261e78",
+          "kind": "planned",
+          "parent_branch_id": null,
+          "depth": 0,
+          "trigger": null,
+          "claim_id": null,
+          "claim_revision_before": null,
+          "status": "evidence_found",
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "created_at": "2026-09-28T15:58:33.269681+00:00",
+          "waiting_reason": null,
+          "outcome": "Captured cited public records; recipient amount still needs comparison.",
+          "answer_evidence_ids": [
+            "672d5096-486a-4366-948d-f59ff9d34bdf"
+          ],
+          "completed_at": "2026-09-28T15:58:39.083627+00:00"
+        },
+        {
+          "id": "db9851be-714a-4a76-8322-e8aa578c2058",
+          "question": "Does River Trust disclose the same amount for 2024?",
+          "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+          "purpose": "Test the reported amount against the recipient's own disclosure.",
+          "priority": 5,
+          "query_key": "57b9315427a60d0deca4ccc95fd46c6311a1a909ccfcc3ea54f49f5731f0f09a",
+          "kind": "independent_verification",
+          "parent_branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "depth": 1,
+          "trigger": {
+            "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+            "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+            "locator": "p1",
+            "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+            "method": "machine_extraction",
+            "independently_verified": false
+          },
+          "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+          "claim_revision_before": 1,
+          "status": "evidence_found",
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "created_at": "2026-09-28T15:58:39.060712+00:00",
+          "waiting_reason": null,
+          "outcome": "Captured cited public records; recipient amount still needs comparison.",
+          "answer_evidence_ids": [
+            "10f12aec-997f-4513-a061-291082d5bb28"
+          ],
+          "completed_at": "2026-09-28T15:58:42.482707+00:00"
+        }
+      ],
+      "objective": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+      "completion_criteria": [
+        "Trace recipient-side evidence for disclosed grants."
+      ],
+      "stops": [],
+      "decision_order": "jev_first",
+      "initial_limits": {
+        "branches": 8,
+        "depth": 4,
+        "sources_per_branch": 2,
+        "candidates_per_branch": 8,
+        "search_requests": 24,
+        "source_fetches": 12,
+        "model_calls": 24,
+        "decision_calls": 128,
+        "active_seconds": 1200
+      },
+      "budget_basis": "Cumulative reservations, including interrupted attempts. Gate reserves both possible providers; unused fallback capacity is not a bill. Active seconds count execution, not queue/pause time."
+    },
+    "plans": [
+      {
+        "id": "f25a7e3f-2f78-4fc2-9b66-69e565c37dfd",
+        "version": 1,
+        "reason": "Plan the submitted question before searching.",
+        "document": {
+          "branches": [
+            {
+              "id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+              "query": "Research plan fc7e32ff-f233-4385-b014-c49323bee302",
+              "phase": "plan",
+              "status": "queued"
+            }
+          ],
+          "trigger": null,
+          "budgets": {
+            "branches": 8,
+            "depth": 4,
+            "sources_per_branch": 2,
+            "candidates_per_branch": 8,
+            "search_requests": 24,
+            "source_fetches": 12,
+            "model_calls": 24,
+            "decision_calls": 128,
+            "active_seconds": 1200
+          },
+          "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached.",
+          "used": {},
+          "objective": "",
+          "completion_criteria": [],
+          "questions": []
+        },
+        "created_at": "2026-09-28T15:58:32.432457+00:00"
+      },
+      {
+        "id": "7a47728f-9cbb-495f-82ff-75e78000b34b",
+        "version": 2,
+        "reason": "Research question decomposed into independent directions; capacity retained for follow-up evidence.",
+        "document": {
+          "branches": [
+            {
+              "id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+              "query": "Research plan fc7e32ff-f233-4385-b014-c49323bee302",
+              "phase": "plan",
+              "status": "running"
+            },
+            {
+              "id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "query": "Alpine Foundation legal identity",
+              "phase": "search",
+              "status": "queued"
+            },
+            {
+              "id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "query": "Alpine Foundation grants report",
+              "phase": "search",
+              "status": "queued"
+            }
+          ],
+          "trigger": null,
+          "budgets": {
+            "branches": 8,
+            "depth": 4,
+            "sources_per_branch": 2,
+            "candidates_per_branch": 8,
+            "search_requests": 24,
+            "source_fetches": 12,
+            "model_calls": 24,
+            "decision_calls": 128,
+            "active_seconds": 1200
+          },
+          "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached.",
+          "used": {
+            "model_calls": 1,
+            "active_seconds": 0.092
+          },
+          "objective": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "completion_criteria": [
+            "Trace recipient-side evidence for disclosed grants."
+          ],
+          "questions": [
+            {
+              "id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity",
+              "purpose": "Establish the legal entity from registry evidence.",
+              "priority": 5,
+              "query_key": "8166d45e938abc85d84b9f19dad320b23b82cb1385fec68f92bf2dd7f1948227",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "investigating",
+              "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "created_at": "2026-09-28T15:58:33.265148+00:00",
+              "waiting_reason": null
+            },
+            {
+              "id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report",
+              "purpose": "Find documented grants and recipients.",
+              "priority": 4,
+              "query_key": "c3ca052c911e6ebb873a2874cba78d290d1c08ffb0ab9661f9303c0323261e78",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "investigating",
+              "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "created_at": "2026-09-28T15:58:33.269681+00:00",
+              "waiting_reason": null
+            }
+          ]
+        },
+        "created_at": "2026-09-28T15:58:33.285731+00:00"
+      },
+      {
+        "id": "5bf8b60e-c74a-410d-85ef-9a52c8752f2f",
+        "version": 3,
+        "reason": "Revised research plan from newly captured public evidence.",
+        "document": {
+          "branches": [
+            {
+              "id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+              "query": "Research plan fc7e32ff-f233-4385-b014-c49323bee302",
+              "phase": "plan",
+              "status": "completed"
+            },
+            {
+              "id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "query": "Alpine Foundation legal identity",
+              "phase": "reflect",
+              "status": "running"
+            },
+            {
+              "id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "query": "Alpine Foundation grants report",
+              "phase": "search",
+              "status": "queued"
+            }
+          ],
+          "trigger": null,
+          "budgets": {
+            "branches": 8,
+            "depth": 4,
+            "sources_per_branch": 2,
+            "candidates_per_branch": 8,
+            "search_requests": 24,
+            "source_fetches": 12,
+            "model_calls": 24,
+            "decision_calls": 128,
+            "active_seconds": 1200
+          },
+          "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached.",
+          "used": {
+            "model_calls": 3,
+            "active_seconds": 0.607,
+            "search_requests": 2,
+            "decision_calls": 4,
+            "source_fetches": 1
+          },
+          "objective": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "completion_criteria": [
+            "Trace recipient-side evidence for disclosed grants."
+          ],
+          "questions": [
+            {
+              "id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity",
+              "purpose": "Establish the legal entity from registry evidence.",
+              "priority": 5,
+              "query_key": "8166d45e938abc85d84b9f19dad320b23b82cb1385fec68f92bf2dd7f1948227",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "investigating",
+              "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "created_at": "2026-09-28T15:58:33.265148+00:00",
+              "waiting_reason": null
+            },
+            {
+              "id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report",
+              "purpose": "Find documented grants and recipients.",
+              "priority": 4,
+              "query_key": "c3ca052c911e6ebb873a2874cba78d290d1c08ffb0ab9661f9303c0323261e78",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "investigating",
+              "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "created_at": "2026-09-28T15:58:33.269681+00:00",
+              "waiting_reason": null
+            }
+          ]
+        },
+        "created_at": "2026-09-28T15:58:36.196261+00:00"
+      },
+      {
+        "id": "b6fc6255-2388-4163-ac01-15225ad013ed",
+        "version": 4,
+        "reason": "Revised research plan from newly captured public evidence.",
+        "document": {
+          "branches": [
+            {
+              "id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+              "query": "Research plan fc7e32ff-f233-4385-b014-c49323bee302",
+              "phase": "plan",
+              "status": "completed"
+            },
+            {
+              "id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "query": "Alpine Foundation legal identity",
+              "phase": "reflect",
+              "status": "completed"
+            },
+            {
+              "id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "query": "Alpine Foundation grants report",
+              "phase": "reflect",
+              "status": "running"
+            },
+            {
+              "id": "18863521-a94d-43ca-87c6-f6933643eb32",
+              "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+              "phase": "search",
+              "status": "queued"
+            }
+          ],
+          "trigger": null,
+          "budgets": {
+            "branches": 8,
+            "depth": 4,
+            "sources_per_branch": 2,
+            "candidates_per_branch": 8,
+            "search_requests": 24,
+            "source_fetches": 12,
+            "model_calls": 24,
+            "decision_calls": 128,
+            "active_seconds": 1200
+          },
+          "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached.",
+          "used": {
+            "model_calls": 5,
+            "active_seconds": 1.119,
+            "search_requests": 4,
+            "decision_calls": 8,
+            "source_fetches": 2
+          },
+          "objective": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "completion_criteria": [
+            "Trace recipient-side evidence for disclosed grants."
+          ],
+          "questions": [
+            {
+              "id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity",
+              "purpose": "Establish the legal entity from registry evidence.",
+              "priority": 5,
+              "query_key": "8166d45e938abc85d84b9f19dad320b23b82cb1385fec68f92bf2dd7f1948227",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "unresolved",
+              "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "created_at": "2026-09-28T15:58:33.265148+00:00",
+              "waiting_reason": null,
+              "outcome": "Captured cited public records; recipient amount still needs comparison.",
+              "answer_evidence_ids": [],
+              "completed_at": "2026-09-28T15:58:36.204247+00:00"
+            },
+            {
+              "id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report",
+              "purpose": "Find documented grants and recipients.",
+              "priority": 4,
+              "query_key": "c3ca052c911e6ebb873a2874cba78d290d1c08ffb0ab9661f9303c0323261e78",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "investigating",
+              "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "created_at": "2026-09-28T15:58:33.269681+00:00",
+              "waiting_reason": null
+            },
+            {
+              "id": "db9851be-714a-4a76-8322-e8aa578c2058",
+              "question": "Does River Trust disclose the same amount for 2024?",
+              "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+              "purpose": "Test the reported amount against the recipient's own disclosure.",
+              "priority": 5,
+              "query_key": "57b9315427a60d0deca4ccc95fd46c6311a1a909ccfcc3ea54f49f5731f0f09a",
+              "kind": "independent_verification",
+              "parent_branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "depth": 1,
+              "trigger": {
+                "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+                "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+                "locator": "p1",
+                "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+                "method": "machine_extraction",
+                "independently_verified": false
+              },
+              "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+              "claim_revision_before": 1,
+              "status": "investigating",
+              "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+              "created_at": "2026-09-28T15:58:39.060712+00:00",
+              "waiting_reason": null
+            }
+          ]
+        },
+        "created_at": "2026-09-28T15:58:39.075570+00:00"
+      },
+      {
+        "id": "26711478-dd1f-43d5-9a5f-dda6dea823e3",
+        "version": 5,
+        "reason": "Revised research plan from newly captured public evidence.",
+        "document": {
+          "branches": [
+            {
+              "id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+              "query": "Research plan fc7e32ff-f233-4385-b014-c49323bee302",
+              "phase": "plan",
+              "status": "completed"
+            },
+            {
+              "id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "query": "Alpine Foundation legal identity",
+              "phase": "reflect",
+              "status": "completed"
+            },
+            {
+              "id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "query": "Alpine Foundation grants report",
+              "phase": "reflect",
+              "status": "completed"
+            },
+            {
+              "id": "18863521-a94d-43ca-87c6-f6933643eb32",
+              "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+              "phase": "reflect",
+              "status": "running"
+            }
+          ],
+          "trigger": null,
+          "budgets": {
+            "branches": 8,
+            "depth": 4,
+            "sources_per_branch": 2,
+            "candidates_per_branch": 8,
+            "search_requests": 24,
+            "source_fetches": 12,
+            "model_calls": 24,
+            "decision_calls": 128,
+            "active_seconds": 1200
+          },
+          "stop_rule": "Stop when pending branches finish or the explicit evidence/query budgets are reached.",
+          "used": {
+            "model_calls": 7,
+            "active_seconds": 2.07,
+            "search_requests": 6,
+            "decision_calls": 12,
+            "source_fetches": 3
+          },
+          "objective": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "completion_criteria": [
+            "Trace recipient-side evidence for disclosed grants."
+          ],
+          "questions": [
+            {
+              "id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+              "question": "What is the foundation's legal identity?",
+              "query": "Alpine Foundation legal identity",
+              "purpose": "Establish the legal entity from registry evidence.",
+              "priority": 5,
+              "query_key": "8166d45e938abc85d84b9f19dad320b23b82cb1385fec68f92bf2dd7f1948227",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "unresolved",
+              "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+              "created_at": "2026-09-28T15:58:33.265148+00:00",
+              "waiting_reason": null,
+              "outcome": "Captured cited public records; recipient amount still needs comparison.",
+              "answer_evidence_ids": [],
+              "completed_at": "2026-09-28T15:58:36.204247+00:00"
+            },
+            {
+              "id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+              "question": "Which grants does the foundation disclose?",
+              "query": "Alpine Foundation grants report",
+              "purpose": "Find documented grants and recipients.",
+              "priority": 4,
+              "query_key": "c3ca052c911e6ebb873a2874cba78d290d1c08ffb0ab9661f9303c0323261e78",
+              "kind": "planned",
+              "parent_branch_id": null,
+              "depth": 0,
+              "trigger": null,
+              "claim_id": null,
+              "claim_revision_before": null,
+              "status": "evidence_found",
+              "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "created_at": "2026-09-28T15:58:33.269681+00:00",
+              "waiting_reason": null,
+              "outcome": "Captured cited public records; recipient amount still needs comparison.",
+              "answer_evidence_ids": [
+                "672d5096-486a-4366-948d-f59ff9d34bdf"
+              ],
+              "completed_at": "2026-09-28T15:58:39.083627+00:00"
+            },
+            {
+              "id": "db9851be-714a-4a76-8322-e8aa578c2058",
+              "question": "Does River Trust disclose the same amount for 2024?",
+              "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+              "purpose": "Test the reported amount against the recipient's own disclosure.",
+              "priority": 5,
+              "query_key": "57b9315427a60d0deca4ccc95fd46c6311a1a909ccfcc3ea54f49f5731f0f09a",
+              "kind": "independent_verification",
+              "parent_branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+              "depth": 1,
+              "trigger": {
+                "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+                "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+                "locator": "p1",
+                "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+                "method": "machine_extraction",
+                "independently_verified": false
+              },
+              "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+              "claim_revision_before": 1,
+              "status": "investigating",
+              "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+              "created_at": "2026-09-28T15:58:39.060712+00:00",
+              "waiting_reason": null
+            }
+          ]
+        },
+        "created_at": "2026-09-28T15:58:42.474063+00:00"
+      }
+    ],
+    "branches": [
+      {
+        "id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+        "query": "Research plan fc7e32ff-f233-4385-b014-c49323bee302",
+        "status": "completed",
+        "phase": "plan",
+        "reason": "Decompose the question into useful research directions.",
+        "steps": [
+          {
+            "id": "fab383b5-cb3f-402f-beb0-6733e802307d",
+            "phase": "plan",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:33.149406+00:00",
+            "finished_at": "2026-09-28T15:58:33.284239+00:00"
+          }
+        ],
+        "error": null,
+        "coverage": null,
+        "question_id": null,
+        "parent_branch_id": null,
+        "depth": null,
+        "decisions": [],
+        "candidate_counts": null,
+        "model_routes": [
+          {
+            "step_id": "fab383b5-cb3f-402f-beb0-6733e802307d",
+            "phase": "plan",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          }
+        ],
+        "outcome": null
+      },
+      {
+        "id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+        "query": "Alpine Foundation legal identity",
+        "status": "completed",
+        "phase": "reflect",
+        "reason": "Establish the legal entity from registry evidence.",
+        "steps": [
+          {
+            "id": "6d5420ef-bbdb-42da-9fb2-1a95d1f9cec9",
+            "phase": "search",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:33.575593+00:00",
+            "finished_at": "2026-09-28T15:58:33.680736+00:00"
+          },
+          {
+            "id": "4f5a303e-eb7a-42af-9d2b-8e5e9ad7c07b",
+            "phase": "gate",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:33.965583+00:00",
+            "finished_at": "2026-09-28T15:58:34.061344+00:00"
+          },
+          {
+            "id": "a61d2c30-38e6-4ca2-80f0-a8d9cec0d367",
+            "phase": "gate",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:34.361074+00:00",
+            "finished_at": "2026-09-28T15:58:34.463022+00:00"
+          },
+          {
+            "id": "80348279-8f68-4855-9df0-1b4eef4da0d8",
+            "phase": "read",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:35.219685+00:00",
+            "finished_at": "2026-09-28T15:58:35.327536+00:00"
+          },
+          {
+            "id": "c5f380f9-3e3d-47e6-bb54-1f2761e673c0",
+            "phase": "extract",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:35.663911+00:00",
+            "finished_at": "2026-09-28T15:58:35.779487+00:00"
+          },
+          {
+            "id": "e61dabe4-2ef8-4cc2-851c-e8d5ca3f8ef5",
+            "phase": "reflect",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:36.080255+00:00",
+            "finished_at": "2026-09-28T15:58:36.195047+00:00"
+          }
+        ],
+        "error": null,
+        "coverage": {
+          "retrieval": {
+            "lanes": [
+              {
+                "status": "complete",
+                "name": "Fixture search index"
+              }
+            ],
+            "search_requests": 3
+          },
+          "scope": "Federated candidate retrieval only. Each candidate requires a separate relevance gate before reading."
+        },
+        "question_id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+        "parent_branch_id": null,
+        "depth": 0,
+        "decisions": [
+          {
+            "id": "362a284952d3a7250e4bdd72a659ea78",
+            "url": "https://example.org/road",
+            "title": "Vaud motorway deforestation in the canton",
+            "verdict": "unrelated",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          },
+          {
+            "id": "689f6a627384c7dcb2dcc1487e540223",
+            "url": "https://example.org/identity",
+            "title": "Alpine Foundation identity",
+            "verdict": "relevant",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          }
+        ],
+        "candidate_counts": {
+          "retrieved": 2,
+          "duplicate_or_excluded": 0,
+          "outside_candidate_budget": 0,
+          "not_evaluated_within_source_budget": 0
+        },
+        "model_routes": [
+          {
+            "step_id": "c5f380f9-3e3d-47e6-bb54-1f2761e673c0",
+            "phase": "extract",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          },
+          {
+            "step_id": "e61dabe4-2ef8-4cc2-851c-e8d5ca3f8ef5",
+            "phase": "reflect",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          }
+        ],
+        "outcome": "Captured cited public records; recipient amount still needs comparison."
+      },
+      {
+        "id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+        "query": "Alpine Foundation grants report",
+        "status": "completed",
+        "phase": "reflect",
+        "reason": "Find documented grants and recipients.",
+        "steps": [
+          {
+            "id": "5e88abe1-7480-4bf7-bccd-5801a054e462",
+            "phase": "search",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:36.508924+00:00",
+            "finished_at": "2026-09-28T15:58:36.613871+00:00"
+          },
+          {
+            "id": "717a2167-41ed-41b6-9529-c9ad299c5bcf",
+            "phase": "gate",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:36.888299+00:00",
+            "finished_at": "2026-09-28T15:58:36.981201+00:00"
+          },
+          {
+            "id": "29318cfa-3023-4b57-9da8-cc52fdef1bf9",
+            "phase": "gate",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:37.704785+00:00",
+            "finished_at": "2026-09-28T15:58:37.800328+00:00"
+          },
+          {
+            "id": "1dd703ac-ea72-48d5-a2ba-36fced9322de",
+            "phase": "read",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:38.119515+00:00",
+            "finished_at": "2026-09-28T15:58:38.229948+00:00"
+          },
+          {
+            "id": "638cb621-577a-4377-b244-edbde882bf8e",
+            "phase": "extract",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:38.531069+00:00",
+            "finished_at": "2026-09-28T15:58:38.653063+00:00"
+          },
+          {
+            "id": "ceccb71f-1c1a-4796-9140-29ec5eae8008",
+            "phase": "reflect",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:38.950055+00:00",
+            "finished_at": "2026-09-28T15:58:39.074457+00:00"
+          }
+        ],
+        "error": null,
+        "coverage": {
+          "retrieval": {
+            "lanes": [
+              {
+                "status": "complete",
+                "name": "Fixture search index"
+              }
+            ],
+            "search_requests": 3
+          },
+          "scope": "Federated candidate retrieval only. Each candidate requires a separate relevance gate before reading."
+        },
+        "question_id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+        "parent_branch_id": null,
+        "depth": 0,
+        "decisions": [
+          {
+            "id": "362a284952d3a7250e4bdd72a659ea78",
+            "url": "https://example.org/road",
+            "title": "Vaud motorway deforestation in the canton",
+            "verdict": "unrelated",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          },
+          {
+            "id": "3492ad65d05a973fef8c825521eeb41a",
+            "url": "https://example.org/grant",
+            "title": "Alpine Foundation grant",
+            "verdict": "relevant",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          }
+        ],
+        "candidate_counts": {
+          "retrieved": 2,
+          "duplicate_or_excluded": 0,
+          "outside_candidate_budget": 0,
+          "not_evaluated_within_source_budget": 0
+        },
+        "model_routes": [
+          {
+            "step_id": "638cb621-577a-4377-b244-edbde882bf8e",
+            "phase": "extract",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          },
+          {
+            "step_id": "ceccb71f-1c1a-4796-9140-29ec5eae8008",
+            "phase": "reflect",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          }
+        ],
+        "outcome": "Captured cited public records; recipient amount still needs comparison."
+      },
+      {
+        "id": "18863521-a94d-43ca-87c6-f6933643eb32",
+        "query": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+        "status": "completed",
+        "phase": "reflect",
+        "reason": "Test the reported amount against the recipient's own disclosure.",
+        "steps": [
+          {
+            "id": "861616f0-8acd-43bd-b117-ad2001218c81",
+            "phase": "search",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:39.429349+00:00",
+            "finished_at": "2026-09-28T15:58:39.988265+00:00"
+          },
+          {
+            "id": "c3de5956-2093-463a-a1c6-65f2af0d39c0",
+            "phase": "gate",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:40.302659+00:00",
+            "finished_at": "2026-09-28T15:58:40.394187+00:00"
+          },
+          {
+            "id": "ac2ff0d3-c4b6-41e1-a769-90c9a22e0f0a",
+            "phase": "gate",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:40.683969+00:00",
+            "finished_at": "2026-09-28T15:58:40.773002+00:00"
+          },
+          {
+            "id": "49d633af-b3b5-4867-9956-66ca8372a43d",
+            "phase": "read",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:41.076482+00:00",
+            "finished_at": "2026-09-28T15:58:41.179584+00:00"
+          },
+          {
+            "id": "e7d88448-3164-42b2-a15c-0049561e6619",
+            "phase": "extract",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:41.496418+00:00",
+            "finished_at": "2026-09-28T15:58:41.622413+00:00"
+          },
+          {
+            "id": "aae6cd77-dfab-482e-b69a-d73e8b489589",
+            "phase": "reflect",
+            "status": "completed",
+            "started_at": "2026-09-28T15:58:42.367342+00:00",
+            "finished_at": "2026-09-28T15:58:42.472774+00:00"
+          }
+        ],
+        "error": null,
+        "coverage": {
+          "retrieval": {
+            "lanes": [
+              {
+                "status": "complete",
+                "name": "Fixture search index"
+              }
+            ],
+            "search_requests": 3
+          },
+          "scope": "Federated candidate retrieval only. Each candidate requires a separate relevance gate before reading."
+        },
+        "question_id": "db9851be-714a-4a76-8322-e8aa578c2058",
+        "parent_branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+        "depth": 1,
+        "decisions": [
+          {
+            "id": "362a284952d3a7250e4bdd72a659ea78",
+            "url": "https://example.org/road",
+            "title": "Vaud motorway deforestation in the canton",
+            "verdict": "unrelated",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          },
+          {
+            "id": "665d0698dbc8fb95afc25c3a4d9cf280",
+            "url": "https://example.org/recipient",
+            "title": "Alpine Foundation recipient",
+            "verdict": "relevant",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          }
+        ],
+        "candidate_counts": {
+          "retrieved": 2,
+          "duplicate_or_excluded": 0,
+          "outside_candidate_budget": 0,
+          "not_evaluated_within_source_budget": 0
+        },
+        "model_routes": [
+          {
+            "step_id": "e7d88448-3164-42b2-a15c-0049561e6619",
+            "phase": "extract",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          },
+          {
+            "step_id": "aae6cd77-dfab-482e-b69a-d73e8b489589",
+            "phase": "reflect",
+            "provider": "custom",
+            "model": "apertus-1.5b-q4km",
+            "basis": "Workspace configuration used for this request; provider response does not expose model identity here."
+          }
+        ],
+        "outcome": "Captured cited public records; recipient amount still needs comparison."
+      }
+    ],
+    "sources": [
+      {
+        "id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+        "kind": "public_source",
+        "title": "Alpine Foundation identity",
+        "url": "https://example.org/identity",
+        "sha256": "d12f0e79a8a27dd07f6e8da95ad9a123388af2184858b8f0aa34b96d38b0ba6a",
+        "snapshot": {
+          "status": "complete",
+          "url": "https://example.org/identity",
+          "sha256": "d12f0e79a8a27dd07f6e8da95ad9a123388af2184858b8f0aa34b96d38b0ba6a",
+          "excerpts": [
+            {
+              "text": "The Registry of Switzerland identifies Alpine Foundation as CH-100, a foundation established in Switzerland.",
+              "passage": "p1"
+            }
+          ],
+          "scope": "Controlled fixture public evidence",
+          "title": "Alpine Foundation identity",
+          "retrieval_queries": [
+            "Alpine Foundation legal identity"
+          ],
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "research_question": "Alpine Foundation legal identity",
+          "relevance_gate": {
+            "id": "689f6a627384c7dcb2dcc1487e540223",
+            "url": "https://example.org/identity",
+            "title": "Alpine Foundation identity",
+            "verdict": "relevant",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          },
+          "source_class": {
+            "category": "primary",
+            "basis": "Machine classification of the cited source passage; not a truth rating.",
+            "source_id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+            "quote": "The Registry of Switzerland identifies Alpine Foundation as CH-100, a foundation established in Switzerland.",
+            "locator": "p1",
+            "sha256": "d12f0e79a8a27dd07f6e8da95ad9a123388af2184858b8f0aa34b96d38b0ba6a",
+            "method": "machine_extraction",
+            "independently_verified": false
+          }
+        },
+        "original": null,
+        "created_at": "2026-09-28T15:58:35.321371+00:00"
+      },
+      {
+        "id": "4258cd48-6286-47d4-9048-5e6917342d26",
+        "kind": "public_source",
+        "title": "Alpine Foundation grant",
+        "url": "https://example.org/grant",
+        "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+        "snapshot": {
+          "status": "complete",
+          "url": "https://example.org/grant",
+          "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+          "excerpts": [
+            {
+              "text": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+              "passage": "p1"
+            }
+          ],
+          "scope": "Controlled fixture public evidence",
+          "title": "Alpine Foundation grant",
+          "retrieval_queries": [
+            "Alpine Foundation grants report"
+          ],
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "research_question": "Alpine Foundation grants report",
+          "relevance_gate": {
+            "id": "3492ad65d05a973fef8c825521eeb41a",
+            "url": "https://example.org/grant",
+            "title": "Alpine Foundation grant",
+            "verdict": "relevant",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          },
+          "source_class": {
+            "category": "primary",
+            "basis": "Machine classification of the cited source passage; not a truth rating.",
+            "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+            "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+            "locator": "p1",
+            "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+            "method": "machine_extraction",
+            "independently_verified": false
+          }
+        },
+        "original": null,
+        "created_at": "2026-09-28T15:58:38.225022+00:00"
+      },
+      {
+        "id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+        "kind": "public_source",
+        "title": "Alpine Foundation recipient",
+        "url": "https://example.org/recipient",
+        "sha256": "195a78cdb36d4aa7b2b635f6df4f650403c09b2a1ad58fea47e67e45a8e3f07f",
+        "snapshot": {
+          "status": "complete",
+          "url": "https://example.org/recipient",
+          "sha256": "195a78cdb36d4aa7b2b635f6df4f650403c09b2a1ad58fea47e67e45a8e3f07f",
+          "excerpts": [
+            {
+              "text": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+              "passage": "p1"
+            }
+          ],
+          "scope": "Controlled fixture public evidence",
+          "title": "Alpine Foundation recipient",
+          "retrieval_queries": [
+            "River Trust Alpine Foundation recipient disclosure 2024 grant amount"
+          ],
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "research_question": "River Trust Alpine Foundation recipient disclosure 2024 grant amount",
+          "relevance_gate": {
+            "id": "665d0698dbc8fb95afc25c3a4d9cf280",
+            "url": "https://example.org/recipient",
+            "title": "Alpine Foundation recipient",
+            "verdict": "relevant",
+            "engine": "jev",
+            "model": "fixture-jev",
+            "confidence": 1,
+            "latency_ms": 1,
+            "fallback_errors": [],
+            "usage": {
+              "engine": "jev",
+              "models": [
+                "fixture-jev"
+              ],
+              "error": null,
+              "input_tokens": 12,
+              "output_tokens": 1,
+              "estimated_cost_usd": null,
+              "cost_basis": null,
+              "cost_scope": "Decision inference only; search index and hosting costs excluded. Estimate, not a bill.",
+              "confidence_definition": "Provider-reported concentration; differs between Jev and Laya. Not measured accuracy."
+            },
+            "basis": "Model topical classification of title/snippet; not factual verification."
+          },
+          "source_class": {
+            "category": "primary",
+            "basis": "Machine classification of the cited source passage; not a truth rating.",
+            "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+            "quote": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+            "locator": "p1",
+            "sha256": "195a78cdb36d4aa7b2b635f6df4f650403c09b2a1ad58fea47e67e45a8e3f07f",
+            "method": "machine_extraction",
+            "independently_verified": false
+          }
+        },
+        "original": null,
+        "created_at": "2026-09-28T15:58:41.174297+00:00"
+      }
+    ],
+    "claims": [
+      {
+        "id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+        "statement": "Alpine Foundation granted CHF 50,000 to River Trust in 2024.",
+        "status": "CONTESTED",
+        "revision": 2,
+        "history": [
+          {
+            "revision": 1,
+            "from": "UNVERIFIED",
+            "to": "SUPPORTED",
+            "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+            "relation": "SUPPORTS",
+            "at": "2026-09-28T15:58:38.637078+00:00",
+            "basis": "Machine-linked source evidence; independent factual verification remains open."
+          },
+          {
+            "revision": 2,
+            "from": "SUPPORTED",
+            "to": "CONTESTED",
+            "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+            "relation": "CONTRADICTS",
+            "at": "2026-09-28T15:58:41.607821+00:00",
+            "basis": "Machine-linked source evidence; independent factual verification remains open."
+          }
+        ],
+        "later_evidence": null
+      }
+    ],
+    "evidence": [
+      {
+        "id": "672d5096-486a-4366-948d-f59ff9d34bdf",
+        "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+        "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+        "relation": "SUPPORTS",
+        "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+        "locator": "p1"
+      },
+      {
+        "id": "10f12aec-997f-4513-a061-291082d5bb28",
+        "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+        "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+        "relation": "CONTRADICTS",
+        "quote": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+        "locator": "p1"
+      }
+    ],
+    "entities": [
+      {
+        "id": "f6b92e58-f5b6-443a-9143-7c945b606b2c",
+        "name": "Alpine Foundation",
+        "kind": "foundation",
+        "evidence": {
+          "source_id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+          "quote": "The Registry of Switzerland identifies Alpine Foundation as CH-100, a foundation established in Switzerland.",
+          "locator": "p1",
+          "sha256": "d12f0e79a8a27dd07f6e8da95ad9a123388af2184858b8f0aa34b96d38b0ba6a",
+          "method": "machine_extraction",
+          "independently_verified": false,
+          "identifier": {
+            "value": "CH-100",
+            "issuer": "Registry of Switzerland",
+            "jurisdiction": "Switzerland",
+            "kind": "foundation"
+          },
+          "mentions": [
+            {
+              "name": "Alpine Foundation",
+              "source_id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+              "quote": "The Registry of Switzerland identifies Alpine Foundation as CH-100, a foundation established in Switzerland.",
+              "locator": "p1",
+              "sha256": "d12f0e79a8a27dd07f6e8da95ad9a123388af2184858b8f0aa34b96d38b0ba6a",
+              "method": "machine_extraction",
+              "independently_verified": false
+            },
+            {
+              "name": "Alpine Foundation",
+              "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+              "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+              "locator": "p1",
+              "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+              "method": "machine_extraction",
+              "independently_verified": false
+            },
+            {
+              "name": "Alpine Foundation",
+              "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+              "quote": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+              "locator": "p1",
+              "sha256": "195a78cdb36d4aa7b2b635f6df4f650403c09b2a1ad58fea47e67e45a8e3f07f",
+              "method": "machine_extraction",
+              "independently_verified": false
+            }
+          ],
+          "identity": "source_identifier"
+        }
+      },
+      {
+        "id": "7d412e1f-118d-4fd8-9166-58bc4ba379cd",
+        "name": "River Trust",
+        "kind": "organisation",
+        "evidence": {
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+          "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+          "locator": "p1",
+          "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+          "method": "machine_extraction",
+          "independently_verified": false,
+          "identifier": {
+            "value": "CH-200",
+            "issuer": "Registry of Switzerland",
+            "jurisdiction": "Switzerland",
+            "kind": "organisation"
+          },
+          "mentions": [
+            {
+              "name": "River Trust",
+              "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+              "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+              "locator": "p1",
+              "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+              "method": "machine_extraction",
+              "independently_verified": false
+            },
+            {
+              "name": "River Trust",
+              "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+              "quote": "River Trust, Registry of Switzerland CH-200, reports receiving CHF 40,000 from Alpine Foundation, Registry of Switzerland CH-100, in 2024.",
+              "locator": "p1",
+              "sha256": "195a78cdb36d4aa7b2b635f6df4f650403c09b2a1ad58fea47e67e45a8e3f07f",
+              "method": "machine_extraction",
+              "independently_verified": false
+            }
+          ],
+          "identity": "source_identifier"
+        }
+      }
+    ],
+    "relationships": [
+      {
+        "id": "d7c765e6-c744-4136-bae6-9367532e5a6b",
+        "subject_id": "f6b92e58-f5b6-443a-9143-7c945b606b2c",
+        "object_id": "7d412e1f-118d-4fd8-9166-58bc4ba379cd",
+        "predicate": "FUNDS",
+        "evidence": {
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+          "quote": "Alpine Foundation, Registry of Switzerland CH-100, granted CHF 50,000 to River Trust, Registry of Switzerland CH-200, in 2024.",
+          "locator": "p1",
+          "sha256": "d98017aa62e6aec2e4ffb78822a1c8b4aa32c6904c8b5c798f5025e0509d7f9c",
+          "method": "machine_extraction",
+          "independently_verified": false,
+          "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+          "amount_text": "CHF 50,000",
+          "period_text": "2024",
+          "label": "source_claim",
+          "temporal_validity": "Only the quoted period; current applicability is unverified."
+        }
+      }
+    ],
+    "activity": [
+      {
+        "sequence": 1,
+        "kind": "investigation_queued",
+        "detail": {
+          "question": "Investigate Alpine Foundation funding, recipients, amounts, periods and documentary evidence.",
+          "disclosure": "The submitted question and follow-up queries derived from public-source evidence may be sent to external search. Private dossier text is never used for external queries. Saved evidence may be analysed by the configured workspace model."
+        },
+        "created_at": "2026-09-28T15:58:31.380617+00:00"
+      },
+      {
+        "sequence": 2,
+        "kind": "plan_updated",
+        "detail": {
+          "version": 1,
+          "reason": "Plan the submitted question before searching.",
+          "trigger": null
+        },
+        "created_at": "2026-09-28T15:58:32.432094+00:00"
+      },
+      {
+        "sequence": 3,
+        "kind": "capabilities_resolved",
+        "detail": {
+          "capabilities": [
+            {
+              "id": "public_web",
+              "available": true,
+              "description": "Search1API Google/Bing discovery across the public web"
+            },
+            {
+              "id": "scientific_literature",
+              "available": false,
+              "description": "Europe PMC literature discovery"
+            },
+            {
+              "id": "source_reader",
+              "available": true,
+              "description": "Permitted anonymous HTML, text and PDF excerpts; robots and size limits apply"
+            },
+            {
+              "id": "saved_evidence",
+              "available": true,
+              "description": "Current dossier contributions and saved monitored extracts"
+            },
+            {
+              "id": "evidence_analysis",
+              "available": false,
+              "description": "Configured workspace model; source-grounded proposals, availability checked during execution"
+            },
+            {
+              "id": "evidence_comparison",
+              "available": false,
+              "description": "Compare independently captured findings with earlier claims in the same dossier audience"
+            },
+            {
+              "id": "authenticated_sources",
+              "available": false,
+              "description": "No authenticated archive or paid database connector attached"
+            },
+            {
+              "id": "ocr",
+              "available": false,
+              "description": "Scanned-image OCR is not available in this workflow"
+            }
+          ]
+        },
+        "created_at": "2026-09-28T15:58:32.453619+00:00"
+      },
+      {
+        "sequence": 4,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+          "phase": "plan"
+        },
+        "created_at": "2026-09-28T15:58:33.150488+00:00"
+      },
+      {
+        "sequence": 5,
+        "kind": "research_question_created",
+        "detail": {
+          "question_id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+          "parent_branch_id": null,
+          "source_id": null
+        },
+        "created_at": "2026-09-28T15:58:33.268629+00:00"
+      },
+      {
+        "sequence": 6,
+        "kind": "research_question_created",
+        "detail": {
+          "question_id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+          "parent_branch_id": null,
+          "source_id": null
+        },
+        "created_at": "2026-09-28T15:58:33.273156+00:00"
+      },
+      {
+        "sequence": 7,
+        "kind": "research_branch_created",
+        "detail": {
+          "question_id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "parent_branch_id": null
+        },
+        "created_at": "2026-09-28T15:58:33.275104+00:00"
+      },
+      {
+        "sequence": 8,
+        "kind": "research_branch_created",
+        "detail": {
+          "question_id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "parent_branch_id": null
+        },
+        "created_at": "2026-09-28T15:58:33.275545+00:00"
+      },
+      {
+        "sequence": 9,
+        "kind": "plan_updated",
+        "detail": {
+          "version": 2,
+          "reason": "Research question decomposed into independent directions; capacity retained for follow-up evidence.",
+          "trigger": null
+        },
+        "created_at": "2026-09-28T15:58:33.285428+00:00"
+      },
+      {
+        "sequence": 10,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "f11d08a5-2526-4d52-8499-c1a82f3a064f",
+          "phase": "plan"
+        },
+        "created_at": "2026-09-28T15:58:33.285435+00:00"
+      },
+      {
+        "sequence": 11,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "search"
+        },
+        "created_at": "2026-09-28T15:58:33.576082+00:00"
+      },
+      {
+        "sequence": 12,
+        "kind": "search_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "retrieved": 2,
+          "duplicate_or_excluded": 0,
+          "outside_candidate_budget": 0
+        },
+        "created_at": "2026-09-28T15:58:33.681787+00:00"
+      },
+      {
+        "sequence": 13,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:33.681813+00:00"
+      },
+      {
+        "sequence": 14,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:33.966232+00:00"
+      },
+      {
+        "sequence": 15,
+        "kind": "candidate_rejected",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "candidate_id": "362a284952d3a7250e4bdd72a659ea78",
+          "verdict": "unrelated",
+          "engine": "jev"
+        },
+        "created_at": "2026-09-28T15:58:34.062322+00:00"
+      },
+      {
+        "sequence": 16,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:34.062329+00:00"
+      },
+      {
+        "sequence": 17,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:34.361756+00:00"
+      },
+      {
+        "sequence": 18,
+        "kind": "candidate_accepted",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "candidate_id": "689f6a627384c7dcb2dcc1487e540223",
+          "verdict": "relevant",
+          "engine": "jev"
+        },
+        "created_at": "2026-09-28T15:58:34.464167+00:00"
+      },
+      {
+        "sequence": 19,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "read"
+        },
+        "created_at": "2026-09-28T15:58:34.464174+00:00"
+      },
+      {
+        "sequence": 20,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "read"
+        },
+        "created_at": "2026-09-28T15:58:35.220420+00:00"
+      },
+      {
+        "sequence": 21,
+        "kind": "source_captured",
+        "detail": {
+          "source_id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+          "title": "Alpine Foundation identity",
+          "source_kind": "public_source"
+        },
+        "created_at": "2026-09-28T15:58:35.326140+00:00"
+      },
+      {
+        "sequence": 22,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "extract"
+        },
+        "created_at": "2026-09-28T15:58:35.328408+00:00"
+      },
+      {
+        "sequence": 23,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "extract"
+        },
+        "created_at": "2026-09-28T15:58:35.664553+00:00"
+      },
+      {
+        "sequence": 24,
+        "kind": "entity_discovered",
+        "detail": {
+          "entity_id": "f6b92e58-f5b6-443a-9143-7c945b606b2c",
+          "source_id": "b1c88bd5-b81f-40cd-a507-5d31f1c01c2d",
+          "name": "Alpine Foundation"
+        },
+        "created_at": "2026-09-28T15:58:35.778525+00:00"
+      },
+      {
+        "sequence": 25,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:35.780398+00:00"
+      },
+      {
+        "sequence": 26,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:36.080996+00:00"
+      },
+      {
+        "sequence": 27,
+        "kind": "plan_updated",
+        "detail": {
+          "version": 3,
+          "reason": "Revised research plan from newly captured public evidence.",
+          "trigger": null
+        },
+        "created_at": "2026-09-28T15:58:36.195996+00:00"
+      },
+      {
+        "sequence": 28,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:36.196005+00:00"
+      },
+      {
+        "sequence": 29,
+        "kind": "research_branch_completed",
+        "detail": {
+          "branch_id": "8d7e04f9-7cae-42ec-b290-6d77d407255e",
+          "question_id": "c3f6dac2-b35c-4d91-86c1-95d850163a8a",
+          "status": "unresolved",
+          "evidence_ids": []
+        },
+        "created_at": "2026-09-28T15:58:36.208079+00:00"
+      },
+      {
+        "sequence": 30,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "search"
+        },
+        "created_at": "2026-09-28T15:58:36.509427+00:00"
+      },
+      {
+        "sequence": 31,
+        "kind": "search_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "retrieved": 2,
+          "duplicate_or_excluded": 0,
+          "outside_candidate_budget": 0
+        },
+        "created_at": "2026-09-28T15:58:36.614615+00:00"
+      },
+      {
+        "sequence": 32,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:36.614622+00:00"
+      },
+      {
+        "sequence": 33,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:36.888943+00:00"
+      },
+      {
+        "sequence": 34,
+        "kind": "candidate_rejected",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "candidate_id": "362a284952d3a7250e4bdd72a659ea78",
+          "verdict": "unrelated",
+          "engine": "jev"
+        },
+        "created_at": "2026-09-28T15:58:36.982157+00:00"
+      },
+      {
+        "sequence": 35,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:36.982164+00:00"
+      },
+      {
+        "sequence": 36,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:37.705458+00:00"
+      },
+      {
+        "sequence": 37,
+        "kind": "candidate_accepted",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "candidate_id": "3492ad65d05a973fef8c825521eeb41a",
+          "verdict": "relevant",
+          "engine": "jev"
+        },
+        "created_at": "2026-09-28T15:58:37.801287+00:00"
+      },
+      {
+        "sequence": 38,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "read"
+        },
+        "created_at": "2026-09-28T15:58:37.801294+00:00"
+      },
+      {
+        "sequence": 39,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "read"
+        },
+        "created_at": "2026-09-28T15:58:38.120224+00:00"
+      },
+      {
+        "sequence": 40,
+        "kind": "source_captured",
+        "detail": {
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+          "title": "Alpine Foundation grant",
+          "source_kind": "public_source"
+        },
+        "created_at": "2026-09-28T15:58:38.228708+00:00"
+      },
+      {
+        "sequence": 41,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "extract"
+        },
+        "created_at": "2026-09-28T15:58:38.230843+00:00"
+      },
+      {
+        "sequence": 42,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "extract"
+        },
+        "created_at": "2026-09-28T15:58:38.531715+00:00"
+      },
+      {
+        "sequence": 43,
+        "kind": "claim_updated",
+        "detail": {
+          "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+          "status": "SUPPORTED",
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26"
+        },
+        "created_at": "2026-09-28T15:58:38.641449+00:00"
+      },
+      {
+        "sequence": 44,
+        "kind": "entity_resolved",
+        "detail": {
+          "entity_id": "f6b92e58-f5b6-443a-9143-7c945b606b2c",
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+          "basis": "Exact same cited identifier, issuer, jurisdiction and kind in this run; not independently verified."
+        },
+        "created_at": "2026-09-28T15:58:38.647418+00:00"
+      },
+      {
+        "sequence": 45,
+        "kind": "entity_discovered",
+        "detail": {
+          "entity_id": "7d412e1f-118d-4fd8-9166-58bc4ba379cd",
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26",
+          "name": "River Trust"
+        },
+        "created_at": "2026-09-28T15:58:38.651936+00:00"
+      },
+      {
+        "sequence": 46,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:38.654472+00:00"
+      },
+      {
+        "sequence": 47,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:38.950735+00:00"
+      },
+      {
+        "sequence": 48,
+        "kind": "evidence_gap_created",
+        "detail": {
+          "question_id": "db9851be-714a-4a76-8322-e8aa578c2058",
+          "parent_branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "source_id": "4258cd48-6286-47d4-9048-5e6917342d26"
+        },
+        "created_at": "2026-09-28T15:58:39.064776+00:00"
+      },
+      {
+        "sequence": 49,
+        "kind": "follow_up_created",
+        "detail": {
+          "question_id": "db9851be-714a-4a76-8322-e8aa578c2058",
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "parent_branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec"
+        },
+        "created_at": "2026-09-28T15:58:39.066493+00:00"
+      },
+      {
+        "sequence": 50,
+        "kind": "plan_updated",
+        "detail": {
+          "version": 4,
+          "reason": "Revised research plan from newly captured public evidence.",
+          "trigger": null
+        },
+        "created_at": "2026-09-28T15:58:39.075362+00:00"
+      },
+      {
+        "sequence": 51,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:39.075370+00:00"
+      },
+      {
+        "sequence": 52,
+        "kind": "research_branch_completed",
+        "detail": {
+          "branch_id": "a9aa5951-d92b-413b-9722-27d19f8246ec",
+          "question_id": "7b082d2d-964d-439d-9ef2-044a5ec9decb",
+          "status": "evidence_found",
+          "evidence_ids": [
+            "672d5096-486a-4366-948d-f59ff9d34bdf"
+          ]
+        },
+        "created_at": "2026-09-28T15:58:39.088283+00:00"
+      },
+      {
+        "sequence": 53,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "search"
+        },
+        "created_at": "2026-09-28T15:58:39.429837+00:00"
+      },
+      {
+        "sequence": 54,
+        "kind": "search_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "retrieved": 2,
+          "duplicate_or_excluded": 0,
+          "outside_candidate_budget": 0
+        },
+        "created_at": "2026-09-28T15:58:39.989092+00:00"
+      },
+      {
+        "sequence": 55,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:39.989100+00:00"
+      },
+      {
+        "sequence": 56,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:40.303329+00:00"
+      },
+      {
+        "sequence": 57,
+        "kind": "candidate_rejected",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "candidate_id": "362a284952d3a7250e4bdd72a659ea78",
+          "verdict": "unrelated",
+          "engine": "jev"
+        },
+        "created_at": "2026-09-28T15:58:40.395135+00:00"
+      },
+      {
+        "sequence": 58,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:40.395142+00:00"
+      },
+      {
+        "sequence": 59,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "gate"
+        },
+        "created_at": "2026-09-28T15:58:40.684576+00:00"
+      },
+      {
+        "sequence": 60,
+        "kind": "candidate_accepted",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "candidate_id": "665d0698dbc8fb95afc25c3a4d9cf280",
+          "verdict": "relevant",
+          "engine": "jev"
+        },
+        "created_at": "2026-09-28T15:58:40.774002+00:00"
+      },
+      {
+        "sequence": 61,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "read"
+        },
+        "created_at": "2026-09-28T15:58:40.774009+00:00"
+      },
+      {
+        "sequence": 62,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "read"
+        },
+        "created_at": "2026-09-28T15:58:41.077208+00:00"
+      },
+      {
+        "sequence": 63,
+        "kind": "source_captured",
+        "detail": {
+          "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+          "title": "Alpine Foundation recipient",
+          "source_kind": "public_source"
+        },
+        "created_at": "2026-09-28T15:58:41.178377+00:00"
+      },
+      {
+        "sequence": 64,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "extract"
+        },
+        "created_at": "2026-09-28T15:58:41.180438+00:00"
+      },
+      {
+        "sequence": 65,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "extract"
+        },
+        "created_at": "2026-09-28T15:58:41.497208+00:00"
+      },
+      {
+        "sequence": 66,
+        "kind": "claim_updated",
+        "detail": {
+          "claim_id": "d675bc0d-c87d-4d27-96f5-6085a551ea0e",
+          "status": "CONTESTED",
+          "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0"
+        },
+        "created_at": "2026-09-28T15:58:41.611464+00:00"
+      },
+      {
+        "sequence": 67,
+        "kind": "entity_resolved",
+        "detail": {
+          "entity_id": "f6b92e58-f5b6-443a-9143-7c945b606b2c",
+          "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+          "basis": "Exact same cited identifier, issuer, jurisdiction and kind in this run; not independently verified."
+        },
+        "created_at": "2026-09-28T15:58:41.616211+00:00"
+      },
+      {
+        "sequence": 68,
+        "kind": "entity_resolved",
+        "detail": {
+          "entity_id": "7d412e1f-118d-4fd8-9166-58bc4ba379cd",
+          "source_id": "097fb5cc-63e0-4ef7-9f61-c56e08ca7fe0",
+          "basis": "Exact same cited identifier, issuer, jurisdiction and kind in this run; not independently verified."
+        },
+        "created_at": "2026-09-28T15:58:41.621366+00:00"
+      },
+      {
+        "sequence": 69,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:41.623315+00:00"
+      },
+      {
+        "sequence": 70,
+        "kind": "step_started",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:42.368074+00:00"
+      },
+      {
+        "sequence": 71,
+        "kind": "plan_updated",
+        "detail": {
+          "version": 5,
+          "reason": "Revised research plan from newly captured public evidence.",
+          "trigger": null
+        },
+        "created_at": "2026-09-28T15:58:42.473787+00:00"
+      },
+      {
+        "sequence": 72,
+        "kind": "step_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "phase": "reflect"
+        },
+        "created_at": "2026-09-28T15:58:42.473803+00:00"
+      },
+      {
+        "sequence": 73,
+        "kind": "research_branch_completed",
+        "detail": {
+          "branch_id": "18863521-a94d-43ca-87c6-f6933643eb32",
+          "question_id": "db9851be-714a-4a76-8322-e8aa578c2058",
+          "status": "evidence_found",
+          "evidence_ids": [
+            "10f12aec-997f-4513-a061-291082d5bb28"
+          ]
+        },
+        "created_at": "2026-09-28T15:58:42.502763+00:00"
+      },
+      {
+        "sequence": 74,
+        "kind": "investigation_finished",
+        "detail": {
+          "status": "completed",
+          "reason": "Bounded research finished. 1 questions remain open or unresolved; 0 paths include unavailable or interrupted steps. Source support is not independent verification."
+        },
+        "created_at": "2026-09-28T15:58:42.568582+00:00"
+      }
+    ],
+    "evidence_basis": "Supported means the linked source supports the statement, not independently established truth. Machine extraction may be wrong. Contradictions remain visible. Names alone do not establish identity; exact source identifiers may group mentions within a run, without independent verification.",
+    "coverage": "Bounded investigation of accessible sources, not exhaustive internet coverage. Submitted text and supported file excerpts can be analysed; OCR and authenticated archives are unavailable. Contribution reviews never perform public discovery; source reading and file extraction have explicit bounds."
+  },
+  "product": "legal",
+  "fictional_sources_and_organisations": true
+}
