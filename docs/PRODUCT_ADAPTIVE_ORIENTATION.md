@@ -1,6 +1,6 @@
 # Evidence changes the next research question — 1.53
 
-Scope recorded before implementation, 29 September 2026. IMPLEMENTED; activation VERIFYING.
+Scope recorded before implementation, 29 September 2026. DONE within verified scope.
 MV2-002/020/024 remain open beyond this bounded release.
 
 ## Outcome and dependencies
@@ -42,7 +42,7 @@ Scripted evidence validates mechanics, not semantic entailment or live-provider
 quality. Frozen evaluation validation remains unopened; professional/human and
 full architecture acceptance remain OPEN.
 
-## Implementation evidence (activation pending)
+## Implementation evidence
 
 The optional typed reconsideration is part of the existing cited Gap, not an
 independent annotation. Its revision/index must identify the saved early reading;
@@ -70,5 +70,26 @@ evidence_changed and withheld derived plans/questions. Its final rerun and the
 backlog invariant passed, overlapping the 39 rather than adding coverage. The ten
 new cases were also rerun after improving the fictional early quote to the actual
 grant paragraph; no additional count is claimed. Exact API lint, protected-value
-scan, client source parity and diff checks passed. Exact deployed activation is
-still pending; no paid/live semantic probe was run.
+scan, client source parity and diff checks passed. Exact deployed activation is verified below; no paid/live semantic probe was run.
+
+## Verified production activation
+
+Core `484872936c936108f1c88c12627881de2a71b0d6` activated as `git-484872936c93`
+at `2026-09-29T17:11:55+00:00`. Legal
+`3698ec096d38b6084f7d33c5125f628ee6a8dc4f` and Pharma
+`d0a7887bab23c0e9a55aed8c8e61af7edfdc26df` are active as version 52
+in their existing public Sites. The exact sources are pushed to GitHub main and
+the corresponding Sites source repositories.
+
+[Production receipt](product-releases/2026-09-29-1.53-adaptive-orientation.json):
+45 exact native module hashes, unchanged schema/packs, five healthy containers
+and nine native Monitoring routes; 47 exact assets and 49 HTTP/auth/origin checks
+per client. All three repositories were clean and aligned with origin/main.
+Frozen evaluation validation remains unopened.
+
+Receipt SHA256: `9c699d4ba0ad46ad6fa4c4e62fc4eed7e4c02f7ed56e390afa9ca262cf82a84d`.
+
+No live-provider interpretation accuracy, semantic entailment, medical/legal
+correctness or professional/human acceptance is claimed. Full architecture OPEN.
+Next audit: an unfinished evidence-backed check should offer a clear explicit
+next episode without losing its source context or multiplying setup controls.
