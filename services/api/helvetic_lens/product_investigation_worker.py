@@ -231,6 +231,14 @@ async def execute(service, job_id, worker):
             finish_or_yield(session, run, job)
             session.commit()
             return {"id": job_id, "state": run.status}
+        if not exploration.adaptive_current(session, run):
+            run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
+            run.revision += 1
+            exploration.update(run, revision=run.event_sequence + 1)
+            event(session, run, "investigation_paused", reason=run.stop_reason)
+            finish_or_yield(session, run, job)
+            session.commit()
+            return {"id": job_id, "state": run.status}
         candidates = [b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE]
         if research.enabled(run):
             candidates.sort(key=lambda b: (-b.checkpoint.get("priority", 6), b.created_at, b.id))
@@ -394,6 +402,8 @@ async def execute(service, job_id, worker):
         if state.get("inflight") != work["token"]:
             return {"id": job_id, "state": "stale_result_discarded"}
         blocked = excluded(session, parent)
+        if not exploration.adaptive_current(session, run):
+            failed = True
         if work["phase"] == "read" and work["item"]["url"] in blocked:
             failed = True
         if work["phase"] == "extract":

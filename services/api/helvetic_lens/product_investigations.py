@@ -296,24 +296,26 @@ def payload(session, run):
 
     web_trigger = web_trigger_for(session, run)
     changes = projection(session, run)
+    from .product_exploration import adaptive_current
     from .product_exploration import projection as exploration_projection
     from .product_iterative_research import projection as research_projection
 
+    adaptive_valid = adaptive_current(session, run)
     return {**summary(run), "web_research_trigger": {
         "id": web_trigger.id, "policy_revision": web_trigger.policy_revision,
         "scheduled_for": iso(web_trigger.scheduled_for)} if web_trigger else None, "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
         "original": original(session, run.trigger_entry_id),
-        "research": research_projection(run),
+        "research": research_projection(run) if adaptive_valid else None,
         "exploration": exploration_projection(session, run),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
-                   "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],
+                   "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)] if adaptive_valid else [],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
             "steps": b.checkpoint.get("steps", []), "error": b.checkpoint.get("error"),
             "coverage": b.checkpoint.get("coverage"),
             "question_id": b.checkpoint.get("question_id"), "parent_branch_id": b.checkpoint.get("parent_branch_id"),
             "depth": b.checkpoint.get("depth"), "decisions": b.checkpoint.get("decisions", []),
             "candidate_counts": b.checkpoint.get("candidate_counts"), "model_routes": b.checkpoint.get("model_routes", []),
-            "outcome": b.checkpoint.get("outcome")} for b in rows(session, InvestigationBranch, run)],
+            "outcome": b.checkpoint.get("outcome")} for b in rows(session, InvestigationBranch, run)] if adaptive_valid else [],
         "sources": [{"id": s.id, "kind": s.kind, "title": s.title, "url": s.url, "sha256": s.sha256,
                      "snapshot": s.snapshot, "original": original(session, s.snapshot.get("origin_entry_id")), "created_at": iso(s.created_at)} for s in rows(session, InvestigationSource, run)],
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status, "revision": c.revision,

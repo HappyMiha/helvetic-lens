@@ -104,7 +104,7 @@ def enabled(run):
 
 
 def initial(*, previous=None):
-    limits = research.Limits(branches=4, depth=1, sources_per_branch=2,
+    limits = research.Limits(branches=4, depth=2, sources_per_branch=2,
         candidates_per_branch=4, search_requests=12, source_fetches=6,
         model_calls=16, decision_calls=40, active_seconds=360)
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
@@ -129,6 +129,7 @@ def prepare(session, run, *, early=False):
     orientation = projection(session, run).get("orientation")
     if not early and orientation and orientation["status"] == "ready":
         value["early_orientation"] = orientation["briefing"]
+        value["interpretation_changes"] = projection(session, run)["changes"]
     return value
 
 
@@ -215,12 +216,54 @@ def apply(session, run, supplied, result):
     event(session, run, "briefing_ready", finding_count=len(result.findings), direction_count=len(result.directions))
 
 
+def adaptive_current(session, run):
+    if not enabled(run):
+        return True
+    available = sources(session, run)
+    return all(d["source_id"] in available and available[d["source_id"]].sha256 == d["sha256"]
+        for d in run.research_state["exploration"].get("adaptive_dependencies", []))
+
+
+def validate_reconsiderations(session, run, supplied, result):
+    """Validate all model inputs and changes before any gap mutates the plan."""
+    early = supplied.get("early_orientation")
+    changes = [None] * len(result.gaps)
+    if not enabled(run) or not early:
+        if any(d.reconsideration for d in result.gaps):
+            fail("No current early interpretation was supplied.", 422, "invalid_evidence")
+        return changes, None
+    current = projection(session, run).get("orientation")
+    if not current or current["status"] != "ready" or current != early or not adaptive_current(session, run):
+        fail("The early interpretation changed.", 422, "invalid_evidence")
+    dependencies = {d["source_id"]: d for d in run.research_state["exploration"].get("adaptive_dependencies", [])}
+    dependencies.update({d["source_id"]: d for d in early["briefing"]["source_dependencies"]})
+    dependencies.update({d["id"]: {"source_id": d["id"], "sha256": d["sha256"]} for d in supplied["sources"]})
+    available = sources(session, run)
+    if any(d["source_id"] not in available or available[d["source_id"]].sha256 != d["sha256"] for d in dependencies.values()):
+        fail("Research inputs are no longer available.", 422, "invalid_evidence")
+    old_ids = {d["source_id"] for d in early["briefing"]["source_dependencies"]}
+    new_ids = {d["id"] for d in supplied["sources"]} - old_ids
+    for index, draft in enumerate(result.gaps):
+        change = draft.reconsideration
+        if change is None:
+            continue
+        if (change.orientation_revision != early["revision"]
+                or change.interpretation_index >= len(early["briefing"]["interpretations"])
+                or draft.source_id not in new_ids):
+            fail("A changed interpretation needs its exact early checkpoint and new public evidence.", 422, "invalid_evidence")
+        citation(available[draft.source_id], draft)
+        changes[index] = {**change.model_dump(),
+            "earlier_meaning": early["briefing"]["interpretations"][change.interpretation_index]["meaning"]}
+    return changes, list(dependencies.values())
+
+
 def projection(session, run):
     if not enabled(run):
         return None
     value = deepcopy(run.research_state["exploration"])
     value.pop("reply_fingerprint", None)
     value.pop("reply_key", None)
+    value.pop("adaptive_dependencies", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):
@@ -233,6 +276,21 @@ def projection(session, run):
     orientation = value.get("orientation")
     if orientation and orientation.get("briefing") and changed(orientation["briefing"], ("interpretations",)):
         orientation.update(status="evidence_changed", briefing=None)
+    value["changes"] = []
+    if not adaptive_current(session, run):
+        value.update(status="evidence_changed", briefing=None, changes_unavailable=True)
+    else:
+        branches = {b.id: b for b in rows(session, InvestigationBranch, run)}
+        for q in run.research_state["questions"]:
+            if not q.get("reconsideration"):
+                continue
+            branch = branches.get(q["branch_id"])
+            steps = branch.checkpoint.get("steps", []) if branch else []
+            value["changes"].append({**q["reconsideration"], **q["trigger"], "question_id": q["id"],
+                "question": q["question"], "branch_id": q["branch_id"], "created_at": q["created_at"],
+                "status": q["status"], "waiting_reason": q.get("waiting_reason"),
+                "searches_completed": sum(s["phase"] == "search" and s["status"] == "completed" for s in steps),
+                "reads_completed": sum(s["phase"] == "read" and s["status"] == "completed" for s in steps)})
     value["sources"] = [{"id": s.id, "title": s.title, "url": s.url,
         "captured_at": iso(s.created_at), "excerpts": s.snapshot["excerpts"][:2]} for s in available.values()]
     return value

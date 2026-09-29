@@ -37,6 +37,8 @@ bounded exploration, cited orientation and an explicit next direction; no recurr
 is inferred from the first question.
 [Early cited orientation](docs/PRODUCT_EARLY_ORIENTATION.md) adds a tentative reading
 while that bounded episode continues; its release evidence remains separate.
+[Evidence-directed reinterpretation](docs/PRODUCT_ADAPTIVE_ORIENTATION.md) connects
+new passages to actual follow-up research; release evidence is tracked separately.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.
 see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).

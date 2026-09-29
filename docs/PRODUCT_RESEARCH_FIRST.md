@@ -54,7 +54,7 @@ probe, new credentials, frozen evaluation reuse or private production read.
 ## Implemented contract and limits
 
 `product_exploration.py` adds a `brief` phase to the existing durable worker.
-Each episode permits four branches, depth one, 12 federated search reservations,
+The initial 1.51 episode permitted four branches, depth one, 12 federated search reservations,
 six source reads, 16 model requests (the final request reserved for the briefing),
 40 gate reservations and 360 active processing seconds. Queue/pause time is not an
 ETA. Scope, failures and unused evidence remain explicit; the complete internet is
@@ -109,3 +109,5 @@ Receipt SHA256: `db3d6a8853fce8b1748f57d251a68474344ed227f0bdc00a6e311dcb759eac7
 The standard Core release passed smoke/functional gates; affected integration
 checks are recorded above. Browser QA, live-provider semantic accuracy and
 professional/human acceptance are not claimed. Full architecture remains OPEN.
+
+New episodes in [1.53](PRODUCT_ADAPTIVE_ORIENTATION.md) permit depth two within the same total budgets so a later passage can trigger a further evidence check. Existing saved episode limits stay unchanged.

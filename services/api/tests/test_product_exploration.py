@@ -200,7 +200,11 @@ def test_private_evidence_and_current_exclusions_fence_the_briefing(signed, monk
     monkeypatch.setattr(model, "complete", guarded)
     value = complete(client, service, root + "/investigations", run)
     if during_model:
-        assert value["exploration"]["status"] == "unavailable"
+        # The early-informed reflection now pins the complete source context.
+        # Its revocation is explicit and also withholds derived plans/questions.
+        assert value["exploration"]["status"] == "evidence_changed"
+        assert value["exploration"]["changes_unavailable"]
+        assert value["research"] is None and value["plans"] == value["branches"] == []
     else:
         assert value["exploration"]["status"] == "ready"
         exclude()
