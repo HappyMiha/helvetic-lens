@@ -1,6 +1,6 @@
 # Human review in saved-evidence search — 1.41
 
-Status: VERIFYING publication; implementation validated. Scope recorded before code on 29 September 2026.
+Status: DONE within bounded search and verified publication scope. Scope recorded before code on 29 September 2026.
 Contributes to MV2-002/020/023/024; full architecture and human acceptance OPEN.
 
 ## Audit and dependencies
@@ -112,4 +112,25 @@ and reported elapsed time includes the final current-review projection.
 The final 16 new cases passed after those repairs, including all three modes,
 current review, source/version changes, bounds, privacy, cache reuse, races and
 timeout handling. Together with the 84 passing existing cases, 100 distinct Core
-checks passed. Exact API lint passed. Production activation remains VERIFYING.
+checks passed. Exact API lint passed. Initial production activation is verified below.
+
+## Verified publication
+
+Core `aef408b76eb78b5f019d3d310ddbd43c67b18335` activated normally at
+2026-09-29T01:01:49Z as `git-aef408b76eb7`. All 36 relevant runtime hashes,
+unchanged migration 0bd495bef125 and retained review constraints, five running
+containers and nine Monitoring routes are verified. Each canonical product
+origin passed 43 HTTP/access checks and 47 exact asset hashes.
+
+- Legal `3154275617a2e2e8107a9343d3834dac98fb403e`, existing Sites 41,
+  activated 2026-09-29T00:59:22.746694Z.
+- Pharma `55d90de2dfc5de1bede741bfb37557f61e16e1a3`, existing Sites 41,
+  activated 2026-09-29T01:00:21.295711Z.
+
+See the [frozen receipt](product-releases/2026-09-29-1.41-reviewed-search.json).
+All three main checkouts were freshly fetched, clean and aligned. The final
+English evidence-only Core commit follows normal deployment; final activation
+is recorded in the parent checkpoint. Unchanged clients are not republished.
+Backup still pauses API/tunnel; zero downtime is not claimed. No browser,
+private production dossier or inference probe was used. Full architecture,
+professional quality, accepted-claim synthesis and human acceptance remain OPEN.
