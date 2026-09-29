@@ -7,6 +7,7 @@ from . import decision_search, decision_sources
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
+from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -74,6 +75,8 @@ async def execute(service, work, seconds):
     }[phase]
     if phase == "brief" and work["input"].get("assessment_question"):
         schema, system = exploration.AssessedBriefing, system + exploration.ASSESSMENT_SYSTEM
+    if phase == "brief" and work["input"].get("research_scope"):
+        system += research_scope.SYSTEM
     if work.get("selected_public_check"):
         system += followups.CONTEXT_SYSTEM
     if work.get("capture_progress"):

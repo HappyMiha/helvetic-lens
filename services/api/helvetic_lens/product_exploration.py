@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import Field
 
 from . import legal_profiles
+from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
 from .db import utcnow
 from .product_api import fail, iso
@@ -150,7 +151,7 @@ def initial(*, previous=None):
         model_calls=16, decision_calls=40, active_seconds=360)
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
-            "briefing": None, "previous": previous}}
+            "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT}}
 
 
 def sources(session, run):
@@ -168,6 +169,8 @@ def prepare(session, run, *, early=False):
         "open_questions": [{"question": q["question"], "status": q["status"]}
             for q in run.research_state["questions"]]}
     state = run.research_state["exploration"]
+    if not early:
+        value["research_scope"] = projection(session, run)["research_scope"]
     if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment_question"] = {"contract": ASSESSMENT_CONTRACT,
             "question_id": state["previous"]["follow_up_id"], "question": run.question}
@@ -259,6 +262,8 @@ def apply(session, run, supplied, result):
     value = validated(session, run, supplied, result, ("findings", "directions"))
     if run.research_state["exploration"].get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment"] = validated_assessment(session, run, supplied, result)
+    if "research_scope" in supplied:
+        value["research_scope_at_briefing"] = deepcopy(supplied["research_scope"])
     update(run, status="ready", briefing=value, revision=run.event_sequence + 1)
     event(session, run, "briefing_ready", finding_count=len(result.findings), direction_count=len(result.directions))
 
@@ -352,6 +357,7 @@ def projection(session, run):
     value.pop("adaptive_dependencies", None)
     value.pop("capture_comparison", None)
     value.pop("assessment_contract", None)
+    value.pop("scope_contract", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):
@@ -392,6 +398,10 @@ def projection(session, run):
         orientation.update(status="evidence_changed", briefing=None)
     next_check = suggestion(session, run)
     value["next_check"] = public_context(next_check) if next_check else None
+    value["research_scope"] = research_scope.observed(session, run, available,
+        invalid=value["status"] == "evidence_changed")
+    if value.get("briefing"):
+        value["briefing"].pop("research_scope_at_briefing", None)
     value["sources"] = [{"id": s.id, "title": s.title, "url": s.url,
         "captured_at": iso(s.created_at), "excerpts": s.snapshot["excerpts"][:2]} for s in available.values()]
     return value
