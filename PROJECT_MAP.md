@@ -32,6 +32,10 @@ domain acceptance remain open. The first bounded implementation is
 [quoted saved text versus AI interpretation](docs/PRODUCT_SOURCE_ANALYSIS.md). Existing product client repositories and working
 native workflows are preserved during incremental migration.
 
+The new default entry uses [research before monitoring](docs/PRODUCT_RESEARCH_FIRST.md):
+bounded exploration, cited orientation and an explicit next direction; no recurrence
+is inferred from the first question.
+
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.
 see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).
 The [test and release policy](docs/TESTING.md) separates platform smoke, functional

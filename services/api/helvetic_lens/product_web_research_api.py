@@ -71,6 +71,14 @@ def routes(router, service, actor):
                 fail("Recurring-search settings changed. Reload before saving.", 409)
             if data.enabled and (not data.standing_public_query_confirmed or len(data.question) < 5):
                 fail("Enter a public question and explicitly confirm its recurring use by the providers.", 422)
+            previously_enabled = policy and (
+                (policy.enabled and policy.question == data.question and policy.cadence_hours == data.cadence_hours)
+                or any(item.get("action") == "enabled" and item.get("question") == data.question
+                    and item.get("cadence_hours") == data.cadence_hours for item in policy.history))
+            if data.enabled and not previously_enabled:
+                from .product_exploration_api import require_briefing
+
+                require_briefing(session, parent.id)
             if not policy:
                 policy = Policy(dossier_id=parent.id, organization_id=parent.organization_id)
                 session.add(policy)

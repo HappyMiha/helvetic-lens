@@ -267,7 +267,7 @@ def apply_extraction(session, run, source, data):
 
 
 def summary(run):
-    return {"id": run.id, "trigger_entry_id": run.trigger_entry_id, "external_discovery": run.external_discovery, "created_by_user_id": run.created_by_user_id, "engine": run.research_state.get("version", "bounded-v1"), "question": run.question, "status": run.status, "revision": run.revision,
+    return {"id": run.id, "trigger_entry_id": run.trigger_entry_id, "external_discovery": run.external_discovery, "created_by_user_id": run.created_by_user_id, "exploratory": bool(run.research_state.get("exploration")), "engine": run.research_state.get("version", "bounded-v1"), "question": run.question, "status": run.status, "revision": run.revision,
         "plan_version": run.plan_version, "event_sequence": run.event_sequence,
         "stop_reason": run.stop_reason, "created_at": iso(run.created_at), "updated_at": iso(run.updated_at)}
 
@@ -296,6 +296,7 @@ def payload(session, run):
 
     web_trigger = web_trigger_for(session, run)
     changes = projection(session, run)
+    from .product_exploration import projection as exploration_projection
     from .product_iterative_research import projection as research_projection
 
     return {**summary(run), "web_research_trigger": {
@@ -303,6 +304,7 @@ def payload(session, run):
         "scheduled_for": iso(web_trigger.scheduled_for)} if web_trigger else None, "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
         "original": original(session, run.trigger_entry_id),
         "research": research_projection(run),
+        "exploration": exploration_projection(session, run),
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,

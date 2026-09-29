@@ -378,3 +378,82 @@ implementation and exact production acceptance are recorded in
 tests each, all builds, 84 authored contrast pairs, corrected native production
 git-8ea723c934b8 with 40 assets/43 HTTP checks, and both Sites 26 with 125 origin
 checks/47 assets each. The final backlog smoke and protected-value scans pass.
+
+
+## Archived overview entries, 29 September 2026 — before research-first
+
+## Research continuation — 1.43 reviewed claim kinds
+
+Reviewed claim kinds 1.43 DONE within verified scope. Reuse ClaimReview, DomainPack and current evidence/access pins; retained captures only. Explicit versioned editor classification, unknown legacy type, source/user/AI separation, stale-search/answer protection. [Scope, dependencies and acceptance](docs/PRODUCT_CLAIM_INTERPRETATION.md). Full target/human acceptance OPEN.
+
+## Research continuation — 1.42 consented claim synthesis
+
+Consented claim synthesis 1.42 DONE. Reuse current claims, citation/review pins, private access and research preview. Retained eligible captures only. Explicit versioned consent, bounded complete contradiction groups, exact quotes, stale-answer and hidden-source protection; legacy input unchanged. Scope/dependencies/source readiness/acceptance: [PRODUCT_CLAIM_SYNTHESIS.md](docs/PRODUCT_CLAIM_SYNTHESIS.md). Full target/human acceptance OPEN.
+
+## Research continuation — 1.41 reviewed saved-evidence search
+
+DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Research continuation — 1.40 human claim review
+
+DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Product decision — 1.28 evidence read recovery
+
+DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Product decision — 1.29 domain-aware dossier setup
+
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Owner priority — 1.30 readable dossier
+
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Architecture continuation — 1.31 structured dossier context
+
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Architecture continuation — 1.32 versioned dossier templates
+
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Research continuation — 1.39 reviewed entity identity
+
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Research continuation — 1.38 captured-source relationships
+
+DONE within bounded verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Research continuation — 1.37 conservative local rejection
+
+DONE within its verified scope. No threshold passed; no guard enabled; validation
+remains unopened. The exact predeclared protocol and results are retained in
+[release history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md) and
+[scope and evidence](docs/PRODUCT_RESEARCH_GATE_POLICY.md).
+
+## Owner priority — 1.36 research reader repair
+
+DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Research continuation — 1.35 bounded evaluation
+
+DONE within scope. Full recorded overview is preserved verbatim in
+[release history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Owner priority — 1.34 iterative dossier research
+
+DONE within scope. Full recorded overview is preserved verbatim in
+[release history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Architecture continuation — 1.33 readable source coverage
+
+DONE within verified 1.33 scope. Recorded before code: C14/C23/C24 and MV2-002/020/024.
+99 API checks and 185 client tests each passed, with lint/types/Sites builds.
+Compose saved page/topic/source-pack/public-search state as a calm dossier reader.
+Missing or unsupported selected sources stay visible; collection is not a complete
+per-dossier scan. See [scope and acceptance](docs/PRODUCT_DOSSIER_COVERAGE.md).
+Existing source rights and full parent/human acceptance gates remain unchanged.
+
+<!-- End of archived overview entries. -->

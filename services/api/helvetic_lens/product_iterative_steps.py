@@ -4,6 +4,7 @@ import re
 from copy import deepcopy
 
 from . import decision_search, decision_sources
+from . import product_exploration as exploration
 from . import product_iterative_research as research
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -18,6 +19,21 @@ def prepare(session, run, branch, state, work):
     work["limits"] = run.research_state["limits"]
     if branch.phase == "plan":
         work["input"] = {"question": run.question, "branch_slots": min(6, max(2, work["limits"]["branches"] // 2))}
+        if exploration.enabled(run):
+            work["exploratory"] = True
+            previous = run.research_state["exploration"].get("previous")
+            if previous:
+                from .product_investigation_models import Investigation
+
+                prior = session.get(Investigation, previous["investigation_id"])
+                if prior and prior.dossier_id == run.dossier_id:
+                    current = exploration.projection(session, prior)
+                    if current and current["status"] == "ready":
+                        work["input"]["previous_public_briefing"] = current["briefing"]
+                        work["input"]["previous_public_queries"] = [b.query for b in rows(session, InvestigationBranch, prior)
+                            if b.checkpoint.get("question_id")]
+    elif branch.phase == "brief":
+        work["input"] = exploration.prepare(session, run)
     elif branch.phase in {"gate", "gate_review"}:
         work["item"] = state["candidates"][state.get("gate_index", 0)]
         work["input"] = {"question": run.question, "branch": branch.query,
@@ -42,7 +58,10 @@ async def execute(service, work, seconds):
         "gate_review": (research.CandidateAssessment, research.ASSESS_SYSTEM),
         "extract": (research.ResearchExtraction, research.EXTRACT_SYSTEM),
         "reflect": (research.Reflection, research.REFLECT_SYSTEM),
+        "brief": (exploration.Briefing, exploration.SYSTEM),
     }[phase]
+    if phase == "plan" and work.get("exploratory"):
+        system += exploration.PLAN
     work["model_route"] = {"provider": service.settings.apertus_provider, "model": service.settings.apertus_model,
         "basis": "Workspace configuration used for this request; provider response does not expose model identity here."}
     raw = await service.model_client.complete(system, json.dumps(work["input"], ensure_ascii=False),
@@ -65,7 +84,7 @@ def settle(branch, state):
 
 
 def failed(branch, state, *, interrupted=False):
-    if branch.phase in {"plan", "reflect"}:
+    if branch.phase in {"plan", "reflect", "brief"}:
         branch.status = "failed"
     if branch.phase in {"gate", "gate_review"}:
         item = state.get("candidates", [])[state.get("gate_index", 0)]
@@ -83,6 +102,9 @@ def apply(session, run, branch, state, work, result):
         research.apply_plan(session, run, result)
         branch.status = "completed"
         state["planning_done"] = True
+    elif phase == "brief":
+        exploration.apply(session, run, work["input"], result)
+        branch.status = "completed"
     elif phase == "search":
         seen = {s.url for s in rows(session, InvestigationSource, run)}
         for other in rows(session, InvestigationBranch, run):

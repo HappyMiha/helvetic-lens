@@ -121,6 +121,11 @@ def payload(session, row, profile, *, detail=True):
               "profile": legal_profiles.payload(session, profile, detail=detail), "work": work_payload(session, row),
               "template": dossier_templates.payload(row)}
     policy = session.scalar(select(WebResearchPolicy).where(WebResearchPolicy.dossier_id == row.id))
+    from .product_exploration_api import latest as latest_exploration
+
+    exploratory = latest_exploration(session, row.id)
+    if exploratory:
+        result["exploration"] = {"investigation_id": exploratory.id}
     if policy:
         result["research_monitoring"] = {"enabled": policy.enabled, "cadence_hours": policy.cadence_hours}
     from .product_access import current_user_id, summary
@@ -617,4 +622,7 @@ def product_router(service):
     from .product_question_start import routes as question_start_routes
 
     question_start_routes(router, service, actor)
+    from .product_exploration_api import routes as exploration_routes
+
+    exploration_routes(router, service, actor)
     return router

@@ -194,10 +194,13 @@ def reserve_step(session, run, branch, state, phase, product):
         "gate": ("decision_calls", 2), "read": ("source_fetches", 1),
         "plan": ("model_calls", 1), "extract": ("model_calls", 1),
         "reflect": ("model_calls", 1), "gate_review": ("model_calls", 1),
-        "compare": ("model_calls", 1)}
+        "compare": ("model_calls", 1), "brief": ("model_calls", 1)}
     resource, amount = units[phase]
+    # Keep the final model request for a useful orientation when exploration
+    # exhausts other analysis work; the same cumulative cap still applies.
+    reserved = int(bool(data.get("exploration")) and resource == "model_calls" and phase != "brief")
     exceeded = "active_seconds" if data["used"].get("active_seconds", 0) >= data["limits"]["active_seconds"] else (
-        resource if data["used"].get(resource, 0) + amount > data["limits"][resource] else None)
+        resource if data["used"].get(resource, 0) + amount > (data["limits"][resource] - reserved) else None)
     if exceeded:
         state["budget_blocked"] = exceeded
         for question in data["questions"]:
@@ -423,5 +426,6 @@ def projection(run):
     if not enabled(run):
         return None
     data = deepcopy(run.research_state)
+    data.pop("exploration", None)  # Read through the current-source-checked projection only.
     data["budget_basis"] = "Cumulative reservations, including interrupted attempts. Gate reserves both possible providers; unused fallback capacity is not a bill. Active seconds count execution, not queue/pause time."
     return data

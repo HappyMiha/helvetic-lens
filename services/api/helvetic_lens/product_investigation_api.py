@@ -111,12 +111,16 @@ def routes(router, service, actor):
                 fail("The investigation changed. Refresh before applying this action.", 409)
             if data.limits is not None and data.action != "deepen":
                 fail("A new cumulative budget applies only to Continue research.")
+            if data.action in {"resume", "retry", "deepen"} and run.research_state.get("exploration", {}).get("continued_by"):
+                fail("This episode was continued in a newer research checkpoint.", 409)
             if data.action in {"resume", "retry", "deepen"}:
                 from .product_monitoring_research import retry_authority
                 from .product_web_research import retry_authority as web_retry_authority
 
                 retry_authority(session, run)
                 web_retry_authority(session, run)
+                if data.action == "deepen" and run.research_state.get("exploration"):
+                    fail("Choose a next direction from the saved exploration briefing.", 409)
                 if data.action == "deepen":
                     if data.limits is None:
                         fail("Set a cumulative budget for continuation.")
@@ -142,6 +146,10 @@ def routes(router, service, actor):
                     jobs.cancel(session, run.job_id)
                 run.status = "paused" if data.action == "pause" else "cancelled"
                 run.stop_reason = "Paused by a dossier editor." if data.action == "pause" else "Cancelled by a dossier editor. Saved evidence is retained."
+            if run.research_state.get("exploration") and data.action in {"pause", "cancel"}:
+                from .product_exploration import update
+
+                update(run, revision=run.event_sequence + 1)
             event(session, run, "investigation_" + data.action, status=run.status)
             session.commit()
             return payload(session, run)

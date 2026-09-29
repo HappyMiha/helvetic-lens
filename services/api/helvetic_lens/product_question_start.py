@@ -8,6 +8,7 @@ from pydantic import Field, field_validator
 from sqlalchemy import select
 
 from . import domain_packs, legal_profiles
+from . import product_exploration as exploration
 from . import product_iterative_research as research
 from .db import utcnow
 from .legal_profile_models import LegalMonitoringProfile
@@ -52,6 +53,21 @@ class Start(legal_profiles.Input):
         return value
 
 
+class Explore(legal_profiles.Input):
+    request_key: UUID
+    question: str = Field(min_length=5, max_length=300)
+    public_query_confirmed: Literal[True]
+
+    _question = field_validator("question")(Start.clean_question.__func__)
+
+    @field_validator("public_query_confirmed", mode="before")
+    @classmethod
+    def explicit_consent(cls, value):
+        if value is not True:
+            raise ValueError("Confirm public research of this question.")
+        return value
+
+
 def monitoring_summary(session, parent, settings):
     policy = session.scalar(select(WebResearchPolicy).where(WebResearchPolicy.dossier_id == parent.id))
     if not policy:
@@ -64,13 +80,22 @@ def monitoring_summary(session, parent, settings):
 def routes(router, service, actor):
     @router.post("/start", status_code=202)
     def start(product: Product, data: Start, request: Request):
+        return create(product, data, request, exploratory=False)
+
+    @router.post("/explore", status_code=202)
+    def explore(product: Product, data: Explore, request: Request):
+        return create(product, data, request, exploratory=True)
+
+    def create(product, data, request, *, exploratory):
+        contract = exploration.CONTRACT if exploratory else CONTRACT
+        disclosure = exploration.DISCLOSURE if exploratory else START_DISCLOSURE
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, identity.organization_id)
             member = organization_member(session, identity.user_id, identity.organization_id)
             if not member or member.role != "organization_admin":
                 fail("Your current workspace role cannot create dossiers.", 403)
-            key = fingerprint({"contract": CONTRACT, "question": data.question, "actor": identity.user_id})
+            key = fingerprint({"contract": contract, "question": data.question, "actor": identity.user_id})
             parent = session.scalar(select(ProductDossier).where(
                 ProductDossier.product == product, ProductDossier.creation_key == str(data.request_key)))
             if parent:
@@ -92,33 +117,35 @@ def routes(router, service, actor):
             parent = ProductDossier(product=product, profile_id=profile.id, creation_key=str(data.request_key))
             session.add(parent)
             session.flush()
-            limits = research.Limits()
+            state = exploration.initial() if exploratory else research.initial(research.Limits())
+            limits = research.Limits(**state["limits"])
             run = Investigation(dossier_id=parent.id, organization_id=parent.organization_id,
                 request_key=str(data.request_key), question=data.question, created_by_user_id=identity.user_id,
                 actor_user_id=identity.user_id, session_id=identity.session_id,
                 session_organization_id=identity.organization_id,
-                research_state={**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump()})
+                research_state={**state, "decision_order": "jev_first", "initial_limits": limits.model_dump()})
             session.add(run)
             session.flush()
             enqueue(session, run)
-            event(session, run, "investigation_queued", question=run.question, disclosure=START_DISCLOSURE,
-                origin=CONTRACT)
-            tomorrow = utcnow() + timedelta(hours=24)
-            policy = WebResearchPolicy(dossier_id=parent.id, organization_id=parent.organization_id,
-                enabled=True, revision=1, question=data.question, cadence_hours=24,
-                authorized_by_user_id=identity.user_id, audience_fingerprint=audience_key(parent, profile),
-                next_run_at=tomorrow, next_check_at=tomorrow, history=[])
-            session.add(policy)
-            history(policy, "enabled", "Initial research queued. Daily public-question checks begin tomorrow; updates stay in this dossier.")
+            event(session, run, "investigation_queued", question=run.question, disclosure=disclosure,
+                origin=contract)
+            if not exploratory:
+                tomorrow = utcnow() + timedelta(hours=24)
+                policy = WebResearchPolicy(dossier_id=parent.id, organization_id=parent.organization_id,
+                    enabled=True, revision=1, question=data.question, cadence_hours=24,
+                    authorized_by_user_id=identity.user_id, audience_fingerprint=audience_key(parent, profile),
+                    next_run_at=tomorrow, next_check_at=tomorrow, history=[])
+                session.add(policy)
+                history(policy, "enabled", "Initial research queued. Daily public-question checks begin tomorrow; updates stay in this dossier.")
             session.add(PrivateDossierFollow(dossier_id=parent.id, organization_id=parent.organization_id,
                 owner_user_id=identity.user_id, following=True,
                 seen_marker=follow_state(session, parent, None)["marker"], research_seen_at=utcnow()))
             session.add(DossierEntry(dossier_id=parent.id, request_key=str(data.request_key), kind="question_start",
-                actor_user_id=identity.user_id, title="Research and daily monitoring started",
-                body="The submitted public question starts private research and daily checks. Updates appear here; monitoring can be paused.",
-                data_json={"contract": CONTRACT, "fingerprint": key, "investigation_id": run.id,
-                    "public_question": data.question, "daily_public_research_confirmed": True,
-                    "disclosure": START_DISCLOSURE, "recurring_disclosure": DISCLOSURE, "initial_limits": limits.model_dump()}))
+                actor_user_id=identity.user_id, title="Exploration started" if exploratory else "Research and daily monitoring started",
+                body=disclosure,
+                data_json={"contract": contract, "fingerprint": key, "investigation_id": run.id,
+                    "public_question": data.question, "daily_public_research_confirmed": not exploratory,
+                    "disclosure": disclosure, "recurring_disclosure": None if exploratory else DISCLOSURE, "initial_limits": limits.model_dump()}))
             session.flush()
             result = {"dossier_id": parent.id, "investigation": summary(run),
                 "monitoring": monitoring_summary(session, parent, service.settings)}

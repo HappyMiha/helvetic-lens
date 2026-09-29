@@ -10,6 +10,7 @@ from uuid import uuid4
 from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
+from . import product_exploration as exploration
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
 from .analysis import InferenceBudget
@@ -160,6 +161,9 @@ def finish_or_yield(session, run, job):
                 branch.checkpoint = {**branch.checkpoint, "question_finished": True}
     if schedule(session, run, branches):
         branches = rows(session, InvestigationBranch, run)
+    if exploration.schedule(session, run, branches):
+        session.flush()
+        branches = rows(session, InvestigationBranch, run)
     if run.status in ACTIVE and any(b.status in ACTIVE for b in branches):
         jobs.yield_batch(session, job)
     else:
@@ -251,7 +255,7 @@ async def execute(service, job_id, worker):
                         "phase": branch.phase, "product": parent.product, "generation": run.generation}
                     if research.enabled(run):
                         research_steps.prepare(session, run, branch, state, work)
-                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect"}:
+                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect", "brief"}:
                         pass
                     elif branch.phase == "search":
                         if not run.external_discovery:
@@ -401,7 +405,7 @@ async def execute(service, job_id, worker):
             if work.get("model_route") and work["phase"] == "extract":
                 state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
         if not failed:
-            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect"}:
+            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect", "brief"}:
                 try:
                     research_steps.apply(session, run, branch, state, work, result)
                 except DomainError:
