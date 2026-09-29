@@ -1,6 +1,6 @@
 # Explicit reviewed context for AI research — 1.45
 
-Status: IMPLEMENTED; production activation pending. Scope recorded before implementation; MV2-002/020/023/024.
+Status: DONE within the verified bounded release. Scope recorded before implementation; MV2-002/020/023/024.
 
 The research preview can explicitly include an editor's claim classification and
 source-specific role assessments. Each own or related claim keeps its independent
@@ -81,5 +81,27 @@ request, loading guards, failure/retry identity, independent labels and escaping
 The first test harness lacked document.cookie and attempted to stringify React
 fiber children; both harness issues were corrected. Accessibility lint identified
 a missing explicit select/label association; useId/htmlFor now links the control.
-The protected-value scan and shared-client parity check passed. Exact production
-activation remains pending; browser and human acceptance are separate.
+The protected-value scan and shared-client parity check passed. Initial production activation is verified below; browser and human acceptance
+remain separate.
+
+## Verified publication
+
+Core `b059addf6a2b1900dc01402ebbb9014befd94b8b` activated at
+2026-09-29T09:03:59Z. All 41 runtime module hashes match validated source;
+DomainPack remains 1.4.0 and migration 0bd495bef125 is unchanged. Five containers,
+nine Monitoring routes, source privacy boundaries and readiness passed.
+
+Existing public Sites version 45:
+
+- Legal `e6b99d49a18535577cc8bb7d75871cd3deff6ddb`, activated 2026-09-29T09:05:08.618895Z.
+- Pharma `06bf6533305d501c1ce2debe9a5079c2286f4d86`, activated 2026-09-29T09:05:41.334839Z.
+
+Each canonical origin passed 45 HTTP/access checks and 47 exact asset checks.
+The new scope is present in the compiled UI and anonymous preview/generation
+requests remain denied. The [frozen receipt](product-releases/2026-09-29-1.45-reviewed-synthesis.json)
+records this initial activation. Final documentation activation is tracked in the
+parent workspace checkpoint without republishing unchanged clients.
+
+Native backup still pauses API/tunnel; zero downtime is not claimed. No browser,
+private production dossier or paid inference was used. Full architecture, actual
+professional performance and human acceptance remain OPEN.
