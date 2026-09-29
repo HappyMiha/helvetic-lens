@@ -1,9 +1,12 @@
 """An explicit, replay-safe response starts the next bounded research episode."""
+from uuid import UUID
+
 from fastapi import Request
-from pydantic import Field
+from pydantic import Field, model_validator
 from sqlalchemy import select
 
 from . import product_exploration as exploration
+from . import product_exploration_followups as followups
 from .membership_locks import lock_organization
 from .product_api import Product, fail
 from .product_investigation_models import Investigation
@@ -15,6 +18,13 @@ from .product_question_start import Explore
 class Reply(Explore):
     expected_revision: int = Field(ge=1, strict=True)
     direction: int | None = Field(default=None, ge=0, le=2, strict=True)
+    follow_up_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def single_choice(self):
+        if self.direction is not None and self.follow_up_id is not None:
+            raise ValueError("Choose one saved check or one briefing direction.")
+        return self
 
 
 def latest(session, dossier_id):
@@ -40,7 +50,10 @@ def routes(router, service, actor):
             if not exploration.enabled(previous):
                 fail("This research does not have an exploratory checkpoint.", 409)
             state = previous.research_state["exploration"]
-            key = fingerprint({**data.model_dump(mode="json"), "actor": identity.user_id})
+            command = data.model_dump(mode="json")
+            if data.follow_up_id is None:
+                command.pop("follow_up_id")  # Preserve pre-1.54 retry fingerprints.
+            key = fingerprint({**command, "actor": identity.user_id})
             if state.get("reply_key") == str(data.request_key):
                 if state.get("reply_fingerprint") != key:
                     fail("This reply key belongs to a different direction.", 409)
@@ -62,18 +75,19 @@ def routes(router, service, actor):
             if session.scalar(select(Investigation.id).where(Investigation.dossier_id == dossier_id,
                     Investigation.request_key == str(data.request_key)).limit(1)):
                 fail("This request key is already used in the dossier.", 409)
+            selected = followups.select(session, previous, str(data.follow_up_id), data.question) if data.follow_up_id else {}
             run = Investigation(dossier_id=dossier_id, organization_id=identity.organization_id,
                 request_key=str(data.request_key), question=data.question,
                 created_by_user_id=identity.user_id, actor_user_id=identity.user_id,
                 session_id=identity.session_id, session_organization_id=identity.organization_id,
                 research_state=exploration.initial(previous={"investigation_id": previous.id,
-                    "briefing_revision": state["revision"]}))
+                    "briefing_revision": state["revision"], **selected}))
             session.add(run)
             session.flush()
             enqueue(session, run)
             exploration.update(previous, continued_by=run.id, reply_key=str(data.request_key), reply_fingerprint=key)
             event(session, previous, "exploration_direction_chosen", next_investigation_id=run.id,
-                question=data.question, direction=data.direction, actor_user_id=identity.user_id)
+                question=data.question, direction=data.direction, follow_up_id=str(data.follow_up_id) if data.follow_up_id else None, actor_user_id=identity.user_id)
             event(session, run, "investigation_queued", question=run.question, previous_investigation_id=previous.id,
                 disclosure=exploration.DISCLOSURE, origin=exploration.CONTRACT)
             session.commit()

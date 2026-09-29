@@ -39,6 +39,8 @@ is inferred from the first question.
 while that bounded episode continues; its release evidence remains separate.
 [Evidence-directed reinterpretation](docs/PRODUCT_ADAPTIVE_ORIENTATION.md) connects
 new passages to actual follow-up research; release evidence is tracked separately.
+[Saved-check continuation](docs/PRODUCT_SAVED_CHECK_CONTINUATION.md) adds an explicit
+next episode for a source-contained unfinished check; production verification pending.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.
 see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).

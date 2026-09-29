@@ -197,6 +197,10 @@ def query_key(query):
 
 
 def seed(session, run):
+    from .product_exploration_followups import seed as seed_follow_up
+
+    if seed_follow_up(session, run):
+        return
     session.add(InvestigationBranch(**scope(run), query=f"Research plan {run.id}", phase="plan",
         reason="Decompose the question into useful research directions.",
         checkpoint={"research_control": True}))

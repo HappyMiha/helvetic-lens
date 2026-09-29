@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from . import decision_search, decision_sources
 from . import product_exploration as exploration
+from . import product_exploration_followups as followups
 from . import product_iterative_research as research
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -14,6 +15,9 @@ from .product_research_gate import evaluate
 
 def prepare(session, run, branch, state, work):
     work["research"] = True
+    selected = followups.context(session, run)
+    if selected and selected["status"] == "ready":
+        work["selected_public_check"] = selected
     work["decision_order"] = run.research_state.get("decision_order", "jev_first")
     work["question"] = run.question
     work["limits"] = run.research_state["limits"]
@@ -64,6 +68,8 @@ async def execute(service, work, seconds):
         "brief": (exploration.Briefing, exploration.SYSTEM),
         "orient": (exploration.EarlyOrientation, exploration.EARLY_SYSTEM),
     }[phase]
+    if work.get("selected_public_check"):
+        system += followups.CONTEXT_SYSTEM
     if phase == "plan" and work.get("exploratory"):
         system += exploration.PLAN
     work["model_route"] = {"provider": service.settings.apertus_provider, "model": service.settings.apertus_model,

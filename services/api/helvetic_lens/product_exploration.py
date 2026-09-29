@@ -217,6 +217,12 @@ def apply(session, run, supplied, result):
 
 
 def adaptive_current(session, run):
+    from .product_exploration_followups import references_current
+
+    return local_dependencies_current(session, run) and references_current(session, run)
+
+
+def local_dependencies_current(session, run):
     if not enabled(run):
         return True
     available = sources(session, run)
@@ -291,6 +297,13 @@ def projection(session, run):
                 "status": q["status"], "waiting_reason": q.get("waiting_reason"),
                 "searches_completed": sum(s["phase"] == "search" and s["status"] == "completed" for s in steps),
                 "reads_completed": sum(s["phase"] == "read" and s["status"] == "completed" for s in steps)})
+    from .product_exploration_followups import context, public_context, suggestion
+
+    value["continuation"] = context(session, run)
+    if value["continuation"] and value["continuation"]["status"] == "evidence_changed" and orientation:
+        orientation.update(status="evidence_changed", briefing=None)
+    next_check = suggestion(session, run)
+    value["next_check"] = public_context(next_check) if next_check else None
     value["sources"] = [{"id": s.id, "title": s.title, "url": s.url,
         "captured_at": iso(s.created_at), "excerpts": s.snapshot["excerpts"][:2]} for s in available.values()]
     return value

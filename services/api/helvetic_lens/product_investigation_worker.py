@@ -226,16 +226,16 @@ async def execute(service, job_id, worker):
                 detail="Waiting for the current dossier investigation to finish or pause.")
             session.commit()
             return {"id": job_id, "state": "queued"}
-        if not run.plan_version:
-            seed(session, run, parent, service.settings)
-            finish_or_yield(session, run, job)
-            session.commit()
-            return {"id": job_id, "state": run.status}
         if not exploration.adaptive_current(session, run):
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1
             exploration.update(run, revision=run.event_sequence + 1)
             event(session, run, "investigation_paused", reason=run.stop_reason)
+            finish_or_yield(session, run, job)
+            session.commit()
+            return {"id": job_id, "state": run.status}
+        if not run.plan_version:
+            seed(session, run, parent, service.settings)
             finish_or_yield(session, run, job)
             session.commit()
             return {"id": job_id, "state": run.status}
@@ -314,6 +314,8 @@ async def execute(service, job_id, worker):
                             if source.kind == "public_source":
                                 work["input"]["existing_claims"] = [{"id": c.id, "statement": c.statement, "status": c.status}
                                     for c in research.public_existing_claims(session, run)][:60]
+                        if work.get("selected_public_check") and "input" in work:
+                            work["input"]["selected_public_check"] = work["selected_public_check"]
                         budget_before = deepcopy(run.research_state)
                         if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
                             work = None
@@ -404,6 +406,10 @@ async def execute(service, job_id, worker):
         blocked = excluded(session, parent)
         if not exploration.adaptive_current(session, run):
             failed = True
+            run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
+            run.revision += 1
+            exploration.update(run, revision=run.event_sequence + 1)
+            event(session, run, "investigation_paused", reason=run.stop_reason)
         if work["phase"] == "read" and work["item"]["url"] in blocked:
             failed = True
         if work["phase"] == "extract":
