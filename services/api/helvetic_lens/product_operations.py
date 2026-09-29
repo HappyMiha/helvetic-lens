@@ -494,16 +494,27 @@ def operations(router, service, actor):
                     from .product_api import entry_payload
 
                     exposed = entry_payload(session, accepted)
-                    citations = []
+                    citations, structured = [], []
+                    separated = exposed["data"].get("answer_format") == "source_analysis_v1"
                     if accepted.kind == "research":
                         snapshots = {source["id"]: source for source in exposed["data"].get("sources", [])}
                         for finding in exposed["data"].get("findings", []):
+                            finding_citations = []
                             for citation in finding.get("citations", []):
                                 source = snapshots.get(citation["source_id"], {})
-                                citations.append(f'<li>“{esc(citation["quote"])}” — {esc(source.get("title"))} '
-                                                 f'({esc(source.get("kind"))}) {link(source.get("url", ""))}</li>')
+                                finding_citations.append(f'<li>“{esc(citation["quote"])}” — {esc(source.get("title"))} '
+                                                         f'({esc(source.get("kind"))}) {link(source.get("url", ""))}</li>')
+                            if separated:
+                                label = exposed["data"]["answer_contract"]["labels"].get(finding.get("kind"), "Unclassified AI output")
+                                statement = "" if finding.get("kind") == "SOURCE_QUOTE" else f'<p>{esc(finding["claim"])}</p>'
+                                structured.append(f'<section><h5>{esc(label)}</h5>{statement}<ul>{"".join(finding_citations)}</ul></section>')
+                            else:
+                                citations.extend(finding_citations)
                     gaps = ''.join(f'<li>{esc(gap)}</li>' for gap in exposed["data"].get("unknowns", []))
-                    answer = f'<h4>Team’s working answer</h4><p>{esc(exposed["body"])}</p><p>{link(exposed["url"])}</p>'
+                    text = "".join(structured) if structured else f'<p>{esc(exposed["body"])}</p>'
+                    answer = f'<h4>Team’s working answer</h4>{text}<p>{link(exposed["url"])}</p>'
+                    if separated:
+                        answer += f'<p>{esc(exposed["data"]["answer_contract"]["boundary"])}</p>'
                     answer += f'<p class="meta">Accepted / reviewed {esc(iso(question.accepted_at)) if question.accepted_at else "—"}.</p>'
                     state = review_state(session, row, profile, question, row.organization_id, accepted=accepted)
                     if state["reasons"]:

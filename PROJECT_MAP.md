@@ -28,7 +28,8 @@ domain acceptance remain open. The first bounded implementation is
 [consented claim-grounded research](docs/PRODUCT_CLAIM_SYNTHESIS.md) and
 [reviewed domain claim kinds](docs/PRODUCT_CLAIM_INTERPRETATION.md) and
 [source-specific editor roles](docs/PRODUCT_SOURCE_AUTHORITY.md) and
-[explicit reviewed context for AI research](docs/PRODUCT_REVIEWED_SYNTHESIS.md). Existing product client repositories and working
+[explicit reviewed context for AI research](docs/PRODUCT_REVIEWED_SYNTHESIS.md) and
+[quoted saved text versus AI interpretation](docs/PRODUCT_SOURCE_ANALYSIS.md). Existing product client repositories and working
 native workflows are preserved during incremental migration.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.

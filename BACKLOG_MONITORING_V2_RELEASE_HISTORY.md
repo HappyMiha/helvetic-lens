@@ -306,3 +306,38 @@ cases, 142 per client, exact API Ruff and 55 API cases, all builds and scans;
 both Sites 28, 130 origin checks and 47 exact assets each, exact native reader
 activation/assets and 58-module runtime proof. Full specifications and broader
 MV2-002/020/024 remain IN PROGRESS.
+
+**Global Ask/Search and retained command drafts — 28 September 2026:
+DONE (scoped production contribution / release 1.24).** Scope: MV2-002/023/024.
+Deliver a persistent native global entry, including login/history routes, with
+Cmd/Ctrl+K, accessible dialog focus, useful saved-source and explicitly public
+Pharma/Loyer knowledge results, and a local draft handoff into existing Marvin
+context. Preserve existing conversation/comparison drafts; paused or detached
+context is never silently enabled. Preparing a question never submits AI work.
+Both product clients retain their typed command on dismissal and share safe
+shortcut behavior; route/account/dossier changes clear scoped transient state.
+
+Dependencies: completed 1.23 themes, native AuthGate/I18n/Marvin and existing
+registry/public-knowledge APIs, existing Radix/Base UI dialogs and shared
+product destinations. Source readiness: current authorized registry records and
+author-published knowledge only. This native entry does not add internet/model
+coverage; open-web investigation stays available through the existing product
+journeys. No new provider, account, secret, model, schema, API, publication,
+source-permission or external-delivery change is required.
+
+Acceptance: one globally available entry; explicit submit only; bounded real
+results with exact safe links, accurate partial/failure/empty/pagination state;
+current account/route context and cancellation/late-result fences; retained
+question on dismissal, cleared state on authority/context transition; conflict-
+safe local Marvin draft preparation without auto-activation or overwrite;
+composition/repeat/nested-dialog-aware shortcuts and focus restoration; five
+native locales and responsive Brandbook light/dark/forced-color/reduced-motion
+styles. Run meaningful helper/adapter/SSR behavior checks, all native frontend/
+localization/types/build/format gates, both client tests/lint/types/portable
+builds, final backlog smoke, provider-value scans, immediate main pushes and
+exact native/Sites/origin/asset verification. Browser/human/professional and the
+remaining full-spec acceptance stay open. Evidence: [Global Ask/Search](docs/PRODUCT_GLOBAL_ASK.md): native 380 cases,
+135 tests per client, final builds, protected-value scans and backlog smoke;
+both Sites 27, 129 origin checks and 47 exact assets each, plus exact corrected
+native activation/assets and unchanged runtime proof. Full specifications and
+broader MV2-002/023/024 remain IN PROGRESS.

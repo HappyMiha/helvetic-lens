@@ -156,41 +156,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 **Source reading — 1.25 DONE:** [Complete recorded overview](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
-**Global Ask/Search and retained command drafts — 28 September 2026:
-DONE (scoped production contribution / release 1.24).** Scope: MV2-002/023/024.
-Deliver a persistent native global entry, including login/history routes, with
-Cmd/Ctrl+K, accessible dialog focus, useful saved-source and explicitly public
-Pharma/Loyer knowledge results, and a local draft handoff into existing Marvin
-context. Preserve existing conversation/comparison drafts; paused or detached
-context is never silently enabled. Preparing a question never submits AI work.
-Both product clients retain their typed command on dismissal and share safe
-shortcut behavior; route/account/dossier changes clear scoped transient state.
-
-Dependencies: completed 1.23 themes, native AuthGate/I18n/Marvin and existing
-registry/public-knowledge APIs, existing Radix/Base UI dialogs and shared
-product destinations. Source readiness: current authorized registry records and
-author-published knowledge only. This native entry does not add internet/model
-coverage; open-web investigation stays available through the existing product
-journeys. No new provider, account, secret, model, schema, API, publication,
-source-permission or external-delivery change is required.
-
-Acceptance: one globally available entry; explicit submit only; bounded real
-results with exact safe links, accurate partial/failure/empty/pagination state;
-current account/route context and cancellation/late-result fences; retained
-question on dismissal, cleared state on authority/context transition; conflict-
-safe local Marvin draft preparation without auto-activation or overwrite;
-composition/repeat/nested-dialog-aware shortcuts and focus restoration; five
-native locales and responsive Brandbook light/dark/forced-color/reduced-motion
-styles. Run meaningful helper/adapter/SSR behavior checks, all native frontend/
-localization/types/build/format gates, both client tests/lint/types/portable
-builds, final backlog smoke, provider-value scans, immediate main pushes and
-exact native/Sites/origin/asset verification. Browser/human/professional and the
-remaining full-spec acceptance stay open. Evidence: [Global Ask/Search](docs/PRODUCT_GLOBAL_ASK.md): native 380 cases,
-135 tests per client, final builds, protected-value scans and backlog smoke;
-both Sites 27, 129 origin checks and 47 exact assets each, plus exact corrected
-native activation/assets and unchanged runtime proof. Full specifications and
-broader MV2-002/023/024 remain IN PROGRESS.
-
+**Global Ask/Search — 1.24 DONE:** [Complete recorded overview](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 **Native reading themes and shared preference resilience — 28 September 2026:
 DONE (scoped production contribution / release 1.23).** Scope: MV2-002/024.
@@ -1902,7 +1868,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — source/AI output 1.46 VERIFYING — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1920,11 +1886,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — source/AI output 1.46 VERIFYING — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — source/AI output 1.46 VERIFYING — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — source/AI output 1.46 VERIFYING — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -2072,6 +2038,8 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+Source/AI output 1.46 VERIFYING. Reuse research preview, retained citations and existing privacy/review guards; no new acquisition. Explicit format, strict quoted text versus AI interpretation, legacy compatibility. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SOURCE_ANALYSIS.md).
 
 Reviewed synthesis 1.45 DONE within verified scope. 81 Core cases, 228 tests/lint/types/build each; Core b059addf6a2b and existing Sites 45 verified (41 runtime hashes, 45 HTTP and 47 assets each). Reuse current review/capture/provider contracts; retained evidence only. Explicit opt-in, independent related-claim metadata, complete dependency privacy and stale-answer checks. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_REVIEWED_SYNTHESIS.md).
 
@@ -2898,6 +2866,8 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+Source/AI output 1.46 VERIFYING. Reuse research preview, retained citations and existing privacy/review guards; no new acquisition. Explicit format, strict quoted text versus AI interpretation, legacy compatibility. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SOURCE_ANALYSIS.md).
+
 Reviewed synthesis 1.45 DONE within verified scope. 81 Core cases, 228 tests/lint/types/build each; Core b059addf6a2b and existing Sites 45 verified (41 runtime hashes, 45 HTTP and 47 assets each). Reuse current review/capture/provider contracts; retained evidence only. Explicit opt-in, independent related-claim metadata, complete dependency privacy and stale-answer checks. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_REVIEWED_SYNTHESIS.md).
 
 Source roles 1.44 DONE within verified scope. Reuse ClaimReview, exact retained source/citation/version pins and DomainPack; no new acquisition. Per-source editor categories and reasons, explicit public consent/history, stale and hidden-source protection, source-specific search display. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SOURCE_AUTHORITY.md). 129 Core cases, 225 tests each client; existing Sites 44 and exact Core activation verified. Full parent/human acceptance OPEN.
@@ -3175,6 +3145,8 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
+Source/AI output 1.46 VERIFYING. Reuse research preview, retained citations and existing privacy/review guards; no new acquisition. Explicit format, strict quoted text versus AI interpretation, legacy compatibility. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SOURCE_ANALYSIS.md).
+
 Reviewed synthesis 1.45 DONE within verified scope. 81 Core cases, 228 tests/lint/types/build each; Core b059addf6a2b and existing Sites 45 verified (41 runtime hashes, 45 HTTP and 47 assets each). Reuse current review/capture/provider contracts; retained evidence only. Explicit opt-in, independent related-claim metadata, complete dependency privacy and stale-answer checks. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_REVIEWED_SYNTHESIS.md).
 
 Source roles 1.44 DONE within verified scope. Reuse ClaimReview, exact retained source/citation/version pins and DomainPack; no new acquisition. Per-source editor categories and reasons, explicit public consent/history, stale and hidden-source protection, source-specific search display. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SOURCE_AUTHORITY.md). 129 Core cases, 225 tests each client; existing Sites 44 and exact Core activation verified. Full parent/human acceptance OPEN.
@@ -3282,6 +3254,8 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+Source/AI output 1.46 VERIFYING. Reuse research preview, retained citations and existing privacy/review guards; no new acquisition. Explicit format, strict quoted text versus AI interpretation, legacy compatibility. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SOURCE_ANALYSIS.md).
 
 Reviewed synthesis 1.45 DONE within verified scope. 81 Core cases, 228 tests/lint/types/build each; Core b059addf6a2b and existing Sites 45 verified (41 runtime hashes, 45 HTTP and 47 assets each). Reuse current review/capture/provider contracts; retained evidence only. Explicit opt-in, independent related-claim metadata, complete dependency privacy and stale-answer checks. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_REVIEWED_SYNTHESIS.md).
 
