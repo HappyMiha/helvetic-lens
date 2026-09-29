@@ -11,6 +11,7 @@ from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
 from . import product_exploration as exploration
+from . import product_exploration_progress as progress
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
 from .analysis import InferenceBudget
@@ -316,6 +317,8 @@ async def execute(service, job_id, worker):
                                     for c in research.public_existing_claims(session, run)][:60]
                         if work.get("selected_public_check") and "input" in work:
                             work["input"]["selected_public_check"] = work["selected_public_check"]
+                        if work.get("capture_progress") and "input" in work:
+                            work["input"]["capture_progress"] = work["capture_progress"]
                         budget_before = deepcopy(run.research_state)
                         if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
                             work = None
@@ -404,7 +407,7 @@ async def execute(service, job_id, worker):
         if state.get("inflight") != work["token"]:
             return {"id": job_id, "state": "stale_result_discarded"}
         blocked = excluded(session, parent)
-        if not exploration.adaptive_current(session, run):
+        if not exploration.adaptive_current(session, run) or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", [])):
             failed = True
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1
@@ -503,6 +506,8 @@ async def execute(service, job_id, worker):
                         source.snapshot = {**source.snapshot, "analysis_completed": True}
                     next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
+        if not failed:
+            progress.remember(run, work.get("capture_progress"), work.get("capture_dependencies", []))
         if failed:
             advance(branch, state)
             if work.get("file") and isinstance(result, dict) and result.get("error"):

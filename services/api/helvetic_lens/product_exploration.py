@@ -218,8 +218,9 @@ def apply(session, run, supplied, result):
 
 def adaptive_current(session, run):
     from .product_exploration_followups import references_current
+    from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and references_current(session, run)
+    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run)
 
 
 def local_dependencies_current(session, run):
@@ -270,6 +271,7 @@ def projection(session, run):
     value.pop("reply_fingerprint", None)
     value.pop("reply_key", None)
     value.pop("adaptive_dependencies", None)
+    value.pop("capture_comparison", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):
@@ -298,7 +300,13 @@ def projection(session, run):
                 "searches_completed": sum(s["phase"] == "search" and s["status"] == "completed" for s in steps),
                 "reads_completed": sum(s["phase"] == "read" and s["status"] == "completed" for s in steps)})
     from .product_exploration_followups import context, public_context, suggestion
+    from .product_exploration_progress import context as progress_context
 
+    value["capture_progress"] = progress_context(session, run)
+    if value["capture_progress"] and not adaptive_current(session, run):
+        value["capture_progress"] = {"status": "evidence_changed"}
+        if orientation:
+            orientation.update(status="evidence_changed", briefing=None)
     value["continuation"] = context(session, run)
     if value["continuation"] and value["continuation"]["status"] == "evidence_changed" and orientation:
         orientation.update(status="evidence_changed", briefing=None)

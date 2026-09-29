@@ -31,6 +31,10 @@ def saved_context(session, run, question_id):
     prior = reference(run)
     if prior and not prior.get("follow_up_id"):
         return None
+    from .product_exploration_progress import current
+
+    if not current(session, run):
+        return None
     dependencies = run.research_state["exploration"].get("adaptive_dependencies")
     if not dependencies or not exploration.local_dependencies_current(session, run):
         return None
@@ -119,6 +123,9 @@ def seed(session, run):
         fail("The selected check is no longer available.", 409)
     parent = session.get(Investigation, link["investigation_id"])
     value = saved_context(session, parent, link["follow_up_id"])
+    from .product_exploration_progress import initialize
+
+    initialize(session, run)
     state = deepcopy(run.research_state)
     state.update(objective=run.question, completion_criteria=["Read new public evidence for the explicitly selected saved check; retain unresolved questions."])
     run.research_state, run.status = state, "running"

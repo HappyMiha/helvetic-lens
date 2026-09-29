@@ -457,3 +457,14 @@ per-dossier scan. See [scope and acceptance](docs/PRODUCT_DOSSIER_COVERAGE.md).
 Existing source rights and full parent/human acceptance gates remain unchanged.
 
 <!-- End of archived overview entries. -->
+
+
+## Evidence-directed reinterpretation — 1.53
+
+DONE within verified scope: Core and existing public Sites 52 active. Cited reinterpretation drives actual bounded follow-up research; 49 Core checks and 263 client tests each passed. [Scope and acceptance](docs/PRODUCT_ADAPTIVE_ORIENTATION.md).
+
+## Early source-backed orientation — 1.52
+
+DONE within verified scope: Core and both public Sites 51 active; one bounded early cited interpretation while research continues, retained history and pause/correction. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_EARLY_ORIENTATION.md). No new monitoring authority.
+
+The two completed overviews above were archived verbatim from the active backlog on 29 September 2026 during scope recording for 1.55.
