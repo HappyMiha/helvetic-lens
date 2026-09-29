@@ -1,6 +1,6 @@
 # One question to a living dossier — 1.48
 
-Status: VERIFYING publication. Owner priority recorded before code, 29 September 2026.
+Status: DONE within this one-question product scope. Owner priority recorded before code, 29 September 2026.
 Scope: MV2-002/020/023/024. This takes priority over requested-source Coverage work.
 
 ## Product outcome
@@ -82,4 +82,27 @@ acquisition and pause/replay. It does not call paid providers or create private
 production records. 65 Core cases passed (64 integration, one backlog smoke); exact API lint passed.
 Each client passed 239 tests, lint, typecheck and the production build. Shared-file
 parity and protected-value checks passed for all three repositories. Exact production
-activation is pending at this checkpoint. The existing frozen provider studies remain closed.
+activation is verified below. The existing frozen provider studies remain closed.
+
+## Published outcome
+
+Core `79989fae6383ea594d8b11cec7541d76b67f6a15` activated at
+2026-09-29T12:53:56+00:00. Legal `a9293714246059c8448b49b9deca88abc786924c`
+and Pharma `70ccd981798125be7e4aa5eff01ad1d1e8c48527` are deployed in their
+existing public Sites projects as version 47 (client package 1.48.0).
+The [frozen release receipt](product-releases/2026-09-29-1.48-question-start.json)
+records 42 exact native module hashes, the unchanged schema/domain packs, five
+containers and nine native routes; 48 HTTP/access checks and 47 exact assets per
+client; and clean main/origin alignment. Anonymous start is denied, cross-origin
+writes are denied and the question-start route is POST-only at the client gateway.
+
+The deployment's smoke/functional checks passed; its separate integration step
+remained skipped under existing policy. All 64 affected integration cases ran
+locally. No authenticated production dossier, paid-provider probe or browser
+interaction was used as release evidence. Human usability acceptance, full target
+architecture and automatic domain-context inference remain open.
+
+The separate ai.helveticlens.ch client shown in the screenshot has not been changed;
+the optional scope clarification received no answer during this release. Further
+work should preserve this one-question entry and close observable dossier-result
+clarity and field-to-behavior gaps, with scope recorded before implementation.
