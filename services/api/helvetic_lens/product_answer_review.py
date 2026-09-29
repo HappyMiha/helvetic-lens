@@ -57,10 +57,16 @@ def review_state(session, parent, profile, row, organization_id, *, accepted=Non
     current = []
     markers = {}
     baseline = None
+    claim_state = None
     if row.accepted_entry_id and row.accepted_at:
         accepted = accepted or session.get(DossierEntry, row.accepted_entry_id)
         if not accepted or accepted.dossier_id != parent.id or accepted.thread_id != row.id:
             accepted = None
+        from .product_claim_synthesis import retained_state
+
+        claim_state = retained_state(session, accepted)
+        if claim_state and claim_state["status"] != "current":
+            reasons.append({"code": "claim_" + claim_state["status"], "message": claim_state["message"], "source_ids": []})
         current = page_states(session, parent, accepted, organization_id)
         audit = session.execute(select(DossierEntry.id, DossierEntry.data_json).where(
             DossierEntry.dossier_id == parent.id, DossierEntry.kind == "review",
@@ -114,5 +120,6 @@ def review_state(session, parent, profile, row, organization_id, *, accepted=Non
     token = fingerprint({"organization_id": organization_id, "product": parent.product, "dossier_id": parent.id,
         "thread_id": row.id, "revision": row.revision, "accepted_entry_id": row.accepted_entry_id,
         "accepted_at": iso(row.accepted_at) if row.accepted_at else None,
-        "sources": current, "baseline": baseline, "markers": markers})
+        "sources": current, "baseline": baseline, "markers": markers,
+        **({"claim_state": claim_state} if claim_state else {})})
     return {"fingerprint": token, "reasons": reasons, "reviewed_at": iso(row.accepted_at) if row.accepted_at else None}

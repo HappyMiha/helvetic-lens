@@ -107,7 +107,9 @@ def entry_payload(session, entry):
             cache[entry.dossier_id] = current_reviews(session, entry.dossier_id)
         review = cache[entry.dossier_id].get(entry.url)
         result["source_review"] = entry_payload(session, review) if review else None
-    return result
+    from .product_claim_synthesis import serialize
+
+    return serialize(session, entry, result)
 
 
 def payload(session, row, profile, *, detail=True):

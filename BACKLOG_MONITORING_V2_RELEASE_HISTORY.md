@@ -129,3 +129,62 @@ Core and both clients are published and verified. 64 API checks and 189 tests pe
 client passed, alongside exact runtime/assets and anonymous access checks. Legacy
 monitoring/source rights remain intact. Full specifications and live quality remain OPEN.
 
+
+
+### Legal product rename — 1.27 DONE within scope
+
+Owner-confirmed addition on 28 September 2026: **Helvetic Lens Legal**,
+`legal.helveticlens.ch`, `HappyMiha/helveticlens-legal`. Public names, navigation,
+search, metadata, guide and source URLs are updated with compatibility for the
+existing `loyer` API/storage identity and old domain. The same Sites project,
+dossiers, roles, publication choices and Apache-2.0 repository history remain.
+See `docs/PRODUCT_LEGAL_RENAME.md`. Verified evidence includes alias idempotency,
+private/public/guest/CSRF boundaries, exact production assets and renamed remote
+identity. This addition does not complete the full investigation/visual specs.
+
+
+## Product decision — 1.28 evidence read recovery
+
+DONE within verified 1.28 scope; recorded before implementation on 28 September. Scope and acceptance
+are in [PRODUCT_READ_RECOVERY.md](docs/PRODUCT_READ_RECOVERY.md): native comparison
+and snapshot retry with server-authoritative result recovery; both product clients
+cancel and fence obsolete reads. This contributes to MV2-002/020 and preserves
+current source rights, nine directions and full-specification open gates.
+
+
+## Owner priority — 1.36 research reader repair
+
+DONE within verified client repair/publication; recorded before implementation. MV2-002/020/023/024: repair repeated
+saved-evidence forms shown in the owner's Legal mobile screenshots and make
+transient platform errors actionable. EvidenceSearch and ClaimEvolution currently
+shared one sibling React key; changes in preceding conditional children could strand
+old search components. The 16:42 UTC-offset-adjusted report also overlaps native
+API/tunnel quiescence during the 1.35 release; exact failed request is unavailable.
+Dependencies: existing shared clients, native authorization and Sites projects.
+No new sources or model calls. Acceptance: actual reconciliation regression for
+error/loading/recovery transitions, one search and one history block, stable
+search state; status-aware API errors without automatic write/model retries;
+existing access isolation preserved; both clients tested, pushed and verified.
+Both clients passed 197 tests plus lint/types/build and are live as version 38;
+33 HTTP/access checks and 47 exact assets passed per product.
+See [scope and evidence](docs/PRODUCT_RESEARCH_REPAIR.md). Parent tasks stay open.
+
+
+## Research continuation — 1.40 human claim review
+
+DONE within verified review/publication scope; 52 affected Core checks and 209 tests/lint/types/build per client passed; recorded before code. MV2-002/020/024: explicit source-pinned
+accept/dismiss/needs-more-evidence on the existing DossierClaim, separate from
+machine support. Reuse native evidence, roles, visibility and publication consent;
+no new source access or inference. See [scope, dependencies, source readiness and
+acceptance](docs/PRODUCT_CLAIM_REVIEW.md). Full architecture/human acceptance OPEN.
+
+
+## Research continuation — 1.41 reviewed saved-evidence search
+
+DONE within verified search/publication scope; 100 Core and 216 client checks passed; recorded before code. MV2-002/020/023/024: current human review
+alongside original machine status/citations in all private saved-search modes;
+separate bounded freshness fence, no ranking/inference promotion. Reuse current
+review/source/auth/cache contracts; retained evidence only. Scope, dependencies,
+source readiness and acceptance: [reviewed search](docs/PRODUCT_REVIEWED_SEARCH.md).
+Full target and human acceptance remain OPEN.
+

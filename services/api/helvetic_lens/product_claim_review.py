@@ -130,9 +130,9 @@ def decision_state(latest, latest_visible, current):
         "finding_status": "PENDING_REVIEW" if stale or not decision else decision.upper()}
 
 
-def projection(session, claim):
+def projection(session, claim, *, current=None):
     """Current private search metadata; no reviewer identity, reason or history."""
-    current = context(session, claim)
+    current = current or context(session, claim)
     latest = session.scalar(select(ClaimReview).where(ClaimReview.claim_id == claim.id)
         .order_by(ClaimReview.revision.desc()).limit(1))
     state = decision_state(latest, bool(latest and history_visible(session, latest, None)), current)

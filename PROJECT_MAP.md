@@ -24,7 +24,8 @@ domain acceptance remain open. The first bounded implementation is
 [captured-source relationships](docs/PRODUCT_SOURCE_RELATIONSHIPS.md) and
 [reviewed entity mentions](docs/PRODUCT_ENTITY_IDENTITY.md) and
 [source-pinned human finding review](docs/PRODUCT_CLAIM_REVIEW.md) and
-[current human review in saved search](docs/PRODUCT_REVIEWED_SEARCH.md). Existing product client repositories and working
+[current human review in saved search](docs/PRODUCT_REVIEWED_SEARCH.md) and
+[consented claim-grounded research](docs/PRODUCT_CLAIM_SYNTHESIS.md). Existing product client repositories and working
 native workflows are preserved during incremental migration.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.

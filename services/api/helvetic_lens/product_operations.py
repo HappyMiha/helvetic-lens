@@ -139,6 +139,8 @@ def work_payload(session, row):
 
 
 def action_payload(session, row, parent=None, profile=None):
+    from .product_claim_synthesis import UNAVAILABLE, action_hidden
+
     result = {"id": row.id, "dossier_id": row.dossier_id, "revision": row.revision,
               "title": row.title, "detail": row.detail, "status": row.status, "priority": row.priority,
               "assignee": member(session, row.assignee_user_id),
@@ -146,6 +148,8 @@ def action_payload(session, row, parent=None, profile=None):
               "overdue": bool(row.due_on and row.due_on < today() and row.status in ("open", "in_progress")),
               "source_url": row.source_url, "evidence": row.evidence_json, "outcome": row.outcome,
               "created_at": iso(row.created_at), "updated_at": iso(row.updated_at)}
+    if action_hidden(session, row):
+        result.update(title="Research follow-up unavailable", detail=UNAVAILABLE, outcome="", source_url="", evidence={})
     if parent and profile:
         result["dossier_name"] = profile.config_json.get("name", "Untitled dossier")
         result["subject"] = parent.context_json.get("subject", "")
@@ -209,10 +213,17 @@ def research_action_evidence(session, parent, origin):
         entry = session.get(DossierEntry, str(origin.entry_id))
         if not entry or entry.dossier_id != parent.id or entry.thread_id != thread.id or entry.kind != "research":
             fail("Research note not found in this question.", 404)
-        gaps = entry.data_json.get("unknowns", [])
+        from .product_api import entry_payload
+
+        exposed = entry_payload(session, entry)
+        if exposed["data"].get("claim_freshness", {}).get("status", "current") != "current":
+            fail("This research note changed. Generate a current note before creating a follow-up.", 409)
+        gaps = exposed["data"].get("unknowns", [])
         if not isinstance(gaps, list) or origin.gap_index >= len(gaps) or not isinstance(gaps[origin.gap_index], str):
             fail("This saved research gap is unavailable. Reload the question.", 409)
         snapshot.update({"entry_id": entry.id, "gap_index": origin.gap_index, "gap": gaps[origin.gap_index]})
+        if entry.data_json.get("evidence_scope") == "claims_v1":
+            snapshot["evidence_scope"] = "claims_v1"
     return snapshot
 
 
@@ -425,6 +436,11 @@ def operations(router, service, actor):
             facts = ''.join(f'<dt>{esc(a)}</dt><dd>{esc(b)}</dd>' for a, b in fields)
             cards = []
             for action in actions:
+                from .product_claim_synthesis import UNAVAILABLE, action_hidden
+
+                if action_hidden(session, action):
+                    cards.append(f'<article><h3>Research follow-up unavailable</h3><p>{esc(UNAVAILABLE)}</p></article>')
+                    continue
                 assigned = member(session, action.assignee_user_id)
                 research = action.evidence_json.get("research")
                 origin = (f'<p><b>Research question:</b> {esc(research["question"])}</p>'
@@ -473,16 +489,19 @@ def operations(router, service, actor):
                 accepted = session.get(DossierEntry, question.accepted_entry_id) if question.accepted_entry_id else None
                 answer = "<p>Still open: no working answer accepted.</p>"
                 if accepted and accepted.thread_id == question.id:
+                    from .product_api import entry_payload
+
+                    exposed = entry_payload(session, accepted)
                     citations = []
                     if accepted.kind == "research":
-                        snapshots = {source["id"]: source for source in accepted.data_json.get("sources", [])}
-                        for finding in accepted.data_json.get("findings", []):
+                        snapshots = {source["id"]: source for source in exposed["data"].get("sources", [])}
+                        for finding in exposed["data"].get("findings", []):
                             for citation in finding.get("citations", []):
                                 source = snapshots.get(citation["source_id"], {})
                                 citations.append(f'<li>“{esc(citation["quote"])}” — {esc(source.get("title"))} '
                                                  f'({esc(source.get("kind"))}) {link(source.get("url", ""))}</li>')
-                    gaps = ''.join(f'<li>{esc(gap)}</li>' for gap in accepted.data_json.get("unknowns", []))
-                    answer = f'<h4>Team’s working answer</h4><p>{esc(accepted.body)}</p><p>{link(accepted.url)}</p>'
+                    gaps = ''.join(f'<li>{esc(gap)}</li>' for gap in exposed["data"].get("unknowns", []))
+                    answer = f'<h4>Team’s working answer</h4><p>{esc(exposed["body"])}</p><p>{link(exposed["url"])}</p>'
                     answer += f'<p class="meta">Accepted / reviewed {esc(iso(question.accepted_at)) if question.accepted_at else "—"}.</p>'
                     state = review_state(session, row, profile, question, row.organization_id, accepted=accepted)
                     if state["reasons"]:
@@ -493,6 +512,17 @@ def operations(router, service, actor):
                         answer += f'<h4>Quoted evidence</h4><ul>{"".join(citations)}</ul>'
                     if gaps:
                         answer += f'<h4>Still to establish</h4><ul>{gaps}</ul>'
+                    if exposed["data"].get("claims"):
+                        answer += '<h4>Claim context supplied at generation</h4><p>Human acceptance is workflow review, not independent truth.</p>'
+                        for claim in exposed["data"]["claims"]:
+                            review = claim["human_review"]
+                            label = "Changed — review again" if review["stale"] else review["decision"] or "Not reviewed"
+                            answer += f'<p>{esc(claim["statement"])} — machine: {esc(claim["machine_status"])}; human: {esc(label)}.</p>'
+                            for comparison in claim["comparisons"]:
+                                answer += f'<p>{esc(comparison["kind"])} ({esc(comparison["status"])}): {esc(comparison["statement"])}</p>'
+                        for source in exposed["data"].get("sources", []):
+                            if source["kind"] == "investigation_quote":
+                                answer += f'<blockquote>{esc(source["text"])}</blockquote><p>{esc(source["id"])} · {esc(source["relation"])} · {esc(source["locator"])} · {link(source["url"])}</p>'
                     if accepted.kind == "research":
                         answer += '<p class="meta">AI research note accepted by the team; citations are saved snapshots.</p>'
                 discussion.append(f'<article><h3>{esc(question.title)}</h3><p>{esc(question.body)}</p>{answer}</article>')
