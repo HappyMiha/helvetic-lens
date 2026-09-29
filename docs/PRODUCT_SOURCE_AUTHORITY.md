@@ -1,6 +1,7 @@
 # Reviewed source roles — 1.44
 
-Status: IN PROGRESS. Scope recorded before code for MV2-002/020/023/024;
+Status: DONE within the bounded source-role and verified release scope.
+Scope recorded before code for MV2-002/020/023/024;
 Unified sections 9, 29, 31, 35, 38–39 and 48–50. Full architecture, professional
 authority/applicability and human acceptance remain OPEN.
 
@@ -96,5 +97,25 @@ client, including three new real-render/form cases. The initial public-checkbox
 test needed the animation-frame scheduler supplied by browsers; the local test
 harness now supplies and restores it, and the case passes. All 129 affected Core cases passed, including 14 new source-assessment cases
 and the extended exact native-version test. Exact API lint, the active-backlog
-invariant and protected-value/shared-client parity scan passed. Main publication
-and production activation are pending; they are distinct from code acceptance.
+invariant and protected-value/shared-client parity scan passed. Initial publication and exact production activation are verified below.
+
+Both existing public Sites are published as version 44: Legal
+`534c6b8bebd055c61769c5f8741d7a35a59e7c25`, Pharma
+`fa203e0f77b5de2c5f05546f54f85e70bbf978bc`. Core implementation
+`b4d9de5967e94987b8b2e49f279686cd1c4390bf` activated at
+2026-09-29T07:04:09Z. The [frozen release receipt](product-releases/2026-09-29-1.44-source-authority.json)
+confirms 41 exact runtime module hashes, DomainPack 1.4.0 source roles,
+unchanged migration 0bd495bef125, five running containers and nine Monitoring
+routes. Each canonical product origin passed 45 HTTP/access checks and 47 exact
+asset comparisons. All three main branches were clean and aligned after fetch.
+
+The final English evidence commit follows normal native activation; its exact
+SHA and verification are recorded in the parent cycle checkpoint. Clients are
+unchanged and do not need another publication. Native backup still briefly
+stops API/tunnel. Browser, private production dossier and professional human
+acceptance were not performed; no inference calls or provider changes occurred.
+
+Next audit: a separately consented typed synthesis contract, including distinct
+own/related claim kinds and source-specific editorial roles. Existing saved and
+claims_v1 inputs must stay unchanged. Full architecture, source authority ranking,
+applicability, GENERAL and complete Market Access acceptance remain OPEN.
