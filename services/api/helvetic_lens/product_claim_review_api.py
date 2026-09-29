@@ -6,9 +6,11 @@ from fastapi import Query, Request
 from pydantic import Field, StrictBool
 from sqlalchemy import select
 
+from .domain_packs import for_product
 from .legal_profiles import Input
 from .product_api import Product, fail
 from .product_claim_evolution_api import editor
+from .product_claim_interpretation import Interpretation, resolve
 from .product_claim_review import claims, context, page, payload
 from .product_community import participant, publication
 from .product_entity_identity import digest
@@ -26,6 +28,7 @@ class Review(Input):
     decision: Literal["accepted", "dismissed", "needs_more_evidence"]
     reason: str = Field(min_length=5, max_length=500)
     confirm_public: StrictBool = False
+    interpretation: Interpretation | None = None
 
 
 def apply_review(session, parent, identity, data, published=None):
@@ -42,7 +45,10 @@ def apply_review(session, parent, identity, data, published=None):
     current = context(session, claim, published)
     if not current["reviewable"] or current["evidence_fingerprint"] != data.evidence_fingerprint:
         fail("The evidence changed or cannot be fully reviewed. Reload the finding and its sources.", 409)
-    fingerprint = digest([identity.user_id, data.model_dump(mode="json")])
+    request_data = data.model_dump(mode="json")
+    if data.interpretation is None:
+        request_data.pop("interpretation")  # Preserve historical retry fingerprints.
+    fingerprint = digest([identity.user_id, request_data])
     previous = session.scalar(select(ClaimReview).where(ClaimReview.claim_id == claim.id)
         .order_by(ClaimReview.revision.desc()).limit(1))
     replay = session.scalar(select(ClaimReview).where(ClaimReview.dossier_id == parent.id,
@@ -54,9 +60,14 @@ def apply_review(session, parent, identity, data, published=None):
     revision = previous.revision if previous else 0
     if revision != data.expected_revision or revision >= 100:
         fail("This finding changed or reached its review limit. Reload its history before reviewing.", 409)
+    basis = dict(current["basis"])
+    if data.interpretation is not None:
+        basis["interpretation"] = resolve(for_product(parent.product), data.interpretation)
+    elif previous and previous.basis.get("interpretation"):
+        fail("Review the claim type explicitly before saving another decision.", 409)
     run = session.get(Investigation, claim.investigation_id)
     session.add(ClaimReview(**scope(run), claim_id=claim.id, decision=data.decision, reason=data.reason,
-        revision=revision + 1, evidence_fingerprint=current["evidence_fingerprint"], basis=current["basis"],
+        revision=revision + 1, evidence_fingerprint=current["evidence_fingerprint"], basis=basis,
         reviewed_by_user_id=identity.user_id, request_key=str(data.request_key), request_fingerprint=fingerprint))
     event(session, run, "claim_reviewed", reason="A dossier editor reviewed a finding; source assessment and original evidence remain unchanged.")
     session.flush()

@@ -188,3 +188,42 @@ review/source/auth/cache contracts; retained evidence only. Scope, dependencies,
 source readiness and acceptance: [reviewed search](docs/PRODUCT_REVIEWED_SEARCH.md).
 Full target and human acceptance remain OPEN.
 
+
+
+**Saved document context and exact source links — 28 September 2026:
+DONE (scoped production contribution / release 1.27).** Scope: MV2-002/020/024.
+Make the exact saved source legible inside owned-document comparisons and both
+product document-history readers: full version identity, capture fingerprint,
+file/format, actual retained counts and distinct capture/document dates. Keep
+synthetic/import and selected-article provenance explicit. Improve text measure,
+spacing, narrow-screen reader layout and disclosure controls using Brandbook v1.0.
+Native report provenance and passage links must identify the full saved version
+and encode complete passage IDs, including query/hash characters.
+
+Dependencies: existing ComparisonView/Version/VersionCard/ReportProvenance,
+SourceReading helpers/copy, product DocumentHistory/SavedPageVersion, installed
+primitives and revision-pinned source readers. Source readiness: version_summary,
+product_document_history METADATA and evidence_pages already provide the required
+fields under current authorization; no API/schema/model/provider/credential or
+source-right change is required. Native comparison jobs, identity decisions,
+material classification, review actions, companion tabs and Ask remain in place.
+The existing client history/error/refresh/revision behavior stays authoritative;
+no query, collection, paid research, publication or notification is started by
+opening context. The separate native baseline workflow completed in 1.26 stays
+unchanged. A broader legacy comparison resource/job-cache refactor is not part
+of this presentation and exact-link outcome and is not claimed complete.
+
+Acceptance: full old/new IDs in saved report provenance; exact escaped native
+version/passage destinations; true saved passage/character totals with unknown
+separate from zero; valid capture timestamps, stated/official/supplied date
+provenance, original files, recorded hashes, selection scope and synthetic labels
+remain distinct. Product original-source actions retain legacy HTTP(S) support
+while rejecting unsafe or credential-bearing URLs. Both readers preserve exact
+quoted text, source language, page offsets, revision mismatch/withdrawal handling,
+explicit current-revision reload and retained AI-note context. Five native locales,
+actual SSR/helper behavior cases, required frontend tests/lint/types/builds,
+affected existing API contracts, backlog smoke, value scans, immediate main pushes
+and exact existing Sites/native production proof precede scoped DONE. No browser
+or private-production-record probes; human/professional/full-spec gates stay open.
+Evidence: docs/PRODUCT_VERSION_CONTEXT.md.
+

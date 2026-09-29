@@ -12,6 +12,10 @@
 
 DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
+## Research continuation — 1.43 reviewed claim kinds
+
+Reviewed claim kinds 1.43 IN PROGRESS. Reuse ClaimReview, DomainPack and current evidence/access pins; retained captures only. Explicit versioned editor classification, unknown legacy type, source/user/AI separation, stale-search/answer protection. [Scope, dependencies and acceptance](docs/PRODUCT_CLAIM_INTERPRETATION.md). Full target/human acceptance OPEN.
+
 ## Research continuation — 1.42 consented claim synthesis
 
 Consented claim synthesis 1.42 DONE. Reuse current claims, citation/review pins, private access and research preview. Retained eligible captures only. Explicit versioned consent, bounded complete contradiction groups, exact quotes, stale-answer and hidden-source protection; legacy input unchanged. Scope/dependencies/source readiness/acceptance: [PRODUCT_CLAIM_SYNTHESIS.md](docs/PRODUCT_CLAIM_SYNTHESIS.md). Full target/human acceptance OPEN.
@@ -146,42 +150,7 @@ two independent builds/repositories and verified production URLs. Evidence:
 
 ## Product decision
 
-**Saved document context and exact source links — 28 September 2026:
-DONE (scoped production contribution / release 1.27).** Scope: MV2-002/020/024.
-Make the exact saved source legible inside owned-document comparisons and both
-product document-history readers: full version identity, capture fingerprint,
-file/format, actual retained counts and distinct capture/document dates. Keep
-synthetic/import and selected-article provenance explicit. Improve text measure,
-spacing, narrow-screen reader layout and disclosure controls using Brandbook v1.0.
-Native report provenance and passage links must identify the full saved version
-and encode complete passage IDs, including query/hash characters.
-
-Dependencies: existing ComparisonView/Version/VersionCard/ReportProvenance,
-SourceReading helpers/copy, product DocumentHistory/SavedPageVersion, installed
-primitives and revision-pinned source readers. Source readiness: version_summary,
-product_document_history METADATA and evidence_pages already provide the required
-fields under current authorization; no API/schema/model/provider/credential or
-source-right change is required. Native comparison jobs, identity decisions,
-material classification, review actions, companion tabs and Ask remain in place.
-The existing client history/error/refresh/revision behavior stays authoritative;
-no query, collection, paid research, publication or notification is started by
-opening context. The separate native baseline workflow completed in 1.26 stays
-unchanged. A broader legacy comparison resource/job-cache refactor is not part
-of this presentation and exact-link outcome and is not claimed complete.
-
-Acceptance: full old/new IDs in saved report provenance; exact escaped native
-version/passage destinations; true saved passage/character totals with unknown
-separate from zero; valid capture timestamps, stated/official/supplied date
-provenance, original files, recorded hashes, selection scope and synthetic labels
-remain distinct. Product original-source actions retain legacy HTTP(S) support
-while rejecting unsafe or credential-bearing URLs. Both readers preserve exact
-quoted text, source language, page offsets, revision mismatch/withdrawal handling,
-explicit current-revision reload and retained AI-note context. Five native locales,
-actual SSR/helper behavior cases, required frontend tests/lint/types/builds,
-affected existing API contracts, backlog smoke, value scans, immediate main pushes
-and exact existing Sites/native production proof precede scoped DONE. No browser
-or private-production-record probes; human/professional/full-spec gates stay open.
-Evidence: docs/PRODUCT_VERSION_CONTEXT.md.
+**Saved document context — 1.27 DONE:** [Complete recorded overview](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 **Saved comparison clarity and selection safety — 28 September 2026:
 DONE (scoped production contribution / release 1.26).** Scope: MV2-002/020/024.
@@ -2011,7 +1980,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — reviewed claim kinds 1.43 IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -2029,11 +1998,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — reviewed claim kinds 1.43 IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — reviewed claim kinds 1.43 IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — reviewed claim kinds 1.43 IN PROGRESS — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -2181,6 +2150,8 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+Reviewed claim kinds 1.43 IN PROGRESS. Reuse ClaimReview, DomainPack and current evidence/access pins; retained captures only. Explicit versioned editor classification, unknown legacy type, source/user/AI separation, stale-search/answer protection. [Scope, dependencies and acceptance](docs/PRODUCT_CLAIM_INTERPRETATION.md). Full target/human acceptance OPEN.
 
 Consented claim synthesis 1.42 DONE. Reuse current claims, citation/review pins, private access and research preview. Retained eligible captures only. Explicit versioned consent, bounded complete contradiction groups, exact quotes, stale-answer and hidden-source protection; legacy input unchanged. Scope/dependencies/source readiness/acceptance: [PRODUCT_CLAIM_SYNTHESIS.md](docs/PRODUCT_CLAIM_SYNTHESIS.md). Full target/human acceptance OPEN.
 
@@ -3001,6 +2972,8 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+Reviewed claim kinds 1.43 IN PROGRESS. Reuse ClaimReview, DomainPack and current evidence/access pins; retained captures only. Explicit versioned editor classification, unknown legacy type, source/user/AI separation, stale-search/answer protection. [Scope, dependencies and acceptance](docs/PRODUCT_CLAIM_INTERPRETATION.md). Full target/human acceptance OPEN.
+
 Consented claim synthesis 1.42 DONE. Reuse current claims, citation/review pins, private access and research preview. Retained eligible captures only. Explicit versioned consent, bounded complete contradiction groups, exact quotes, stale-answer and hidden-source protection; legacy input unchanged. Scope/dependencies/source readiness/acceptance: [PRODUCT_CLAIM_SYNTHESIS.md](docs/PRODUCT_CLAIM_SYNTHESIS.md). Full target/human acceptance OPEN.
 
 **Scoped continuation 1.41 — DONE within search/release scope, recorded before code:** Current human
@@ -3272,6 +3245,8 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
+Reviewed claim kinds 1.43 IN PROGRESS. Reuse ClaimReview, DomainPack and current evidence/access pins; retained captures only. Explicit versioned editor classification, unknown legacy type, source/user/AI separation, stale-search/answer protection. [Scope, dependencies and acceptance](docs/PRODUCT_CLAIM_INTERPRETATION.md). Full target/human acceptance OPEN.
+
 Consented claim synthesis 1.42 DONE. Reuse current claims, citation/review pins, private access and research preview. Retained eligible captures only. Explicit versioned consent, bounded complete contradiction groups, exact quotes, stale-answer and hidden-source protection; legacy input unchanged. Scope/dependencies/source readiness/acceptance: [PRODUCT_CLAIM_SYNTHESIS.md](docs/PRODUCT_CLAIM_SYNTHESIS.md). Full target/human acceptance OPEN.
 
 **Scoped continuation 1.41 — DONE within search/release scope, recorded before code:** Current human
@@ -3373,6 +3348,8 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+Reviewed claim kinds 1.43 IN PROGRESS. Reuse ClaimReview, DomainPack and current evidence/access pins; retained captures only. Explicit versioned editor classification, unknown legacy type, source/user/AI separation, stale-search/answer protection. [Scope, dependencies and acceptance](docs/PRODUCT_CLAIM_INTERPRETATION.md). Full target/human acceptance OPEN.
 
 Consented claim synthesis 1.42 DONE. Reuse current claims, citation/review pins, private access and research preview. Retained eligible captures only. Explicit versioned consent, bounded complete contradiction groups, exact quotes, stale-answer and hidden-source protection; legacy input unchanged. Scope/dependencies/source readiness/acceptance: [PRODUCT_CLAIM_SYNTHESIS.md](docs/PRODUCT_CLAIM_SYNTHESIS.md). Full target/human acceptance OPEN.
 

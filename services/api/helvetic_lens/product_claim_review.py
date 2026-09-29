@@ -3,6 +3,7 @@ from sqlalchemy import func, or_, select
 
 from .product_api import iso
 from .product_claim_evolution import query as comparisons
+from .product_claim_interpretation import recorded
 from .product_entity_identity import audience, digest
 from .product_investigation_models import (
     ClaimChange,
@@ -135,8 +136,9 @@ def projection(session, claim, *, current=None):
     current = current or context(session, claim)
     latest = session.scalar(select(ClaimReview).where(ClaimReview.claim_id == claim.id)
         .order_by(ClaimReview.revision.desc()).limit(1))
-    state = decision_state(latest, bool(latest and history_visible(session, latest, None)), current)
-    return {**state, "complete": current["complete"], "reviewable": current["reviewable"],
+    visible = bool(latest and history_visible(session, latest, None))
+    state = decision_state(latest, visible, current)
+    return {**state, **recorded(latest, visible), "complete": current["complete"], "reviewable": current["reviewable"],
         "context_fingerprint": digest({key: value for key, value in current.items() if key != "basis"}),
         "has_conflicting_evidence": any(row["relation"] == "CONTRADICTS" for row in current["evidence"])
             or any(row["kind"] == "CONTRADICTS" and row["status"] == "active" for row in current["comparisons"])}
@@ -150,7 +152,7 @@ def payload(session, claim, publication=None, *, current=None):
     visible = [row for row in history if history_visible(session, row, publication)]
     latest_visible = latest in visible if latest else False
     return {key: value for key, value in current.items() if key != "basis"} | {
-        "id": claim.id, **decision_state(latest, latest_visible, current),
+        "id": claim.id, **decision_state(latest, latest_visible, current), **recorded(latest, latest_visible),
         "history_unavailable": len(visible) != len(history),
         "history": [{"revision": row.revision, "decision": row.decision, "reason": row.reason,
             "at": iso(row.created_at), "reviewer": "Dossier editor" if row.reviewed_by_user_id else "Former dossier editor",
@@ -158,9 +160,14 @@ def payload(session, claim, publication=None, *, current=None):
 
 
 def page(session, dossier_id, publication=None, *, offset=0):
+    from .domain_packs import for_product
+    from .product_claim_interpretation import options
+    from .product_models import ProductDossier
+
+    pack = for_product(session.get(ProductDossier, dossier_id).product)
     query = claims(dossier_id, publication)
     return {"items": [payload(session, row, publication) for row in session.scalars(query
         .order_by(DossierClaim.created_at.desc(), DossierClaim.id).offset(offset).limit(PAGE_SIZE))],
         "total": session.scalar(select(func.count()).select_from(query.subquery())),
         "offset": offset, "page_size": PAGE_SIZE, "publication_revision": publication.revision if publication else None,
-        "boundary": BOUNDARY}
+        "boundary": BOUNDARY, "interpretation_options": options(pack)}

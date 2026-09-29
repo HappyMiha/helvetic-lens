@@ -10,6 +10,7 @@ from typing import Literal
 from sqlalchemy import select
 
 from .config import DomainError
+from .product_claim_interpretation import LEGAL_TYPES, PHARMA_TYPES
 from .product_models import ProductDossier
 
 
@@ -23,6 +24,7 @@ class DomainPack:
     topic_instructions: str
     topic_task: str
     context_schema_id: str
+    claim_types: tuple[tuple[str, str, str], ...] = ()
     scientific_literature: bool = False
 
     def descriptor(self):
@@ -30,21 +32,22 @@ class DomainPack:
 
         return {"id": self.id, "version": self.version, "domain": self.domain,
                 "label": self.label, "focus": self.focus, "context_schema_id": self.context_schema_id,
-                "template_ids": [item.id for item in available(self.domain)]}
+                "template_ids": [item.id for item in available(self.domain)],
+                "claim_types": [{"kind": kind, "claim_type": code, "label": label} for kind, code, label in self.claim_types]}
 
 
 LEGAL = DomainPack(
-    id="LegalPack", version="1.2.0", domain="LEGAL", label="Legal monitoring",
+    id="LegalPack", version="1.3.0", domain="LEGAL", label="Legal monitoring",
     focus="Legal developments, proceedings and regulatory changes relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct legal monitoring topics for the supplied context and feedback. "
         "These are editable search interests, not legal conclusions. "
         "Do not invent law citations, legal requirements, events or source coverage. "
     ),
-    topic_task="legal_profile_topics", context_schema_id="legal-context/v1",
+    topic_task="legal_profile_topics", context_schema_id="legal-context/v1", claim_types=LEGAL_TYPES,
 )
 PHARMA = DomainPack(
-    id="PharmaPack", version="1.2.0", domain="PHARMA", label="Pharmaceutical monitoring",
+    id="PharmaPack", version="1.3.0", domain="PHARMA", label="Pharmaceutical monitoring",
     focus="Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct pharmaceutical monitoring topics for the supplied context and feedback. "
@@ -54,7 +57,7 @@ PHARMA = DomainPack(
         "Do not invent studies, efficacy or safety findings, approvals, reimbursement decisions, "
         "events or source coverage. Separate research signals from authoritative decisions. "
     ),
-    topic_task="pharma_profile_topics", context_schema_id="pharma-context/v1", scientific_literature=True,
+    topic_task="pharma_profile_topics", context_schema_id="pharma-context/v1", claim_types=PHARMA_TYPES, scientific_literature=True,
 )
 _PRODUCTS = MappingProxyType({"legal": LEGAL, "loyer": LEGAL, "pharma": PHARMA})
 
