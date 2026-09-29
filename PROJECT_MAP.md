@@ -39,6 +39,7 @@ is inferred from the first question.
 while that bounded episode continues; its release evidence remains separate.
 [Evidence-directed reinterpretation](docs/PRODUCT_ADAPTIVE_ORIENTATION.md) connects
 new passages to actual follow-up research; release evidence is tracked separately.
+[Selected-question assessment](docs/PRODUCT_QUESTION_ASSESSMENT.md) adds the bounded research outcome; implemented and tested, production verification pending.
 [Episode progress](docs/PRODUCT_EPISODE_PROGRESS.md) distinguishes repeated and changed captured material across continued research; Core and both clients verified.
 [Saved-check continuation](docs/PRODUCT_SAVED_CHECK_CONTINUATION.md) adds an explicit
 next episode for a source-contained unfinished check; Core and both clients verified.

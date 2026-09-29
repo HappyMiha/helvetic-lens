@@ -72,6 +72,8 @@ async def execute(service, work, seconds):
         "brief": (exploration.Briefing, exploration.SYSTEM),
         "orient": (exploration.EarlyOrientation, exploration.EARLY_SYSTEM),
     }[phase]
+    if phase == "brief" and work["input"].get("assessment_question"):
+        schema, system = exploration.AssessedBriefing, system + exploration.ASSESSMENT_SYSTEM
     if work.get("selected_public_check"):
         system += followups.CONTEXT_SYSTEM
     if work.get("capture_progress"):

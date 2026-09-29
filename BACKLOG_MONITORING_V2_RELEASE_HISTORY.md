@@ -468,3 +468,9 @@ DONE within verified scope: Core and existing public Sites 52 active. Cited rein
 DONE within verified scope: Core and both public Sites 51 active; one bounded early cited interpretation while research continues, retained history and pause/correction. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_EARLY_ORIENTATION.md). No new monitoring authority.
 
 The two completed overviews above were archived verbatim from the active backlog on 29 September 2026 during scope recording for 1.55.
+
+## Continue a saved evidence check — 1.54
+
+DONE within verified scope: Core and existing public Sites 53 active; 41 Core cases and 269 client cases each passed. An explicit source-validated choice starts the actual unfinished query. [Scope and acceptance](docs/PRODUCT_SAVED_CHECK_CONTINUATION.md).
+
+<!-- The 1.54 overview above was archived verbatim during 1.56 scope recording. -->

@@ -126,6 +126,7 @@ def seed(session, run):
     from .product_exploration_progress import initialize
 
     initialize(session, run)
+    exploration.update(run, assessment_contract=exploration.ASSESSMENT_CONTRACT)
     state = deepcopy(run.research_state)
     state.update(objective=run.question, completion_criteria=["Read new public evidence for the explicitly selected saved check; retain unresolved questions."])
     run.research_state, run.status = state, "running"

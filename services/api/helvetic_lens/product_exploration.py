@@ -13,6 +13,24 @@ from .product_investigations import ACTIVE, Citation, citation, event, rows, sco
 from .product_source_reviews import current_reviews
 
 CONTRACT = "exploration/v1"
+ASSESSMENT_CONTRACT = "selected-question-assessment/v1"
+ASSESSMENT_SYSTEM = """The assessment_question is the exact explicitly selected
+question to assess. Return its question_id unchanged. Assess what the supplied
+READ passages say about that question, not merely the user's possible intent.
+Use possible_answer, partial, conflicting, or not_found IN THE MATERIAL READ.
+These are tentative AI assessments, never truth ratings or human acceptance.
+Each substantive point needs exact citations, labelled support, counterevidence
+or context. Retain contrary passages and explain limitations. A conflicting
+assessment needs distinct passages with support and counterevidence; don't invent
+disagreement. A possible answer needs supporting evidence, not just an analogy.
+If material is tangential, use not_found with optional cited context points; never
+turn absence of an answer into proof of absence. Limitations describe missing
+scope or uncertainty, not uncited factual conclusions. Do not claim complete
+coverage. Repeated material can answer a different question; new captures or
+completed jobs don't establish an answer. No extra clarification unless it changes
+the work. The assessment is the primary concise conclusion, with no uncited
+summary. Existing findings preserve background evidence. Return requested JSON.
+"""
 DISCLOSURE = (
     "Start one bounded private exploration. The submitted public question and follow-ups from public "
     "evidence may be sent to search and decision providers. The workspace model analyses selected "
@@ -87,6 +105,29 @@ class Briefing(legal_profiles.Input):
     directions: list[Direction] = Field(max_length=3)
 
 
+class AssessmentEvidence(Citation):
+    source_id: str = Field(min_length=1, max_length=36)
+    role: Literal["support", "counterevidence", "context"]
+
+
+class AssessmentPoint(legal_profiles.Input):
+    statement: str = Field(min_length=5, max_length=700)
+    evidence: list[AssessmentEvidence] = Field(min_length=1, max_length=3)
+
+
+class QuestionAssessment(legal_profiles.Input):
+    question_id: str = Field(min_length=1, max_length=36)
+    status: Literal["possible_answer", "partial", "conflicting", "not_found"]
+    points: list[AssessmentPoint] = Field(max_length=4)
+    limitations: list[str] = Field(min_length=1, max_length=4)
+
+
+class AssessedBriefing(Briefing):
+    # The same final phase/provider request, with a versioned stronger contract.
+    model_config = {**Briefing.model_config, "title": "Briefing"}
+    assessment: QuestionAssessment
+
+
 class Interpretation(Citation):
     source_id: str = Field(min_length=1, max_length=36)
     meaning: str = Field(min_length=5, max_length=350)
@@ -126,6 +167,10 @@ def prepare(session, run, *, early=False):
             for s in sources(session, run).values()],
         "open_questions": [{"question": q["question"], "status": q["status"]}
             for q in run.research_state["questions"]]}
+    state = run.research_state["exploration"]
+    if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
+        value["assessment_question"] = {"contract": ASSESSMENT_CONTRACT,
+            "question_id": state["previous"]["follow_up_id"], "question": run.question}
     orientation = projection(session, run).get("orientation")
     if not early and orientation and orientation["status"] == "ready":
         value["early_orientation"] = orientation["briefing"]
@@ -212,8 +257,42 @@ def apply(session, run, supplied, result):
     if len({d.question.strip().casefold() for d in result.directions}) != len(result.directions):
         fail("Clarification directions must be distinct.", 422)
     value = validated(session, run, supplied, result, ("findings", "directions"))
+    if run.research_state["exploration"].get("assessment_contract") == ASSESSMENT_CONTRACT:
+        value["assessment"] = validated_assessment(session, run, supplied, result)
     update(run, status="ready", briefing=value, revision=run.event_sequence + 1)
     event(session, run, "briefing_ready", finding_count=len(result.findings), direction_count=len(result.directions))
+
+
+def validated_assessment(session, run, supplied, result):
+    target = supplied.get("assessment_question")
+    selected = supplied.get("selected_public_check")
+    expected_id = run.research_state["exploration"]["previous"]["follow_up_id"]
+    if (not isinstance(result, AssessedBriefing) or not target or not selected
+            or target != {"contract": ASSESSMENT_CONTRACT, "question_id": expected_id, "question": run.question}
+            or selected.get("question_id") != expected_id or selected.get("question") != run.question
+            or result.assessment.question_id != expected_id):
+        fail("Assessment does not match the selected question.", 422, "invalid_evidence")
+    assessment = result.assessment
+    if any(not v.strip() or len(v) > 500 for v in assessment.limitations):
+        fail("Unbounded assessment limitation.", 422)
+    refs = [ref for point in assessment.points for ref in point.evidence]
+    roles = {ref.role for ref in refs}
+    locations = {(ref.source_id, ref.locator, ref.quote) for ref in refs}
+    if (assessment.status != "not_found" and not refs
+            or assessment.status == "possible_answer" and "support" not in roles
+            or assessment.status == "conflicting" and (len(locations) < 2 or not {"support", "counterevidence"} <= roles)
+            or assessment.status == "not_found" and roles - {"context"}):
+        fail("Assessment needs evidence consistent with its stated limits.", 422, "invalid_evidence")
+    available = sources(session, run)
+    supplied_ids = {s["id"] for s in supplied["sources"]}
+    value = assessment.model_dump()
+    for p, point in zip(value["points"], assessment.points):
+        for ref, draft in zip(p["evidence"], point.evidence):
+            if draft.source_id not in supplied_ids:
+                fail("Assessment evidence was not supplied.", 422, "invalid_evidence")
+            ref.update(citation(available[draft.source_id], draft))
+    return {**value, **target, "investigation_id": run.id,
+        "selected_from_investigation_id": selected["investigation_id"]}
 
 
 def adaptive_current(session, run):
@@ -272,6 +351,7 @@ def projection(session, run):
     value.pop("reply_key", None)
     value.pop("adaptive_dependencies", None)
     value.pop("capture_comparison", None)
+    value.pop("assessment_contract", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):

@@ -54,7 +54,7 @@ def adapters(monkeypatch, service, model, *, invalid=False, unavailable=False):
         def cite(text):
             return {"source_id": sources[text]["id"], "quote": text, "locator": "p1"}
         first = next(iter(sources))
-        return json.dumps({"understanding": "Alpin may mean Alpine Foundation; this is a tentative interpretation you can correct.",
+        value = {"understanding": "Alpin may mean Alpine Foundation; this is a tentative interpretation you can correct.",
             "findings": [{**cite(text), "statement": text,
                 "basis": "contradiction" if text == RECIPIENT else "direct"}
                 for text in sources],
@@ -62,7 +62,13 @@ def adapters(monkeypatch, service, model, *, invalid=False, unavailable=False):
             "clarification": "Should the next episode verify the recipient or the foundation's identity?",
             "directions": [{**cite(GRANT if GRANT in sources else first), "quote": "This quote is invented and must be rejected" if invalid else (GRANT if GRANT in sources else first),
                 "question": "Check River Trust recipient disclosure for the reported grant.", "why": "Verify the recipient side of the captured record."},
-                {**cite(first), "question": "Is Alpine Foundation the intended entity?", "why": "Check the tentative interpretation against registry records."}]})
+                {**cite(first), "question": "Is Alpine Foundation the intended entity?", "why": "Check the tentative interpretation against registry records."}]}
+        if data.get("assessment_question"):
+            value["assessment"] = {"question_id": data["assessment_question"]["question_id"],
+                "status": "partial", "points": [{"statement": first,
+                    "evidence": [{**cite(first), "role": "context"}]}],
+                "limitations": ["The scripted capture does not settle the full selected question."]}
+        return json.dumps(value)
 
     monkeypatch.setattr(model, "complete", complete_model)
     return trace
