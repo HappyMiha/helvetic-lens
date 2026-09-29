@@ -255,7 +255,7 @@ async def execute(service, job_id, worker):
                         "phase": branch.phase, "product": parent.product, "generation": run.generation}
                     if research.enabled(run):
                         research_steps.prepare(session, run, branch, state, work)
-                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect", "brief"}:
+                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect", "brief", "orient"}:
                         pass
                     elif branch.phase == "search":
                         if not run.external_discovery:
@@ -339,7 +339,7 @@ async def execute(service, job_id, worker):
     result, failed = None, False
     started = perf_counter()
     try:
-        seconds = min(90, service.settings.job_lease_seconds - 5, work.get("remaining_seconds", 90))
+        seconds = min(90, service.settings.job_lease_seconds - 5, work.get("remaining_seconds", 90), work.get("timeout_seconds", 90))
         async with asyncio.timeout(seconds):
             if work.get("skip"):
                 failed = True
@@ -402,10 +402,10 @@ async def execute(service, job_id, worker):
                 failed = True
         if research.enabled(run):
             research.elapsed(run, perf_counter() - started)
-            if work.get("model_route") and work["phase"] == "extract":
+            if work.get("model_route") and (work["phase"] == "extract" or failed):
                 state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
         if not failed:
-            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect", "brief"}:
+            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect", "brief", "orient"}:
                 try:
                     research_steps.apply(session, run, branch, state, work, result)
                 except DomainError:

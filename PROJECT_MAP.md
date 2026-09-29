@@ -35,6 +35,8 @@ native workflows are preserved during incremental migration.
 The new default entry uses [research before monitoring](docs/PRODUCT_RESEARCH_FIRST.md):
 bounded exploration, cited orientation and an explicit next direction; no recurrence
 is inferred from the first question.
+[Early cited orientation](docs/PRODUCT_EARLY_ORIENTATION.md) adds a tentative reading
+while that bounded episode continues; its release evidence remains separate.
 
 The owner authorized separate Pharma and Legal product clients; Legal is the confirmed name from 28 September 2026.
 see [delivery and release evidence](docs/PRODUCT_DOSSIERS.md).

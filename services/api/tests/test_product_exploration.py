@@ -32,6 +32,14 @@ def adapters(monkeypatch, service, model, *, invalid=False, unavailable=False):
     async def complete_model(system, user, **kwargs):
         data = json.loads(user)
         title = kwargs["response_schema"]["title"]
+        if title == "EarlyOrientation":
+            trace.setdefault("orientations", []).append(data)
+            source = data["sources"][0]
+            return json.dumps({"interpretations": [{"source_id": source["id"],
+                "quote": source["excerpts"][0]["text"], "locator": "p1",
+                "meaning": "Alpin may refer to Alpine Foundation; the intended identity is unconfirmed.",
+                "why": "The captured registry describes a similarly named foundation, which may explain the submitted words.",
+                "signal": "possible"}], "uncertainties": ["Does the user mean this foundation and its grant recipients?"]})
         if title != "Briefing":
             value = json.loads(await base(system, user, **kwargs))
             if title == "ResearchPlan" and data["question"].startswith("Check River Trust"):
@@ -204,7 +212,7 @@ def test_private_evidence_and_current_exclusions_fence_the_briefing(signed, monk
 
 def test_analysis_budget_keeps_one_request_for_an_honest_partial_briefing(signed, monkeypatch):
     client, service, _, model = signed
-    adapters(monkeypatch, service, model)
+    trace = adapters(monkeypatch, service, model)
     root, run, _ = start(client)
     with service.db.session() as session:
         saved = session.get(Investigation, run["id"])
@@ -217,3 +225,4 @@ def test_analysis_budget_keeps_one_request_for_an_honest_partial_briefing(signed
     assert "model_calls" in value["research"]["stops"]
     assert value["exploration"]["status"] == "ready", value
     assert value["sources"] and value["exploration"]["briefing"]["uncertainties"]
+    assert not trace.get("orientations")

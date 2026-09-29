@@ -32,8 +32,11 @@ def prepare(session, run, branch, state, work):
                         work["input"]["previous_public_briefing"] = current["briefing"]
                         work["input"]["previous_public_queries"] = [b.query for b in rows(session, InvestigationBranch, prior)
                             if b.checkpoint.get("question_id")]
-    elif branch.phase == "brief":
-        work["input"] = exploration.prepare(session, run)
+    elif branch.phase in {"orient", "brief"}:
+        work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
+        if branch.phase == "orient":
+            work["timeout_seconds"] = 20
+            work["skip"] = len(work["input"]["sources"]) < 2
     elif branch.phase in {"gate", "gate_review"}:
         work["item"] = state["candidates"][state.get("gate_index", 0)]
         work["input"] = {"question": run.question, "branch": branch.query,
@@ -59,6 +62,7 @@ async def execute(service, work, seconds):
         "extract": (research.ResearchExtraction, research.EXTRACT_SYSTEM),
         "reflect": (research.Reflection, research.REFLECT_SYSTEM),
         "brief": (exploration.Briefing, exploration.SYSTEM),
+        "orient": (exploration.EarlyOrientation, exploration.EARLY_SYSTEM),
     }[phase]
     if phase == "plan" and work.get("exploratory"):
         system += exploration.PLAN
@@ -84,7 +88,7 @@ def settle(branch, state):
 
 
 def failed(branch, state, *, interrupted=False):
-    if branch.phase in {"plan", "reflect", "brief"}:
+    if branch.phase in {"plan", "reflect", "brief", "orient"}:
         branch.status = "failed"
     if branch.phase in {"gate", "gate_review"}:
         item = state.get("candidates", [])[state.get("gate_index", 0)]
@@ -104,6 +108,9 @@ def apply(session, run, branch, state, work, result):
         state["planning_done"] = True
     elif phase == "brief":
         exploration.apply(session, run, work["input"], result)
+        branch.status = "completed"
+    elif phase == "orient":
+        exploration.apply_orientation(session, run, work["input"], result)
         branch.status = "completed"
     elif phase == "search":
         seen = {s.url for s in rows(session, InvestigationSource, run)}

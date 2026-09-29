@@ -194,7 +194,7 @@ def reserve_step(session, run, branch, state, phase, product):
         "gate": ("decision_calls", 2), "read": ("source_fetches", 1),
         "plan": ("model_calls", 1), "extract": ("model_calls", 1),
         "reflect": ("model_calls", 1), "gate_review": ("model_calls", 1),
-        "compare": ("model_calls", 1), "brief": ("model_calls", 1)}
+        "compare": ("model_calls", 1), "brief": ("model_calls", 1), "orient": ("model_calls", 1)}
     resource, amount = units[phase]
     # Keep the final model request for a useful orientation when exploration
     # exhausts other analysis work; the same cumulative cap still applies.
