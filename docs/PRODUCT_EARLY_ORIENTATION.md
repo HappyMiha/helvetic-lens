@@ -1,7 +1,7 @@
 # Useful orientation while research continues — 1.52
 
 Scope recorded before implementation on 29 September 2026. MV2-002/020/024 remain
-IN PROGRESS; this slice is VERIFYING (local acceptance passed; production activation pending). Full architecture, live-provider semantic
+IN PROGRESS; this slice is DONE within the verified scope below. Full architecture, live-provider semantic
 quality and professional/human acceptance remain OPEN.
 
 ## Scope and dependencies
@@ -95,5 +95,28 @@ and nine legacy worker/iterative/start/backlog checks. Four selected cases were 
 after correcting two stale pre-pause test fixtures and retaining failed model-route
 metadata; those four overlap the 21 cases and are not additional coverage. Existing
 revision validation was preserved. Exact API lint and protected-value/client-parity
-checks passed. Production activation remains pending; no live semantic, browser or
+checks passed. Exact production activation is verified below; no live semantic, browser or
 professional acceptance is claimed.
+
+## Verified production activation
+
+Core `bd324ab07f3c2888cb7133b311d45d6a180b7846` activated as
+`git-bd324ab07f3c` at `2026-09-29T16:07:55+00:00`.
+Legal `623b6e6be62272e88837bfcee7584774784c721e` and Pharma
+`f082e8d2093f6f1c4572c5559eee89e63897f689` are published as version 51
+in their existing public Sites, with the same exact sources in both GitHub main
+and the Sites source repositories.
+
+[Production receipt](product-releases/2026-09-29-1.52-early-orientation.json):
+45 matching native module hashes, unchanged schema/packs, five healthy containers
+and nine native Monitoring routes. Each client passed 47 exact asset comparisons
+and 49 HTTP/auth/origin checks. All three development repositories were clean
+and aligned to origin/main. Frozen study validation remains unopened.
+
+Receipt SHA256: `ef00b8e81fed8d1d53bab00bb7f668d7ba1847bbd6b9a328dfa0ff0e92c4c07c`.
+
+These checks establish the deployed mechanics, source provenance, bounds and
+access behavior. They do not establish live interpretation accuracy, clinical
+or legal correctness, browser usability or professional/human acceptance. The
+full architecture remains OPEN. Next audit: explicit, cited explanation of how
+later evidence revised or left unresolved an early working interpretation.
