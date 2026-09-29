@@ -1,6 +1,6 @@
 # Quoted saved text and AI interpretation — 1.46
 
-Status: VERIFYING. Scope recorded before code; MV2-002/020/023/024.
+Status: DONE within the verified bounded release. Scope recorded before code; MV2-002/020/023/024.
 
 Offer an explicit research answer format that separates literal saved text from
 model interpretation. A checked citation proves text provenance, not the truth,
@@ -89,5 +89,36 @@ fixture dossier ID and split negative requests across fresh fixtures to respect
 the real inference rate limit; production behavior was not changed by those fixes.
 The 81-case affected server regression suite passed, including the backlog invariant:
 91 distinct server cases are verified in total. The exact API lint gate passed.
-Actual publication remains pending. Full architecture
+Exact initial production publication is verified below. Full architecture
 and human/professional acceptance remain open.
+
+
+## Publication and production evidence
+
+Core implementation `fc48651fcd73f9e0d0ef8d8149ac36b0f20add70` activated as
+`git-fc48651fcd73` at 2026-09-29T10:59:54+00:00. The existing public Sites 46 use
+Legal `d42bfac5fc46485037068f446e55f4b2d24917da` and Pharma
+`239578eafddba919eee511ac5f276e80eae3f6b8`. Legal activated at
+2026-09-29T11:00:34.147206+00:00; Pharma at 2026-09-29T11:01:14.888974+00:00.
+
+The [frozen release receipt](product-releases/2026-09-29-1.46-source-analysis.json)
+verifies 41 exact runtime module hashes, the unchanged DomainPack 1.4.0 and
+0bd495bef125 schema, five running containers and nine native navigation routes.
+Each product passed 45 public/access checks and 47 exact published asset hashes.
+The public guide and compiled optional format are active; anonymous private
+preview/generation remain denied. Labels come from the retained server contract;
+compiled client checks verify its version and quotation rendering branch. All
+three main checkouts were clean and aligned after fresh fetches at verification.
+
+The local gate covered 91 distinct Core cases and 232 tests per client, lint,
+types and production builds. Source parity and protected-value scans passed.
+The normal native release policy ran smoke/functional checks; its integration
+step remains explicitly skipped under the existing policy. The affected integration
+cases above were run locally before publication. The completed Global Ask 1.24
+backlog overview was archived verbatim; the 512 KiB guard was preserved.
+
+No browser, authenticated production dossier or paid inference probe was used.
+Native backup still briefly pauses API/tunnel; this is not zero-downtime evidence.
+Final documentation activation is observed separately in the parent checkpoint
+without republishing unchanged clients. Full architecture, live source readiness,
+semantic entailment and human/professional acceptance remain OPEN.
