@@ -121,6 +121,27 @@ def history_visible(session, review, publication):
     return visible == ids
 
 
+def decision_state(latest, latest_visible, current):
+    """One human-state contract for the review reader and retrieval projections."""
+    stale = bool(latest and (not latest_visible or latest.evidence_fingerprint != current["evidence_fingerprint"]))
+    decision = latest.decision if latest_visible else None
+    return {"revision": latest.revision if latest else 0, "decision": decision, "stale": stale,
+        "human_status": "UNRESOLVED" if stale else STATES.get(decision, "PROPOSED"),
+        "finding_status": "PENDING_REVIEW" if stale or not decision else decision.upper()}
+
+
+def projection(session, claim):
+    """Current private search metadata; no reviewer identity, reason or history."""
+    current = context(session, claim)
+    latest = session.scalar(select(ClaimReview).where(ClaimReview.claim_id == claim.id)
+        .order_by(ClaimReview.revision.desc()).limit(1))
+    state = decision_state(latest, bool(latest and history_visible(session, latest, None)), current)
+    return {**state, "complete": current["complete"], "reviewable": current["reviewable"],
+        "context_fingerprint": digest({key: value for key, value in current.items() if key != "basis"}),
+        "has_conflicting_evidence": any(row["relation"] == "CONTRADICTS" for row in current["evidence"])
+            or any(row["kind"] == "CONTRADICTS" and row["status"] == "active" for row in current["comparisons"])}
+
+
 def payload(session, claim, publication=None, *, current=None):
     current = current or context(session, claim, publication)
     history = list(session.scalars(select(ClaimReview).where(ClaimReview.claim_id == claim.id)
@@ -128,12 +149,8 @@ def payload(session, claim, publication=None, *, current=None):
     latest = history[-1] if history else None
     visible = [row for row in history if history_visible(session, row, publication)]
     latest_visible = latest in visible if latest else False
-    stale = bool(latest and (not latest_visible or latest.evidence_fingerprint != current["evidence_fingerprint"]))
-    decision = latest.decision if latest_visible else None
     return {key: value for key, value in current.items() if key != "basis"} | {
-        "id": claim.id, "revision": latest.revision if latest else 0, "decision": decision, "stale": stale,
-        "human_status": "UNRESOLVED" if stale else STATES.get(decision, "PROPOSED"),
-        "finding_status": "PENDING_REVIEW" if stale or not decision else decision.upper(),
+        "id": claim.id, **decision_state(latest, latest_visible, current),
         "history_unavailable": len(visible) != len(history),
         "history": [{"revision": row.revision, "decision": row.decision, "reason": row.reason,
             "at": iso(row.created_at), "reviewer": "Dossier editor" if row.reviewed_by_user_id else "Former dossier editor",

@@ -11,9 +11,10 @@ import json
 from datetime import UTC, datetime
 from time import perf_counter
 from typing import Literal
+from uuid import UUID
 
 from fastapi import Request
-from pydantic import Field, StrictBool, field_validator
+from pydantic import Field, StrictBool, field_validator, model_validator
 from sqlalchemy import JSON, String, cast, func, literal, or_, select, true, type_coerce, union_all
 from sqlalchemy.exc import OperationalError
 
@@ -46,6 +47,16 @@ class Search(Input):
     as_of: datetime | None = None
     check_only: StrictBool = False
     fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+    review_claim_ids: list[UUID] = Field(default_factory=list, max_length=BATCH_SIZE)
+    review_fingerprint: str | None = Field(default=None, pattern=r"^[0-9a-f]{64}$")
+
+    @model_validator(mode="after")
+    def review_check(self):
+        if (self.review_claim_ids or self.review_fingerprint) and not self.check_only:
+            raise ValueError("Review fingerprints are only used to check displayed results.")
+        if self.review_claim_ids and not self.review_fingerprint:
+            raise ValueError("A review fingerprint is required for the displayed findings.")
+        return self
 
     @field_validator("query")
     @classmethod
@@ -78,18 +89,18 @@ def ledger(dialect, dossier_id, organization_id, as_of):
     permitted = (run.dossier_id == dossier_id, run.organization_id == organization_id,
         source.dossier_id == dossier_id, source.organization_id == organization_id,
         run.publication_id.is_(None), run.status == "completed", sources_visible(run))
-    def columns(kind, identifier, quote, location, created_at, statement, status, claim_id, revision):
+    def columns(kind, identifier, quote, location, created_at, statement, status, claim_id, revision, relation):
         return [literal(kind).label("kind"), identifier.label("id"), run.id.label("investigation_id"),
             source.id.label("source_id"), source.title.label("title"), source.url.label("url"),
             source.sha256.label("sha256"), quote.label("quote"), location.label("locator"),
             created_at.label("created_at"), statement.label("statement"), status.label("claim_status"),
-            claim_id.label("claim_id"), revision.label("claim_revision")]
+            claim_id.label("claim_id"), revision.label("claim_revision"), relation.label("citation_relation")]
     captured = select(*columns("passage", source.id + ":" + cast(position, String), text, locator,
-        source.created_at, literal(""), literal(""), literal(""), literal(0))).select_from(source).join(
+        source.created_at, literal(""), literal(""), literal(""), literal(0), literal(""))).select_from(source).join(
             run, run.id == source.investigation_id).join(passages, true()).where(
                 *permitted, source.created_at <= as_of, func.length(text) > 0)
     findings = select(*columns("claim", evidence.id, evidence.quote, evidence.locator,
-        evidence.created_at, claim.statement, claim.status, claim.id, claim.revision)).select_from(evidence).join(
+        evidence.created_at, claim.statement, claim.status, claim.id, claim.revision, evidence.relation)).select_from(evidence).join(
             source, source.id == evidence.source_id).join(claim, claim.id == evidence.claim_id).join(
                 run, run.id == evidence.investigation_id).where(*permitted,
                     evidence.dossier_id == dossier_id, evidence.organization_id == organization_id,
@@ -176,19 +187,33 @@ def routes(router, service, actor):
         identity = actor(request)
         started = perf_counter()
         command.as_of = command.as_of or utcnow().astimezone(UTC)
-        async def read():
+        async def database(function, *args):
             try:
-                return await asyncio.to_thread(capture, service, identity, product, dossier_id, command)
+                return await asyncio.to_thread(function, *args)
             except OperationalError as error:
                 if getattr(error.orig, "sqlstate", None) == "57014":
                     fail("The saved-evidence search exceeded its database time limit. Try again later.", 503, "search_read_timeout")
                 raise
+        async def read():
+            return await database(capture, service, identity, product, dossier_id, command)
         before = await read()
         captured_fingerprint = fingerprint(before)
+        from . import product_search_review as reviews
+
         if command.check_only:
             if not command.fingerprint or captured_fingerprint != command.fingerprint:
                 fail("Saved evidence or access changed. Search again to see current results.", 409, "evidence_changed")
+            if command.review_fingerprint:
+                current = await database(reviews.read, service, identity, product, dossier_id,
+                    command, captured_fingerprint, [str(key) for key in command.review_claim_ids])
+                if fingerprint(current) != command.review_fingerprint:
+                    fail("Finding reviews or their evidence changed. Search again to see current results.", 409, "review_changed")
             return {"current": True}
+        async def reviewed(result):
+            value = await database(reviews.decorate, service, identity, product, dossier_id,
+                command, captured_fingerprint, result)
+            value["measurement"]["latency_ms"] = round((perf_counter() - started) * 1000, 2)
+            return value
         async def revalidate():
             current = await read()
             if fingerprint(current) != captured_fingerprint:
@@ -198,8 +223,9 @@ def routes(router, service, actor):
 
             try:
                 async with asyncio.timeout(40):
-                    return await search_corpus(service, identity, product, dossier_id, command, request,
+                    result = await search_corpus(service, identity, product, dossier_id, command, request,
                         before, captured_fingerprint, revalidate, limiter, started)
+                    return await reviewed(result)
             except TimeoutError:
                 fail("Meaning search reached its time limit. Prepared evidence is retained; try again or use Words.", 503, "search_timeout")
         answers, error = [], None
@@ -230,7 +256,7 @@ def routes(router, service, actor):
         measure.update({"requests_completed": len(answers), "latency_ms": round((perf_counter() - started) * 1000, 2),
             "estimated_cost_usd": None, "cost_scope": "Local compute and hosting cost are not metered here; unknown, not zero.",
             "accuracy": None, "accuracy_basis": "No independent relevance evaluation for this dossier or query."})
-        return {"dossier_id": dossier_id, "query": command.query, "mode": command.mode,
+        return await reviewed({"dossier_id": dossier_id, "query": command.query, "mode": command.mode,
             "method": "literal" if command.mode == "literal" else "literal_fallback" if error else "local_semantic_hybrid",
             "items": results, "total_records": before["total"], "matching_records": before["matching"] if command.mode == "literal" else None,
             "examined_records": len(before["items"]), "offset": offset, "batch_size": BATCH_SIZE,
@@ -242,4 +268,4 @@ def routes(router, service, actor):
                    "Only this newest-first batch is compared; continue to older evidence for more coverage. No word filter excludes semantic candidates. "
                    "Each passage is limited to its first 2,400 characters. " + (
                        "Local comparison was unavailable; these are only all-word matches in this batch. Use Words for a full-ledger literal search."
-                       if error else "All compared candidates remain available, including model-negative records. Relevance is a fallible model judgment, not evidence of truth or a global semantic ranking."))}
+                       if error else "All compared candidates remain available, including model-negative records. Relevance is a fallible model judgment, not evidence of truth or a global semantic ranking."))})

@@ -103,3 +103,29 @@ captured identifiers only; no source acquisition or model call. See
 [scope, dependencies and acceptance](docs/PRODUCT_ENTITY_IDENTITY.md).
 Full canonical registry, professional quality and broader parent acceptance OPEN.
 
+
+
+## Research continuation — 1.35 bounded evaluation
+
+DONE within bounded evaluation/publication scope. MV2-002/020/023/051 reuse the pinned public
+NoMIRACL cache, existing local Laya adapter, 1.34 gate instructions and saved
+controlled-worker traces. Freeze a disjoint sample and explicit call/time budgets;
+measure three-way relevance outcomes and deterministic citation/follow-up integrity.
+Publish IDs/hashes/metrics only. No paid probes or private production records.
+[Scope, readiness and acceptance](docs/PRODUCT_RESEARCH_EVALUATION.md).
+Live hosted/full-workflow quality and all broader parent gates remain OPEN.
+
+
+
+## Owner priority — 1.34 iterative dossier research
+
+DONE within the verified 1.34 scope; scope defined before implementation. MV2-002/020/023 and the new
+[Investigation Engine specification](docs/INVESTIGATION_ENGINE_SPEC.md), sections
+42–43. [Architecture audit, dependencies, readiness and acceptance](docs/PRODUCT_ITERATIVE_RESEARCH.md)
+record the current gaps and additive vertical slice: question-first creation,
+planner, candidate gate, cited claims/entities/edges, persistent open questions,
+a real second search updating existing evidence, budgets and readable UI.
+Core and both clients are published and verified. 64 API checks and 189 tests per
+client passed, alongside exact runtime/assets and anonymous access checks. Legacy
+monitoring/source rights remain intact. Full specifications and live quality remain OPEN.
+
