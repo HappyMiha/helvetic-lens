@@ -1,6 +1,7 @@
 # Reviewed claim kinds — 1.43
 
-Status: IN PROGRESS. Scope recorded before code for MV2-002/020/023/024 and
+Status: DONE within the bounded classification and verified release scope.
+Scope recorded before code for MV2-002/020/023/024 and
 Unified sections 10–13, 31, 38–39, 48–50. Full architecture and human acceptance
 remain OPEN.
 
@@ -87,7 +88,7 @@ Both clients use one matching reader implementation and existing native-select
 primitive inside the folded review; no new top-level panel or navigation route.
 The exact original claims, quotes, contradictions and source dates remain visible.
 
-## Implementation validation; activation pending
+## Validation and publication
 
 Both clients: 222 tests, lint, type checks and production build passed.
 Domain context/template regression: 33 passed. Exact API lint and active-backlog
@@ -95,8 +96,27 @@ invariant passed. Known protected-value scan and shared-reader parity passed.
 The review/search/synthesis suite passed 81 of 82 initial cases; the remaining
 fixture was repaired and its targeted rerun passed. Together with the 33 domain
 checks, all 115 distinct affected Core cases pass (12 new classification cases).
-Exact release activation is pending.
+Initial implementation activation is verified below.
 A new synthesis fixture initially supplied an empty search_queries list, contrary
 to the established response schema; it was corrected to use the cited-answer
 fixture. The corrected cited-answer check passed, including accepted-answer invalidation
 and rejection of obsolete reconfirmation. No additional live inference was used.
+
+
+Both GitHub main branches and their existing public Sites are published as version
+43: Legal `841a9dc557df3db1a23ee8520d5a03ce1ca05593`, Pharma
+`5beffed19f4c3dcbf0bdbb58b23c51bd8d6b47ec`. Core implementation
+`ada06c3c2790de7996818e95c422bec1847a46f9` activated at
+2026-09-29T04:59:52Z. The [frozen release receipt](product-releases/2026-09-29-1.43-claim-interpretation.json)
+confirms 40 exact native module hashes, DomainPack 1.3.0 with claim types,
+unchanged migration 0bd495bef125, five running containers and all nine Monitoring
+routes. Each canonical product origin passed 45 HTTP/access checks and 47 exact
+asset hashes. Source checkouts were clean and aligned with freshly fetched main.
+
+The follow-up English evidence commit uses normal native activation; its final
+SHA and verification are retained in the parent cycle checkpoint. Clients remain
+unchanged and need no repeat publication. Native backup still briefly stops API
+and tunnel; this release does not provide zero-downtime deployment. Browser,
+authenticated production and professional human acceptance were not performed.
+Full architecture, typed synthesis, source authority/applicability and the
+complete Market Access journey remain OPEN.
