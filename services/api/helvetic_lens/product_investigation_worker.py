@@ -11,6 +11,7 @@ from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
 from . import product_exploration as exploration
+from . import product_exploration_activity as activity
 from . import product_exploration_progress as progress
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
@@ -338,8 +339,11 @@ async def execute(service, job_id, worker):
                         branch.status = run.status = "running"
                         state["inflight"] = str(uuid4())
                         work["token"] = state["inflight"]
+                        work["deadline_seconds"] = min(90, service.settings.job_lease_seconds - 5,
+                            work.get("remaining_seconds", 90), work.get("timeout_seconds", 90))
                         state.setdefault("steps", []).append({"id": state["inflight"], "phase": branch.phase,
                             "status": "running", "started_at": iso(utcnow())})
+                        activity.record(run, job, state, work)
                         checkpoint(session, run, branch, "step_started", state)
         if not work:
             finish_or_yield(session, run, job)
@@ -352,7 +356,7 @@ async def execute(service, job_id, worker):
     result, failed = None, False
     started = perf_counter()
     try:
-        seconds = min(90, service.settings.job_lease_seconds - 5, work.get("remaining_seconds", 90), work.get("timeout_seconds", 90))
+        seconds = work["deadline_seconds"]
         async with asyncio.timeout(seconds):
             if work.get("skip"):
                 failed = True

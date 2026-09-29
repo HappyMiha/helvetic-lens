@@ -484,3 +484,9 @@ DONE within verified scope: Core and public Sites 54 active; 56 Core cases and 2
 DONE within verified scope: Core and both public Sites 50 active; 45 native hashes, 47 assets/49 access checks per client. Bounded exploration, cited briefing, one consequential clarification and explicit continuation; no recurrence from initial text. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_RESEARCH_FIRST.md). Existing consented policies remain unchanged. Earlier completed overview entries are retained verbatim in [release history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 <!-- Archived verbatim before research-scope 1.57 implementation. -->
+
+## Selected-question assessment — 1.56
+
+DONE within verified scope: Core and public Sites 55 active; 62 Core and 280 client cases each passed. [Scope and acceptance](docs/PRODUCT_QUESTION_ASSESSMENT.md). A concise cited assessment of the exact continued question; broader gates OPEN.
+
+<!-- Archived verbatim before research activity 1.58 implementation. -->

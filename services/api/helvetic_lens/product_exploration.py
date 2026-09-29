@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import Field
 
 from . import legal_profiles
+from . import product_exploration_activity as activity
 from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
 from .db import utcnow
@@ -151,7 +152,8 @@ def initial(*, previous=None):
         model_calls=16, decision_calls=40, active_seconds=360)
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
-            "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT}}
+            "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
+            "activity_contract": activity.CONTRACT}}
 
 
 def sources(session, run):
@@ -358,6 +360,7 @@ def projection(session, run):
     value.pop("capture_comparison", None)
     value.pop("assessment_contract", None)
     value.pop("scope_contract", None)
+    value.pop("activity_contract", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):
@@ -400,6 +403,8 @@ def projection(session, run):
     value["next_check"] = public_context(next_check) if next_check else None
     value["research_scope"] = research_scope.observed(session, run, available,
         invalid=value["status"] == "evidence_changed")
+    value["current_activity"] = activity.projection(session, run, available,
+        invalid=value["status"] == "evidence_changed" or value["research_scope"]["status"] == "evidence_changed")
     if value.get("briefing"):
         value["briefing"].pop("research_scope_at_briefing", None)
     value["sources"] = [{"id": s.id, "title": s.title, "url": s.url,
