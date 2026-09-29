@@ -227,3 +227,42 @@ and exact existing Sites/native production proof precede scoped DONE. No browser
 or private-production-record probes; human/professional/full-spec gates stay open.
 Evidence: docs/PRODUCT_VERSION_CONTEXT.md.
 
+
+
+**Saved comparison clarity and selection safety — 28 September 2026:
+DONE (scoped production contribution / release 1.26).** Scope: MV2-002/020/024.
+Make native saved-version comparison and both product saved-page change readers
+clear about the exact pair, capture identities, real retained counts and preview
+limits. Separate the editor's unsaved baseline selection from the persisted
+comparison. Retain a local choice across background reads; if its source revision
+changes, require an explicit return to the current saved choice before another
+write. After a committed mutation, withhold the old comparison until the server receipt is acknowledged by a current read. Hide retained source text when its current read fails.
+
+Dependencies: existing NativeComparisonWorkspace, native_comparison_views and
+revisioned native selection writes; both MonitoringTriggerRow/PageChange readers,
+DocumentHistory's expected_revision links, installed primitives and release 1.25
+source metadata helpers. Source readiness: current native API already returns
+saved version IDs/times, material counts, comparison identity, paged exact text
+and stale/unselected states. Existing product page payload already returns exact
+old/new revisions, hashes, full saved-text character counts and bounded excerpts;
+matched_at is the watched page version's capture time. No new API/schema/provider,
+model, credential, source rights, publication or delivery change is required.
+
+Acceptance: distinguish the saved pair from a draft; revision conflicts cannot
+silently rebase a choice, and a committed write cannot display an older result
+as its new comparison. Preserve explicit clear/save, read-only roles, current
+source withdrawal, exact passage/source/PDF readers, candidate/result paging,
+registry return and account boundaries. Show actual counts, with unknown distinct
+from zero; partial previews never imply complete changes or legal/factual impact.
+Both clients expose source version/revision/capture/fingerprint details and exact
+revision-pinned full-reader actions. Reuse neutral Brandbook typography, readable
+measure and responsive paired text; no synthetic Lens or truth score. Cover five
+native locales, pure selection and actual SSR behaviors, required client tests/
+lint/types, native checks/types, final builds, backlog smoke, protected-value scan,
+immediate main pushes and exact existing production/runtime verification.
+Browser/human language/visual and professional/full-spec acceptance stay separate.
+Evidence: [Saved comparisons](docs/PRODUCT_SAVED_COMPARISONS.md): 403 native
+frontend cases, 147 per client, exact API Ruff and 71 API cases, all builds
+and scans; both Sites 29, 131 origin checks and 47 exact assets each, exact
+native comparison activation/assets and 60-module runtime proof. Full
+specifications and broader MV2-002/020/024 remain IN PROGRESS.

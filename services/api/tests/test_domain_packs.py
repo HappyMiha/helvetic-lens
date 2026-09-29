@@ -32,7 +32,7 @@ def test_common_profile_setup_resolves_saved_product_and_preserves_proposal_prov
     profile = result.json()["profile"] if product else result.json()
     route = "/api/monitoring-profiles/" + profile["id"]
     pack = profile["domain_pack"]
-    assert pack["id"] == pack_id and pack["version"] == "1.3.0"
+    assert pack["id"] == pack_id and pack["version"] == "1.4.0"
     assert client.get(route).json()["domain_pack"] == pack
     model.responses = [TOPICS]
     response = post(client, route + "/suggest", {"expected_revision": 1})

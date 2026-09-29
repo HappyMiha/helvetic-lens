@@ -18,6 +18,8 @@ from .product_investigation_models import ClaimReview, DossierClaim, Investigati
 from .product_investigations import access, event, scope
 from .product_models import ProductDossier
 from .product_public_research import public_identity
+from .product_source_authority import SourceAssessments
+from .product_source_authority import resolve as resolve_sources
 
 
 class Review(Input):
@@ -29,6 +31,7 @@ class Review(Input):
     reason: str = Field(min_length=5, max_length=500)
     confirm_public: StrictBool = False
     interpretation: Interpretation | None = None
+    source_assessments: SourceAssessments | None = None
 
 
 def apply_review(session, parent, identity, data, published=None):
@@ -48,6 +51,8 @@ def apply_review(session, parent, identity, data, published=None):
     request_data = data.model_dump(mode="json")
     if data.interpretation is None:
         request_data.pop("interpretation")  # Preserve historical retry fingerprints.
+    if data.source_assessments is None:
+        request_data.pop("source_assessments")
     fingerprint = digest([identity.user_id, request_data])
     previous = session.scalar(select(ClaimReview).where(ClaimReview.claim_id == claim.id)
         .order_by(ClaimReview.revision.desc()).limit(1))
@@ -65,11 +70,15 @@ def apply_review(session, parent, identity, data, published=None):
         basis["interpretation"] = resolve(for_product(parent.product), data.interpretation)
     elif previous and previous.basis.get("interpretation"):
         fail("Review the claim type explicitly before saving another decision.", 409)
+    if data.source_assessments is not None:
+        basis["source_assessments"] = resolve_sources(for_product(parent.product), data.source_assessments, current)
+    elif previous and previous.basis.get("source_assessments"):
+        fail("Review the source roles explicitly before saving another decision.", 409)
     run = session.get(Investigation, claim.investigation_id)
     session.add(ClaimReview(**scope(run), claim_id=claim.id, decision=data.decision, reason=data.reason,
         revision=revision + 1, evidence_fingerprint=current["evidence_fingerprint"], basis=basis,
         reviewed_by_user_id=identity.user_id, request_key=str(data.request_key), request_fingerprint=fingerprint))
-    event(session, run, "claim_reviewed", reason="A dossier editor reviewed a finding; source assessment and original evidence remain unchanged.")
+    event(session, run, "claim_reviewed", reason="A dossier editor reviewed a finding; original machine assessments and captured evidence remain unchanged.")
     session.flush()
     result = payload(session, claim, published, current=current)
     session.commit()

@@ -12,7 +12,7 @@ from helvetic_lens.product_models import DossierEntry, PublicContribution
 
 
 def choice(kind="AI_INTERPRETATION", claim_type="AI_ANALYSIS", **values):
-    return {"schema_version": 1, "domain_pack_version": "1.3.0", "kind": kind, "claim_type": claim_type, **values}
+    return {"schema_version": 1, "domain_pack_version": "1.4.0", "kind": kind, "claim_type": claim_type, **values}
 
 
 @pytest.mark.parametrize("product,code,other", [("loyer", "CASE_HOLDING", "CLINICAL_RESULT"),
@@ -23,7 +23,7 @@ def test_classification_is_explicit_domain_scoped_and_versioned_without_rewritin
     first = item(client, root, ids[0])
     assert "interpretation" not in first
     options = client.get(root + "/claim-reviews").json()["interpretation_options"]
-    assert options["domain_pack_version"] == "1.3.0"
+    assert options["domain_pack_version"] == "1.4.0"
     assert code in {row["claim_type"] for row in options["types"]}
     assert other not in {row["claim_type"] for row in options["types"]}
     with service.db.session() as session:
@@ -116,6 +116,7 @@ def test_legacy_retry_fingerprint_survives_optional_classification(signed):
     value = post(client, root + "/claim-reviews/review", data).json()
     legacy = Review(**data).model_dump(mode="json")
     legacy.pop("interpretation")
+    legacy.pop("source_assessments")
     with service.db.session() as session:
         review = session.scalar(select(ClaimReview).where(ClaimReview.claim_id == ids[0]))
         assert review.request_fingerprint == digest([review.reviewed_by_user_id, legacy])

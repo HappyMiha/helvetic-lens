@@ -376,14 +376,19 @@ def test_saved_page_revision_correction_stales_claim_review_without_rewriting_ca
     assert due(service)["started"] == 1
     run = complete(client, service, root + "/investigations", last_run(client, root))
     value = item(client, root, run["claims"][0]["id"])
-    saved = post(client, root + "/claim-reviews/review", body(value))
+    saved = post(client, root + "/claim-reviews/review", body(value, source_assessments={
+        "schema_version": 1, "domain_pack_version": "1.4.0", "items": [{
+            "source_id": value["evidence"][0]["source"]["id"], "evidence_id": value["evidence"][0]["id"],
+            "category": "SECONDARY_COMMENTARY", "reason": "Fictional saved-page role for version-pinning test."}]}))
     assert saved.status_code == 200, saved.text
     pin = saved.json()["history"][0]["basis"]["sources"][0]["saved_version"]
+    assert saved.json()["source_assessments"]["items"][0]["source"]["saved_version"] == pin
     assert pin["id"] == version_id and pin["recorded_revision"] == pin["current_revision"]
     with service.db.session() as session:
         session.get(Version, version_id).evidence_revision += 1
         session.commit()
     stale = item(client, root, value["id"])
+    assert stale["source_assessments"] == saved.json()["source_assessments"]
     assert stale["stale"] and not stale["reviewable"] and stale["human_status"] == "UNRESOLVED"
     assert stale["evidence"][0]["quote"] == value["evidence"][0]["quote"]
     assert post(client, root + "/claim-reviews/review", body(saved.json())).status_code == 409

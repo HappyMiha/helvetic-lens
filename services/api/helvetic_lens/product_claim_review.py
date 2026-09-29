@@ -14,6 +14,8 @@ from .product_investigation_models import (
     InvestigationBranch,
     InvestigationSource,
 )
+from .product_source_authority import options as source_options
+from .product_source_authority import recorded as source_recorded
 
 PAGE_SIZE = 10
 EVIDENCE_LIMIT = 100
@@ -138,7 +140,7 @@ def projection(session, claim, *, current=None):
         .order_by(ClaimReview.revision.desc()).limit(1))
     visible = bool(latest and history_visible(session, latest, None))
     state = decision_state(latest, visible, current)
-    return {**state, **recorded(latest, visible), "complete": current["complete"], "reviewable": current["reviewable"],
+    return {**state, **recorded(latest, visible), **source_recorded(latest, visible, compact=True), "complete": current["complete"], "reviewable": current["reviewable"],
         "context_fingerprint": digest({key: value for key, value in current.items() if key != "basis"}),
         "has_conflicting_evidence": any(row["relation"] == "CONTRADICTS" for row in current["evidence"])
             or any(row["kind"] == "CONTRADICTS" and row["status"] == "active" for row in current["comparisons"])}
@@ -152,7 +154,7 @@ def payload(session, claim, publication=None, *, current=None):
     visible = [row for row in history if history_visible(session, row, publication)]
     latest_visible = latest in visible if latest else False
     return {key: value for key, value in current.items() if key != "basis"} | {
-        "id": claim.id, **decision_state(latest, latest_visible, current), **recorded(latest, latest_visible),
+        "id": claim.id, **decision_state(latest, latest_visible, current), **recorded(latest, latest_visible), **source_recorded(latest, latest_visible),
         "history_unavailable": len(visible) != len(history),
         "history": [{"revision": row.revision, "decision": row.decision, "reason": row.reason,
             "at": iso(row.created_at), "reviewer": "Dossier editor" if row.reviewed_by_user_id else "Former dossier editor",
@@ -170,4 +172,4 @@ def page(session, dossier_id, publication=None, *, offset=0):
         .order_by(DossierClaim.created_at.desc(), DossierClaim.id).offset(offset).limit(PAGE_SIZE))],
         "total": session.scalar(select(func.count()).select_from(query.subquery())),
         "offset": offset, "page_size": PAGE_SIZE, "publication_revision": publication.revision if publication else None,
-        "boundary": BOUNDARY, "interpretation_options": options(pack)}
+        "boundary": BOUNDARY, "interpretation_options": options(pack), "source_assessment_options": source_options(pack)}
