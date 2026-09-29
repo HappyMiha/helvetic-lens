@@ -143,7 +143,7 @@ continue independent implementation without inventing coverage or sign-off.
 
 [Bounded verification 1.47](../PRODUCT_SHARED_JOURNEY.md) composes the existing
 acquisition, review and cited-Ask APIs with fictional fixtures for Legal and Pharma.
-Both composed integration cases passed; publication is being verified. This does
+Both composed integration cases and exact native publication are verified. This does
 not close P6 or authorize real Market Access assertions. The C13 audit
 previously overlooked the existing atomic ClaimReview transaction; the updated
 matrix separates that delivered behavior from required policies and supersession.

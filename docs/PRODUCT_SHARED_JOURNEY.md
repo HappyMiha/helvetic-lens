@@ -1,6 +1,6 @@
 # Shared source-change journey verification — 1.47
 
-Status: VERIFYING publication; both paired journeys and required local checks passed. Scope recorded before implementation, 29 September 2026;
+Status: DONE within the verified bounded fixture journey. Scope recorded before implementation, 29 September 2026;
 MV2-002/020/023 and architecture C11/C13/C26/C44.
 
 ## Outcome and dependencies
@@ -64,7 +64,7 @@ Anonymous and foreign-workspace access fails through actual API routes.
 
 Untouched 1.46 runtime and clients retain their completed regression evidence;
 the 232-client-case suites/builds are not claimed as new runs in this cycle.
-No client files or runtime service modules changed. Existing Sites 46 will remain
+No client files or runtime service modules changed. Existing Sites 46 remain
 in place. Core publication/activation and protected-value checks are recorded
 separately below. Frozen 1.35/1.37 receipts and unopened validation are preserved.
 
@@ -88,3 +88,29 @@ The named Semaglutide—Switzerland context is user-provided fixture metadata. N
 BAG, Swissmedic, EMA or reimbursement facts, source rights or real human decisions
 were validated by these tests. P6, the full target and professional acceptance
 remain OPEN.
+
+
+## Publication and verification
+
+Core `afdeae8a8f3eb2b461b5558dfc975573d176e98f` activated as
+`git-afdeae8a8f3e` at 2026-09-29T11:53:52+00:00. The
+[frozen receipt](product-releases/2026-09-29-1.47-shared-journey.json) records
+fresh exact hashes for 41 runtime modules, unchanged DomainPack 1.4.0 and
+0bd495bef125 schema, five containers and all nine native routes. Fresh fetches
+confirmed all three main checkouts clean/aligned. Both product homes returned 200;
+Sites reported both existing projects active/public with latest version 46.
+
+Legal remains `d42bfac5fc46485037068f446e55f4b2d24917da`; Pharma remains
+`239578eafddba919eee511ac5f276e80eae3f6b8`. The frozen prior 1.46 receipt's 45
+access/HTTP checks and 47 exact assets per client were checksum-verified and
+reused, not rerun or republished. The new cycle's local evidence is two composed
+integration cases plus the backlog invariant; exact lint and protected-value/
+shared-source scans passed. The 1.23 completed backlog overview was archived
+verbatim without changing the 512 KiB guard.
+
+The normal deployment passed its smoke/functional policy. Its separate integration
+step was explicitly skipped under existing policy; the two affected integration
+cases ran locally before publication. Native backup still briefly pauses API/tunnel;
+no zero-downtime claim is made. No browser, private production dossier, paid model
+probe or real professional review occurred. Final documentation activation is
+observed in the parent checkpoint; unchanged clients are retained.
