@@ -1,6 +1,6 @@
 # Observed research scope — 1.57
 
-Scope recorded before code, 29 September 2026. VERIFYING production activation.
+Scope recorded before code, 29 September 2026. DONE within the verified bounded scope.
 MV2-002/020/024 and full architecture/professional/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -71,5 +71,29 @@ unavailable and unrecorded constituent search-index outcomes. All 30 existing re
 distinct passing cases. Exact API lint, protected-value checks and shared-client
 source parity passed. Final 285-case client runs after clarifying the unstarted
 reading label overlap the earlier 285, rather than adding cases. Production
-activation is pending; wider acceptance remains OPEN. Completed 1.55 and 1.51 overview blocks were archived
+activation is verified below; wider acceptance remains OPEN. Completed 1.55 and 1.51 overview blocks were archived
 verbatim into the linked release history; the 512 KiB guard is unchanged.
+
+## Verified production activation
+
+Core feature `1d878de8dc25ac823d932db227d9132c3420ea6f` activated as
+`git-1d878de8dc25` at 2026-09-29T22:17:56+00:00 through the normal release
+controller. Legal `90d01fa68ff9bd4a9feae5f461c398a5f7cdfd47` and Pharma
+`22172b66553f35b2832105c0c2ea4aefe7545a87` are active in their existing public
+Sites as version 56. Exact source commits were pushed to GitHub main and the
+corresponding Sites source repositories. Custom hostnames and audience preserved.
+
+The [frozen production receipt](product-releases/2026-09-29-1.57-research-scope.json)
+records 48 exact native module hashes, current schema, five running containers,
+nine native Monitoring routes and clean aligned main branches. Each client passed
+47 exact built-asset comparisons and 51 HTTP/access checks. Deployed bundles contain
+the observed-scope reader. No private production research, paid inference or
+browser session was used. Initial archive launch lacked the Node runtime PATH;
+corrected packaging succeeded without rebuilding or changing the validated source.
+
+Receipt SHA-256: `eeba662ad6b0b3538443af4ad1672aee1575b33df6b6bdbfde46ee7a8e0fbead`.
+Final English evidence is published separately; its normal Core activation will
+be checked with fresh runtime/main/home checks, retaining this unchanged client
+receipt without another Sites publication. Full architecture, live semantic quality
+and professional/human acceptance remain OPEN. The next audit concerns useful,
+truthful live progress before the first source-backed interpretation is ready.
