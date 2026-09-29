@@ -1,6 +1,6 @@
 # Consented claim-grounded research — 1.42
 
-Status: VERIFYING; implemented, publication pending. Scope recorded before code on 29 September 2026.
+Status: DONE within bounded implementation and verified publication scope. Scope recorded before code on 29 September 2026.
 Contributes to MV2-002/020/023/024; full architecture and human acceptance OPEN.
 
 ## Scope and dependencies
@@ -54,7 +54,7 @@ Existing search, vectors, source reviews, nine Monitoring sections and all
 completed stages remain intact. Canonical entities, domain claim types,
 applicability and full Market Access remain open. Frozen evaluations untouched.
 
-## Implementation and verification in progress
+## Implementation and verification
 
 The new product_claim_synthesis module selects current eligible completed private
 claim groups and reuses product_claim_review context/projection. Stable workflow
@@ -89,6 +89,27 @@ fixture initially lacked Element, corrected without changing product behavior.
 Source parity, whitespace and the count-only protected-value scan passed.
 Initial Core suite: 51 passes, three fixture assertions expected HTTP 200 while
 the existing idempotent action route correctly returns 201. All hidden payloads
-were already sanitized. Assertions corrected. The final affected suite passed all 26 cases, including all 14 new cases collected then; the additional current-brief escaping/citation case also passed. Together with the 41 existing checks from the initial suite, 56 distinct Core checks passed (15 new). The final backlog invariant and exact API lint passed. Publication pending.
+were already sanitized. Assertions corrected. The final affected suite passed all 26 cases, including all 14 new cases collected then; the additional current-brief escaping/citation case also passed. Together with the 41 existing checks from the initial suite, 56 distinct Core checks passed (15 new). The final backlog invariant and exact API lint passed. Initial publication verified below.
 No browser/private production/inference evaluation. Full target and human
 acceptance remain OPEN.
+
+## Verified publication
+
+Core `4204cdfb6e6655255bb91d498d0e74c57a538455` activated normally at
+2026-09-29T02:57:51Z as `git-4204cdfb6e66`. All 39 relevant runtime hashes,
+unchanged migration 0bd495bef125 and review constraints, five running containers
+and nine Monitoring routes were verified. Both canonical product origins passed
+45 HTTP/access checks and 47 exact asset hashes.
+
+- Legal `283dd346e89946d30020df7ccb2750905c645b5c`, existing Sites 42,
+  activated 2026-09-29T02:56:05.136617Z.
+- Pharma `1c29a8b7b2e9d2b5e1bfcefaa4f718d0dbeb754f`, existing Sites 42,
+  activated 2026-09-29T02:56:31.691053Z.
+
+See the [frozen receipt](product-releases/2026-09-29-1.42-claim-synthesis.json).
+All three main checkouts were freshly fetched, clean and aligned. The final
+English evidence-only Core commit follows normal activation, recorded in the
+parent checkpoint; unchanged clients are not republished. Native backups still
+pause API/tunnel; zero downtime is not claimed. No browser, private production
+dossier, paid model probe or frozen evaluation was used. Full architecture,
+professional quality, whole-ledger ranking and human acceptance remain OPEN.
