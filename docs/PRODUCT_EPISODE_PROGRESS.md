@@ -1,6 +1,6 @@
 # What a continued research episode added — 1.55
 
-Scope recorded before code, 29 September 2026. Implemented and tested; production VERIFYING.
+Scope recorded before code, 29 September 2026. DONE within the verified bounded scope.
 MV2-002/020/024, full architecture and professional/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -84,7 +84,7 @@ and the durable worker, except the explicit missing-metadata comparison contract
 All 39 distinct affected saved-check/exploration/adaptive/early/iterative/backlog
 regressions passed: 56 distinct Core cases in total. The unquoted-input case was
 strengthened to assert actual early-orientation comparison input and passed again;
-that retest overlaps the 17 new cases. Production activation is still VERIFYING.
+that retest overlaps the 17 new cases. Production activation is verified below.
 
 Both clients passed 275 distinct tests, lint, typecheck and production builds.
 A JSX apostrophe lint issue was escaped without changing displayed text. Final
@@ -94,3 +94,29 @@ passed. Those retests overlap the 275. Exact API lint, protected-value scans,
 shared reader parity and Git diff checks passed. The 1.53/1.52 completed overview
 blocks were archived verbatim to the linked release history to retain the 512 KiB
 backlog guard. Full architecture, live semantic and human acceptance remain OPEN.
+
+## Verified production activation
+
+Core feature `967ba823ac04b77f43de4267ee44653bb5700863` activated as
+`git-967ba823ac04` at 2026-09-29T19:15:55Z through the normal release controller.
+Legal `4dd0883c097e2d6eea89c2278bf094ef04b1a77d` and Pharma
+`61bbc5e3fa5663843ca4439e2c55754fe58aed34` are active as version 54 in their
+existing public Sites. Their source commits are pushed to GitHub main and the
+corresponding Sites source repositories. Existing custom hostnames and audience
+were preserved.
+
+The [frozen production receipt](product-releases/2026-09-29-1.55-episode-progress.json)
+records 47 exact native module hashes, current schema, five running containers,
+nine native Monitoring routes and clean aligned main branches. Each client passed
+47 exact built-asset comparisons and 51 HTTP/access checks, including existing typed
+continuation authorization/origin boundaries. Deployed bundles include the capture
+progress reader and its additive contract. No private production research, paid
+inference or browser session was started by verification.
+
+Receipt SHA-256: `176f4bf8f08e103f100189f11acbdb53f02df24443f6bfd2ff5a16a1264ea576`.
+Final English evidence is a separate documentation commit. Its normal native
+activation is checked separately, reusing the unchanged client receipt without
+another Sites publication. The full architecture, live semantic quality and
+professional/human acceptance remain OPEN. Next audit: a concise source-backed
+assessment of where the explicitly selected research question stands, using the
+existing final briefing request and keeping capture novelty separate from an answer.
