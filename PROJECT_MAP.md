@@ -235,3 +235,8 @@ investigation/visual specifications remain IN PROGRESS.
 The owner’s [Investigation Engine specification](docs/INVESTIGATION_ENGINE_SPEC.md)
 is being implemented through [iterative research 1.34](docs/PRODUCT_ITERATIVE_RESEARCH.md).
 The section 47 audit precedes additive code changes; full acceptance remains open.
+
+[Shared source-change journey verification](docs/PRODUCT_SHARED_JOURNEY.md) composes
+Legal and Pharma template/context, native page acquisition, worker, typed claim
+review, cited Ask and source-failure coverage using fictional fixtures. It does
+not establish live Market Access source readiness or human acceptance.

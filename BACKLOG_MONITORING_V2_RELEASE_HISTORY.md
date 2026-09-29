@@ -341,3 +341,40 @@ remaining full-spec acceptance stay open. Evidence: [Global Ask/Search](docs/PRO
 both Sites 27, 129 origin checks and 47 exact assets each, plus exact corrected
 native activation/assets and unchanged runtime proof. Full specifications and
 broader MV2-002/023/024 remain IN PROGRESS.
+
+**Native reading themes and shared preference resilience — 28 September 2026:
+DONE (scoped production contribution / release 1.23).** Scope: MV2-002/024.
+Deliver dark/light/system reading themes across the existing native page
+surfaces, forms, tables, source/evidence readers, dialogs, login and all nine
+Monitoring directions. Reuse the existing Brandbook shell and both product
+clients' theme controls, with one device-local preference contract. Preserve
+user drafts and mounted research context when themes change. The initial theme
+is Brandbook dark; explicit light/system preferences remain available per origin.
+Do not equate this palette migration with native universal Ask/Search, full visual
+redesign, human acceptance or completion of the dynamic dossier specification.
+
+Dependencies: delivered 1.22 navigation/identity; existing root layouts, native
+I18n/AuthGate/Marvin, client ResearchEnvironment and installed accessible UI
+primitives. Source readiness: repository-owned UI only; no source-rights,
+model/provider, API, schema, authentication, publication or external-delivery
+change. The current tracked-source inventory has 24 CSS/TSX files containing
+639 color literals; legitimate semantic statuses and artwork require review,
+not blanket color inversion. Existing tokens and helpers are extended; no new
+framework or dependency is required.
+
+Acceptance: actual persisted/invalid/blocked-storage preferences, in-memory
+choice under system changes, cross-tab updates and listener teardown; early
+paint and hydration-safe global controls in both clients and native five locales;
+semantic light/dark surfaces, text, status, focus and selection with authored
+contrast evidence; print/forced-colors/reduced-motion behavior; existing nine
+navigation directions and context/auth/draft gates. Run native frontend,
+localization/types/build/format, both client tests/lint/types/portable builds,
+final backlog smoke and protected-value scans; immediately push tested main,
+exact native and existing Sites publication, origin/auth/compiled-asset checks.
+No browser/human visual or language acceptance is implied by this background
+cycle. Both parent tasks and full specifications remain IN PROGRESS. Detailed
+implementation and exact production acceptance are recorded in
+[Reading themes](docs/PRODUCT_READING_THEMES.md): native 367 cases, 129 client
+tests each, all builds, 84 authored contrast pairs, corrected native production
+git-8ea723c934b8 with 40 assets/43 HTTP checks, and both Sites 26 with 125 origin
+checks/47 assets each. The final backlog smoke and protected-value scans pass.
