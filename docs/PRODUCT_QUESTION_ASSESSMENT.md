@@ -1,6 +1,6 @@
 # Selected-question assessment — 1.56
 
-Scope recorded before code, 29 September 2026. Implemented and tested; production VERIFYING.
+Scope recorded before code, 29 September 2026. DONE within the verified bounded scope.
 MV2-002/020/024 and full architecture/professional/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -73,8 +73,32 @@ scripted cases prove mechanics and provenance, not semantic quality. Both client
 passed 280 distinct tests, lint, typecheck and final production builds. Twenty-nine
 final interaction retests after removing a repeated question display overlap the
 280, rather than adding coverage. Exact API lint and protected-value/source-parity
-checks passed. All 42 affected Core regression/backlog cases passed: 62 distinct Core cases in total. Production verification is pending.
+checks passed. All 42 affected Core regression/backlog cases passed: 62 distinct Core cases in total. Production activation is verified below.
 
 The completed 1.54 backlog overview was archived verbatim to the linked release
 history. The 512 KiB backlog guard is unchanged. Full architecture, live semantic
 quality and professional/human acceptance remain OPEN.
+
+## Verified production activation
+
+Core feature `6ea6bf38a9144e586fdf3ed418086a5eab8db72a` activated as
+`git-6ea6bf38a914` at 2026-09-29T20:17:56+00:00 through the normal release
+controller. Legal `9a2c9cb823dc6597403cf1d7025c76bc6d5e7ce1` and Pharma
+`58658e5c35d4b439a9554c810f6eb31754052ed8` are active in their existing public
+Sites as version 55. Exact source commits were pushed to GitHub main and the
+corresponding Sites source repositories; custom hostnames and audience preserved.
+
+The [frozen production receipt](product-releases/2026-09-29-1.56-question-assessment.json)
+records 47 exact native module hashes, current schema, five running containers,
+nine native Monitoring routes and clean aligned main branches. Each client passed
+47 exact built-asset comparisons and 51 HTTP/access checks, preserving existing
+research/continuation authorization and origin boundaries. Deployed bundles contain
+the selected-question assessment reader. No private production research, paid
+inference or browser session was used for verification.
+
+Receipt SHA-256: `d9ba11926c71276097122d9305a51c1766b03b1c1572bfd4db56408dd0c7d3fa`.
+Final English evidence is published separately; its normal native activation is
+verified with fresh runtime/main/home checks, reusing this unchanged client receipt
+without another Sites publication. Full architecture, live semantic quality and
+professional/human acceptance remain OPEN. The next audit concerns an honest
+account of actual failed, deferred and unchecked research alongside the conclusion.
