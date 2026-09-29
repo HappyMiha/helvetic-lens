@@ -1,6 +1,6 @@
 # Continue a saved evidence check — 1.54
 
-Scope recorded before implementation, 29 September 2026. Implemented and tested; production VERIFYING.
+Scope recorded before implementation, 29 September 2026. DONE within the verified bounded scope.
 MV2-002/020/024 and full architecture/professional/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -87,7 +87,29 @@ passed. The exact API lint command passed, shared reader sources match, Git diff
 are clean, and protected-value scans of source/build artifacts found no configured
 credentials. No browser, private production research or paid inference was used.
 
-Main publication and exact native/Sites activation remain VERIFYING at this
-checkpoint. Frozen 1.35/1.37 evaluation data is unchanged and validation unopened.
+Main publication and exact native/Sites activation are verified below.
+Frozen 1.35/1.37 evaluation data is unchanged and validation unopened.
 Live research quality, broader architecture and professional/human acceptance
 remain OPEN.
+
+## Verified production release
+
+Core feature `bbd1fd77aa9712ab1b21c0babdf7ec474eb9d1fb` activated as
+`git-bbd1fd77aa97` at 2026-09-29T18:13:57Z through the normal release controller.
+Legal `6552c57ee5979bc1be4002d2216fc499b692f362` and Pharma
+`48d20ec11280dd5a202e566649e62fc1313d2c76` are active in their existing public
+Sites, version 53. Custom product hostnames and audience remain unchanged.
+
+The [frozen production receipt](product-releases/2026-09-29-1.54-saved-check.json)
+records 46 exact native module hashes, current schema, five healthy containers,
+nine native Monitoring routes and clean aligned main branches. Both products
+passed 47 exact built-asset comparisons and 51 HTTP/access checks, including the
+new typed saved-check command's anonymous and cross-origin rejection. Compiled
+clients include the selected-check action, retained origin and typed selector.
+No authenticated production research or inference was started by verification.
+
+Production receipt SHA-256: `05ff4374148d8a1987c6d7398e56b3b1759dbfaddc6e8169980508bce53aeee9`.
+This final evidence commit follows the functional release. Its normal native
+activation is checked separately; the unchanged client receipt is reused without
+another Sites publication. These are implementation and activation checks, not
+live semantic quality, professional or human acceptance of the whole product.
