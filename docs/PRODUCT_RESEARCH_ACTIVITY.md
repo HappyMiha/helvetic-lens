@@ -1,6 +1,6 @@
 # Current research activity — 1.58
 
-Scope recorded before code, 30 September 2026. Local implementation verified; production activation pending.
+Scope recorded before code, 30 September 2026. COMPLETE within bounded scope; Core and both clients verified.
 MV2-002/020/024 and full architecture/professional/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -68,7 +68,7 @@ All sixteen new durable cases passed: fourteen initial passes and two corrected
 whole-worker cases. The first whole-worker fixtures over-polled the HTTP API;
 per-step projection checks now retain explicit API parity checkpoints without
 an artificial request burst or any production rate-limit change. Fifty-seven existing regression/backlog cases passed: 73 distinct Core cases total.
-Production activation remains pending.
+Exact feature activation and both client publications are verified below.
 
 Each client passed all 290 tests, lint, types and its production build. The initial
 client lint found clock reads during render and status-element semantics; a keyed
@@ -77,3 +77,28 @@ suites. Source/protected-value scan and shared reader parity passed. Exact API
 lint passed. No new schema, extra provider call, polling loop, automatic episode
 or monitoring consent. Frozen validation remains unopened. Scripted fixtures
 prove execution and access behavior, not live research quality.
+
+## Verified publication
+
+Core feature `d7fe7e848b9e66d8f43c7b09327029be44ee58eb` activated as
+`git-d7fe7e848b9e` at 2026-09-29T23:17:58+00:00. Legal
+`71790403eb6a56b63417214b711c420a7897fae0` and Pharma
+`faec184ae4892e1a9172b5f09a391ce607c06cd2` are active in the existing public Sites 57.
+Forty-nine exact native module hashes, schema, five running containers and all nine
+Monitoring routes were verified. Each client passed 47 exact deployed-asset checks
+and 51 HTTP/access-boundary checks. Source/main alignment was clean.
+
+The [frozen production receipt](product-releases/2026-09-30-1.58-research-activity.json)
+was captured at 2026-09-29T23:18:39.503531+00:00; SHA256
+`2061e3a0c3463cc5802d15158ef1a54c0a5c3cf79486727285790ce448ffc480`. The existing verification helper observed the retired Loyer
+host as unavailable; its read-only transport retries did not change any binding.
+The backlog invariant passed again after status changes; repeated checks overlap
+the 73 distinct Core cases. The completed 1.56 overview was archived verbatim;
+the 512 KiB backlog guard remains unchanged.
+
+Final documentation uses normal Core activation and retains these exact unchanged
+client artifacts without another Sites publication. No browser or authenticated
+private production research was performed. Full architecture, live semantic
+quality and professional/human acceptance remain OPEN. Next bounded audit:
+recover useful evidence from already retrieved permitted alternatives after a
+selected public page cannot be read, within existing time and request limits.
