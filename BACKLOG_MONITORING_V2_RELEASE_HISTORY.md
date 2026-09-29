@@ -266,3 +266,43 @@ frontend cases, 147 per client, exact API Ruff and 71 API cases, all builds
 and scans; both Sites 29, 131 origin checks and 47 exact assets each, exact
 native comparison activation/assets and 60-module runtime proof. Full
 specifications and broader MV2-002/020/024 remain IN PROGRESS.
+
+**Source reading and inspectable provenance — 28 September 2026:
+DONE (scoped production contribution / release 1.25).** Scope: MV2-002/020/024.
+Give the native saved/corpus evidence reader a clear source-first hierarchy,
+readable retained-text measure, distinct source and capture dates, actual saved
+record counts and inspectable capture identity. In both product clients, make
+captured excerpts, source usage and preservation boundaries legible in the same
+source card/reader journey. Keep unknown classification/publication dates honest.
+
+Dependencies: existing native EvidenceView/evidencePage and product SourceCard/
+SourceMetadata/SourcePreview, installed UI primitives, shared Brandbook themes
+and completed global Ask. Source readiness: authorized retained versions and
+investigation snapshots already returned by existing APIs; current access and
+source withdrawal remain backend decisions. Inspection found that the bounded
+native evidence-page projection omits the already stored content hash. Return
+that scalar under the same existing authorization query, without hydrating full
+versions or making another request. No acquisition, provider, account, secret,
+schema, publication, model or notification change is required. The existing
+product HTTPS-only source-link policy remains in place; native legacy HTTP(S)
+references retain their existing scheme policy while rejecting user-info URLs.
+
+Acceptance: source origin is a safe HTTP(S) reference without embedded credentials;
+saved capture time and stated/publication date stay separate; true zero counts
+remain distinct from unknown; only real SHA-256 identities are labelled as such;
+retained excerpts are not represented as a complete original. Preserve exact
+passage targets, PDF page/source anchors, original downloads, previous/next pages,
+source language, synthetic/import notices, permission/error states and current
+registry return position. Show context and provenance without a new widget grid
+or simulated Lens. Reuse semantic themes, accessible disclosure and responsive
+reading layout, with complete five-locale native copy. Run helper/real SSR cases,
+existing frontend/localization/types/format and both client lint/tests/types,
+final native/Sites builds, exact API Ruff gate and affected bounded-reader/auth/
+document-history cases, backlog smoke, protected-value scans, immediate main
+pushes and exact production readiness/origin/asset/runtime verification. Browser,
+human language/visual and professional/full-spec gates remain separate.
+Evidence: [Source reading](docs/PRODUCT_SOURCE_READING.md): native 391 frontend
+cases, 142 per client, exact API Ruff and 55 API cases, all builds and scans;
+both Sites 28, 130 origin checks and 47 exact assets each, exact native reader
+activation/assets and 58-module runtime proof. Full specifications and broader
+MV2-002/020/024 remain IN PROGRESS.

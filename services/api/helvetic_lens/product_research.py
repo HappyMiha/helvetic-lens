@@ -56,11 +56,11 @@ class ResearchInput(legal_profiles.Input):
     expected_revision: int = Field(ge=1)
     request_key: UUID
     expected_evidence: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
-    evidence_scope: Literal["saved", "claims_v1"] = "saved"
+    evidence_scope: Literal["saved", "claims_v1", "claims_typed_v1"] = "saved"
 
     @model_validator(mode="after")
     def consent(self):
-        if self.evidence_scope == "claims_v1" and self.expected_evidence is None:
+        if self.evidence_scope in ("claims_v1", "claims_typed_v1") and self.expected_evidence is None:
             raise ValueError("Claim inputs require a current explicit evidence preview.")
         return self
 
@@ -286,10 +286,10 @@ def research_bundle(session, parent, profile, row, identity, settings, evidence_
                "profile_revision": profile.revision, "provider": settings.apertus_provider, "model": settings.apertus_model,
                "input": {"title": row.title, "context": row.body, "monitoring_goal": profile.config_json.get("goal"), "sources": sources},
                "source_review_ids": review_vector(reviews)}
-    if evidence_scope == "claims_v1":
+    if evidence_scope in ("claims_v1", "claims_typed_v1"):
         from .product_claim_synthesis import selection
 
-        claims, quotes, pins, limits = selection(session, parent, row.title + " " + row.body)
+        claims, quotes, pins, limits = selection(session, parent, row.title + " " + row.body, typed=evidence_scope == "claims_typed_v1")
         payload["input"]["sources"] = quotes + [{**value, "id": f"S{index + len(quotes) + 1}"}
             for index, value in enumerate(sources[:18 - len(quotes)])]
         payload["input"]["claims"] = claims
@@ -298,7 +298,7 @@ def research_bundle(session, parent, profile, row, identity, settings, evidence_
     payload["selection"] = {"team_candidate_limit": 30, "linked_page_limit": 20, "topic_limit": 6,
                             "matches_per_topic": 20, "snapshot_limit": 18, "excerpt_char_limit": 1800,
                             "excluded_urls": sum(review.data_json["decision"] == "exclude" for review in reviews.values())}
-    if evidence_scope == "claims_v1":
+    if evidence_scope in ("claims_v1", "claims_typed_v1"):
         payload["selection"].update(limits)
     return payload
 
@@ -495,7 +495,7 @@ def research_routes(router, service, actor):
 
     @router.get("/dossiers/{identifier}/discussion/{thread_id}/research-preview")
     def preview_research(product: Product, identifier: str, thread_id: str, request: Request,
-                         evidence_scope: Literal["saved", "claims_v1"] = "saved"):
+                         evidence_scope: Literal["saved", "claims_v1", "claims_typed_v1"] = "saved"):
         identity = actor(request)
         with service.db.session() as session:
             principal(session, identity, utcnow())
@@ -528,7 +528,13 @@ def research_routes(router, service, actor):
             "Team contributions are opinions, page extracts are snapshots; do not silently upgrade either to authoritative current facts. "
             "Claim statements are interpretations; human acceptance is workflow review, not independent truth. Preserve supporting AND contradicting evidence and describe unresolved or dismissed comparisons accurately. Stale acceptance is not current approval. "
             "Do not invent URLs, facts or coverage. If evidence is insufficient, return no findings. Always list specific unknowns to verify and useful "
-            "public search phrases WITHOUT private client names or confidential details. Return only the requested JSON. This is a draft for human review.",
+            "public search phrases WITHOUT private client names or confidential details. Return only the requested JSON. This is a draft for human review."
+            + (" Editor context contains independent classifications and per-citation source roles for each claim, not verified facts. "
+               "Never transfer one claim's classification or role to another. Unreviewed or stale metadata is unknown. "
+               "Source roles do not prove binding authority, applicability, effective dates, regulatory status or clinical value. "
+               "Do not collapse source statements, user assertions and AI interpretations. All generated findings remain AI draft interpretations. "
+               "investigation_quote date means capture time, not publication or effective date."
+               if data.evidence_scope == "claims_typed_v1" else ""),
             json.dumps(question, ensure_ascii=False), response_schema=ResearchAnswer.model_json_schema(),
             budget=InferenceBudget(max_requests=1, max_seconds=90))
         try:
@@ -561,7 +567,7 @@ def research_routes(router, service, actor):
                     "preview_fingerprint": data.expected_evidence, "input_fingerprint": bundle["evidence_fingerprint"],
                     "input_revision": data.expected_revision, "provider": bundle["provider"], "model": bundle["model"],
                     **({"evidence_scope": data.evidence_scope, "claims": bundle["input"]["claims"],
-                        "claim_contexts": bundle["claim_contexts"]} if data.evidence_scope == "claims_v1" else {})})
+                        "claim_contexts": bundle["claim_contexts"]} if data.evidence_scope in ("claims_v1", "claims_typed_v1") else {})})
             session.add(post)
             row.revision += 1
             row.updated_at = utcnow()

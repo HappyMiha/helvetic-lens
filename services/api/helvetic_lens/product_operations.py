@@ -222,8 +222,10 @@ def research_action_evidence(session, parent, origin):
         if not isinstance(gaps, list) or origin.gap_index >= len(gaps) or not isinstance(gaps[origin.gap_index], str):
             fail("This saved research gap is unavailable. Reload the question.", 409)
         snapshot.update({"entry_id": entry.id, "gap_index": origin.gap_index, "gap": gaps[origin.gap_index]})
-        if entry.data_json.get("evidence_scope") == "claims_v1":
-            snapshot["evidence_scope"] = "claims_v1"
+        from .product_claim_synthesis import SCOPES
+
+        if entry.data_json.get("evidence_scope") in SCOPES:
+            snapshot["evidence_scope"] = entry.data_json["evidence_scope"]
     return snapshot
 
 
@@ -513,13 +515,17 @@ def operations(router, service, actor):
                     if gaps:
                         answer += f'<h4>Still to establish</h4><ul>{gaps}</ul>'
                     if exposed["data"].get("claims"):
+                        from .product_claim_synthesis import editor_brief
+
                         answer += '<h4>Claim context supplied at generation</h4><p>Human acceptance is workflow review, not independent truth.</p>'
                         for claim in exposed["data"]["claims"]:
                             review = claim["human_review"]
                             label = "Changed — review again" if review["stale"] else review["decision"] or "Not reviewed"
                             answer += f'<p>{esc(claim["statement"])} — machine: {esc(claim["machine_status"])}; human: {esc(label)}.</p>'
+                            answer += editor_brief(claim)
                             for comparison in claim["comparisons"]:
                                 answer += f'<p>{esc(comparison["kind"])} ({esc(comparison["status"])}): {esc(comparison["statement"])}</p>'
+                                answer += editor_brief(comparison)
                         for source in exposed["data"].get("sources", []):
                             if source["kind"] == "investigation_quote":
                                 answer += f'<blockquote>{esc(source["text"])}</blockquote><p>{esc(source["id"])} · {esc(source["relation"])} · {esc(source["locator"])} · {link(source["url"])}</p>'

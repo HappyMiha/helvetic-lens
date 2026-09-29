@@ -29,15 +29,15 @@ def setup(signed, product="pharma"):
     return values, root + "/discussion/" + thread["id"]
 
 
-def preview(client, path):
-    result = client.get(path + "/research-preview?evidence_scope=claims_v1")
+def preview(client, path, evidence_scope="claims_v1"):
+    result = client.get(path + "/research-preview?evidence_scope=" + evidence_scope)
     assert result.status_code == 200, result.text
     return result.json()
 
 
 def request(value):
     return {"request_key": str(uuid4()), "expected_revision": value["expected_revision"],
-        "expected_evidence": value["evidence_fingerprint"], "evidence_scope": "claims_v1"}
+        "expected_evidence": value["evidence_fingerprint"], "evidence_scope": value["evidence_scope"]}
 
 
 def answer(value):
@@ -47,8 +47,8 @@ def answer(value):
         "unknowns": ["PRIVATE generated gap tied to a captured claim."], "search_queries": ["fictional official source"]})
 
 
-def generate(client, model, path):
-    value = preview(client, path)
+def generate(client, model, path, evidence_scope="claims_v1"):
+    value = preview(client, path, evidence_scope)
     model.responses = [answer(value)]
     data = request(value)
     response = post(client, path + "/research", data)
@@ -94,10 +94,11 @@ def test_legacy_and_versioned_consent_are_separate(signed):
 
 
 @pytest.mark.parametrize("change", ["review", "capture", "comparison", "exclude", "unfinished"])
-def test_preview_and_inference_revalidate_claim_context(signed, change):
+@pytest.mark.parametrize("evidence_scope", ["claims_v1", "claims_typed_v1"])
+def test_preview_and_inference_revalidate_claim_context(signed, change, evidence_scope):
     values, path = setup(signed)
     client, service, doc, root, ids, sources, runs, _, evidence = values
-    value = preview(client, path)
+    value = preview(client, path, evidence_scope)
     def mutate():
         if change == "review":
             with service.db.session() as session:
@@ -127,10 +128,11 @@ def test_preview_and_inference_revalidate_claim_context(signed, change):
         assert session.scalar(select(DossierEntry).where(DossierEntry.kind == "research")) is None
 
 
-def test_changed_review_invalidates_answer_and_cannot_be_reconfirmed(signed):
+@pytest.mark.parametrize("evidence_scope", ["claims_v1", "claims_typed_v1"])
+def test_changed_review_invalidates_answer_and_cannot_be_reconfirmed(signed, evidence_scope):
     values, path = setup(signed)
     client, _, _, root, ids, _, _, _, _ = values
-    _, data, saved = generate(client, signed[3], path)
+    _, data, saved = generate(client, signed[3], path, evidence_scope)
     current = client.get(path).json()
     assert post(client, path + "/accept", {"expected_revision": current["revision"], "entry_id": saved["id"]}).status_code == 200
     before = client.get(path).json()
@@ -146,10 +148,11 @@ def test_changed_review_invalidates_answer_and_cannot_be_reconfirmed(signed):
 
 
 @pytest.mark.parametrize("change", ["exclude", "delete", "unfinished"])
-def test_unavailable_claim_hides_retained_note_replay_exports_and_followup(signed, change):
+@pytest.mark.parametrize("evidence_scope", ["claims_v1", "claims_typed_v1"])
+def test_unavailable_claim_hides_retained_note_replay_exports_and_followup(signed, change, evidence_scope):
     values, path = setup(signed)
     client, service, doc, root, ids, sources, runs, _, _ = values
-    _, data, saved = generate(client, signed[3], path)
+    _, data, saved = generate(client, signed[3], path, evidence_scope)
     current = client.get(path).json()
     assert post(client, path + "/accept", {"expected_revision": current["revision"], "entry_id": saved["id"]}).status_code == 200
     task, task_data = action(client, root, title="PRIVATE generated gap copied to action", detail="PRIVATE generated gap detail",
@@ -174,7 +177,8 @@ def test_unavailable_claim_hides_retained_note_replay_exports_and_followup(signe
     assert len(signed[3].calls) == 1
 
 
-def test_oversized_group_is_omitted_whole_and_public_or_running_claims_are_absent(signed):
+@pytest.mark.parametrize("evidence_scope", ["claims_v1", "claims_typed_v1"])
+def test_oversized_group_is_omitted_whole_and_public_or_running_claims_are_absent(signed, evidence_scope):
     values, path = setup(signed)
     client, service, _, _, ids, sources, runs, _, _ = values
     with service.db.session() as session:
@@ -184,35 +188,37 @@ def test_oversized_group_is_omitted_whole_and_public_or_running_claims_are_absen
             session.add(ClaimEvidence(**scope(run), claim_id=ids[0], source_id=sources[0], quote=existing.quote, locator=existing.locator, relation="CONTRADICTS"))
         session.get(Investigation, runs[1]).status = "running"
         session.commit()
-    result = preview(client, path)
+    result = preview(client, path, evidence_scope)
     assert result["input"]["claims"] == [] and result["selection"]["omitted_claim_groups"] == 1
     assert not signed[3].calls
 
 
-def test_claim_preview_and_notes_do_not_cross_dossiers_or_anonymous_access(signed):
+@pytest.mark.parametrize("evidence_scope", ["claims_v1", "claims_typed_v1"])
+def test_claim_preview_and_notes_do_not_cross_dossiers_or_anonymous_access(signed, evidence_scope):
     values, path = setup(signed)
     client, service, _, _, ids, _, _, _, _ = values
     other, other_path = setup(signed)
     with service.db.session() as session:
         session.get(DossierClaim, ids[0]).statement = "PRIVATE foreign claim statement"
         session.commit()
-    result = preview(client, other_path)
+    result = preview(client, other_path, evidence_scope)
     assert "PRIVATE foreign claim statement" not in json.dumps(result)
     assert not set(ids) & {claim["id"] for claim in result["input"]["claims"]}
     assert client.post(other_path + "/research", json=request(result)).status_code == 403
     client.cookies.clear()
-    assert client.get(path + "/research-preview?evidence_scope=claims_v1").status_code == 401
+    assert client.get(path + "/research-preview?evidence_scope=" + evidence_scope).status_code == 401
     assert client.get(other_path).status_code == 401
     assert not signed[3].calls
 
 
-def test_current_brief_preserves_all_claim_quotes_and_escapes_context(signed):
+@pytest.mark.parametrize("evidence_scope", ["claims_v1", "claims_typed_v1"])
+def test_current_brief_preserves_all_claim_quotes_and_escapes_context(signed, evidence_scope):
     values, path = setup(signed)
     client, service, _, root, ids, _, _, _, _ = values
     with service.db.session() as session:
         session.get(DossierClaim, ids[0]).statement = "Fictional <script>claim</script> interpretation"
         session.commit()
-    _, _, saved = generate(client, signed[3], path)
+    _, _, saved = generate(client, signed[3], path, evidence_scope)
     current = client.get(path).json()
     assert post(client, path + "/accept", {"expected_revision": current["revision"], "entry_id": saved["id"]}).status_code == 200
     brief = client.get(root + "/brief")
