@@ -1,7 +1,7 @@
 # Research before monitoring — 1.51
 
 Recorded before implementation, 29 September 2026. MV2-002/020/024 remain IN
-PROGRESS overall. This bounded slice is VERIFYING: implementation and automated checks passed; activation is pending.
+PROGRESS overall. This bounded slice is DONE within the verified scope below. Full target and human acceptance remain OPEN.
 
 ## Scope and dependencies
 
@@ -89,5 +89,23 @@ checks passed after preserving pause/resume of previously enabled scope. These
 reported test groups overlap; they are not summed as independent checks. Scripted sources demonstrate
 mechanics and privacy, not live-provider accuracy or medical/legal acceptance.
 
-Publication pending. Production remains at verified 1.50 until the release receipt
-records actual activation. Full architecture and human acceptance remain OPEN.
+## Verified production activation
+
+Core `3b2b375f80c1f0c3b6258d71faa74350ca6625cf` activated on 29 September
+2026. Legal `3b4d498dfa6254d09db7cf872e621eb82dc2018e` and Pharma
+`795c2b2c650cb97216c5c60bd5181f4250fe4cb7` are published as version 50 in
+their existing public Sites. Both GitHub main branches and the separate Sites
+source repositories contain the exact validated source. No duplicate deployment.
+
+[Production receipt](product-releases/2026-09-29-1.51-research-first.json):
+45 exact native module hashes, unchanged schema/DomainPacks, five healthy containers
+and nine native routes; 47 exact public assets and 49 HTTP/auth/origin checks per
+product. A transient asset connection closure and a single gateway 502 during
+verification were followed by successful fresh checks; no product data or paid
+inference was used. The frozen 1.35/1.37 validation remains unopened.
+
+Receipt SHA256: `db3d6a8853fce8b1748f57d251a68474344ed227f0bdc00a6e311dcb759eac7f`.
+
+The standard Core release passed smoke/functional gates; affected integration
+checks are recorded above. Browser QA, live-provider semantic accuracy and
+professional/human acceptance are not claimed. Full architecture remains OPEN.
