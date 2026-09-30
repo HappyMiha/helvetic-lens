@@ -9,6 +9,7 @@ from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
 from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
+from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import event, rows
@@ -48,6 +49,7 @@ def prepare(session, run, branch, state, work):
             work["skip"] = len(work["input"]["sources"]) < 2
     elif branch.phase in {"gate", "gate_review"}:
         work["item"] = state["candidates"][state.get("gate_index", 0)]
+        work["skip"] = recovery.unavailable(session, run, branch, state, work["item"])
         work["input"] = {"question": run.question, "branch": branch.query,
             "title": work["item"]["title"], "snippet": work["item"].get("summary", "")}
     elif branch.phase == "reflect":
@@ -93,8 +95,9 @@ async def execute(service, work, seconds):
 
 
 def settle(branch, state):
+    recovery.settle(branch, state)
     if branch.phase == "gate" and (state.get("gate_index", 0) >= len(state.get("candidates", []))
-            or len(state.get("items", [])) >= state.get("source_limit", 2)):
+            or len(state.get("items", [])) >= recovery.selection_limit(state)):
         state.setdefault("candidate_counts", {})["not_evaluated_within_source_budget"] = max(0, len(state.get("candidates", [])) - state.get("gate_index", 0))
         branch.phase = "read"
         state["empty_search"] = not state.get("items")
@@ -105,6 +108,8 @@ def settle(branch, state):
 
 
 def failed(branch, state, *, interrupted=False):
+    if branch.phase == "read":
+        recovery.failed_read(state)
     if branch.phase in {"plan", "reflect", "brief", "orient"}:
         branch.status = "failed"
     if branch.phase in {"gate", "gate_review"}:
@@ -137,7 +142,15 @@ def apply(session, run, branch, state, work, result):
         from .product_models import ProductDossier
 
         blocked = excluded(session, session.get(ProductDossier, run.dossier_id))
-        candidates = [v for v in result["items"] if v["url"] not in seen | blocked]
+        recover = recovery.enabled(run, branch, state)
+        candidates = []
+        for item in result["items"]:
+            if item["url"] not in seen | blocked:
+                candidates.append(item)
+                if recover:
+                    seen.add(item["url"])
+        if recover:
+            state["source_recovery"] = {"contract": recovery.CONTRACT, "failed_reads": 0}
         limit = work["limits"]["candidates_per_branch"]
         state.update(candidates=candidates[:limit], gate_index=0, items=[], source_limit=work["limits"]["sources_per_branch"],
             candidate_counts={"retrieved": len(result["items"]), "duplicate_or_excluded": len(result["items"]) - len(candidates),

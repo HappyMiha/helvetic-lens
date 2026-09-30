@@ -1,6 +1,7 @@
 """A current public research checkpoint, bounded by the actual worker receipt."""
 from datetime import UTC, datetime, timedelta
 
+from . import product_source_recovery as recovery
 from .db import utcnow
 from .models import Job
 from .product_api import iso
@@ -69,5 +70,6 @@ def projection(session, run, available, *, invalid=False):
     return {**value, "status": "working", "phase": branch.phase,
         "question": question["question"] if question else run.question,
         "observed_at": iso(now), "valid_for_ms": remaining,
+        "checking_alternative": recovery.alternative(state, branch.phase),
         "latest_source": {"id": latest.id, "title": latest.title, "url": latest.url,
             "captured_at": iso(latest.created_at)} if latest else None}

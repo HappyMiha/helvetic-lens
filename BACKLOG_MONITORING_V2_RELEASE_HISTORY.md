@@ -490,3 +490,10 @@ DONE within verified scope: Core and both public Sites 50 active; 45 native hash
 DONE within verified scope: Core and public Sites 55 active; 62 Core and 280 client cases each passed. [Scope and acceptance](docs/PRODUCT_QUESTION_ASSESSMENT.md). A concise cited assessment of the exact continued question; broader gates OPEN.
 
 <!-- Archived verbatim before research activity 1.58 implementation. -->
+
+## Observed research scope — 1.57
+
+DONE within verified scope: Core and public Sites 56 active; 45 Core and 285 client cases each passed. [Scope and acceptance](docs/PRODUCT_RESEARCH_SCOPE.md). Actual captured passages and unfinished work stay visible beside the conclusion; broader gates OPEN.
+
+
+<!-- Verbatim 1.57 overview archived for the 1.59 scope. -->

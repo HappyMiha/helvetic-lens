@@ -1,4 +1,5 @@
 """Observed public research work, never a score for coverage or answer quality."""
+from . import product_source_recovery as recovery
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import rows
 
@@ -11,7 +12,10 @@ are appearances, not unique or independent sources. Failed/interrupted work and
 unexamined candidates cannot establish absence. Open questions are workflow gaps,
 not proof that other questions are answered. No count establishes relevance,
 truth, complete coverage or an answer. Unknown scope must remain unknown. Do not
-invent missing operations, provider failures or reasons. No extra model request.
+invent missing operations, provider failures or reasons. source_recovery describes
+failed reads and bounded checks of already retrieved alternatives; captures do not
+prove equal authority, relevance or an answer. Preserve exhausted options and
+unfinished work. No extra model request.
 """
 RESOURCES = {"search_requests", "source_fetches", "model_calls", "decision_calls",
     "active_seconds", "branch_budget", "depth_budget"}
@@ -73,4 +77,5 @@ def observed(session, run, available, *, invalid=False):
             "truncated_sources": sum(s.snapshot.get("text_truncated") is True for s in material),
             "unknown_reader_scope": sum(not isinstance(s.snapshot.get("text_truncated"), bool) for s in material)},
         "questions": {"open": len(pending), "not_started": sum(not q.get("branch_id") for q in pending)},
-        "budget_stops": sorted(stops & RESOURCES)}
+        "budget_stops": sorted(stops & RESOURCES),
+        "source_recovery": recovery.projection(session, run, available)}

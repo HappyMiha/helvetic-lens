@@ -15,6 +15,7 @@ from . import product_exploration_activity as activity
 from . import product_exploration_progress as progress
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
+from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .config import DomainError
 from .db import utcnow
@@ -280,7 +281,7 @@ async def execute(service, job_id, worker):
                     elif branch.phase == "read":
                         item = state["items"][state.get("read_index", 0)]
                         work["item"] = item
-                        work["skip"] = item["url"] in blocked
+                        work["skip"] = item["url"] in blocked or recovery.unavailable(session, run, branch, state, item)
 
                         if state.get("contribution_entry_id"):
                             from .product_contributions import PUBLIC_READ_PURPOSE
@@ -485,6 +486,7 @@ async def execute(service, job_id, worker):
                             fresh = False
                             state["unchanged"] = state.get("unchanged", 0) + 1
                             event(session, run, "duplicate_document", source_id=source.id, original_source_id=duplicate.id)
+                    recovery.captured(state, source, fresh)
                     if fresh:
                         state.setdefault("source_ids", []).append(source.id)
                     state["read_index"] = state.get("read_index", 0) + 1
