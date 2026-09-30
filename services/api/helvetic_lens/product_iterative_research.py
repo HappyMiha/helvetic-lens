@@ -256,6 +256,10 @@ def elapsed(run, seconds):
 def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None):
     data = deepcopy(run.research_state)
     key = query_key(draft.query)
+    if any(query_key(q["branch_assessment"]["assessment"]["further_check"]["query"]) == key
+            for q in data["questions"] if q.get("branch_assessment", {}).get("assessment", {}).get("further_check")):
+        event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
+        return None
     if any(key in {query_key(b.query), query_key(b.checkpoint.get("query_recovery", {}).get("query") or b.query)} for b in rows(session, InvestigationBranch, run)) or any(q["query_key"] == key or query_key(q["question"]) == query_key(draft.question) for q in data["questions"]):
         event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
         return None
@@ -330,6 +334,9 @@ def prepare_reflection(session, run, branch):
             for c in rows(session, DossierClaim, run) if c.id in claim_ids],
         "previous_questions": [{"question": q["question"], "query": q["query"]} for q in run.research_state["questions"]]}
     informed.prepare(session, run, value)
+    from . import product_branch_assessment as branch_assessment
+
+    branch_assessment.prepare(session, run, branch, value)
     if exploration.enabled(run):
         orientation = exploration.projection(session, run).get("orientation")
         if orientation and orientation["status"] == "ready":
@@ -338,11 +345,13 @@ def prepare_reflection(session, run, branch):
 
 
 def apply_reflection(session, run, branch, supplied, result):
+    from . import product_branch_assessment as branch_assessment
     from . import product_exploration as exploration
     from . import product_exploration_followups as followups
     from . import product_informed_research as informed
 
     informed.validate(session, run, supplied)
+    assessment = branch_assessment.validate(session, run, branch, supplied, result)
     changes, dependencies = exploration.validate_reconsiderations(session, run, supplied, result)
     sources = {s["id"]: session.get(InvestigationSource, s["id"]) for s in supplied["sources"]}
     claim_ids = {c["id"] for c in supplied["claims"]}
@@ -353,6 +362,7 @@ def apply_reflection(session, run, branch, supplied, result):
     if dependencies:
         exploration.update(run, adaptive_dependencies=dependencies)
     informed.remember(session, run, supplied)
+    branch_assessment.remember(run, branch, supplied, assessment)
     for draft, change in zip(result.gaps, changes, strict=True):
         identifier = add_question(session, run, draft, parent=branch, trigger=citation(sources[draft.source_id], draft),
             claim=session.get(DossierClaim, draft.claim_id) if draft.claim_id else None, reconsideration=change)
@@ -475,7 +485,7 @@ def public_existing_claims(session, run):
 
 
 def public_questions(questions):
-    return [{k: deepcopy(v) for k, v in q.items() if k != "open_check_context"} for q in questions]
+    return [{k: deepcopy(v) for k, v in q.items() if k not in {"open_check_context", "branch_assessment"}} for q in questions]
 
 
 def projection(run):

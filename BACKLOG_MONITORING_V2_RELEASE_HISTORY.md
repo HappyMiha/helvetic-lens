@@ -553,3 +553,95 @@ DONE within scope: Core and public Sites 58 verified; 88 Core and 295 client cas
 ## Current research activity — 1.58
 
 DONE within scope: Core and public Sites 57 verified; 73 Core and 290 client cases each passed. [Scope and acceptance](docs/PRODUCT_RESEARCH_ACTIVITY.md). Recorded activity replaces generic waiting text; broader gates OPEN.
+
+## Verbatim completed whole-dossier retrieval overview (archived for 1.64)
+
+**Whole-dossier retrieval — 28 September 2026: DONE (scoped stage 4f / release 1.21).**
+Scope: MV2-021/023/051, with existing private dossiers, native permission-filtered
+captured evidence, exact citations and the shared Jev/Laya decision boundary.
+An older relevant passage must be discoverable without manually reviewing every
+twelve-record window. Evaluate direct Laya, all-word and BM25 baselines against
+a pinned local multilingual retrieval model before selecting an implementation.
+The evaluation will use independently human-labeled NoMIRACL development/test
+data in English, German and French, with deterministic samples, immutable source
+hashes, disjoint query IDs, original judgments, retrieval/latency measurements and
+explicit unmetered local costs. Its encyclopedia candidate pools do not establish
+legal/medical accuracy, full-web recall or quality in Italian/Ukrainian.
+Readiness: existing Laya and captured-evidence paths are active; NoMIRACL's data
+card and E5's MIT model card have been inspected. Dataset material remains local
+evaluation input with source attribution; publish scripts/identifiers/metrics,
+not copied passages. No private production data or new paid provider is needed.
+Implementation selection follows measured evidence and a further recorded
+decision. Pgvector/MV2-063 remains DEFERRED.
+Acceptance: automatic coverage of the authorized dossier ledger; exact visible
+coverage/limits and source-linked results; current audience/source/version filters
+before ranking and counts and again after inference; safe interruption/fallback,
+no private external queries or confidence-as-accuracy; meaningful privacy and
+failure tests; both clients' required gates; immediate main pushes and exact
+native/both-client production verification. Broader parent tasks remain open.
+
+**Stage 4f implementation decision, before product code (02:54 UTC):**
+The pinned development experiment has 48 queries (36 answerable) across three
+languages and 1,207 retained passage candidates. Candidate nDCG@10 is 0.80392
+for E5/BM25 rank fusion, 0.73886 for direct Laya and 0.68031 for BM25. Known-positive
+pooled recall@12 is 0.99074 versus BM25 0.95833; this small selected pool is not
+full-corpus recall. Local E5 corpus preparation took154.8s, mean query embedding
+13.8ms; Laya mean pair530.5ms. Costs remain unmetered. [Development receipt](docs/product-evaluations/2026-09-28-dossier-retrieval-dev.json).
+Select pinned E5-small retrieval + existing BM25, reciprocal ranks with weights
+2:1 and constant60, followed by local Laya opinions on the displayed12 records
+without removing or reordering candidates. Keep direct12-record and all-word
+fallback modes. Test labels/results have not been used for selection. Before
+promotion require held-out overall nDCG above both direct-Laya/BM25 baselines,
+and pooled known-positive recall no worse than BM25; failures stay explicit.
+Implement a discardable native dossier/source-contained binary vector cache,
+not pgvector or a separate vector database. Prepare16 eligible records per
+request with visible automatic progress and stop/resume; reuse exact model/input
+hashes on later questions. Maximum20,000 eligible ledger records per full ranking;
+if exceeded explain the limit and retain direct/literal modes rather than
+silently dropping older evidence. Current ACL/source/version predicates apply
+before cache reads/counts and again after each local call. No query persistence,
+private hosted calls, source publication, new accounts or emails. A separate
+bounded local CPU embedding service preserves the active Laya deployment.
+Acceptance additionally covers cache containment/cascades, metadata changes,
+revocation during preparation/ranking, current-source invalidation, concurrent
+preparation, full-record paging, no threshold suppression, capacity/timeout
+fallback and exact production model/runtime. Both shared product clients must
+complete the same automatic preparation/search/citation journey.
+
+**Stage4f retrieval correction before new held-out validation:** a zero-score
+BM25 record must add no lexical signal. Otherwise arbitrary ID ordering biases
+purely cross-language questions with no shared words. Keep2:1/60 fusion and the
+selected E5 checkpoint; remove only that uninformative lexical contribution.
+The first held-out report passed its predeclared aggregate gates (nDCG0.793,
+Laya0.7466, BM250.60496; known-positive pooled recall0.99167 vs0.94111), but its
+labels are now exposed. Validate the corrected rule on a fresh deterministic
+20-query test slice per language (offset20, plus4 non-answerable at offset20).
+Do not call the reused development rows or original test a new independent test.
+No model fitting, threshold or relevance-label changes are authorized by this fix.
+
+**Stage 4f local acceptance (before production):** the fresh disjoint72-query
+held-out slice passes the fixed aggregate gate: selected hybrid nDCG0.78913,
+Laya0.72839, BM250.60347; known-positive pooled recall@12 is0.96667 vs0.90444.
+No claim of full-corpus, professional or Italian/Ukrainian quality follows.
+196 affected native cases and two isolated service contracts pass. Actual local
+native/model probes recover the older record at rank1 in both synthetic64-record
+product dossiers, with reusable preparation and warm requests around5.9s.
+Both clients have119 passing tests; final publication gates remain required.
+[Architecture, evidence and remaining limits](docs/PRODUCT_CORPUS_SEARCH.md).
+
+**Stage 4f production acceptance:** native `git-52cb35ef028f` activated at
+03:37:41 UTC; both public Sites 24 deployments succeeded. Each custom origin
+passed 120 HTTP/auth/gateway/guide checks and 47 exact JS/CSS asset hashes.
+Runtime matches 57 native modules, migration `06d495bef125`, source-contained
+cache cascades and permission-filtered SQL, all retained research gates,
+five scheduler hashes, four native runtimes and the existing healthy Laya.
+The isolated embedding image/source/pinned weights match, with private-network
+access and a real synthetic adapter probe. Both exact client GitHub CI runs pass;
+119 client tests each, lint/types/build, 196 affected native cases, two isolated
+service contracts, exact API Ruff, backlog smoke and protected-value scans pass.
+[Scoped acceptance and limits](docs/PRODUCT_CORPUS_SEARCH.md),
+[release receipt](docs/product-releases/2026-09-28-1.21.0.json).
+Full dynamic/visual specifications, professional evaluation and parent
+MV2-021/023/051 remain IN PROGRESS; MV2-063/pgvector stays DEFERRED.
+
+<!-- End of the verbatim 1.21 overview. -->

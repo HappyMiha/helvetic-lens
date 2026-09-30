@@ -4,6 +4,7 @@ import re
 from copy import deepcopy
 
 from . import decision_search, decision_sources
+from . import product_branch_assessment as branch_assessment
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
@@ -82,6 +83,8 @@ async def execute(service, work, seconds):
         "brief": (exploration.Briefing, exploration.SYSTEM),
         "orient": (exploration.EarlyOrientation, exploration.EARLY_SYSTEM),
     }[phase]
+    if phase == "reflect" and work["input"].get("branch_assessment_question"):
+        schema, system = branch_assessment.AssessedReflection, system + branch_assessment.SYSTEM
     if phase == "extract" and work.get("read_relevance"):
         schema, system = read_relevance.ReadExtraction, system + read_relevance.SYSTEM
     if phase == "brief" and work["input"].get("assessment_question"):

@@ -81,15 +81,24 @@ def saved_context(session, run, question_id):
     prior = reference(run)
     if prior and not prior.get("follow_up_id"):
         return None
+    from . import product_read_relevance
     from .product_exploration_progress import current
 
-    if not current(session, run):
+    if not current(session, run) or not product_read_relevance.current(session, run):
         return None
     dependencies = run.research_state["exploration"].get("adaptive_dependencies")
     if not dependencies or not exploration.local_dependencies_current(session, run):
         return None
     question = next((q for q in run.research_state["questions"] if q["id"] == question_id), None)
-    if not question or not question.get("trigger"):
+    if not question:
+        return None
+    from . import product_branch_assessment as branch_assessment
+
+    if branch_assessment.enabled(run) and question.get("branch_assessment"):
+        return branch_assessment.context(session, run, question, dependencies)
+    if branch_assessment.enabled(run) and question.get("completed_at"):
+        return None  # Unknown assessment is not authority to repeat completed research.
+    if not question.get("trigger"):
         return None
     ordinary = not question.get("reconsideration")
     if ordinary and not open_context_current(session, run, question, dependencies):
@@ -150,11 +159,14 @@ def context(session, run):
 
 
 def suggestion(session, run):
+    from . import product_branch_assessment as branch_assessment
+
     if (not exploration.enabled(run) or run.status in ACTIVE
-            or run.research_state["exploration"].get("continued_by") or not references_current(session, run)):
+            or run.research_state["exploration"].get("continued_by") or not references_current(session, run)
+            or not branch_assessment.current(session, run)):
         return None
     for question in sorted(run.research_state["questions"], key=lambda q: (-q["priority"], q["created_at"], q["id"])):
-        if question["status"] not in {"open", "unresolved", "investigating"}:
+        if question["status"] not in {"open", "unresolved", "investigating"} and not question.get("branch_assessment"):
             continue
         value = saved_context(session, run, question["id"])
         if value:

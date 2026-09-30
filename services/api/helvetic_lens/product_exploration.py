@@ -72,6 +72,10 @@ No invented facts, URLs, coverage, medical/legal conclusions or hidden reasoning
 If an early_orientation is supplied, recheck its possible meanings against ALL the
 current passages, including contrary evidence. Explain the current interpretation
 in understanding; do not simply repeat an earlier guess or treat it as user consent.
+Question assessments are earlier source-bound AI checkpoints, not settled answers.
+Use their limits and cited material when preparing this briefing; revise them only
+with a source-grounded explanation. Unassessed questions remain unknown, regardless
+of captured material or completed jobs.
 Return the requested JSON only. A bounded preliminary briefing is not human review.
 """
 EARLY_SYSTEM = """Give a concise early orientation while source research CONTINUES.
@@ -152,13 +156,15 @@ def enabled(run):
 
 
 def initial(*, previous=None):
+    from . import product_branch_assessment as branch_assessment
+
     limits = research.Limits(branches=4, depth=2, sources_per_branch=2,
         candidates_per_branch=4, search_requests=12, source_fetches=6,
         model_calls=16, decision_calls=40, active_seconds=360)
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
-            "open_check_contract": OPEN_CHECK_CONTRACT,
+            "open_check_contract": OPEN_CHECK_CONTRACT, "branch_assessment_contract": branch_assessment.CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -181,6 +187,7 @@ def prepare(session, run, *, early=False):
         informed.prepare(session, run, value)
     if not early:
         value["research_scope"] = projection(session, run)["research_scope"]
+        value["question_assessments"] = projection(session, run)["question_assessments"]
     if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment_question"] = {"contract": ASSESSMENT_CONTRACT,
             "question_id": state["previous"]["follow_up_id"], "question": run.question}
@@ -291,7 +298,12 @@ def validated_assessment(session, run, supplied, result):
             or selected.get("question_id") != expected_id or selected.get("question") != run.question
             or result.assessment.question_id != expected_id):
         fail("Assessment does not match the selected question.", 422, "invalid_evidence")
-    assessment = result.assessment
+    value = validated_question_points(session, run, supplied, result.assessment)
+    return {**value, **target, "investigation_id": run.id,
+        "selected_from_investigation_id": selected["investigation_id"]}
+
+
+def validated_question_points(session, run, supplied, assessment):
     if any(not v.strip() or len(v) > 500 for v in assessment.limitations):
         fail("Unbounded assessment limitation.", 422)
     refs = [ref for point in assessment.points for ref in point.evidence]
@@ -307,18 +319,20 @@ def validated_assessment(session, run, supplied, result):
     value = assessment.model_dump()
     for p, point in zip(value["points"], assessment.points):
         for ref, draft in zip(p["evidence"], point.evidence):
-            if draft.source_id not in supplied_ids:
+            if draft.source_id not in supplied_ids or draft.source_id not in available or not any(
+                    p["passage"] == draft.locator and draft.quote in p["text"]
+                    for source in supplied["sources"] if source["id"] == draft.source_id for p in source["excerpts"]):
                 fail("Assessment evidence was not supplied.", 422, "invalid_evidence")
             ref.update(citation(available[draft.source_id], draft))
-    return {**value, **target, "investigation_id": run.id,
-        "selected_from_investigation_id": selected["investigation_id"]}
+    return value
 
 
 def adaptive_current(session, run):
+    from . import product_branch_assessment as branch_assessment
     from .product_exploration_followups import references_current
     from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run)
+    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run)
 
 
 def local_dependencies_current(session, run):
@@ -371,6 +385,7 @@ def projection(session, run):
     value.pop("adaptive_dependencies", None)
     value.pop("capture_comparison", None)
     value.pop("assessment_contract", None)
+    value.pop("branch_assessment_contract", None)
     value.pop("scope_contract", None)
     value.pop("activity_contract", None)
     value.pop("recovery_contract", None)
@@ -421,6 +436,9 @@ def projection(session, run):
         orientation.update(status="evidence_changed", briefing=None)
     next_check = suggestion(session, run)
     value["next_check"] = public_context(next_check) if next_check else None
+    from . import product_branch_assessment as branch_assessment
+
+    value["question_assessments"] = branch_assessment.projection(session, run, invalid=value["status"] == "evidence_changed")
     value["research_scope"] = research_scope.observed(session, run, available,
         invalid=value["status"] == "evidence_changed")
     value["current_activity"] = activity.projection(session, run, available,

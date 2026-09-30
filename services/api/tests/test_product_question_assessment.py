@@ -195,7 +195,16 @@ def test_current_inputs_fence_assessment_and_private_material_is_excluded(signed
         final = client.get(root + "/investigations/" + child["id"]).json()
     assert final["exploration"]["briefing"] is None
     assert final["exploration"]["status"] == "evidence_changed"
-    assert "assessment" not in json.dumps(final["exploration"])
+    assert final["exploration"]["question_assessments"] == {
+        "contract": "branch-question-assessment/v1",
+        "status": "evidence_changed",
+    }
+    # The status-only contract name includes "assessment"; no assessment data
+    # or internal receipt may survive a changed input.
+    serialized = json.dumps(final["exploration"])
+    assert '"assessment":' not in serialized
+    assert '"assessments":' not in serialized
+    assert '"branch_assessment":' not in serialized
     assert unquoted_id
 
 
