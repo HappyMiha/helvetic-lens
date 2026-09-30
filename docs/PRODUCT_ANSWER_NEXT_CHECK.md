@@ -1,6 +1,6 @@
 # A next check tied to the selected answer — 1.72
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. Parent tasks
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. Parent tasks
 MV2-002/020/024 and full architecture/live semantic/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -112,7 +112,33 @@ cases cover one explicit linked action for three incomplete outcomes, missing or
 mismatched annotation, answered/no-assessment/changed states, read-only access and
 actual overlapping-poll/denial races. Exact payloads keep the existing question
 identity; client-supplied annotation is never used to authorize work.
-Source/privacy/parity and final backlog status gates are release prerequisites.
-Production activation remains pending. These fictional fixtures prove mechanics,
+Source/privacy/parity and final backlog status gates passed.
+Production activation is recorded below. These fictional fixtures prove mechanics,
 provenance and access boundaries, not live semantic quality or human acceptance.
 The original affected run completed with 84 passes and three real failures: changed in-flight candidate, contract and source metadata left an older generic suggestion visible. The persistent invalid-input guard fixes this gap. All 33 affected overlapping cases then passed, including those three failures, actual next worker search, input/answer changes, legacy/no-read/required-output and saved-check continuity. The initial two cases and affected rerun overlap the 87 distinct cases; they are not additional coverage.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `14cf9c66434a9ca1206c4e449fd7c27fdef7da00` activated as
+`git-14cf9c66434a` at 2026-09-30T14:08:05+00:00 through the normal
+release controller. Legal `f93bfb49a1d921eac000ec33b1e66950f7680426` and Pharma
+`6883ba7eeccf96cf965da9e5cd40a857782207e2` are active in the existing public Sites
+71/71, since
+2026-09-30T14:05:21.783222+00:00 and
+2026-09-30T14:06:25.203444+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T14:09:17.403808+00:00 confirmed 57 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 53 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`answer-next-check-1.72-production.json`, SHA256
+`3c9a9d831b4e879b784e4d7688a503023237d12cb8f4cf1e3ab245e46481eaf1`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: useful research progress across
+episodes, including possible repeated public queries before an early direction
+choice. Audit first; no automatic expansion or unlimited history synthesis.
