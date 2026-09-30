@@ -175,6 +175,7 @@ def enabled(run):
 def initial(*, previous=None):
     from . import product_branch_assessment as branch_assessment
     from . import product_question_renewal as renewal
+    from .product_early_clarification import CONTEXT_CONTRACT as DIRECTION_CONTEXT_CONTRACT
     from .product_early_clarification import CONTRACT as CLARIFICATION_CONTRACT
 
     limits = research.Limits(branches=4, depth=2, sources_per_branch=2,
@@ -189,6 +190,7 @@ def initial(*, previous=None):
             "research_update_contract": branch_assessment.UPDATE_CONTRACT,
             "purpose_contract": activity.PURPOSE_CONTRACT,
             "clarification_contract": CLARIFICATION_CONTRACT,
+            "direction_context_contract": DIRECTION_CONTEXT_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -447,6 +449,7 @@ def projection(session, run):
     value.pop("activity_contract", None)
     value.pop("purpose_contract", None)
     value.pop("clarification_contract", None)
+    value.pop("direction_context_contract", None)
     value.pop("orientation_context", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
@@ -496,6 +499,9 @@ def projection(session, run):
         if orientation:
             orientation.update(status="evidence_changed", briefing=None)
     value["continuation"] = context(session, run)
+    value["selected_direction"] = clarification.context(session, run)
+    if value["selected_direction"] and value["status"] == "evidence_changed":
+        value["selected_direction"] = {"status": "evidence_changed"}
     if value["continuation"] and value["continuation"]["status"] == "evidence_changed" and orientation:
         orientation.update(status="evidence_changed", briefing=None)
     next_check = suggestion(session, run)

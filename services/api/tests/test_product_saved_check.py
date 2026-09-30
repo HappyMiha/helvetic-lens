@@ -12,6 +12,7 @@ from test_product_exploration import QUESTION, start
 from test_product_investigations import tick
 from test_product_iterative_research import complete
 
+from helvetic_lens import product_exploration as exploration
 from helvetic_lens import product_exploration_followups as followups
 from helvetic_lens import product_iterative_research as research
 from helvetic_lens.product_investigation_models import Investigation, InvestigationSource, WebResearchPolicy
@@ -225,13 +226,14 @@ def test_withdrawn_ancestor_hides_a_child_early_interpretation_too(signed, monke
     with service.db.session() as session:
         saved = session.get(Investigation, child["id"])
         source = session.scalar(select(InvestigationSource).where(InvestigationSource.investigation_id == saved.id))
-        state = deepcopy(saved.research_state)
-        state["exploration"]["orientation"]={"status":"ready","briefing":{
-            "interpretations":[{"source_id":source.id,"sha256":source.sha256,"quote":PASSAGE,"locator":"p1",
+        supplied = exploration.prepare(session, saved, early=True)
+        result = exploration.ClarifyingOrientation.model_validate({
+            "interpretations":[{"source_id":source.id,"quote":PASSAGE,"locator":"p1",
                 "meaning":"A tentative view informed by the earlier selected context.","why":"A later source mentions instalments.","signal":"possible"}],
-            "uncertainties":["The explanation remains tentative."],
-            "source_dependencies":[{"source_id":source.id,"sha256":source.sha256}]}}
-        saved.research_state=state
+            "uncertainties":["The explanation remains tentative."]})
+        # New early checkpoints require their complete source/claim/read receipt,
+        # even without a clarification fork. Do not bypass that production gate.
+        exploration.apply_orientation(session, saved, supplied, result)
         session.commit()
     assert client.get(root + "/investigations/" + child["id"]).json()["exploration"]["orientation"]["briefing"]
     exclude(service, identity, value["exploration"]["next_check"]["source"]["id"])

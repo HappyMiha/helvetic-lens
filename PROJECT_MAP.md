@@ -35,6 +35,7 @@ native workflows are preserved during incremental migration.
 The new default entry uses [research before monitoring](docs/PRODUCT_RESEARCH_FIRST.md):
 bounded exploration, cited orientation and an explicit next direction; no recurrence
 is inferred from the first question.
+[Selected direction context](docs/PRODUCT_SELECTED_DIRECTION.md) is VERIFYING production activation: retain the chosen rationale and earlier passage in the existing planner and reader.
 [Optional early clarification](docs/PRODUCT_EARLY_CLARIFICATION.md) is verified within scope: one consequential source-backed choice through existing pause/reply.
 [Early cited orientation](docs/PRODUCT_EARLY_ORIENTATION.md) adds a tentative reading
 while that bounded episode continues; its release evidence remains separate.

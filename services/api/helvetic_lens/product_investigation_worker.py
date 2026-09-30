@@ -10,6 +10,7 @@ from uuid import uuid4
 from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
+from . import product_early_clarification as clarification
 from . import product_exploration as exploration
 from . import product_exploration_activity as activity
 from . import product_exploration_progress as progress
@@ -417,7 +418,9 @@ async def execute(service, job_id, worker):
         if state.get("inflight") != work["token"]:
             return {"id": job_id, "state": "stale_result_discarded"}
         blocked = excluded(session, parent)
-        if not exploration.adaptive_current(session, run) or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", [])):
+        if (not exploration.adaptive_current(session, run)
+                or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", []))
+                or not clarification.input_current(session, run, work.get("input", {}).get("selected_direction"))):
             failed = True
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1

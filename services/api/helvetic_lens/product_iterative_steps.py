@@ -36,6 +36,9 @@ def prepare(session, run, branch, state, work):
     work["limits"] = run.research_state["limits"]
     if branch.phase == "plan":
         work["input"] = {"question": run.question, "branch_slots": min(6, max(2, work["limits"]["branches"] // 2))}
+        direction = clarification.context(session, run)
+        if direction and direction["status"] == "ready":
+            work["input"]["selected_direction"] = direction
         if exploration.enabled(run):
             work["exploratory"] = True
             previous = run.research_state["exploration"].get("previous")
@@ -107,6 +110,8 @@ async def execute(service, work, seconds):
         system += progress.SYSTEM
     if phase == "plan" and work.get("exploratory"):
         system += exploration.PLAN
+    if phase == "plan" and work["input"].get("selected_direction"):
+        system += clarification.CONTEXT_SYSTEM
     work["model_route"] = {"provider": service.settings.apertus_provider, "model": service.settings.apertus_model,
         "basis": "Workspace configuration used for this request; provider response does not expose model identity here."}
     raw = await service.model_client.complete(system, json.dumps(work["input"], ensure_ascii=False),
