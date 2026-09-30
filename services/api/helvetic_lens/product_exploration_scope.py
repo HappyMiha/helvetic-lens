@@ -1,5 +1,6 @@
 """Observed public research work, never a score for coverage or answer quality."""
 from . import product_query_recovery as query_recovery
+from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import rows
@@ -18,7 +19,11 @@ failed reads and bounded checks of already retrieved alternatives; captures do n
 prove equal authority, relevance or an answer. Preserve exhausted options and
 unfinished work. query_recovery records an unconfirmed alternate search wording,
 not corrected intent or evidence. Distinguish a proposed query from executed
-retrieval and actual captures. Original question remains authoritative. No extra model request.
+retrieval and actual captures. Original question remains authoritative. read_relevance contains AI assessments of
+actual read passages with exact quotes, not source truth or human review. Context
+and counterevidence can help; absent assessments and no claims are not evidence of
+irrelevance. Additional reading is bounded, not proof of a useful answer. Preserve
+entity/jurisdiction/date/incomplete-reading limitations. No extra model request.
 """
 RESOURCES = {"search_requests", "source_fetches", "model_calls", "decision_calls",
     "active_seconds", "branch_budget", "depth_budget"}
@@ -87,4 +92,5 @@ def observed(session, run, available, *, invalid=False):
         "questions": {"open": len(pending), "not_started": sum(not q.get("branch_id") for q in pending)},
         "budget_stops": sorted(stops & RESOURCES),
         "source_recovery": recovery.projection(session, run, available),
-        "query_recovery": query_recovery.projection(session, run, available)}
+        "query_recovery": query_recovery.projection(session, run, available),
+        "read_relevance": read_relevance.projection(session, run, available)}

@@ -10,6 +10,7 @@ from . import product_exploration_progress as progress
 from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
 from . import product_query_recovery as query_recovery
+from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -80,6 +81,8 @@ async def execute(service, work, seconds):
         "brief": (exploration.Briefing, exploration.SYSTEM),
         "orient": (exploration.EarlyOrientation, exploration.EARLY_SYSTEM),
     }[phase]
+    if phase == "extract" and work.get("read_relevance"):
+        schema, system = read_relevance.ReadExtraction, system + read_relevance.SYSTEM
     if phase == "brief" and work["input"].get("assessment_question"):
         schema, system = exploration.AssessedBriefing, system + exploration.ASSESSMENT_SYSTEM
     if phase == "brief" and work["input"].get("research_scope"):
@@ -100,6 +103,7 @@ async def execute(service, work, seconds):
 
 
 def settle(branch, state):
+    read_relevance.settle(branch, state)
     recovery.settle(branch, state)
     if branch.phase == "gate" and (state.get("gate_index", 0) >= len(state.get("candidates", []))
             or len(state.get("items", [])) >= recovery.selection_limit(state)):

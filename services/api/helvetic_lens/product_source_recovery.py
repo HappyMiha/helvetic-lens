@@ -29,7 +29,9 @@ def failed_read(state):
 
 
 def selection_limit(state):
-    return state.get("source_limit", 2) + (state["source_recovery"]["failed_reads"] if recorded(state) else 0)
+    from .product_read_relevance import selection_slots
+
+    return state.get("source_limit", 2) + (state["source_recovery"]["failed_reads"] if recorded(state) else 0) + selection_slots(state)
 
 
 def settle(branch, state):

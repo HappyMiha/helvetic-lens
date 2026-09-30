@@ -16,6 +16,7 @@ from . import product_exploration_progress as progress
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
 from . import product_query_recovery as query_recovery
+from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .config import DomainError
@@ -323,6 +324,8 @@ async def execute(service, job_id, worker):
                             work["input"]["selected_public_check"] = work["selected_public_check"]
                         if work.get("capture_progress") and "input" in work:
                             work["input"]["capture_progress"] = work["capture_progress"]
+                        if branch.phase == "extract":
+                            read_relevance.prepare(session, run, branch, state, source, work)
                         budget_before = deepcopy(run.research_state)
                         if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
                             work = None
@@ -424,7 +427,7 @@ async def execute(service, job_id, worker):
             failed = True
         if work["phase"] == "extract":
             source = session.get(InvestigationSource, work["source_id"])
-            if source.url in blocked:
+            if source.url in blocked or (work.get("read_relevance") and not read_relevance.current(session, run, work["read_dependencies"])):
                 failed = True
         if research.enabled(run):
             research.elapsed(run, perf_counter() - started)
@@ -503,6 +506,7 @@ async def execute(service, job_id, worker):
                     state["comparison_done"] = True
             else:
                 try:
+                    assessed = read_relevance.validate(session, run, source, work, result)
                     if research.enabled(run):
                         research.extract(session, run, source, result)
                     else:
@@ -510,6 +514,7 @@ async def execute(service, job_id, worker):
                 except DomainError:
                     failed = True
                 if not failed:
+                    read_relevance.remember(run, state, work, assessed)
                     if state.get("recurring_web"):
                         source.snapshot = {**source.snapshot, "analysis_completed": True}
                     next_extraction(state)

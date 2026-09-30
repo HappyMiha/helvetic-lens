@@ -9,6 +9,7 @@ from . import product_exploration_activity as activity
 from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
 from . import product_query_recovery as query_recovery
+from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
 from .db import utcnow
 from .product_api import fail, iso
@@ -155,7 +156,7 @@ def initial(*, previous=None):
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
-            "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
+            "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
 def sources(session, run):
@@ -308,7 +309,7 @@ def adaptive_current(session, run):
     from .product_exploration_followups import references_current
     from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run)
+    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run)
 
 
 def local_dependencies_current(session, run):
@@ -365,6 +366,8 @@ def projection(session, run):
     value.pop("activity_contract", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
+    value.pop("read_relevance_contract", None)
+    value.pop("read_dependencies", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):
