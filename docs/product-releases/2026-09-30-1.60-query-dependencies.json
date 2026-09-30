@@ -1,0 +1,546 @@
+{
+  "verified_at": "2026-09-30T01:26:42.526414+00:00",
+  "current": {
+    "sha": "a2126ce92f617cb2e87c0dbcda607b61263bb4ce",
+    "release": "git-a2126ce92f61",
+    "summary": "fix: validate current evidence dependencies before reformulating queries",
+    "deployed_at": "2026-09-30T01:26:31+00:00"
+  },
+  "native": {
+    "release": "git-a2126ce92f61",
+    "containers": [
+      {
+        "name": "api",
+        "image": "helvetic-lens-api:git-a2126ce92f61",
+        "running": true
+      },
+      {
+        "name": "worker-cpu",
+        "image": "helvetic-lens-api:git-a2126ce92f61",
+        "running": true
+      },
+      {
+        "name": "worker-ai",
+        "image": "helvetic-lens-api:git-a2126ce92f61",
+        "running": true
+      },
+      {
+        "name": "scheduler",
+        "image": "helvetic-lens-api:git-a2126ce92f61",
+        "running": true
+      },
+      {
+        "name": "web",
+        "image": "helvetic-lens-web:git-a2126ce92f61",
+        "running": true
+      }
+    ],
+    "runtime": {
+      "hashes": {
+        "domain_packs": "151a166af1de12fbe436ec5de8e6a7735504a80bd3ddb955f1da5ad5b051277b",
+        "legal_profiles": "177ea873ed2b47c4fd1a8c3cb7edf5790964093f84463bd2eba589487fa0bb31",
+        "product_api": "c8503644afe87a8b950cbdea36d64c20d87c62ade51a58c9edc5d8a519d87d39",
+        "decision_search": "7a48bde4be19475d3ffeccd73fd825be4155cb37ebc916e88412310098b2c99a",
+        "product_investigations": "1f1e42d2f29ec3b0ae71092fbcfe5b1f80645e13a6b1a260fbd543d98ad7f75d",
+        "product_domain_context": "4e3f0824a066b6733063163e1ed7d3c622773113bcae054c32fe378295d34a25",
+        "product_models": "26478fa5f3b63daec451768b629ce2c38ef6a89599bc787e6341f00232aaa4f0",
+        "product_access": "946594848b272f41430529943da476a59a2a5d138de1122dd7ecb994d54af9c5",
+        "product_operations": "ad95ad9ff7cec213aedf8bde5b6c5473fa943059dbfa79e9432fb646a8695c86",
+        "dossier_templates": "3907660133c9f8122b3aa2f96437703fc3579d10506c56c560039ee21a0b0959",
+        "product_templates": "188845b78716c18a80c850a500bcf9913b3e9b98f806ca6e2291b4f54a62bfe2",
+        "product_coverage": "ed81f4ffb515e5f8532f3694075c4f9ad8f4dbd0dc461347ac9eafc6f6ea85d1",
+        "topic_coverage": "7bab70d8959d19ebb4ea9cb3f7970c8510d45596c44eba09dc31a653f2cb8c55",
+        "product_sources": "27a4d991e0dcf68ff2ebab84a034f415d4b021cc451ba56f17a03636f284ec27",
+        "product_investigation_models": "f2e295c8e787592550fa7d22b64add1b4739a88ade2111518091daaa4dd21aa4",
+        "product_investigation_worker": "56cd326044e18a6dce43a70260af7f85f13fa31c5673a89278f1ac3463e7aa46",
+        "product_investigation_api": "7c36fdff3babd4961aa4b86bda60d114eaff8ed6233438de12d4a52af4550b1e",
+        "product_iterative_research": "afbb96aaacef8ce0404f485d03acd04f6b2c2430a0c95a89ea39d6bb31167c97",
+        "product_iterative_steps": "20598051755fe6153a5cd2fe10d202397cf4f255abf41306abe144d204f9bae5",
+        "product_research_gate": "72258701acc7d9b752c3e1916f0059bd919aa3c7cf1f3ea9764070c307ee5542",
+        "decision_sources": "b584f466ecee6340ca694932158cc7c34b7289b2513b7295c831a50fdd628e1e",
+        "decision_engines": "7c357ba9ab9bf868f91b7d9bc9c6eda21db1fb9ced65612140061dc29ef6e35b",
+        "product_contributions": "26a4e3b9b71d04be249956208ed5ab98002e4ea241fef316ffd4f9b5cd479abc",
+        "product_query_recovery": "73202a56b9dcb82f72a4f8904c6c58a69c096430d44621e282a9157e9a0282ef",
+        "product_source_recovery": "7c40850c44b21793ea3c660fe97bc2a1e23013eecfafdf6b493cbcf982d61d04",
+        "product_exploration_activity": "e6e7c6f3ab6b4b6168881059ecae3b2f5700eb30de02e351421948d998449265",
+        "product_exploration_scope": "5366c9d4708a86f6393dce945c324c04c0ebc9892dcf84fef8b3fa5db19f16d9",
+        "product_exploration_progress": "20d269a3e6b1d59d824781af853fdc9c972218caaba3dde6aa2917e1032c58b8",
+        "product_exploration_followups": "9719121bb55808c8500d1d552d313aec0f83b28540c2368eda44b6cf649e4623",
+        "product_question_start": "4f7b52cba01b74c0d3b627f6ef62e138331cf72ee383f54e0de3887862c96f76",
+        "product_exploration": "664257f9e5b9449421167d41449c0745fc05b7b0a7cbc95548fd9c147115cdd8",
+        "product_exploration_api": "b171a325330433e26657f11a13dcce2653815ce7ab9592de63422f166f23a16a",
+        "product_web_research_api": "a1c6a11ab259342ef53f361ebe6bf975c4c8098051faafd06b774de283a8e8ae",
+        "research_evaluation": "6f4dac20a2ba713e253b7ec57f78fd64bfb859e0853b6f7ca9583da0b9304880",
+        "research_gate_policy": "d17e54a7841f2985dbc69ab82d56873045970969ff6633f3dbfd3cd1210a97fe",
+        "product_source_relationships": "29b0ff7359a586080e206b9e14f06890364a3fae942ceb851989706fe2ef4607",
+        "product_claim_evolution": "f88b8e8d3070ba6fb293f169ea429f46cb70e4fbe8d47e650820e96ef89abe4f",
+        "product_claim_evolution_api": "da5a9ca5670312aeec78cb781423d27f0df9b462aee5846cb4200a3ac2b8f335",
+        "product_entity_identity": "b8aa6ce822ccdfd9a0b3ad6428f7fc1de1ba0f49b3c4e768f7d014d494831f6d",
+        "product_entity_identity_api": "1333616ac3c0aa36b5db86df6d38da9ede7ab6503c546249b7c03067f6f86d78",
+        "product_publications": "fba379df131774c0e4e6070e039f548827711f7763d4b7bf29cf401d8003fd86",
+        "product_community": "5969f7bcf70e6c22f07b267a622ece226b71873510f31664a0a1bae599b29565",
+        "product_claim_review": "6f895f873f9a47eae4f8da7c41f27992526d3c68df0b0716773e9621b7cc67dc",
+        "product_claim_review_api": "10f6701b660c14cf3db8b54b345cc9beb35657bccccc81823557c0d41ea3dd20",
+        "product_search_review": "e604a5f3210ac26e30a4864b1061c38b847725b8b44f053217185da11edd011a",
+        "product_evidence_search": "a42e662571521201d7d8e976c25fe1201863750cfc2b45ad6983b210703642c6",
+        "product_claim_synthesis": "3fcf3870fa019eb3d48754a78ccc61ef27cae18b338d8b9b164e1dca035e0acf",
+        "product_research": "e7f2e20249078b0376c4e0d9937b6d8db302886c94207f767e59002ca4f49140",
+        "product_answer_review": "a8994c3679e40e9669d72ca001b0fccbc01d635a78136da40afe35b91e10a340",
+        "product_claim_interpretation": "bf6bfe6a3b9d52267b4b93e169d5138f836f7819254b51fc5a231315c429e5d7",
+        "product_source_authority": "8409eaae5183360518e27ecf8723988f87ba91dfb546946ea00636d0f953950d"
+      },
+      "packs": {
+        "pharma": {
+          "id": "PharmaPack",
+          "version": "1.4.0",
+          "domain": "PHARMA",
+          "label": "Pharmaceutical monitoring",
+          "focus": "Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
+          "context_schema_id": "pharma-context/v1",
+          "template_ids": [
+            "market-access",
+            "regulatory-monitor",
+            "safety"
+          ],
+          "source_roles": [
+            {
+              "category": "UNASSESSED",
+              "label": "Not assessed"
+            },
+            {
+              "category": "SECONDARY_COMMENTARY",
+              "label": "Secondary commentary"
+            },
+            {
+              "category": "USER_DOCUMENT",
+              "label": "User document"
+            },
+            {
+              "category": "USER_STATEMENT",
+              "label": "User statement"
+            },
+            {
+              "category": "AI_INTERPRETATION",
+              "label": "AI interpretation"
+            },
+            {
+              "category": "REGULATORY_PUBLICATION",
+              "label": "Regulatory publication"
+            },
+            {
+              "category": "REIMBURSEMENT_PUBLICATION",
+              "label": "Reimbursement publication"
+            },
+            {
+              "category": "CLINICAL_PUBLICATION",
+              "label": "Clinical publication"
+            },
+            {
+              "category": "TRIAL_REGISTRY",
+              "label": "Trial registry record"
+            },
+            {
+              "category": "CLINICAL_GUIDANCE",
+              "label": "Clinical guidance"
+            },
+            {
+              "category": "COMPANY_COMMUNICATION",
+              "label": "Company communication"
+            }
+          ],
+          "claim_types": [
+            {
+              "kind": "UNKNOWN",
+              "claim_type": "UNCLASSIFIED",
+              "label": "Not classified"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "USER_STATEMENT",
+              "label": "User statement"
+            },
+            {
+              "kind": "AI_INTERPRETATION",
+              "claim_type": "AI_ANALYSIS",
+              "label": "AI analysis"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "REGULATORY_STATUS",
+              "label": "Regulatory status reported by a source"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "MARKET_ACCESS_STATUS",
+              "label": "Market access status reported by a source"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "SAFETY_SIGNAL",
+              "label": "Reported safety signal"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "CLINICAL_RESULT",
+              "label": "Reported clinical result"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "LABEL_CHANGE",
+              "label": "Reported label change"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "REIMBURSEMENT_CHANGE",
+              "label": "Reported reimbursement change"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "SUPPLY_EVENT",
+              "label": "Reported supply event"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "COMPETITOR_EVENT",
+              "label": "Reported competitor event"
+            },
+            {
+              "kind": "AI_INTERPRETATION",
+              "claim_type": "EVIDENCE_INTERPRETATION",
+              "label": "Interpretation of evidence"
+            }
+          ]
+        },
+        "legal": {
+          "id": "LegalPack",
+          "version": "1.4.0",
+          "domain": "LEGAL",
+          "label": "Legal monitoring",
+          "focus": "Legal developments, proceedings and regulatory changes relevant to your question.",
+          "context_schema_id": "legal-context/v1",
+          "template_ids": [
+            "legal-question",
+            "legislative-monitor",
+            "case-dispute"
+          ],
+          "source_roles": [
+            {
+              "category": "UNASSESSED",
+              "label": "Not assessed"
+            },
+            {
+              "category": "SECONDARY_COMMENTARY",
+              "label": "Secondary commentary"
+            },
+            {
+              "category": "USER_DOCUMENT",
+              "label": "User document"
+            },
+            {
+              "category": "USER_STATEMENT",
+              "label": "User statement"
+            },
+            {
+              "category": "AI_INTERPRETATION",
+              "label": "AI interpretation"
+            },
+            {
+              "category": "PRIMARY_BINDING",
+              "label": "Primary binding material"
+            },
+            {
+              "category": "PRIMARY_NON_BINDING",
+              "label": "Primary non-binding material"
+            },
+            {
+              "category": "CASE_LAW",
+              "label": "Case law"
+            },
+            {
+              "category": "OFFICIAL_GUIDANCE",
+              "label": "Official guidance"
+            },
+            {
+              "category": "PARLIAMENTARY_MATERIAL",
+              "label": "Parliamentary material"
+            }
+          ],
+          "claim_types": [
+            {
+              "kind": "UNKNOWN",
+              "claim_type": "UNCLASSIFIED",
+              "label": "Not classified"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "USER_STATEMENT",
+              "label": "User statement"
+            },
+            {
+              "kind": "AI_INTERPRETATION",
+              "claim_type": "AI_ANALYSIS",
+              "label": "AI analysis"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "STATUTORY_RULE",
+              "label": "Statutory rule"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "CASE_HOLDING",
+              "label": "Court holding"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "FACT",
+              "label": "Fact asserted by a source"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "FACT",
+              "label": "Fact asserted by a user"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "PARTY_ARGUMENT",
+              "label": "Party argument"
+            },
+            {
+              "kind": "AI_INTERPRETATION",
+              "claim_type": "INTERPRETATION",
+              "label": "Interpretation of sources"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "EXCEPTION",
+              "label": "Exception stated by a source"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "PROCEDURAL_REQUIREMENT",
+              "label": "Procedural requirement"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "JURISDICTION_RULE",
+              "label": "Jurisdiction rule"
+            }
+          ]
+        },
+        "loyer": {
+          "id": "LegalPack",
+          "version": "1.4.0",
+          "domain": "LEGAL",
+          "label": "Legal monitoring",
+          "focus": "Legal developments, proceedings and regulatory changes relevant to your question.",
+          "context_schema_id": "legal-context/v1",
+          "template_ids": [
+            "legal-question",
+            "legislative-monitor",
+            "case-dispute"
+          ],
+          "source_roles": [
+            {
+              "category": "UNASSESSED",
+              "label": "Not assessed"
+            },
+            {
+              "category": "SECONDARY_COMMENTARY",
+              "label": "Secondary commentary"
+            },
+            {
+              "category": "USER_DOCUMENT",
+              "label": "User document"
+            },
+            {
+              "category": "USER_STATEMENT",
+              "label": "User statement"
+            },
+            {
+              "category": "AI_INTERPRETATION",
+              "label": "AI interpretation"
+            },
+            {
+              "category": "PRIMARY_BINDING",
+              "label": "Primary binding material"
+            },
+            {
+              "category": "PRIMARY_NON_BINDING",
+              "label": "Primary non-binding material"
+            },
+            {
+              "category": "CASE_LAW",
+              "label": "Case law"
+            },
+            {
+              "category": "OFFICIAL_GUIDANCE",
+              "label": "Official guidance"
+            },
+            {
+              "category": "PARLIAMENTARY_MATERIAL",
+              "label": "Parliamentary material"
+            }
+          ],
+          "claim_types": [
+            {
+              "kind": "UNKNOWN",
+              "claim_type": "UNCLASSIFIED",
+              "label": "Not classified"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "USER_STATEMENT",
+              "label": "User statement"
+            },
+            {
+              "kind": "AI_INTERPRETATION",
+              "claim_type": "AI_ANALYSIS",
+              "label": "AI analysis"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "STATUTORY_RULE",
+              "label": "Statutory rule"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "CASE_HOLDING",
+              "label": "Court holding"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "FACT",
+              "label": "Fact asserted by a source"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "FACT",
+              "label": "Fact asserted by a user"
+            },
+            {
+              "kind": "USER_ASSERTION",
+              "claim_type": "PARTY_ARGUMENT",
+              "label": "Party argument"
+            },
+            {
+              "kind": "AI_INTERPRETATION",
+              "claim_type": "INTERPRETATION",
+              "label": "Interpretation of sources"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "EXCEPTION",
+              "label": "Exception stated by a source"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "PROCEDURAL_REQUIREMENT",
+              "label": "Procedural requirement"
+            },
+            {
+              "kind": "SOURCE_STATEMENT",
+              "claim_type": "JURISDICTION_RULE",
+              "label": "Jurisdiction rule"
+            }
+          ]
+        }
+      }
+    },
+    "nine_navigation_routes": true,
+    "checks": [
+      {
+        "path": "/api/monitoring-profiles/00000000-0000-0000-0000-000000000000",
+        "status": 401
+      },
+      {
+        "path": "/api/products/pharma/dossiers/00000000-0000-0000-0000-000000000000/coverage",
+        "status": 401
+      },
+      {
+        "path": "/api/products/legal/dossiers/00000000-0000-0000-0000-000000000000/coverage",
+        "status": 401
+      },
+      {
+        "path": "/api/products/loyer/dossiers/00000000-0000-0000-0000-000000000000/coverage",
+        "status": 401
+      },
+      {
+        "path": "/api/products/pharma/dossiers",
+        "status": 401
+      },
+      {
+        "path": "/api/products/legal/dossiers",
+        "status": 401
+      },
+      {
+        "path": "/api/products/loyer/dossiers",
+        "status": 401
+      }
+    ],
+    "retired_legacy_host": {
+      "unavailable": true
+    },
+    "schema": {
+      "migration": "0bd495bef125",
+      "research_state_column": true,
+      "context_column": true,
+      "template_column": true
+    },
+    "claim_review_schema": {
+      "table": true,
+      "reviewer_nullable": true,
+      "reviewer_erasure": true,
+      "claim_fences": 1,
+      "revision_unique": true
+    }
+  },
+  "repositories": [
+    {
+      "repository": "helvetic-lens",
+      "sha": "a2126ce92f617cb2e87c0dbcda607b61263bb4ce",
+      "clean": true,
+      "ahead_behind": [
+        0,
+        0
+      ]
+    },
+    {
+      "repository": "helveticlens-pharma",
+      "sha": "7e48a1077af755d8021e5ef23515c032338bfb9f",
+      "clean": true,
+      "ahead_behind": [
+        0,
+        0
+      ]
+    },
+    {
+      "repository": "helveticlens-legal",
+      "sha": "d874cb50d05cecfd892253d14410327a9c42e3a2",
+      "clean": true,
+      "ahead_behind": [
+        0,
+        0
+      ]
+    }
+  ],
+  "unchanged_client_receipt": {
+    "file": "query-recovery-1.60-production.json",
+    "sha256": "2c64de71253d4a342d757c0dc923c2684439c18154e4e08f33e7dee8f416b259",
+    "scope": "Frozen 1.60 exact Sites 59 asset/access verification; unchanged client artifacts not repeated after final documentation commit."
+  },
+  "fresh_product_homes": [
+    {
+      "product": "legal",
+      "url": "https://legal.helveticlens.ch",
+      "status": 200
+    },
+    {
+      "product": "pharma",
+      "url": "https://pharma.helveticlens.ch",
+      "status": 200
+    }
+  ],
+  "validation_unopened": true,
+  "scope": "Source dependency hardening activation. Verified bounded query reformulation release. Fresh exact native runtime/schema/routes, main alignment and product home availability. Existing Sites 59 retained; no browser, private dossiers or inference."
+}

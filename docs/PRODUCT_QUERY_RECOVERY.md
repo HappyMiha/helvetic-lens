@@ -1,6 +1,6 @@
 # Bounded query reformulation — 1.60
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. COMPLETE within bounded scope; Core and both clients verified. MV2-002/020/024,
 full architecture, live semantic quality and professional/human acceptance OPEN.
 
 ## Scope, dependencies and source readiness
@@ -63,7 +63,7 @@ loop. Current exclusions are checked before and after that request.
 Final dependency audit extends that boundary to every recorded source-triggered
 prior public query: its source must still be permitted at the recorded hash before
 and after reformulation. An excluded or changed trigger suppresses the proposal.
-The focused hardening checks passed; its native activation remains pending. No source
+The focused hardening checks and exact native activation passed. No source
 snippet, private evidence, note, provider error or review comment enters it.
 
 The original question and branch query remain unchanged. A recorded alternative
@@ -91,8 +91,7 @@ source-dependency cases);
 three final affected budget retests overlap that count. Thirty-two existing
 scope/activity/backlog cases passed. Fifty-six existing worker/exploration/source-recovery regression cases passed,
 for 118 distinct Core cases. Four additional final recovery cases after the
-source-dependency hardening overlap those totals. Initial production activation
-is verified below; final native hardening activation remains pending. Each client passed
+source-dependency hardening overlap those totals. Initial production and final native hardening activations are verified below. Each client passed
 302 tests, lint, types and its production build. Exact API lint passed after
 import/test formatting cleanup. Completed 1.22 overview archived verbatim into
 linked release history; the 512 KiB guard is unchanged.
@@ -116,5 +115,25 @@ validated builds without source changes. No private production dossier, paid
 inference, browser QA or frozen validation was used. Final review added current
 rights/hash validation for source-triggered prior queries, before/after the new
 model request. Three new durable cases and four affected recovery retests passed;
-its normal native activation must be verified before closing bounded acceptance.
+its normal native activation is now verified below.
 The clients are unchanged and must not be republished for this Core hardening.
+
+
+## Verified source-dependency hardening
+
+Core `a2126ce92f617cb2e87c0dbcda607b61263bb4ce` activated as
+`git-a2126ce92f61` at 2026-09-30T01:26:31+00:00.
+The [hardening receipt](product-releases/2026-09-30-1.60-query-dependencies.json)
+verifies 51 exact native modules, schema, nine routes, main alignment and both
+product homes. It reuses the frozen exact Sites 59 client receipt; unchanged
+clients were not republished. SHA256 `adaa215449384d6f14b7e832f1d8e04ccc46b1ef1d70edb42f23ef480dddf4a0`.
+
+All 118 distinct Core cases and 302 client cases/lint/types/builds each passed.
+Additional affected reruns overlap those counts. Current permission/version checks
+prevent a recorded revoked source-triggered question from entering reformulation
+or launching its result. Protected-value and shared-reader parity checks passed.
+Final English evidence follows normal native activation without client changes.
+Full architecture, live semantic quality and professional/human acceptance remain
+OPEN. Next: assess usefulness of actually read passages through the existing
+extraction request, with exact evidence, current rights and unchanged budgets;
+no live quality or new behavior is claimed by that read-only audit.

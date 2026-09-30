@@ -40,7 +40,7 @@ while that bounded episode continues; its release evidence remains separate.
 [Evidence-directed reinterpretation](docs/PRODUCT_ADAPTIVE_ORIENTATION.md) connects
 new passages to actual follow-up research; release evidence is tracked separately.
 [Selected-question assessment](docs/PRODUCT_QUESTION_ASSESSMENT.md) adds the bounded research outcome; Core and both clients verified.
-[Bounded query reformulation](docs/PRODUCT_QUERY_RECOVERY.md) is locally verified for successful but unproductive public searches; production activation pending.
+[Bounded query reformulation](docs/PRODUCT_QUERY_RECOVERY.md) is verified in Core and both clients for successful but unproductive public searches.
 [Bounded source recovery](docs/PRODUCT_SOURCE_RECOVERY.md) checks already retrieved alternatives after failed public reads within existing budgets; Core and both clients verified.
 [Current research activity](docs/PRODUCT_RESEARCH_ACTIVITY.md) binds visible work to a current worker receipt and expires stale activity; Core and both clients verified.
 [Observed research scope](docs/PRODUCT_RESEARCH_SCOPE.md) explains captured passages and unfinished work beside the conclusion; Core and both clients verified.
