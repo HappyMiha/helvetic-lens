@@ -1,6 +1,6 @@
 # Why this question is being checked — 1.68
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation.
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope.
 MV2-002/020/024, full architecture and semantic/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -81,7 +81,32 @@ cover planned/source purpose, unavailable metadata and real polling races; three
 existing cases now also verify purpose removal on expiry, delayed response and
 inactive/history views. The focused 13-case run overlaps the full suites.
 
-Final source/privacy/parity and backlog status gates are release prerequisites.
-Local checks passed; production activation remains pending. No paid/private live
+Final source/privacy/parity and backlog status gates passed.
+Local checks passed; production activation is recorded below. No paid/private live
 research, browser QA, new provider keys or frozen validation. These fixtures prove
 contracts and access behavior, not semantic usefulness or human acceptance.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `262561db8ed11a3fb0c8dccbe39a6e2a0e1decc1` activated as
+`git-262561db8ed1` at 2026-09-30T09:44:00+00:00 through the normal
+release controller. Legal `9dbe5ec1355d76d07b24700cdf19af37b2715b7b` and Pharma
+`0b6267625942ceb5d8de101b202249ae0863634e` are active in the existing public Sites
+67/67, since
+2026-09-30T09:40:35.204735+00:00 and
+2026-09-30T09:41:01.768314+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T09:45:08.806376+00:00 confirmed 55 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 51 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`research-purpose-1.68-production.json`, SHA256
+`bb3f465fcfedc93f6c5fdeba0add1793ea191cc9b65d2e7887ba71d48c2bd279`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: a consequential source-backed clarification within the existing
+early checkpoint/reply contracts, without a new questionnaire or inference request.

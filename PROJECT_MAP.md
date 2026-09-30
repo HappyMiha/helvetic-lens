@@ -44,7 +44,7 @@ new passages to actual follow-up research; release evidence is tracked separatel
 [Usefulness of read passages](docs/PRODUCT_READ_RELEVANCE.md) is verified in Core and both clients: source-contained assessments and bounded next candidates.
 [Bounded query reformulation](docs/PRODUCT_QUERY_RECOVERY.md) is verified in Core and both clients for successful but unproductive public searches.
 [Bounded source recovery](docs/PRODUCT_SOURCE_RECOVERY.md) checks already retrieved alternatives after failed public reads within existing budgets; Core and both clients verified.
-[Purpose of the current check](docs/PRODUCT_RESEARCH_PURPOSE.md) is VERIFYING production activation: explain the saved rationale within the existing activity.
+[Purpose of the current check](docs/PRODUCT_RESEARCH_PURPOSE.md) is verified within scope: explain the saved rationale within the existing activity.
 [Current research activity](docs/PRODUCT_RESEARCH_ACTIVITY.md) binds visible work to a current worker receipt and expires stale activity; Core and both clients verified.
 [Observed research scope](docs/PRODUCT_RESEARCH_SCOPE.md) explains captured passages and unfinished work beside the conclusion; Core and both clients verified.
 [Episode progress](docs/PRODUCT_EPISODE_PROGRESS.md) distinguishes repeated and changed captured material across continued research; Core and both clients verified.
