@@ -1,5 +1,6 @@
 """Scoped product access to native saved-page metadata and evidence readers."""
 import math
+from datetime import datetime
 
 from fastapi import Query, Request
 from sqlalchemy import select
@@ -65,6 +66,17 @@ def document_history_routes(router, service, actor):
             linked = document(session, product, identifier, version["law_id"], identity)
             return {"document_id": linked["id"], "version_id": version["id"],
                     "expected_revision": revision if recorded else None, "revision_recorded": recorded}
+
+    @router.get("/dossiers/{identifier}/documents/{law_id}/checks")
+    def checks(product: Product, identifier: str, law_id: str, request: Request,
+               offset: int = Query(default=0, ge=0, le=100000), as_of: datetime | None = None):
+        from .product_page_check_history import history
+
+        identity = actor(request)
+        with service.db.session() as session:
+            linked = document(session, product, identifier, law_id, identity)
+            parent, _ = dossier(session, product, identifier, identity.user_id)
+            return history(session, parent, linked, offset=offset, as_of=as_of)
 
     @router.get("/dossiers/{identifier}/documents/{law_id}/versions")
     def history(product: Product, identifier: str, law_id: str, request: Request,

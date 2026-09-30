@@ -772,3 +772,19 @@ DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.m
 ## Current research activity — 1.58
 
 DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Source coverage for a scheduled check — 1.78
+
+DONE within scope; [verified evidence](docs/PRODUCT_CHECK_SOURCE_COVERAGE.md). MV2-002/012/020/024 remain OPEN.
+
+## Readable monitoring outcomes — 1.77
+
+DONE within scope; [verified evidence](docs/PRODUCT_MONITORING_OUTCOMES.md). MV2-002/012/020/024 remain OPEN.
+
+## Evidence applicability — 1.76
+
+DONE within scope; [verified evidence](docs/PRODUCT_EVIDENCE_APPLICABILITY.md). MV2-002/020/024 remain OPEN.
+
+## Informed continuation — 1.75
+
+DONE within scope; [verified evidence](docs/PRODUCT_INFORMED_CONTINUATION.md). MV2-002/020/024 remain OPEN.

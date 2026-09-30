@@ -1,5 +1,9 @@
 # Helvetic Lens project map
 
+[Connected-page check history 1.79](docs/PRODUCT_PAGE_CHECK_HISTORY.md) is VERIFYING activation:
+native checks, saved versions and separately consented research in the existing
+Source coverage reader, with current source/corpus rights and honest unknown times.
+
 One agent develops complete features on **main**, following [the development cycle](docs/DEVELOPMENT.md).
 The shared platform is **helveticlens.ch on HappySnowman**, including Monitoring features.
 
