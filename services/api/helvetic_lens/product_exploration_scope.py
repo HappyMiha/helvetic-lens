@@ -1,4 +1,5 @@
 """Observed public research work, never a score for coverage or answer quality."""
+from . import product_query_recovery as query_recovery
 from . import product_source_recovery as recovery
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import rows
@@ -15,7 +16,9 @@ truth, complete coverage or an answer. Unknown scope must remain unknown. Do not
 invent missing operations, provider failures or reasons. source_recovery describes
 failed reads and bounded checks of already retrieved alternatives; captures do not
 prove equal authority, relevance or an answer. Preserve exhausted options and
-unfinished work. No extra model request.
+unfinished work. query_recovery records an unconfirmed alternate search wording,
+not corrected intent or evidence. Distinguish a proposed query from executed
+retrieval and actual captures. Original question remains authoritative. No extra model request.
 """
 RESOURCES = {"search_requests", "source_fetches", "model_calls", "decision_calls",
     "active_seconds", "branch_budget", "depth_budget"}
@@ -49,12 +52,17 @@ def observed(session, run, available, *, invalid=False):
     candidates = {"retrieved": 0, "not_evaluated": 0, "evaluation_unavailable": 0,
         "selected_not_read": 0}
     indexes = {"completed": 0, "unavailable": 0, "unknown_searches": 0}
+    checkpoints = []
     for branch in branches:
-        checkpoint = branch.checkpoint
+        prior = branch.checkpoint.get("query_recovery", {}).get("prior")
+        if prior:
+            checkpoints.append(prior)
+        checkpoints.append(branch.checkpoint)
+    for checkpoint in checkpoints:
         lanes = checkpoint.get("coverage", {}).get("retrieval", {}).get("lanes")
         if lanes is None:
             indexes["unknown_searches"] += sum(s.get("phase") == "search" and s.get("status") == "completed"
-                for s in checkpoint.get("steps", []))
+                for s in checkpoint.get("steps", [])[checkpoint.get("query_recovery", {}).get("start_step", 0):])
         else:
             indexes["completed"] += sum(lane.get("status") == "complete" for lane in lanes)
             indexes["unavailable"] += sum(lane.get("status") == "unavailable" for lane in lanes)
@@ -78,4 +86,5 @@ def observed(session, run, available, *, invalid=False):
             "unknown_reader_scope": sum(not isinstance(s.snapshot.get("text_truncated"), bool) for s in material)},
         "questions": {"open": len(pending), "not_started": sum(not q.get("branch_id") for q in pending)},
         "budget_stops": sorted(stops & RESOURCES),
-        "source_recovery": recovery.projection(session, run, available)}
+        "source_recovery": recovery.projection(session, run, available),
+        "query_recovery": query_recovery.projection(session, run, available)}

@@ -8,6 +8,7 @@ from . import legal_profiles
 from . import product_exploration_activity as activity
 from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
+from . import product_query_recovery as query_recovery
 from . import product_source_recovery as recovery
 from .db import utcnow
 from .product_api import fail, iso
@@ -154,7 +155,7 @@ def initial(*, previous=None):
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
-            "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
+            "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
 def sources(session, run):
@@ -363,6 +364,7 @@ def projection(session, run):
     value.pop("scope_contract", None)
     value.pop("activity_contract", None)
     value.pop("recovery_contract", None)
+    value.pop("query_recovery_contract", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
     available = sources(session, run)
     def changed(brief, groups):

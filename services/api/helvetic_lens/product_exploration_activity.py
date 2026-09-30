@@ -9,7 +9,7 @@ from .product_investigation_models import InvestigationBranch
 from .product_investigations import ACTIVE, rows
 
 CONTRACT = "research-activity/v1"
-PHASES = {"plan", "search", "gate", "gate_review", "read", "extract", "reflect", "orient", "brief", "compare"}
+PHASES = {"plan", "search", "gate", "gate_review", "read", "extract", "reflect", "orient", "brief", "compare", "reformulate"}
 
 
 def record(run, job, state, work):
@@ -71,5 +71,6 @@ def projection(session, run, available, *, invalid=False):
         "question": question["question"] if question else run.question,
         "observed_at": iso(now), "valid_for_ms": remaining,
         "checking_alternative": recovery.alternative(state, branch.phase),
+        "testing_query": bool(state.get("query_recovery", {}).get("query")) and branch.phase == "search",
         "latest_source": {"id": latest.id, "title": latest.title, "url": latest.url,
             "captured_at": iso(latest.created_at)} if latest else None}

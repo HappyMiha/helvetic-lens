@@ -214,7 +214,7 @@ def reserve_step(session, run, branch, state, phase, product):
     data = deepcopy(run.research_state)
     units = {"search": ("search_requests", 3 if product == "pharma" else 2),
         "gate": ("decision_calls", 2), "read": ("source_fetches", 1),
-        "plan": ("model_calls", 1), "extract": ("model_calls", 1),
+        "reformulate": ("model_calls", 1), "plan": ("model_calls", 1), "extract": ("model_calls", 1),
         "reflect": ("model_calls", 1), "gate_review": ("model_calls", 1),
         "compare": ("model_calls", 1), "brief": ("model_calls", 1), "orient": ("model_calls", 1)}
     resource, amount = units[phase]
@@ -223,6 +223,12 @@ def reserve_step(session, run, branch, state, phase, product):
     reserved = int(bool(data.get("exploration")) and resource == "model_calls" and phase != "brief")
     exceeded = "active_seconds" if data["used"].get("active_seconds", 0) >= data["limits"]["active_seconds"] else (
         resource if data["used"].get(resource, 0) + amount > (data["limits"][resource] - reserved) else None)
+    if not exceeded and phase == "reformulate":
+        # Do not spend a model request when no actual search, gate or read can
+        # follow. These are availability checks, not extra quota reservations.
+        exceeded = next((key for key, minimum in (("search_requests", 3 if product == "pharma" else 2),
+            ("source_fetches", 1), ("decision_calls", 2))
+            if data["used"].get(key, 0) + minimum > data["limits"][key]), None)
     if exceeded:
         state["budget_blocked"] = exceeded
         for question in data["questions"]:
@@ -250,7 +256,7 @@ def elapsed(run, seconds):
 def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None):
     data = deepcopy(run.research_state)
     key = query_key(draft.query)
-    if any(query_key(b.query) == key for b in rows(session, InvestigationBranch, run)) or any(q["query_key"] == key or query_key(q["question"]) == query_key(draft.question) for q in data["questions"]):
+    if any(key in {query_key(b.query), query_key(b.checkpoint.get("query_recovery", {}).get("query") or b.query)} for b in rows(session, InvestigationBranch, run)) or any(q["query_key"] == key or query_key(q["question"]) == query_key(draft.question) for q in data["questions"]):
         event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
         return None
     # No hidden truncation of the saved question/criteria; all response fields

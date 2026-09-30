@@ -497,3 +497,40 @@ DONE within verified scope: Core and public Sites 56 active; 45 Core and 285 cli
 
 
 <!-- Verbatim 1.57 overview archived for the 1.59 scope. -->
+
+
+**Shared product navigation and native identity — 28 September 2026: DONE
+(scoped visual continuation / release 1.22).** Scope: MV2-002/024. Give anonymous
+and signed-in readers a consistent route among Pharma, Loyer and the main
+Monitoring platform, using the existing global Ask/Search in both products and
+native desktop/mobile navigation. Links use only fixed public origins, preserve
+the current tab/draft, suppress referrers and never forward dossier IDs, questions,
+account details or credentials. Destination authentication/access stays authoritative.
+The native H monogram, favicon and navigation frame adopt Brandbook v1.0, with
+Carbon/Obsidian/Frost, structural glass only on the sidebar, readable contrast,
+keyboard focus and all nine visible Monitoring sections. Legacy native evidence
+pages retain their existing functional layout; complete dark/light page migration
+and human visual acceptance remain separate, explicit work.
+Readiness/dependencies: all three existing production origins and routing are
+active; both product command surfaces, native shell/i18n, the five supported
+native locale contracts and shared brand primitives are available. No API/model,
+permission, storage, source, provider, publication or inference change is needed.
+Acceptance: exact public destinations and current-product labels in both clients
+and native desktop/mobile shell; retained draft/authority boundaries; five native
+locale strings, semantic accessible link labels and reduced-motion behavior;
+shared H identity and authored navigation contrast; existing native shell/i18n/
+resource checks, native types/build and both clients' tests/lint/types/builds;
+main pushes, exact native and Sites publication, origin/assets/auth verification.
+No browser interaction or human/language sign-off is claimed in this background
+cycle. Parent MV2-002/024 and both full specifications remain IN PROGRESS.
+Scoped production proof: native `git-747df306ea17` activated at 04:12:40 UTC;
+37 exact native web assets, H favicon and 40 HTTP checks match the immutable web
+image. Both public Sites 25 pass 121 HTTP/auth/guide/navigation checks and 47
+exact assets each. Native 359 frontend cases, localization/types/build and both
+121-test client lint/types/build gates pass, as do GitHub CI, final backlog smoke
+and actual protected-value scanning. Backend 57-module/schema/runtime integrity
+is retained. [Acceptance](docs/PRODUCT_NAVIGATION.md) and
+[release receipt](docs/product-releases/2026-09-28-1.22.0.json).
+
+
+<!-- Archived verbatim from the completed 1.22 overview during 1.60; active task detail is retained. -->

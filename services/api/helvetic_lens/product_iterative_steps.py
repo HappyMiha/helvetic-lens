@@ -9,6 +9,7 @@ from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
 from . import product_exploration_scope as research_scope
 from . import product_iterative_research as research
+from . import product_query_recovery as query_recovery
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -18,7 +19,8 @@ from .product_research_gate import evaluate
 
 def prepare(session, run, branch, state, work):
     work["research"] = True
-    selected = followups.context(session, run)
+    work["query"] = query_recovery.query(branch, state)
+    selected = followups.context(session, run) if branch.phase != "reformulate" else None
     if selected and selected["status"] == "ready":
         work["selected_public_check"] = selected
     if branch.phase in {"extract", "reflect", "orient", "brief"}:
@@ -42,6 +44,8 @@ def prepare(session, run, branch, state, work):
                         work["input"]["previous_public_briefing"] = current["briefing"]
                         work["input"]["previous_public_queries"] = [b.query for b in rows(session, InvestigationBranch, prior)
                             if b.checkpoint.get("question_id")]
+    elif branch.phase == "reformulate":
+        query_recovery.prepare(session, run, branch, state, work)
     elif branch.phase in {"orient", "brief"}:
         work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
         if branch.phase == "orient":
@@ -50,7 +54,7 @@ def prepare(session, run, branch, state, work):
     elif branch.phase in {"gate", "gate_review"}:
         work["item"] = state["candidates"][state.get("gate_index", 0)]
         work["skip"] = recovery.unavailable(session, run, branch, state, work["item"])
-        work["input"] = {"question": run.question, "branch": branch.query,
+        work["input"] = {"question": run.question, "branch": work["query"],
             "title": work["item"]["title"], "snippet": work["item"].get("summary", "")}
     elif branch.phase == "reflect":
         work["input"] = research.prepare_reflection(session, run, branch)
@@ -68,6 +72,7 @@ async def execute(service, work, seconds):
         return await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto",
             rank_passages=False, excerpt_limit=8)
     schema, system = {
+        "reformulate": (query_recovery.QueryReformulation, query_recovery.SYSTEM),
         "plan": (research.ResearchPlan, research.PLAN_SYSTEM),
         "gate_review": (research.CandidateAssessment, research.ASSESS_SYSTEM),
         "extract": (research.ResearchExtraction, research.EXTRACT_SYSTEM),
@@ -110,7 +115,7 @@ def settle(branch, state):
 def failed(branch, state, *, interrupted=False):
     if branch.phase == "read":
         recovery.failed_read(state)
-    if branch.phase in {"plan", "reflect", "brief", "orient"}:
+    if branch.phase in {"plan", "reflect", "brief", "orient", "reformulate"}:
         branch.status = "failed"
     if branch.phase in {"gate", "gate_review"}:
         item = state.get("candidates", [])[state.get("gate_index", 0)]
@@ -128,6 +133,8 @@ def apply(session, run, branch, state, work, result):
         research.apply_plan(session, run, result)
         branch.status = "completed"
         state["planning_done"] = True
+    elif phase == "reformulate":
+        query_recovery.apply(session, run, branch, state, result)
     elif phase == "brief":
         exploration.apply(session, run, work["input"], result)
         branch.status = "completed"

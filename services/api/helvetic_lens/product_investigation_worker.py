@@ -15,6 +15,7 @@ from . import product_exploration_activity as activity
 from . import product_exploration_progress as progress
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
+from . import product_query_recovery as query_recovery
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .config import DomainError
@@ -158,6 +159,7 @@ def finish_or_yield(session, run, job):
     session.flush()
     branches = rows(session, InvestigationBranch, run)
     if research.enabled(run):
+        query_recovery.schedule(session, run, branches)
         for branch in branches:
             if branch.status in {"completed", "failed"} and branch.checkpoint.get("question_id") and not branch.checkpoint.get("question_finished"):
                 research.finish_question(session, run, branch)
@@ -266,7 +268,7 @@ async def execute(service, job_id, worker):
                         "phase": branch.phase, "product": parent.product, "generation": run.generation}
                     if research.enabled(run):
                         research_steps.prepare(session, run, branch, state, work)
-                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect", "brief", "orient"}:
+                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                         pass
                     elif branch.phase == "search":
                         if not run.external_discovery:
@@ -429,7 +431,7 @@ async def execute(service, job_id, worker):
             if work.get("model_route") and (work["phase"] == "extract" or failed):
                 state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
         if not failed:
-            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect", "brief", "orient"}:
+            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                 try:
                     research_steps.apply(session, run, branch, state, work, result)
                 except DomainError:
