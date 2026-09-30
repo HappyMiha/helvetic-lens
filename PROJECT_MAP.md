@@ -1,6 +1,6 @@
 # Helvetic Lens project map
 
-[Shared feed-check history 1.80](docs/PRODUCT_FEED_CHECK_HISTORY.md) is VERIFYING activation:
+[Shared feed-check history 1.80](docs/PRODUCT_FEED_CHECK_HISTORY.md) is DONE within verified scope:
 current source selection gates bounded native collection history and safe failures;
 reported event counts remain distinct from document membership or dossier research.
 
