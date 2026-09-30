@@ -20,6 +20,7 @@ from . import product_iterative_steps as research_steps
 from . import product_observed_queries as queries
 from . import product_query_recovery as query_recovery
 from . import product_read_relevance as read_relevance
+from . import product_research_memory as memory
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .config import DomainError
@@ -329,6 +330,7 @@ async def execute(service, job_id, worker):
                             work["input"]["capture_progress"] = work["capture_progress"]
                         if branch.phase == "extract":
                             read_relevance.prepare(session, run, branch, state, source, work)
+                        memory.prepare(session, run, work)
                         budget_before = deepcopy(run.research_state)
                         if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
                             work = None
@@ -423,7 +425,8 @@ async def execute(service, job_id, worker):
         blocked = excluded(session, parent)
         journal = work.get("input", {}).get("research_scope", {}).get("observed_queries")
         journal_current = queries.input_current(session, run, journal) and queries.dispatch_current(state, work)
-        if (not exploration.adaptive_current(session, run) or not journal_current
+        memory_current = memory.input_current(session, run, work.get("input", {}).get("research_memory"))
+        if (not exploration.adaptive_current(session, run) or not journal_current or not memory_current
                 or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", []))
                 or not clarification.input_current(session, run, work.get("input", {}).get("selected_direction"))
                 or not direction_assessment.input_current(session, run, work.get("input", {}))):
@@ -431,6 +434,8 @@ async def execute(service, job_id, worker):
                     and not direction_assessment.input_current(session, run, work["input"])):
                 exploration.update(run, next_check_inputs_invalid=True)
             failed = True
+            if not memory_current:
+                exploration.update(run, memory_inputs_invalid=True)
             if not journal_current:
                 exploration.update(run, query_inputs_invalid=True)
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."

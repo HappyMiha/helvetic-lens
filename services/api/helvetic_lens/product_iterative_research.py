@@ -197,12 +197,15 @@ def query_key(query):
 
 
 def seed(session, run):
+    from . import product_research_memory as memory
     from .product_exploration_followups import seed as seed_follow_up
     from .product_exploration_progress import initialize
 
     if seed_follow_up(session, run):
+        memory.initialize(session, run)
         return
     initialize(session, run)
+    memory.initialize(session, run)
     session.add(InvestigationBranch(**scope(run), query=f"Research plan {run.id}", phase="plan",
         reason="Decompose the question into useful research directions.",
         checkpoint={"research_control": True}))

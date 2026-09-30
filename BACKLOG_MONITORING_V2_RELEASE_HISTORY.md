@@ -679,3 +679,25 @@ DONE within scope; Core and Sites 67 verified. 96 Core and 355 client cases each
 ## Useful early clarification — 1.69
 
 DONE within scope; Core and Sites 68 verified. 75 Core and 367 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_EARLY_CLARIFICATION.md). MV2-002/020/024 remain OPEN.
+
+## Verbatim research overviews (archived for 1.75)
+
+## Observed search journal — 1.74
+
+DONE within scope; 52 Core and 413 client cases each. [Verified evidence](docs/PRODUCT_OBSERVED_QUERIES.md). MV2-002/020/024 remain OPEN.
+
+## Typed capture history — 1.73
+
+DONE within scope; Core verified, Sites 71 retained. 61 Core and 20 affected reader cases each passed. [Scope, dependencies, readiness and acceptance](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md). MV2-002/020/024 remain OPEN.
+
+## Answer-linked next check — 1.72
+
+DONE within scope; Core and Sites 71 verified. 87 Core and 400 client cases each passed. [Scope, dependencies, readiness and acceptance](docs/PRODUCT_ANSWER_NEXT_CHECK.md). MV2-002/020/024 remain OPEN.
+
+## Selected direction answer — 1.71
+
+DONE within scope; Core and Sites 70 verified. 81 Core and 387 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_DIRECTION_ASSESSMENT.md). MV2-002/020/024 remain OPEN.
+
+## Selected direction context — 1.70
+
+DONE within scope; Core and Sites 69 verified. 80 Core and 376 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SELECTED_DIRECTION.md). MV2-002/020/024 remain OPEN.

@@ -17,6 +17,7 @@ from . import product_observed_queries as queries
 from . import product_query_recovery as query_recovery
 from . import product_question_renewal as renewal
 from . import product_read_relevance as read_relevance
+from . import product_research_memory as memory
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -114,6 +115,8 @@ async def execute(service, work, seconds):
             system += queries.SYSTEM
     if phase in {"orient", "reflect", "brief"} and work["input"].get("read_context"):
         system += informed.SYSTEM
+    if work["input"].get("research_memory"):
+        system += memory.SYSTEM
     if work.get("selected_public_check"):
         system += followups.CONTEXT_SYSTEM
     if work.get("capture_progress"):

@@ -129,6 +129,7 @@ def saved_context(session, run, question_id):
 def references_current(session, run):
     """Walk typed ancestry without recursion or exposing prior private dossier data."""
     from . import product_observed_queries as queries
+    from . import product_research_memory as memory
 
     seen = set()
     current = run
@@ -140,7 +141,7 @@ def references_current(session, run):
         parent = session.get(Investigation, link["investigation_id"])
         if (not parent or parent.dossier_id != run.dossier_id or parent.organization_id != run.organization_id
                 or parent.research_state.get("exploration", {}).get("continued_by") != current.id
-                or not queries.current(session, parent)):
+                or not queries.current(session, parent) or not memory.current(session, parent)):
             return False
         if "early_direction" in link:
             from . import product_early_clarification as clarification
