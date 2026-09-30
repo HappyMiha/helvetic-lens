@@ -35,6 +35,7 @@ native workflows are preserved during incremental migration.
 The new default entry uses [research before monitoring](docs/PRODUCT_RESEARCH_FIRST.md):
 bounded exploration, cited orientation and an explicit next direction; no recurrence
 is inferred from the first question.
+[Evidence applicability](docs/PRODUCT_EVIDENCE_APPLICABILITY.md) is VERIFYING activation: compare quoted source scope with the public question through existing research.
 [Informed continuation](docs/PRODUCT_INFORMED_CONTINUATION.md) is DONE within verified scope: carry earlier public work into the selected research direction.
 [Observed query journal](docs/PRODUCT_OBSERVED_QUERIES.md) is DONE within verified scope: retain exact search attempts and outcomes in existing research details.
 [Typed capture history](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md) is verified within scope: retain bounded source comparisons through early-direction and saved-check ancestry.

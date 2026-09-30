@@ -12,6 +12,7 @@ from sqlalchemy import case, select
 from . import decision_search, decision_sources, jobs
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
+from . import product_evidence_applicability as applicability
 from . import product_exploration as exploration
 from . import product_exploration_activity as activity
 from . import product_exploration_progress as progress
@@ -331,6 +332,7 @@ async def execute(service, job_id, worker):
                         if branch.phase == "extract":
                             read_relevance.prepare(session, run, branch, state, source, work)
                         memory.prepare(session, run, work)
+                        applicability.prepare(session, run, work)
                         budget_before = deepcopy(run.research_state)
                         if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
                             work = None
@@ -425,8 +427,9 @@ async def execute(service, job_id, worker):
         blocked = excluded(session, parent)
         journal = work.get("input", {}).get("research_scope", {}).get("observed_queries")
         journal_current = queries.input_current(session, run, journal) and queries.dispatch_current(state, work)
+        applicability_current = applicability.input_current(session, run, work)
         memory_current = memory.input_current(session, run, work.get("input", {}).get("research_memory"))
-        if (not exploration.adaptive_current(session, run) or not journal_current or not memory_current
+        if (not exploration.adaptive_current(session, run) or not journal_current or not memory_current or not applicability_current
                 or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", []))
                 or not clarification.input_current(session, run, work.get("input", {}).get("selected_direction"))
                 or not direction_assessment.input_current(session, run, work.get("input", {}))):
@@ -434,6 +437,8 @@ async def execute(service, job_id, worker):
                     and not direction_assessment.input_current(session, run, work["input"])):
                 exploration.update(run, next_check_inputs_invalid=True)
             failed = True
+            if not applicability_current:
+                exploration.update(run, applicability_inputs_invalid=True)
             if not memory_current:
                 exploration.update(run, memory_inputs_invalid=True)
             if not journal_current:
@@ -525,6 +530,7 @@ async def execute(service, job_id, worker):
                     state["comparison_done"] = True
             else:
                 try:
+                    scoped = applicability.validate(session, run, source, work, result)
                     assessed = read_relevance.validate(session, run, source, work, result)
                     if research.enabled(run):
                         research.extract(session, run, source, result)
@@ -534,6 +540,7 @@ async def execute(service, job_id, worker):
                     failed = True
                 if not failed:
                     read_relevance.remember(run, state, work, assessed)
+                    applicability.remember(run, source, scoped)
                     if state.get("recurring_web"):
                         source.snapshot = {**source.snapshot, "analysis_completed": True}
                     next_extraction(state)

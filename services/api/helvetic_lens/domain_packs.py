@@ -3,6 +3,7 @@
 These are runtime definitions, not persisted templates or source approvals.
 Generated proposals retain the definition revision that produced them.
 """
+from copy import deepcopy
 from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Literal
@@ -28,6 +29,7 @@ class DomainPack:
     claim_types: tuple[tuple[str, str, str], ...] = ()
     source_roles: tuple[tuple[str, str], ...] = ()
     scientific_literature: bool = False
+    research_policy_id: str = ""
 
     def descriptor(self):
         from .dossier_templates import available
@@ -35,12 +37,13 @@ class DomainPack:
         return {"id": self.id, "version": self.version, "domain": self.domain,
                 "label": self.label, "focus": self.focus, "context_schema_id": self.context_schema_id,
                 "template_ids": [item.id for item in available(self.domain)],
+                "research_policy_id": self.research_policy_id,
                 "source_roles": [{"category": code, "label": label} for code, label in self.source_roles],
                 "claim_types": [{"kind": kind, "claim_type": code, "label": label} for kind, code, label in self.claim_types]}
 
 
 LEGAL = DomainPack(
-    id="LegalPack", version="1.4.0", domain="LEGAL", label="Legal monitoring",
+    id="LegalPack", version="1.5.0", domain="LEGAL", label="Legal monitoring",
     focus="Legal developments, proceedings and regulatory changes relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct legal monitoring topics for the supplied context and feedback. "
@@ -48,9 +51,10 @@ LEGAL = DomainPack(
         "Do not invent law citations, legal requirements, events or source coverage. "
     ),
     topic_task="legal_profile_topics", context_schema_id="legal-context/v1", claim_types=LEGAL_TYPES, source_roles=LEGAL_ROLES,
+    research_policy_id="legal-research/v1",
 )
 PHARMA = DomainPack(
-    id="PharmaPack", version="1.4.0", domain="PHARMA", label="Pharmaceutical monitoring",
+    id="PharmaPack", version="1.5.0", domain="PHARMA", label="Pharmaceutical monitoring",
     focus="Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct pharmaceutical monitoring topics for the supplied context and feedback. "
@@ -61,8 +65,32 @@ PHARMA = DomainPack(
         "events or source coverage. Separate research signals from authoritative decisions. "
     ),
     topic_task="pharma_profile_topics", context_schema_id="pharma-context/v1", claim_types=PHARMA_TYPES, source_roles=PHARMA_ROLES, scientific_literature=True,
+    research_policy_id="pharma-research/v1",
 )
 _PRODUCTS = MappingProxyType({"legal": LEGAL, "loyer": LEGAL, "pharma": PHARMA})
+
+# Retain supported versions when introducing a later policy. These application
+# definitions contain no dossier data, source approvals or inferred user intent.
+RESEARCH_POLICIES = {
+    "legal-research/v1": {"id": "legal-research/v1", "domain": "LEGAL", "dimensions": {
+        "jurisdiction": "Territory and legal level; a different canton or country may offer analogy, not the applicable rule.",
+        "period": "The requested date versus the quoted version/effective period; capture date is not an effective date.",
+        "authority": "Primary rule, holding, guidance or commentary; a publisher name alone does not prove binding authority.",
+        "procedure": "Allegation, procedural order, settlement or adjudicated finding; preserve the distinction.",
+        "subject": "The persons, conduct and exceptions actually addressed by the quoted rule or decision."}},
+    "pharma-research/v1": {"id": "pharma-research/v1", "domain": "PHARMA", "dimensions": {
+        "medicine": "Product, active substance and formulation; a drug class or similar name does not establish identity.",
+        "indication": "The population and use studied or authorised; do not assume every use is off-label or infer illegality.",
+        "market": "Territory of the decision or access conditions; another market is context, not local authorization.",
+        "period": "The requested period versus the dated evidence or decision; capture date does not prove current status.",
+        "evidence_stage": "Study design, observed endpoint and population; a clinical result is not an approval or established benefit.",
+        "decision_type": "Authorization, reimbursement, safety communication or commercial statement; do not substitute one for another."}},
+}
+
+
+def research_policy_context(product):
+    return {"primary_policy": for_product(product).research_policy_id,
+        "policies": [deepcopy(RESEARCH_POLICIES[p.research_policy_id]) for p in (LEGAL, PHARMA)]}
 
 
 def for_product(product: str) -> DomainPack:

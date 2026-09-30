@@ -7,6 +7,7 @@ from . import decision_search, decision_sources
 from . import product_branch_assessment as branch_assessment
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
+from . import product_evidence_applicability as applicability
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
@@ -115,6 +116,10 @@ async def execute(service, work, seconds):
             system += queries.SYSTEM
     if phase in {"orient", "reflect", "brief"} and work["input"].get("read_context"):
         system += informed.SYSTEM
+    if work["input"].get("evidence_applicability"):
+        system += applicability.SYSTEM
+        if phase == "extract" and work.get("applicability"):
+            schema = applicability.ScopedExtraction
     if work["input"].get("research_memory"):
         system += memory.SYSTEM
     if work.get("selected_public_check"):
@@ -132,6 +137,8 @@ async def execute(service, work, seconds):
     if not isinstance(raw, str) or len(raw) > 30000:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    if phase == "extract" and work.get("applicability"):
+        return renewal.parse_recoverable(schema, raw, {"applicability_checks": "_applicability_unavailable"})
     if phase == "brief":
         optional = {}
         if work["input"].get("direction_assessment_target"):

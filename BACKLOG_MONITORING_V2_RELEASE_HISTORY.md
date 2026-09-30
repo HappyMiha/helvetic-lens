@@ -701,3 +701,25 @@ DONE within scope; Core and Sites 70 verified. 81 Core and 387 client cases each
 ## Selected direction context — 1.70
 
 DONE within scope; Core and Sites 69 verified. 80 Core and 376 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_SELECTED_DIRECTION.md). MV2-002/020/024 remain OPEN.
+
+## Archived overview entries before evidence applicability 1.76
+
+## Observed search journal — 1.74
+
+DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Typed capture history — 1.73
+
+DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Answer-linked next check — 1.72
+
+DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Selected direction answer — 1.71
+
+DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Selected direction context — 1.70
+
+DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).

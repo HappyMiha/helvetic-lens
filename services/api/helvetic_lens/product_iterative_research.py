@@ -197,10 +197,12 @@ def query_key(query):
 
 
 def seed(session, run):
+    from . import product_evidence_applicability as applicability
     from . import product_research_memory as memory
     from .product_exploration_followups import seed as seed_follow_up
     from .product_exploration_progress import initialize
 
+    applicability.initialize(session, run)
     if seed_follow_up(session, run):
         memory.initialize(session, run)
         return
