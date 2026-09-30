@@ -316,6 +316,7 @@ def prepare_reflection(session, run, branch):
     public = [s for s in rows(session, InvestigationSource, run) if s.id in branch.checkpoint.get("source_ids", [])
         and s.kind == "public_source" and s.snapshot.get("allow_discovery", True)]
     from . import product_exploration as exploration
+    from . import product_informed_research as informed
 
     if exploration.enabled(run):
         eligible = exploration.sources(session, run)
@@ -328,6 +329,7 @@ def prepare_reflection(session, run, branch):
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status}
             for c in rows(session, DossierClaim, run) if c.id in claim_ids],
         "previous_questions": [{"question": q["question"], "query": q["query"]} for q in run.research_state["questions"]]}
+    informed.prepare(session, run, value)
     if exploration.enabled(run):
         orientation = exploration.projection(session, run).get("orientation")
         if orientation and orientation["status"] == "ready":
@@ -337,7 +339,9 @@ def prepare_reflection(session, run, branch):
 
 def apply_reflection(session, run, branch, supplied, result):
     from . import product_exploration as exploration
+    from . import product_informed_research as informed
 
+    informed.validate(session, run, supplied)
     changes, dependencies = exploration.validate_reconsiderations(session, run, supplied, result)
     sources = {s["id"]: session.get(InvestigationSource, s["id"]) for s in supplied["sources"]}
     claim_ids = {c["id"] for c in supplied["claims"]}
@@ -347,6 +351,7 @@ def apply_reflection(session, run, branch, supplied, result):
         citation(sources[draft.source_id], draft)
     if dependencies:
         exploration.update(run, adaptive_dependencies=dependencies)
+    informed.remember(session, run, supplied)
     for draft, change in zip(result.gaps, changes, strict=True):
         add_question(session, run, draft, parent=branch, trigger=citation(sources[draft.source_id], draft),
             claim=session.get(DossierClaim, draft.claim_id) if draft.claim_id else None, reconsideration=change)

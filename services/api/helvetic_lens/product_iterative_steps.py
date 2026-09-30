@@ -8,6 +8,7 @@ from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
 from . import product_exploration_scope as research_scope
+from . import product_informed_research as informed
 from . import product_iterative_research as research
 from . import product_query_recovery as query_recovery
 from . import product_read_relevance as read_relevance
@@ -87,6 +88,8 @@ async def execute(service, work, seconds):
         schema, system = exploration.AssessedBriefing, system + exploration.ASSESSMENT_SYSTEM
     if phase == "brief" and work["input"].get("research_scope"):
         system += research_scope.SYSTEM
+    if phase in {"orient", "reflect"} and work["input"].get("read_context"):
+        system += informed.SYSTEM
     if work.get("selected_public_check"):
         system += followups.CONTEXT_SYSTEM
     if work.get("capture_progress"):

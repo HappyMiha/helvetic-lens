@@ -40,6 +40,7 @@ while that bounded episode continues; its release evidence remains separate.
 [Evidence-directed reinterpretation](docs/PRODUCT_ADAPTIVE_ORIENTATION.md) connects
 new passages to actual follow-up research; release evidence is tracked separately.
 [Selected-question assessment](docs/PRODUCT_QUESTION_ASSESSMENT.md) adds the bounded research outcome; Core and both clients verified.
+[Read-informed reflection](docs/PRODUCT_INFORMED_RESEARCH.md) is locally checked; production verification pending for current per-question assessments in existing requests.
 [Usefulness of read passages](docs/PRODUCT_READ_RELEVANCE.md) is verified in Core and both clients: source-contained assessments and bounded next candidates.
 [Bounded query reformulation](docs/PRODUCT_QUERY_RECOVERY.md) is verified in Core and both clients for successful but unproductive public searches.
 [Bounded source recovery](docs/PRODUCT_SOURCE_RECOVERY.md) checks already retrieved alternatives after failed public reads within existing budgets; Core and both clients verified.

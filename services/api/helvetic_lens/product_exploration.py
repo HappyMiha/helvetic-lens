@@ -7,6 +7,7 @@ from pydantic import Field
 from . import legal_profiles
 from . import product_exploration_activity as activity
 from . import product_exploration_scope as research_scope
+from . import product_informed_research as informed
 from . import product_iterative_research as research
 from . import product_query_recovery as query_recovery
 from . import product_read_relevance as read_relevance
@@ -156,7 +157,7 @@ def initial(*, previous=None):
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
-            "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
+            "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
 def sources(session, run):
@@ -174,6 +175,8 @@ def prepare(session, run, *, early=False):
         "open_questions": [{"question": q["question"], "status": q["status"]}
             for q in run.research_state["questions"]]}
     state = run.research_state["exploration"]
+    if early:
+        informed.prepare(session, run, value)
     if not early:
         value["research_scope"] = projection(session, run)["research_scope"]
     if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
@@ -250,7 +253,11 @@ def validated(session, run, supplied, result, groups):
 
 
 def apply_orientation(session, run, supplied, result):
+    informed.validate(session, run, supplied)
     value = validated(session, run, supplied, result, ("interpretations",))
+    if informed.enabled(run):
+        value["read_preparation"] = informed.preparation(supplied)
+        value["read_context_at_orientation"] = deepcopy(supplied["read_context"])
     if len({v.meaning.strip().casefold() for v in result.interpretations}) != len(result.interpretations):
         fail("Working interpretations must be distinct.", 422)
     update(run, revision=run.event_sequence + 1,
@@ -366,6 +373,7 @@ def projection(session, run):
     value.pop("activity_contract", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
+    value.pop("informed_contract", None)
     value.pop("read_relevance_contract", None)
     value.pop("read_dependencies", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.
@@ -378,6 +386,8 @@ def projection(session, run):
     if value.get("briefing") and changed(value["briefing"], ("findings", "directions")):
         value.update(status="evidence_changed", briefing=None)
     orientation = value.get("orientation")
+    if orientation and orientation.get("briefing"):
+        orientation["briefing"].pop("read_context_at_orientation", None)
     if orientation and orientation.get("briefing") and changed(orientation["briefing"], ("interpretations",)):
         orientation.update(status="evidence_changed", briefing=None)
     value["changes"] = []
