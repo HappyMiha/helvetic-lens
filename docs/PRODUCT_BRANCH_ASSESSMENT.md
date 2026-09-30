@@ -1,6 +1,6 @@
 # Evidence captured versus question assessed — 1.64
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. MV2-002/020/024,
 full architecture, live semantic and professional/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -83,7 +83,7 @@ from monitoring. No new route, form, polling loop, default inference or schema.
 
 The new durable fixtures use fictional records through actual worker/search/read/
 reflection/briefing/continuation boundaries. Their semantic judgments are scripted;
-source containment is not entailment or professional/human acceptance. Local checks passed as recorded below; production activation remains pending.
+source containment is not entailment or professional/human acceptance. Local checks passed as recorded below; production activation is recorded below.
 
 
 ## Local verification — 30 September 2026
@@ -103,8 +103,33 @@ and lint/typecheck/production build. An initial new assertion incorrectly exclud
 the existing editor correction form; corrected without changing its behavior.
 The public-progress refinement and final builds were checked afterward.
 
-Source/parity/privacy and the final backlog status gate are release prerequisites.
+Source/parity/privacy and the final backlog status gate passed.
 All semantic outputs in these tests are scripted fictional fixtures. No paid or
 private live research, browser QA or new provider credentials were used. Frozen
 1.35/1.37 evidence and unopened validation remain unchanged. Full architecture,
 live semantic quality and professional/human acceptance remain OPEN.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `49040bbdba220012c9ca408c7acd44ef3600745c` activated as
+`git-49040bbdba22` at 2026-09-30T05:39:59+00:00 through the normal
+release controller. Legal `297ad8783815dedfd12fb102d3bcdac1254f9a49` and Pharma
+`684d61216388efda206d7abbd6c775f7e39460c7` are active in the existing public Sites
+63/63, since
+2026-09-30T05:37:43.240481+00:00 and
+2026-09-30T05:37:52.194472+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T05:40:54.798545+00:00 confirmed 54 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 51 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`branch-assessment-1.64-production.json`, SHA256
+`6664a1cc5b549a7adc9782ec625e4df3e4c5cedc94774f92416caed7fec6003b`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. The next bounded audit concerns renewing outdated
+question checkpoints from later public evidence through the existing final briefing.
