@@ -1,6 +1,6 @@
 # A useful optional early clarification — 1.69
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. Parent tasks
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. Parent tasks
 MV2-002/020/024 and full architecture/live semantic/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -99,4 +99,28 @@ an optional state guard fixed the type error before final complete checks.
 Source/privacy/parity and backlog gates passed. No paid/private live research,
 browser QA, new credentials or frozen validation. These fixtures prove mechanics
 and access boundaries, not live interpretation quality or professional acceptance.
-Production activation remains pending; full architecture and parent tasks stay OPEN.
+Production activation is recorded below; full architecture and parent tasks stay OPEN.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `82d0fd2665ff84c7ae2d10e43ac721de1b2db63f` activated as
+`git-82d0fd2665ff` at 2026-09-30T10:46:02+00:00 through the normal
+release controller. Legal `b07dbff9efda3ddf96a623737a84f712b98369d9` and Pharma
+`e3f29cc5c755fd0895f0a2122c65d8cd7c2d1be6` are active in the existing public Sites
+68/68, since
+2026-09-30T10:42:06.391688+00:00 and
+2026-09-30T10:43:22.994307+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T10:47:42.431322+00:00 confirmed 56 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 53 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`early-clarification-1.69-production.json`, SHA256
+`88f687fdb209a82bfc5ed7aced663334715833540459249c5968fe5ba15cbe49`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: preserve the chosen direction’s source-backed rationale in the existing next planning request, with no new inference call or assumed user intent.
