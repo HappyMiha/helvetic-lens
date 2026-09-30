@@ -7,6 +7,7 @@ from pydantic import Field
 from . import product_exploration as exploration
 from . import product_informed_research as informed
 from . import product_iterative_research as research
+from .db import utcnow
 from .product_api import fail, iso
 from .product_investigation_models import Investigation, InvestigationBranch
 from .product_investigations import Citation, citation, rows
@@ -148,7 +149,7 @@ def validate(session, run, branch, supplied, result):
     return value
 
 
-def remember(run, branch, supplied, value):
+def remember(run, branch, supplied, value, *, renewal=False):
     if value is None:
         return
     from .product_exploration_followups import question_fingerprint
@@ -169,14 +170,19 @@ def remember(run, branch, supplied, value):
         "supplied_source_ids": [s["id"] for s in supplied["sources"]],
         "claims": deepcopy(supplied["claims"]),
     }
+    if renewal:
+        old = question["branch_assessment"]
+        question.setdefault("branch_assessment_history", []).append(deepcopy(old))
+        receipt.update(revision=old.get("revision", 1) + 1, stage="final_briefing",
+            saved_at=iso(utcnow()), previous_fingerprint=old["fingerprint"])
     question["branch_assessment"] = {**receipt, "fingerprint": fingerprint(receipt)}
     run.research_state = data
 
 
-def receipt_current(session, run, question, *, allow_public_progress=False):
+def receipt_current(session, run, question, *, allow_public_progress=False, receipt=None):
     from .product_exploration_followups import open_context_current
 
-    saved = question.get("branch_assessment")
+    saved = receipt if receipt is not None else question.get("branch_assessment")
     if (
         not isinstance(saved, dict)
         or saved.get("contract") != CONTRACT
@@ -279,6 +285,12 @@ def projection(session, run, *, invalid=False):
                     **{k: deepcopy(a[k]) for k in ("question_id", "status", "points", "limitations")},
                     "question": question["question"],
                     "branch_id": question["branch_id"],
+                    **({"stage": receipt["stage"], "saved_at": receipt["saved_at"],
+                        "earlier": [
+                            {k: deepcopy(old["assessment"][k]) for k in ("status", "points", "limitations")}
+                            for old in question.get("branch_assessment_history", [])
+                            if receipt_current(session, run, question, allow_public_progress=True, receipt=old)
+                        ]} if receipt.get("stage") == "final_briefing" else {}),
                 }
             )
     return {

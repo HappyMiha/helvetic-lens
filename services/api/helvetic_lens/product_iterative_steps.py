@@ -12,6 +12,7 @@ from . import product_exploration_scope as research_scope
 from . import product_informed_research as informed
 from . import product_iterative_research as research
 from . import product_query_recovery as query_recovery
+from . import product_question_renewal as renewal
 from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
@@ -89,9 +90,12 @@ async def execute(service, work, seconds):
         schema, system = read_relevance.ReadExtraction, system + read_relevance.SYSTEM
     if phase == "brief" and work["input"].get("assessment_question"):
         schema, system = exploration.AssessedBriefing, system + exploration.ASSESSMENT_SYSTEM
+    if phase == "brief" and work["input"].get("question_renewal_targets"):
+        schema = renewal.RenewalAssessedBriefing if work["input"].get("assessment_question") else renewal.RenewalBriefing
+        system += renewal.SYSTEM
     if phase == "brief" and work["input"].get("research_scope"):
         system += research_scope.SYSTEM
-    if phase in {"orient", "reflect"} and work["input"].get("read_context"):
+    if phase in {"orient", "reflect", "brief"} and work["input"].get("read_context"):
         system += informed.SYSTEM
     if work.get("selected_public_check"):
         system += followups.CONTEXT_SYSTEM

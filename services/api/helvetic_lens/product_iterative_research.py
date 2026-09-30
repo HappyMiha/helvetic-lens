@@ -485,7 +485,7 @@ def public_existing_claims(session, run):
 
 
 def public_questions(questions):
-    return [{k: deepcopy(v) for k, v in q.items() if k not in {"open_check_context", "branch_assessment"}} for q in questions]
+    return [{k: deepcopy(v) for k, v in q.items() if k not in {"open_check_context", "branch_assessment", "branch_assessment_history"}} for q in questions]
 
 
 def projection(run):

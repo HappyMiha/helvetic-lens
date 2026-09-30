@@ -157,6 +157,7 @@ def enabled(run):
 
 def initial(*, previous=None):
     from . import product_branch_assessment as branch_assessment
+    from . import product_question_renewal as renewal
 
     limits = research.Limits(branches=4, depth=2, sources_per_branch=2,
         candidates_per_branch=4, search_requests=12, source_fetches=6,
@@ -165,6 +166,7 @@ def initial(*, previous=None):
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
             "open_check_contract": OPEN_CHECK_CONTRACT, "branch_assessment_contract": branch_assessment.CONTRACT,
+            "renewal_contract": renewal.CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -188,6 +190,9 @@ def prepare(session, run, *, early=False):
     if not early:
         value["research_scope"] = projection(session, run)["research_scope"]
         value["question_assessments"] = projection(session, run)["question_assessments"]
+        from . import product_question_renewal as renewal
+
+        renewal.prepare(session, run, value)
     if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment_question"] = {"contract": ASSESSMENT_CONTRACT,
             "question_id": state["previous"]["follow_up_id"], "question": run.question}
@@ -276,15 +281,20 @@ def apply_orientation(session, run, supplied, result):
 
 
 def apply(session, run, supplied, result):
+    from . import product_question_renewal as renewal
+
     if bool(result.clarification.strip()) != bool(result.directions) or len(result.directions) == 1:
         fail("A consequential clarification requires two or three directions.", 422)
     if len({d.question.strip().casefold() for d in result.directions}) != len(result.directions):
         fail("Clarification directions must be distinct.", 422)
+    renewals = renewal.validate(session, run, supplied, result)
     value = validated(session, run, supplied, result, ("findings", "directions"))
+    value.pop("question_renewals", None)
     if run.research_state["exploration"].get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment"] = validated_assessment(session, run, supplied, result)
     if "research_scope" in supplied:
         value["research_scope_at_briefing"] = deepcopy(supplied["research_scope"])
+    renewal.remember(session, run, supplied, renewals)
     update(run, status="ready", briefing=value, revision=run.event_sequence + 1)
     event(session, run, "briefing_ready", finding_count=len(result.findings), direction_count=len(result.directions))
 
@@ -329,10 +339,11 @@ def validated_question_points(session, run, supplied, assessment):
 
 def adaptive_current(session, run):
     from . import product_branch_assessment as branch_assessment
+    from . import product_question_renewal as renewal
     from .product_exploration_followups import references_current
     from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run)
+    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run)
 
 
 def local_dependencies_current(session, run):
@@ -386,6 +397,8 @@ def projection(session, run):
     value.pop("capture_comparison", None)
     value.pop("assessment_contract", None)
     value.pop("branch_assessment_contract", None)
+    value.pop("renewal_contract", None)
+    value.pop("renewal_context", None)
     value.pop("scope_contract", None)
     value.pop("activity_contract", None)
     value.pop("recovery_contract", None)

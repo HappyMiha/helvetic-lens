@@ -81,10 +81,10 @@ def saved_context(session, run, question_id):
     prior = reference(run)
     if prior and not prior.get("follow_up_id"):
         return None
-    from . import product_read_relevance
+    from . import product_question_renewal, product_read_relevance
     from .product_exploration_progress import current
 
-    if not current(session, run) or not product_read_relevance.current(session, run):
+    if not current(session, run) or not product_read_relevance.current(session, run) or not product_question_renewal.current(session, run):
         return None
     dependencies = run.research_state["exploration"].get("adaptive_dependencies")
     if not dependencies or not exploration.local_dependencies_current(session, run):
