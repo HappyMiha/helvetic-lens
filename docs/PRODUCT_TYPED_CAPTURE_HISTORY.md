@@ -1,6 +1,6 @@
 # Retain capture history after choosing a direction — 1.73
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. Parent tasks
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. Parent tasks
 MV2-002/020/024 and full architecture/live semantic/human acceptance remain OPEN.
 
 ## Audit, outcome and dependencies
@@ -85,6 +85,29 @@ The initial affected run had 60 passes and one outdated assertion: changing ance
 Exact API lint passed. Twenty affected existing reader interaction cases passed
 per client. No client source changed, so no new client build or Sites deployment
 was needed; prior 1.72 full client acceptance is retained, not counted as fresh.
-Source/privacy/parity and final backlog status checks are publication gates.
-Production activation is pending. Fictional fixtures establish mechanics and
+Source/privacy/parity and final backlog status checks passed.
+Production activation is recorded below. Fictional fixtures establish mechanics and
 boundaries; they do not establish real-world semantic research quality.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `065a9366287293fa4f6bdc27c337cc3411ccbe98` activated as
+`git-065a93662872` at 2026-09-30T14:54:17+00:00 through the normal
+release controller. Legal `f93bfb49a1d921eac000ec33b1e66950f7680426` and Pharma
+`6883ba7eeccf96cf965da9e5cd40a857782207e2` retain existing public Sites 71/71. Their source and
+artifacts did not change; no new Sites deployment was performed.
+
+Read-only verification at 2026-09-30T14:54:56.923331+00:00 confirmed 57 exact native modules,
+current schema, five healthy containers, all nine Monitoring routes and clean,
+aligned mains. Each product passed four fresh home/auth/origin checks; all 47
+local asset hashes still match the retained 1.72 production receipt. The prior
+full HTTP asset/access verification remains retained evidence, not a fresh run.
+Production receipt: `typed-capture-history-1.73-production.json`, SHA256
+`7264053bbed9914454ae5dfe0f68e757c969ec3d0c33c51e25b1e24bd1055f90`.
+
+These checks establish deployed artifacts and boundaries, not authenticated live
+research quality or browser/human acceptance. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: distinguish planned wording from
+actually executed retrieval before extending query context across typed ancestry.
+Do not infer that equal query text is wasteful or automatically prevent its reuse.
