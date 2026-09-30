@@ -1,6 +1,6 @@
 # Evidence that fits the question — 1.76
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. DONE within the verified scope below. MV2-002/020/024,
 full architecture, live semantic and professional/human acceptance remain OPEN.
 
 ## Audit and complete user outcome
@@ -119,6 +119,22 @@ ancestry changes reject dependent work. Pause/resume and source-budget exhaustio
 preserve their limits; no recurring monitoring is enabled by this feature.
 
 Existing Sites 72 source/artifacts remain unchanged. No new client build/deployment
-or broad repeated HTTP asset sweep. Production activation/access checks are pending.
+or broad repeated HTTP asset sweep. Production activation/access checks passed as recorded below.
 Fictional tests prove mechanics and provenance; full architecture, live semantic
 quality, full applicability/Market Access services and human acceptance remain OPEN.
+
+
+## Verified production activation
+
+Feature Core 63241ee1562280bf08dd2ce5138725461535a688 / git-63241ee15622 activated
+2026-09-30T17:54:05+00:00. Fresh verification matched 60 native modules,
+DomainPacks 1.5.0 and research policy IDs, schema, five containers and nine routes.
+Both clients passed four fresh home/auth/origin checks each. Legal
+511516e2eabbbb5f14da6a29c06f2fb70a47c69a and Pharma 9f4e8e538d11967aa45880aaf5fcdb6cb5675549 retain public Sites 72.
+All 47 local assets each match the exact retained 1.74 production receipt; no
+new build, deployment or complete asset HTTP sweep. All mains clean/aligned.
+Production receipt SHA-256: f54ef99bb64b1eccf3cd1283a2b7346283c3e9dd8304814dc49b64753d939d61.
+
+No paid/live/private research, browser QA, new key or frozen evaluation was used.
+Runtime verification establishes activation, not live professional accuracy.
+Full architecture/live semantic/professional/human acceptance stays OPEN.
