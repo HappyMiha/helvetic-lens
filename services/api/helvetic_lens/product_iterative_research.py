@@ -339,6 +339,7 @@ def prepare_reflection(session, run, branch):
 
 def apply_reflection(session, run, branch, supplied, result):
     from . import product_exploration as exploration
+    from . import product_exploration_followups as followups
     from . import product_informed_research as informed
 
     informed.validate(session, run, supplied)
@@ -353,8 +354,9 @@ def apply_reflection(session, run, branch, supplied, result):
         exploration.update(run, adaptive_dependencies=dependencies)
     informed.remember(session, run, supplied)
     for draft, change in zip(result.gaps, changes, strict=True):
-        add_question(session, run, draft, parent=branch, trigger=citation(sources[draft.source_id], draft),
+        identifier = add_question(session, run, draft, parent=branch, trigger=citation(sources[draft.source_id], draft),
             claim=session.get(DossierClaim, draft.claim_id) if draft.claim_id else None, reconsideration=change)
+        followups.remember_open_context(run, supplied, identifier)
     schedule_questions(session, run)
     plan(session, run, "Revised research plan from newly captured public evidence.")
 
@@ -472,10 +474,15 @@ def public_existing_claims(session, run):
     return [c for c in rows(session, DossierClaim, run) if c.id in allowed]
 
 
+def public_questions(questions):
+    return [{k: deepcopy(v) for k, v in q.items() if k != "open_check_context"} for q in questions]
+
+
 def projection(run):
     if not enabled(run):
         return None
     data = deepcopy(run.research_state)
     data.pop("exploration", None)  # Read through the current-source-checked projection only.
+    data["questions"] = public_questions(data["questions"])
     data["budget_basis"] = "Cumulative reservations, including interrupted attempts. Gate reserves both possible providers; unused fallback capacity is not a bill. Active seconds count execution, not queue/pause time."
     return data

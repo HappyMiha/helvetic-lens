@@ -20,6 +20,7 @@ from .product_source_reviews import current_reviews
 
 CONTRACT = "exploration/v1"
 ASSESSMENT_CONTRACT = "selected-question-assessment/v1"
+OPEN_CHECK_CONTRACT = "open-evidence-check/v1"
 ASSESSMENT_SYSTEM = """The assessment_question is the exact explicitly selected
 question to assess. Return its question_id unchanged. Assess what the supplied
 READ passages say about that question, not merely the user's possible intent.
@@ -157,6 +158,7 @@ def initial(*, previous=None):
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
+            "open_check_contract": OPEN_CHECK_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -374,6 +376,7 @@ def projection(session, run):
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
     value.pop("informed_contract", None)
+    value.pop("open_check_contract", None)
     value.pop("read_relevance_contract", None)
     value.pop("read_dependencies", None)
     value.pop("previous", None)  # Only the worker receives the bounded public context.

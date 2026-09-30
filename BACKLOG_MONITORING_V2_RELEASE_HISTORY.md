@@ -534,3 +534,22 @@ is retained. [Acceptance](docs/PRODUCT_NAVIGATION.md) and
 
 
 <!-- Archived verbatim from the completed 1.22 overview during 1.60; active task detail is retained. -->
+
+## Usefulness of read passages — 1.61
+
+DONE within scope: Core and Sites 60 verified; 145 Core and 308 client cases each passed; [scope, dependencies, source readiness and acceptance](docs/PRODUCT_READ_RELEVANCE.md). MV2-002/020/024 and broader gates OPEN.
+
+
+## Bounded query reformulation — 1.60
+
+DONE within scope: Core and Sites 59 verified; 118 Core and 302 client cases each passed; [scope and acceptance](docs/PRODUCT_QUERY_RECOVERY.md). MV2-002/020/024 and broader gates OPEN.
+
+
+## Bounded source recovery — 1.59
+
+DONE within scope: Core and public Sites 58 verified; 88 Core and 295 client cases each passed. [Scope and acceptance](docs/PRODUCT_SOURCE_RECOVERY.md). Broader gates OPEN.
+
+
+## Current research activity — 1.58
+
+DONE within scope: Core and public Sites 57 verified; 73 Core and 290 client cases each passed. [Scope and acceptance](docs/PRODUCT_RESEARCH_ACTIVITY.md). Recorded activity replaces generic waiting text; broader gates OPEN.

@@ -24,6 +24,56 @@ def reference(run):
     return (run.research_state or {}).get("exploration", {}).get("previous") or {}
 
 
+def question_fingerprint(run, question):
+    return fingerprint({"original_question": run.question, **{k: question[k] for k in
+        ("id", "question", "query", "purpose", "priority", "trigger", "claim_id")}})
+
+
+def remember_open_context(run, supplied, question_id):
+    """Save only new, fully validated ordinary gaps; never retrofit older provenance."""
+    from . import product_informed_research as informed
+
+    state = run.research_state.get("exploration", {})
+    if (not question_id or not informed.enabled(run)
+            or state.get("open_check_contract") != exploration.OPEN_CHECK_CONTRACT):
+        return
+    data = deepcopy(run.research_state)
+    question = next(q for q in data["questions"] if q["id"] == question_id)
+    if question.get("reconsideration"):
+        return  # Keep the established adaptive-check fingerprint unchanged.
+    context = {
+        "contract": exploration.OPEN_CHECK_CONTRACT,
+        "question_fingerprint": question_fingerprint(run, question),
+        "source_dependencies": deepcopy(state["adaptive_dependencies"]),
+        "supplied_source_ids": [s["id"] for s in supplied["sources"]],
+        "claims": deepcopy(supplied["claims"]),
+    }
+    question["open_check_context"] = {**context, "fingerprint": fingerprint(context)}
+    run.research_state = data
+
+
+def open_context_current(session, run, question, dependencies):
+    from . import product_informed_research as informed
+
+    saved = question.get("open_check_context")
+    if (not informed.enabled(run)
+            or run.research_state["exploration"].get("open_check_contract") != exploration.OPEN_CHECK_CONTRACT
+            or not isinstance(saved, dict) or saved.get("contract") != exploration.OPEN_CHECK_CONTRACT
+            or saved.get("fingerprint") != fingerprint({k: v for k, v in saved.items() if k != "fingerprint"})
+            or saved.get("question_fingerprint") != question_fingerprint(run, question)):
+        return False
+    recorded, supplied_ids, claims = (saved.get(k) for k in
+        ("source_dependencies", "supplied_source_ids", "claims"))
+    if (not isinstance(recorded, list) or not recorded or not isinstance(supplied_ids, list)
+            or not supplied_ids or not isinstance(claims, list)):
+        return False
+    if any(d not in dependencies for d in recorded):
+        return False
+    if not set(supplied_ids).issubset({d["source_id"] for d in recorded}):
+        return False
+    return claims == informed.public_claims(session, run, set(supplied_ids), selected={c["id"] for c in claims})
+
+
 def saved_context(session, run, question_id):
     """Only context with recorded complete dependencies is eligible, not guessed legacy provenance."""
     if not exploration.enabled(run):
@@ -39,7 +89,10 @@ def saved_context(session, run, question_id):
     if not dependencies or not exploration.local_dependencies_current(session, run):
         return None
     question = next((q for q in run.research_state["questions"] if q["id"] == question_id), None)
-    if not question or not question.get("reconsideration") or not question.get("trigger"):
+    if not question or not question.get("trigger"):
+        return None
+    ordinary = not question.get("reconsideration")
+    if ordinary and not open_context_current(session, run, question, dependencies):
         return None
     trigger = question["trigger"]
     source = exploration.sources(session, run).get(trigger["source_id"])
@@ -54,11 +107,12 @@ def saved_context(session, run, question_id):
         return None
     return {"investigation_id": run.id, "question_id": question["id"],
         "question": question["question"], "query": question["query"], "purpose": question["purpose"],
-        "priority": question["priority"], "why": question["reconsideration"]["why"],
+        "priority": question["priority"], "why": question["purpose"] if ordinary else question["reconsideration"]["why"],
         "original_question": run.question, "quote": trigger["quote"], "locator": trigger["locator"],
         "source": {"id": source.id, "sha256": source.sha256, "title": source.title,
             "url": source.url, "captured_at": iso(source.created_at)},
-        "source_dependencies": dependencies}
+        "source_dependencies": dependencies, **({"basis": "open_question",
+            "context_fingerprint": question["open_check_context"]["fingerprint"]} if ordinary else {})}
 
 
 def references_current(session, run):
@@ -82,7 +136,7 @@ def references_current(session, run):
 
 
 def public_context(value):
-    return {k: v for k, v in value.items() if k not in {"query", "priority", "source_dependencies"}}
+    return {k: v for k, v in value.items() if k not in {"query", "priority", "source_dependencies", "context_fingerprint"}}
 
 
 def context(session, run):

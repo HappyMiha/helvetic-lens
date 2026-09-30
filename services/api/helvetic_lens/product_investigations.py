@@ -158,9 +158,11 @@ def plan(session, run, reason, *, trigger=None):
     if web_trigger_for(session, run):
         document["budgets"].update(public_branches=1, saved_snapshots=0)
     if (run.research_state or {}).get("version") == "iterative-v1":
+        from .product_iterative_research import public_questions
+
         document.update(budgets=run.research_state["limits"], used=run.research_state["used"],
             objective=run.research_state["objective"], completion_criteria=run.research_state["completion_criteria"],
-            questions=run.research_state["questions"])
+            questions=public_questions(run.research_state["questions"]))
     session.add(InvestigationPlan(**scope(run), version=run.plan_version, reason=reason, document=document))
     event(session, run, "plan_updated", version=run.plan_version, reason=reason, trigger=trigger)
 
