@@ -1,6 +1,6 @@
 # Connected-page check history — 1.79
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation.
+Scope recorded before code, 30 September 2026. DONE within the verified scope below.
 MV2-002/011/020/024 and broader C20–C24/live professional acceptance remain OPEN.
 
 ## Whole outcome
@@ -89,3 +89,19 @@ does not invent a subsequent completion. Related dossier research has its own
 current investigation status and separately consented provenance. Broader unified
 feed history and normalized SourceHealth remain OPEN. No schema, acquisition,
 provider, scheduling, consent or notification changes were made.
+
+
+## Verified production activation
+
+Core 3507ac22058c12aac6370c60027e7db1252ed453 / git-3507ac22058c activated
+2026-09-30T20:04:36+00:00. Verification matched 65 native modules, DomainPacks
+1.5.0, the current schema, five serving containers and nine Monitoring routes.
+Legal de6f1b0e22e8dd90b9fa71ccd991da34ddaf7650 and Pharma 35ef607d619fec633e6fd3a93391145342ec60b2 are published in their
+existing public Sites projects, both version 75. Every public client asset was
+compared with its exact validated local build; home, API access and origin guards
+passed. All three mains were clean and aligned with their fetched origins.
+Production receipt SHA-256: d4c952893055bb71b20b96ad1fd717439b557f8d2ccc4dc1600a11c5b88868e0.
+
+No browser, private production dossier or paid/live research was used. These
+checks prove activation and bounded behavior; full architecture, professional
+accuracy, source coverage and human acceptance remain OPEN.
