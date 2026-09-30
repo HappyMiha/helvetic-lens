@@ -1,6 +1,6 @@
 # An answer to the selected early direction — 1.71
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. Parent tasks
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. Parent tasks
 MV2-002/020/024 and full architecture/live semantic/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -92,10 +92,34 @@ cover all four outcomes in current/history views, one primary question, closed
 source/background details, unchanged legacy summaries, unavailable optional answer
 and evidence-changed states. Existing access/overlapping-read checks also pass.
 The existing primary assessment reader is reused; no new controls or forms.
-Source/privacy/parity and final backlog status gates are release prerequisites.
-Production activation remains pending. These scripted fixtures establish mechanics
+Source/privacy/parity and final backlog status gates passed.
+Production activation is recorded below. These scripted fixtures establish mechanics
 and provenance, not live semantic quality or professional/human acceptance.
 The initial affected run passed 79 cases and exposed two test-only owner-access
 expectation errors. Corrected assertions check private text exclusion from
 exploration/model input, retention for its authenticated owner and anonymous
 denial. Both exact corrected cases passed; production guards were unchanged.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `7c2fad5dbe500295081166391c94460ca24a62af` activated as
+`git-7c2fad5dbe50` at 2026-09-30T12:52:02+00:00 through the normal
+release controller. Legal `44623e2f68fe419ea3479d58928d8a106495157e` and Pharma
+`9980bd51a1de3b5cb14910684e97efa6fb3524fc` are active in the existing public Sites
+70/70, since
+2026-09-30T12:51:05.519213+00:00 and
+2026-09-30T12:51:38.092288+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T12:53:12.177008+00:00 confirmed 57 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 53 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`direction-assessment-1.71-production.json`, SHA256
+`19a8f8501ad9e983ba8ad2e33cc49247568e5b4094580f5c62bdc8e7b53900ce`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: connect remaining uncertainty in the selected answer to a useful existing next-check suggestion, without automatic work or extra controls.
