@@ -1,6 +1,6 @@
 # Continue an ordinary source-backed question — 1.63
 
-Scope recorded before code, 30 September 2026. Implemented and locally verified; production VERIFYING. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. COMPLETE within bounded scope; Core and both clients verified. MV2-002/020/024,
 full architecture, live semantic and professional/human acceptance remain OPEN.
 
 ## Scope, dependencies and source readiness
@@ -79,7 +79,7 @@ The next episode retains the existing selected-question assessment and capture
 comparison. Legacy adaptive-check fingerprints stay unchanged.
 
 Initial durable checks exposed receipt data in the existing saved plan snapshots;
-the plan and active-state projections now share the same omission. All final affected checks passed; exact production verification remains pending. Full architecture, live semantic
+the plan and active-state projections now share the same omission. All final affected checks and exact production verification passed. Full architecture, live semantic
 quality and professional/human acceptance remain OPEN.
 
 ## Local verification
@@ -99,5 +99,34 @@ diff checks passed. The four compact completed 1.58–1.61 backlog overviews wer
 archived verbatim into linked history; the 512 KiB guard remains unchanged.
 Scripted fixtures establish mechanics and access boundaries, not live semantic
 accuracy or professional/human acceptance. No paid/private live research, browser
-QA, new provider credential or frozen validation occurred. Main publication and
-normal Core/existing public Sites verification follow these local checks.
+QA, new provider credential or frozen validation occurred. Main publication and normal Core/existing public Sites verification passed below.
+
+## Verified production activation
+
+Core feature `1164565f953d730433bf7c2a5e6ea87a6a6f0d1d` activated as `git-1164565f953d`
+at 2026-09-30T04:32:18+00:00. Legal `681cc3738c5a6f0cf79857df40a0f449b1b4e350` and
+Pharma `e057c91f32463402ac7e0e2a8a6a946845d23ee9` are active in the existing public Sites 62,
+respectively since 2026-09-30T04:30:16.412250+00:00 and
+2026-09-30T04:30:25.747666+00:00. All three GitHub main branches and
+both Sites source repositories contain the exact validated source. Existing
+audience and custom hostnames remain unchanged.
+
+The [frozen production receipt](product-releases/2026-09-30-1.63-open-check.json)
+was verified at 2026-09-30T04:32:59.508704+00:00. It records 53 exact native module hashes,
+current schema, five running containers, nine Monitoring routes and clean aligned
+repositories. Each product passed 47 exact deployed-asset comparisons and 51
+HTTP/auth/origin checks. Receipt SHA256 `dfe0e422575bc2fb2848ff387037a8e80aa1bd3bf70faf4e4ce27646e4ce6897`.
+
+All 112 distinct Core cases and 316 client tests/lint/types/builds per product
+passed; final status-only backlog checks overlap. No browser, paid inference or
+private production research was used. Final English evidence receives normal
+Core activation, retaining these unchanged verified client artifacts without
+republication. Full architecture, live semantic and professional/human acceptance
+remain OPEN.
+
+Next bounded audit: finish_question currently marks evidence_found for linked
+material, while continuation omits that capture status. A source-bound assessment
+of the exact branch question could preserve useful unfinished work without
+equating any evidence with an answer. Current reflection input binds overall
+question and query, not an explicit branch-question assessment target. Scope and
+acceptance must precede that additional behavior; it is not claimed by 1.63.
