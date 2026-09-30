@@ -70,6 +70,19 @@ def unproductive(state):
 
 
 def permitted(session, run, state):
+    from . import product_exploration as exploration
+
+    # Earlier public queries may themselves depend on captured passages. A
+    # recorded exclusion or changed version must not be laundered into a fresh
+    # model request, even though only query strings (not excerpts) are supplied.
+    available = exploration.sources(session, run)
+    for question in run.research_state.get("questions", []):
+        trigger = question.get("trigger")
+        if trigger and (
+            trigger["source_id"] not in available
+            or available[trigger["source_id"]].sha256 != trigger["sha256"]
+        ):
+            return False
     excluded = {
         url
         for url, review in current_reviews(session, run.dossier_id).items()

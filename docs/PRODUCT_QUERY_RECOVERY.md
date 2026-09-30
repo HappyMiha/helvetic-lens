@@ -59,7 +59,11 @@ episodes. The existing branch is reopened once after a completed fully available
 unproductive retrieval. A new durable reformulate step uses the configured public
 planner model with only the original public question/query and prior planned
 queries. Null, invalid, normalized duplicate or failed/interrupted proposals never
-loop. Current exclusions are checked before and after that request. No source
+loop. Current exclusions are checked before and after that request.
+Final dependency audit extends that boundary to every recorded source-triggered
+prior public query: its source must still be permitted at the recorded hash before
+and after reformulation. An excluded or changed trigger suppresses the proposal.
+The focused hardening checks passed; its native activation remains pending. No source
 snippet, private evidence, note, provider error or review comment enters it.
 
 The original question and branch query remain unchanged. A recorded alternative
@@ -82,11 +86,35 @@ original result ambiguous; that broader research remains unfinished, not absent.
 
 ## Local and production acceptance
 
-Twenty-seven new durable cases passed (21 initial cases and six further fences);
+Thirty new durable cases passed (21 initial cases, six further fences and three
+source-dependency cases);
 three final affected budget retests overlap that count. Thirty-two existing
 scope/activity/backlog cases passed. Fifty-six existing worker/exploration/source-recovery regression cases passed,
-for 115 distinct Core cases. No production activation of 1.60 is claimed yet. Each client passed
+for 118 distinct Core cases. Four additional final recovery cases after the
+source-dependency hardening overlap those totals. Initial production activation
+is verified below; final native hardening activation remains pending. Each client passed
 302 tests, lint, types and its production build. Exact API lint passed after
 import/test formatting cleanup. Completed 1.22 overview archived verbatim into
 linked release history; the 512 KiB guard is unchanged.
 Synthetic cases establish mechanics and privacy, not live semantic accuracy.
+
+
+## Initial verified production activation
+
+Core `2b90aa3d0dae5d33ce19d3af1ed140cc02549901` activated at
+2026-09-30T01:17:55+00:00. Legal `d874cb50d05cecfd892253d14410327a9c42e3a2`
+and Pharma `7e48a1077af755d8021e5ef23515c032338bfb9f` are active in existing
+public Sites 59, respectively since 2026-09-30T01:14:49.303183+00:00 and
+2026-09-30T01:14:57.985063+00:00. Fifty-one exact native module hashes,
+current schema, five running containers and nine routes were verified. Each
+client passed 47 exact deployed-asset comparisons and 51 HTTP/access checks.
+
+The [frozen initial receipt](product-releases/2026-09-30-1.60-query-recovery.json)
+has SHA256 `2c64de71253d4a342d757c0dc923c2684439c18154e4e08f33e7dee8f416b259`.
+Packaging initially lacked the child Node PATH; corrected packaging reused the
+validated builds without source changes. No private production dossier, paid
+inference, browser QA or frozen validation was used. Final review added current
+rights/hash validation for source-triggered prior queries, before/after the new
+model request. Three new durable cases and four affected recovery retests passed;
+its normal native activation must be verified before closing bounded acceptance.
+The clients are unchanged and must not be republished for this Core hardening.

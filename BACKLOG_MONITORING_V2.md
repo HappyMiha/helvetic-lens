@@ -14,7 +14,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 ## Bounded query reformulation — 1.60
 
-VERIFYING: 115 Core and 302 client cases each passed; [scope and acceptance](docs/PRODUCT_QUERY_RECOVERY.md). MV2-002/020/024 and broader gates OPEN.
+VERIFYING: 118 Core and 302 client cases each passed; [scope and acceptance](docs/PRODUCT_QUERY_RECOVERY.md). MV2-002/020/024 and broader gates OPEN.
 
 ## Bounded source recovery — 1.59
 
