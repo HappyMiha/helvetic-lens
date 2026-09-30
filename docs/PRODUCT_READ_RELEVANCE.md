@@ -1,7 +1,7 @@
 # Usefulness of read passages — 1.61
 
-Scope recorded before code, 30 September 2026. VERIFYING; local checks passed, production and
-professional/human semantic acceptance OPEN. MV2-002/020/024 remain open overall.
+Scope recorded before code, 30 September 2026. COMPLETE within bounded scope; Core and both clients verified.
+Live semantic and professional/human acceptance OPEN. MV2-002/020/024 remain open overall.
 
 ## Scope, dependencies and source readiness
 
@@ -97,5 +97,33 @@ text fragments; the copy was made grammatical and emitted coherently. The full
 55-case affected reader suite passed after that repair and again after a final
 copy improvement, with lint/types/builds. Repeated cases overlap the total.
 Synthetic fixtures establish execution, failure and privacy boundaries, not live
-semantic accuracy. Normal Core and both existing public Sites activation still
-require verification; broader architecture and professional acceptance stay open.
+semantic accuracy. Normal Core and both existing public Sites activation is verified below; broader
+architecture and professional acceptance stay open.
+
+## Verified production activation
+
+Core feature `ffb44a03362a192ffa874cbcd0a8a1166d430a94` activated as
+`git-ffb44a03362a` at 2026-09-30T02:21:58+00:00. Legal
+`4f687fe759b66469c01426d04c6535d9ca65fec0` and Pharma
+`b5735670f71e38346b33edef4b46848ea29cfb01` are active in existing public Sites 60,
+respectively since 2026-09-30T02:19:50.652027+00:00 and
+2026-09-30T02:20:00.891771+00:00. All three main branches and the two Sites source
+repositories contain the verified source. Audience, domains and bindings unchanged.
+
+The [frozen production receipt](product-releases/2026-09-30-1.61-read-relevance.json)
+verifies 52 exact native module hashes, current schema, five running containers,
+nine native Monitoring routes and clean aligned main branches. Each product passed
+47 exact deployed-asset comparisons and 51 HTTP/auth/origin checks. Receipt SHA256
+`d7061fb89aeeac41946de02502a05daf32e4026fb3c266bc1fd2631fa84a123e`.
+
+145 distinct Core cases and 308 distinct cases/lint/types/builds per client passed.
+Affected retests and backlog status rechecks overlap those totals. All private and
+paid live probes, browser QA and frozen validation were excluded. The 512 KiB
+backlog guard remains unchanged. Final documentation follows normal Core activation
+and retains these unchanged client artifacts without another Sites publication.
+
+Full architecture, live semantic quality and professional/human acceptance remain
+OPEN. The next read-only audit concerns supplying current per-question relevance
+to existing reflection and early orientation, without another default model call,
+with source/version/privacy fences and without globally discarding useful context
+or counterevidence. No such additional behavior is claimed by this release.
