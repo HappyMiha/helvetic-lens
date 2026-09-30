@@ -1,6 +1,6 @@
 # A truthful search journal — 1.74
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. Parent tasks
+Scope recorded before code, 30 September 2026. DONE within the verified scope below. Parent tasks
 MV2-002/020/024 and full architecture/live semantic/human acceptance remain OPEN.
 
 ## Audit, outcome and dependencies
@@ -104,5 +104,21 @@ The first client run found a text-node assertion issue; fixing the assertion
 preserved the implementation. A build environment invocation was corrected to
 include Node on PATH. Source/privacy/parity checks passed. No new dependency,
 schema, inference call, form, polling, budget or monitoring authority was added.
-Production verification remains pending. These fictional fixtures verify durable
+Production verification completed as recorded below. These fictional fixtures verify durable
 behavior and boundaries, not live semantic accuracy or professional acceptance.
+
+
+## Verified production activation
+
+Feature Core 83fc500c47942605a85bcf07e46974ec43670bd8 / git-83fc500c4794 activated
+2026-09-30T16:00:02+00:00. Both existing public Sites were deployed from their
+exact tested source: Legal 511516e2eabbbb5f14da6a29c06f2fb70a47c69a and Pharma 9f4e8e538d11967aa45880aaf5fcdb6cb5675549.
+Native verification matched all 58 modules, schema, five containers and all nine
+routes. Each client passed 53 fresh HTTP/access checks and all
+47 exact built asset checks. Repositories were clean and aligned on main.
+Receipt SHA-256: a9356dcf26a122aa1b1921416de80f025e5023675429e00e17d008069465353d.
+
+No paid/live/private research, browser QA, new keys, frozen validation or automated
+monitoring was run. The new journal is limited to each recorded episode. It does
+not establish semantic quality, coverage, cross-episode query reuse or completion
+of the broader architecture and professional/human acceptance gates.
