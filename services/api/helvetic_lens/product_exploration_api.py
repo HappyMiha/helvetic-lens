@@ -5,6 +5,7 @@ from fastapi import Request
 from pydantic import Field, model_validator
 from sqlalchemy import select
 
+from . import product_early_clarification as clarification
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from .membership_locks import lock_organization
@@ -19,11 +20,14 @@ class Reply(Explore):
     expected_revision: int = Field(ge=1, strict=True)
     direction: int | None = Field(default=None, ge=0, le=2, strict=True)
     follow_up_id: UUID | None = None
+    orientation_revision: int | None = Field(default=None, ge=1, strict=True)
 
     @model_validator(mode="after")
     def single_choice(self):
         if self.direction is not None and self.follow_up_id is not None:
             raise ValueError("Choose one saved check or one briefing direction.")
+        if self.orientation_revision is not None and self.direction is None:
+            raise ValueError("An early clarification requires its exact saved direction.")
         return self
 
 
@@ -51,6 +55,8 @@ def routes(router, service, actor):
                 fail("This research does not have an exploratory checkpoint.", 409)
             state = previous.research_state["exploration"]
             command = data.model_dump(mode="json")
+            if data.orientation_revision is None:
+                command.pop("orientation_revision")  # Preserve existing reply fingerprints.
             if data.follow_up_id is None:
                 command.pop("follow_up_id")  # Preserve pre-1.54 retry fingerprints.
             key = fingerprint({**command, "actor": identity.user_id})
@@ -65,7 +71,11 @@ def routes(router, service, actor):
                 fail("Pause or finish the preliminary episode before changing direction.", 409)
             if latest(session, dossier_id).id != previous.id:
                 fail("A newer research episode exists. Reply to its checkpoint.", 409)
-            if data.direction is not None:
+            selected = {}
+            if data.orientation_revision is not None:
+                selected = clarification.select(session, previous, current, data.direction,
+                    data.orientation_revision, data.question)
+            elif data.direction is not None:
                 choices = current["briefing"]["directions"] if current.get("briefing") else []
                 if data.direction >= len(choices) or choices[data.direction]["question"] != data.question:
                     fail("The evidence-backed direction changed. Refresh before choosing.", 409)
@@ -75,7 +85,8 @@ def routes(router, service, actor):
             if session.scalar(select(Investigation.id).where(Investigation.dossier_id == dossier_id,
                     Investigation.request_key == str(data.request_key)).limit(1)):
                 fail("This request key is already used in the dossier.", 409)
-            selected = followups.select(session, previous, str(data.follow_up_id), data.question) if data.follow_up_id else {}
+            if data.follow_up_id:
+                selected = followups.select(session, previous, str(data.follow_up_id), data.question)
             run = Investigation(dossier_id=dossier_id, organization_id=identity.organization_id,
                 request_key=str(data.request_key), question=data.question,
                 created_by_user_id=identity.user_id, actor_user_id=identity.user_id,
@@ -87,7 +98,8 @@ def routes(router, service, actor):
             enqueue(session, run)
             exploration.update(previous, continued_by=run.id, reply_key=str(data.request_key), reply_fingerprint=key)
             event(session, previous, "exploration_direction_chosen", next_investigation_id=run.id,
-                question=data.question, direction=data.direction, follow_up_id=str(data.follow_up_id) if data.follow_up_id else None, actor_user_id=identity.user_id)
+                question=data.question, direction=data.direction, orientation_revision=data.orientation_revision,
+                follow_up_id=str(data.follow_up_id) if data.follow_up_id else None, actor_user_id=identity.user_id)
             event(session, run, "investigation_queued", question=run.question, previous_investigation_id=previous.id,
                 disclosure=exploration.DISCLOSURE, origin=exploration.CONTRACT)
             session.commit()

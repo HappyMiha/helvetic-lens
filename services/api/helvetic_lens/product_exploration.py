@@ -91,8 +91,19 @@ do not manufacture a fork or overstate independent support from two documents.
 Retain counterevidence, analogy limits, jurisdiction/date and allegations versus
 adjudicated findings where relevant. List short consequential unknowns. This is
 an early working view, not settled findings, a monitoring policy, human review or
-hidden reasoning. No invented facts/URLs or medical/legal conclusions. Do not ask
-the user to answer now; remaining research continues. Return requested JSON only.
+hidden reasoning. No invented facts/URLs or medical/legal conclusions. Do not require
+the user to answer; remaining research continues. Return requested JSON only.
+"""
+CLARIFICATION_SYSTEM = """You may additionally offer ONE optional consequential
+clarification with 2–3 directions, only when the READ evidence motivates genuinely
+different next work. Otherwise return clarification="" and directions=[]. Each
+direction needs an exact supplied quote/locator, a plain public research question
+and why explaining its connection to the original words and how the next work
+would differ. The question is what to investigate, not an assertion about intent.
+Do not turn every interpretation or uncertainty into a question. Never assume
+the user meant a correction. No generic domain checklist or required answer.
+Research continues without a reply; selection explicitly starts a new bounded
+episode and keeps earlier evidence. Do not promise an answer or complete coverage.
 """
 
 
@@ -151,6 +162,12 @@ class EarlyOrientation(legal_profiles.Input):
     uncertainties: list[str] = Field(min_length=1, max_length=3)
 
 
+class ClarifyingOrientation(EarlyOrientation):
+    model_config = {**EarlyOrientation.model_config, "title": "EarlyOrientation"}
+    clarification: str = Field(default="", max_length=300)
+    directions: list[Direction] = Field(default_factory=list, max_length=3)
+
+
 def enabled(run):
     return (run.research_state or {}).get("exploration", {}).get("contract") == CONTRACT
 
@@ -158,6 +175,7 @@ def enabled(run):
 def initial(*, previous=None):
     from . import product_branch_assessment as branch_assessment
     from . import product_question_renewal as renewal
+    from .product_early_clarification import CONTRACT as CLARIFICATION_CONTRACT
 
     limits = research.Limits(branches=4, depth=2, sources_per_branch=2,
         candidates_per_branch=4, search_requests=12, source_fetches=6,
@@ -170,6 +188,7 @@ def initial(*, previous=None):
             "renewal_recovery_contract": renewal.RECOVERY_CONTRACT,
             "research_update_contract": branch_assessment.UPDATE_CONTRACT,
             "purpose_contract": activity.PURPOSE_CONTRACT,
+            "clarification_contract": CLARIFICATION_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -189,6 +208,11 @@ def prepare(session, run, *, early=False):
             for q in run.research_state["questions"]]}
     state = run.research_state["exploration"]
     if early:
+        from . import product_early_clarification as clarification
+
+        if clarification.enabled(run):
+            value["sources"] = [clarification.source_record(s) for s in sources(session, run).values()]
+            value["claims"] = informed.public_claims(session, run, {s["id"] for s in value["sources"]})
         informed.prepare(session, run, value)
     if not early:
         value["research_scope"] = projection(session, run)["research_scope"]
@@ -270,8 +294,15 @@ def validated(session, run, supplied, result, groups):
 
 
 def apply_orientation(session, run, supplied, result):
+    from . import product_early_clarification as clarification
+
     informed.validate(session, run, supplied)
-    value = validated(session, run, supplied, result, ("interpretations",))
+    if clarification.enabled(run):
+        clarification.validate(session, run, supplied)
+    clarifying = clarification.enabled(run) and isinstance(result, ClarifyingOrientation)
+    if clarifying:
+        validate_directions(result)
+    value = validated(session, run, supplied, result, ("interpretations", "directions") if clarifying else ("interpretations",))
     if informed.enabled(run):
         value["read_preparation"] = informed.preparation(supplied)
         value["read_context_at_orientation"] = deepcopy(supplied["read_context"])
@@ -280,16 +311,22 @@ def apply_orientation(session, run, supplied, result):
     update(run, revision=run.event_sequence + 1,
         orientation={"contract": "orientation/v1", "status": "ready", "briefing": value,
             "revision": run.event_sequence + 1, "saved_at": iso(utcnow())})
+    if clarification.enabled(run):
+        clarification.remember(session, run, supplied)
     event(session, run, "orientation_ready", interpretation_count=len(result.interpretations))
+
+
+def validate_directions(result):
+    if bool(result.clarification.strip()) != bool(result.directions) or len(result.directions) == 1:
+        fail("A consequential clarification requires two or three directions.", 422)
+    if len({d.question.strip().casefold() for d in result.directions}) != len(result.directions):
+        fail("Clarification directions must be distinct.", 422)
 
 
 def apply(session, run, supplied, result):
     from . import product_question_renewal as renewal
 
-    if bool(result.clarification.strip()) != bool(result.directions) or len(result.directions) == 1:
-        fail("A consequential clarification requires two or three directions.", 422)
-    if len({d.question.strip().casefold() for d in result.directions}) != len(result.directions):
-        fail("Clarification directions must be distinct.", 422)
+    validate_directions(result)
     renewals = renewal.validate(session, run, supplied, result)
     value = validated(session, run, supplied, result, ("findings", "directions"))
     value.pop("question_renewals", None)
@@ -409,6 +446,8 @@ def projection(session, run):
     value.pop("scope_contract", None)
     value.pop("activity_contract", None)
     value.pop("purpose_contract", None)
+    value.pop("clarification_contract", None)
+    value.pop("orientation_context", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
     value.pop("informed_contract", None)
@@ -425,6 +464,10 @@ def projection(session, run):
     if value.get("briefing") and changed(value["briefing"], ("findings", "directions")):
         value.update(status="evidence_changed", briefing=None)
     orientation = value.get("orientation")
+    from . import product_early_clarification as clarification
+
+    if orientation and not clarification.local_current(session, run):
+        orientation.update(status="evidence_changed", briefing=None)
     if orientation and orientation.get("briefing"):
         orientation["briefing"].pop("read_context_at_orientation", None)
     if orientation and orientation.get("briefing") and changed(orientation["briefing"], ("interpretations",)):

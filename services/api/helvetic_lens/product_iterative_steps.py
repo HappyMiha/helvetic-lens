@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from . import decision_search, decision_sources
 from . import product_branch_assessment as branch_assessment
+from . import product_early_clarification as clarification
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_exploration_progress as progress
@@ -53,6 +54,7 @@ def prepare(session, run, branch, state, work):
     elif branch.phase in {"orient", "brief"}:
         work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
         if branch.phase == "orient":
+            work["early_clarification"] = clarification.enabled(run)
             work["timeout_seconds"] = 20
             work["skip"] = len(work["input"]["sources"]) < 2
     elif branch.phase in {"gate", "gate_review"}:
@@ -84,6 +86,8 @@ async def execute(service, work, seconds):
         "brief": (exploration.Briefing, exploration.SYSTEM),
         "orient": (exploration.EarlyOrientation, exploration.EARLY_SYSTEM),
     }[phase]
+    if phase == "orient" and work.get("early_clarification"):
+        schema, system = exploration.ClarifyingOrientation, system + exploration.CLARIFICATION_SYSTEM
     if phase == "reflect" and work["input"].get("branch_assessment_question"):
         schema, system = branch_assessment.AssessedReflection, system + branch_assessment.SYSTEM
     if phase == "extract" and work.get("read_relevance"):

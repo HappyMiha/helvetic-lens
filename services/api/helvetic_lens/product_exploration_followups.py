@@ -81,7 +81,7 @@ def saved_context(session, run, question_id):
     if not exploration.enabled(run):
         return None
     prior = reference(run)
-    if prior and not prior.get("follow_up_id"):
+    if prior and not prior.get("follow_up_id") and "early_direction" not in prior:
         return None
     from . import product_question_renewal, product_read_relevance
     from .product_exploration_progress import current
@@ -130,7 +130,7 @@ def references_current(session, run):
     """Walk typed ancestry without recursion or exposing prior private dossier data."""
     seen = set()
     current = run
-    while reference(current).get("follow_up_id"):
+    while reference(current).get("follow_up_id") or "early_direction" in reference(current):
         if current.id in seen:
             return False
         seen.add(current.id)
@@ -139,9 +139,17 @@ def references_current(session, run):
         if (not parent or parent.dossier_id != run.dossier_id or parent.organization_id != run.organization_id
                 or parent.research_state.get("exploration", {}).get("continued_by") != current.id):
             return False
-        context = saved_context(session, parent, link["follow_up_id"])
-        if context is None or current.question != context["question"] or fingerprint(context) != link.get("follow_up_fingerprint"):
-            return False
+        if "early_direction" in link:
+            from . import product_early_clarification as clarification
+
+            context = clarification.selected_context(session, parent, link["early_direction"], link.get("orientation_revision"))
+            if (context is None or current.question != context["direction"]["question"]
+                    or fingerprint(context) != link.get("early_fingerprint")):
+                return False
+        else:
+            context = saved_context(session, parent, link["follow_up_id"])
+            if context is None or current.question != context["question"] or fingerprint(context) != link.get("follow_up_fingerprint"):
+                return False
         current = parent
     return True
 
