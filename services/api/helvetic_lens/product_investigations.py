@@ -288,6 +288,7 @@ def payload(session, run):
     from .product_claim_evolution import projection
     from .product_contributions import original
     from .product_monitoring_research import trigger_for, trigger_payload
+    from .product_observed_queries import public_steps
 
     trigger = trigger_for(session, run)
     if not page_result_visible(session, run):
@@ -312,7 +313,7 @@ def payload(session, run):
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)] if adaptive_valid else [],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
-            "steps": b.checkpoint.get("steps", []), "error": b.checkpoint.get("error"),
+            "steps": public_steps(b.checkpoint), "error": b.checkpoint.get("error"),
             "coverage": b.checkpoint.get("coverage"),
             "question_id": b.checkpoint.get("question_id"), "parent_branch_id": b.checkpoint.get("parent_branch_id"),
             "depth": b.checkpoint.get("depth"), "decisions": b.checkpoint.get("decisions", []),

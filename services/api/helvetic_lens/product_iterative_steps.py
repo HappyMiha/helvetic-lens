@@ -13,6 +13,7 @@ from . import product_exploration_progress as progress
 from . import product_exploration_scope as research_scope
 from . import product_informed_research as informed
 from . import product_iterative_research as research
+from . import product_observed_queries as queries
 from . import product_query_recovery as query_recovery
 from . import product_question_renewal as renewal
 from . import product_read_relevance as read_relevance
@@ -109,6 +110,8 @@ async def execute(service, work, seconds):
             system += direction_assessment.NEXT_CHECK_SYSTEM
     if phase == "brief" and work["input"].get("research_scope"):
         system += research_scope.SYSTEM
+        if work["input"]["research_scope"].get("observed_queries", {}).get("status") == "ready":
+            system += queries.SYSTEM
     if phase in {"orient", "reflect", "brief"} and work["input"].get("read_context"):
         system += informed.SYSTEM
     if work.get("selected_public_check"):

@@ -645,3 +645,37 @@ Full dynamic/visual specifications, professional evaluation and parent
 MV2-021/023/051 remain IN PROGRESS; MV2-063/pgvector stays DEFERRED.
 
 <!-- End of the verbatim 1.21 overview. -->
+
+## Verbatim research overview sections (archived for 1.74)
+
+## Read-informed research — 1.62
+
+DONE within scope: Core and Sites 61 verified; 111 Core and 313 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_INFORMED_RESEARCH.md). MV2-002/020/024 and broader gates OPEN.
+
+## Ordinary saved checks — 1.63
+
+DONE within scope: Core and Sites 62 verified; [scope and evidence](docs/PRODUCT_OPEN_CHECK_CONTINUATION.md); MV2-002/020/024 remain OPEN.
+
+## Question assessment during research — 1.64
+
+DONE within scope; Core and Sites 63 verified. 133 Core and 322 client cases each passed. [Scope and acceptance](docs/PRODUCT_BRANCH_ASSESSMENT.md). MV2-002/020/024 remain OPEN.
+
+## Renew question assessments — 1.65
+
+DONE within scope; Core and Sites 64 verified. 107 Core and 326 client cases each passed. [Scope and acceptance](docs/PRODUCT_QUESTION_RENEWAL.md). MV2-002/020/024 remain OPEN.
+
+## Recover valid research summaries — 1.66
+
+DONE within scope; Core and Sites 65 verified. 103 Core and 332 client cases each passed. [Scope and acceptance](docs/PRODUCT_BRIEFING_RECOVERY.md). MV2-002/020/024 remain OPEN.
+
+## Useful research updates — 1.67
+
+DONE within scope; Core and Sites 66 verified. 150 Core and 345 client cases each passed. [Scope, dependencies and acceptance](docs/PRODUCT_RESEARCH_UPDATES.md). MV2-002/020/024 remain OPEN.
+
+## Current research purpose — 1.68
+
+DONE within scope; Core and Sites 67 verified. 96 Core and 355 client cases each passed. [Scope, dependencies and acceptance](docs/PRODUCT_RESEARCH_PURPOSE.md). MV2-002/020/024 remain OPEN.
+
+## Useful early clarification — 1.69
+
+DONE within scope; Core and Sites 68 verified. 75 Core and 367 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_EARLY_CLARIFICATION.md). MV2-002/020/024 remain OPEN.

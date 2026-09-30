@@ -17,6 +17,7 @@ from . import product_exploration_activity as activity
 from . import product_exploration_progress as progress
 from . import product_iterative_research as research
 from . import product_iterative_steps as research_steps
+from . import product_observed_queries as queries
 from . import product_query_recovery as query_recovery
 from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
@@ -351,6 +352,7 @@ async def execute(service, job_id, worker):
                             work.get("remaining_seconds", 90), work.get("timeout_seconds", 90))
                         state.setdefault("steps", []).append({"id": state["inflight"], "phase": branch.phase,
                             "status": "running", "started_at": iso(utcnow())})
+                        queries.record(session, run, branch, state, work)
                         activity.record(run, job, state, work)
                         checkpoint(session, run, branch, "step_started", state)
         if not work:
@@ -419,7 +421,9 @@ async def execute(service, job_id, worker):
         if state.get("inflight") != work["token"]:
             return {"id": job_id, "state": "stale_result_discarded"}
         blocked = excluded(session, parent)
-        if (not exploration.adaptive_current(session, run)
+        journal = work.get("input", {}).get("research_scope", {}).get("observed_queries")
+        journal_current = queries.input_current(session, run, journal) and queries.dispatch_current(state, work)
+        if (not exploration.adaptive_current(session, run) or not journal_current
                 or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", []))
                 or not clarification.input_current(session, run, work.get("input", {}).get("selected_direction"))
                 or not direction_assessment.input_current(session, run, work.get("input", {}))):
@@ -427,6 +431,8 @@ async def execute(service, job_id, worker):
                     and not direction_assessment.input_current(session, run, work["input"])):
                 exploration.update(run, next_check_inputs_invalid=True)
             failed = True
+            if not journal_current:
+                exploration.update(run, query_inputs_invalid=True)
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1
             exploration.update(run, revision=run.event_sequence + 1)
@@ -529,11 +535,13 @@ async def execute(service, job_id, worker):
                     state["analysed"] = state.get("analysed", 0) + 1
         if not failed:
             progress.remember(run, work.get("capture_progress"), work.get("capture_dependencies", []))
+            queries.remember(run, journal)
         if failed:
             advance(branch, state)
             if work.get("file") and isinstance(result, dict) and result.get("error"):
                 state["error"] = result["error"]
         state.pop("inflight", None)
+        queries.finish(state, work, result, failed)
         state["steps"][-1].update(status="unavailable" if failed else "completed", finished_at=iso(utcnow()))
         settle(branch, state)
         checkpoint(session, run, branch, "step_failed" if failed else "step_completed", state)

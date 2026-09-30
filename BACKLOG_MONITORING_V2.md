@@ -12,6 +12,10 @@
 
 DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
+## Observed search journal — 1.74
+
+VERIFYING activation. [Scope and acceptance evidence](docs/PRODUCT_OBSERVED_QUERIES.md). MV2-002/020/024 remain OPEN.
+
 ## Typed capture history — 1.73
 
 DONE within scope; Core verified, Sites 71 retained. 61 Core and 20 affected reader cases each passed. [Scope, dependencies, readiness and acceptance](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md). MV2-002/020/024 remain OPEN.
@@ -30,35 +34,35 @@ DONE within scope; Core and Sites 69 verified. 80 Core and 376 client cases each
 
 ## Useful early clarification — 1.69
 
-DONE within scope; Core and Sites 68 verified. 75 Core and 367 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_EARLY_CLARIFICATION.md). MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Current research purpose — 1.68
 
-DONE within scope; Core and Sites 67 verified. 96 Core and 355 client cases each passed. [Scope, dependencies and acceptance](docs/PRODUCT_RESEARCH_PURPOSE.md). MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Useful research updates — 1.67
 
-DONE within scope; Core and Sites 66 verified. 150 Core and 345 client cases each passed. [Scope, dependencies and acceptance](docs/PRODUCT_RESEARCH_UPDATES.md). MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Recover valid research summaries — 1.66
 
-DONE within scope; Core and Sites 65 verified. 103 Core and 332 client cases each passed. [Scope and acceptance](docs/PRODUCT_BRIEFING_RECOVERY.md). MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Renew question assessments — 1.65
 
-DONE within scope; Core and Sites 64 verified. 107 Core and 326 client cases each passed. [Scope and acceptance](docs/PRODUCT_QUESTION_RENEWAL.md). MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Question assessment during research — 1.64
 
-DONE within scope; Core and Sites 63 verified. 133 Core and 322 client cases each passed. [Scope and acceptance](docs/PRODUCT_BRANCH_ASSESSMENT.md). MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Ordinary saved checks — 1.63
 
-DONE within scope: Core and Sites 62 verified; [scope and evidence](docs/PRODUCT_OPEN_CHECK_CONTINUATION.md); MV2-002/020/024 remain OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Read-informed research — 1.62
 
-DONE within scope: Core and Sites 61 verified; 111 Core and 313 client cases each passed. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_INFORMED_RESEARCH.md). MV2-002/020/024 and broader gates OPEN.
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Usefulness of read passages — 1.61
 
@@ -1705,7 +1709,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | ID | Task | Phase | Priority | Size | Status | Dependencies |
 |---|---|---|---|---|---|---|
 | [MV2-001](#mv2-001) | Establish extension contracts and MVP compatibility | F0 | P0 | M | DONE | None |
-| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — capture history 1.73 DONE — next check 1.72 DONE — direction answer 1.71 DONE — selected direction 1.70 DONE — early clarification 1.69 DONE — research purpose 1.68 DONE — useful research updates 1.67 DONE — brief recovery 1.66 DONE — question renewal 1.65 DONE — branch assessment 1.64 DONE — ordinary checks 1.63 DONE — informed research 1.62 DONE — read relevance 1.61 DONE — query recovery 1.60 DONE — source recovery 1.59 DONE — research activity 1.58 DONE — research scope 1.57 DONE — question assessment 1.56 DONE — episode progress 1.55 DONE — saved-check continuation 1.54 DONE — adaptive orientation 1.53 DONE — early orientation 1.52 DONE — research-first 1.51 DONE — overview simplicity 1.50 DONE — reading summary 1.49 DONE — one-question start 1.48 DONE — shared journey verification 1.47 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
+| [MV2-002](#mv2-002) | Validate first-value journeys and shared navigation | F0 | P0 | M | IN PROGRESS — query journal 1.74 VERIFYING — capture history 1.73 DONE — next check 1.72 DONE — direction answer 1.71 DONE — selected direction 1.70 DONE — early clarification 1.69 DONE — research purpose 1.68 DONE — useful research updates 1.67 DONE — brief recovery 1.66 DONE — question renewal 1.65 DONE — branch assessment 1.64 DONE — ordinary checks 1.63 DONE — informed research 1.62 DONE — read relevance 1.61 DONE — query recovery 1.60 DONE — source recovery 1.59 DONE — research activity 1.58 DONE — research scope 1.57 DONE — question assessment 1.56 DONE — episode progress 1.55 DONE — saved-check continuation 1.54 DONE — adaptive orientation 1.53 DONE — early orientation 1.52 DONE — research-first 1.51 DONE — overview simplicity 1.50 DONE — reading summary 1.49 DONE — one-question start 1.48 DONE — shared journey verification 1.47 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped read recovery/version context/Legal rename/saved comparison/source reading DONE | None |
 | [MV2-003](#mv2-003) | Verify source rights, coverage and contracts for the nine active scenarios | F0 | P0 | L | PLANNED | [MV2-001](#mv2-001) |
 | [MV2-004](#mv2-004) | Personal workspace and team monitoring permissions | F1 | P0 | M | IN PROGRESS | [MV2-001](#mv2-001) |
 | [MV2-005](#mv2-005) | MonitoringSubject and versioned Monitoring Templates | F1 | P0 | L | PLANNED | [MV2-001](#mv2-001), [MV2-004](#mv2-004) |
@@ -1723,11 +1727,11 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — capture history 1.73 DONE — next check 1.72 DONE — direction answer 1.71 DONE — selected direction 1.70 DONE — early clarification 1.69 DONE — research purpose 1.68 DONE — useful research updates 1.67 DONE — brief recovery 1.66 DONE — question renewal 1.65 DONE — branch assessment 1.64 DONE — ordinary checks 1.63 DONE — informed research 1.62 DONE — read relevance 1.61 DONE — query recovery 1.60 DONE — source recovery 1.59 DONE — research activity 1.58 DONE — research scope 1.57 DONE — question assessment 1.56 DONE — episode progress 1.55 DONE — saved-check continuation 1.54 DONE — adaptive orientation 1.53 DONE — early orientation 1.52 DONE — research-first 1.51 DONE — overview simplicity 1.50 DONE — reading summary 1.49 DONE — one-question start 1.48 DONE — shared journey verification 1.47 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — query journal 1.74 VERIFYING — capture history 1.73 DONE — next check 1.72 DONE — direction answer 1.71 DONE — selected direction 1.70 DONE — early clarification 1.69 DONE — research purpose 1.68 DONE — useful research updates 1.67 DONE — brief recovery 1.66 DONE — question renewal 1.65 DONE — branch assessment 1.64 DONE — ordinary checks 1.63 DONE — informed research 1.62 DONE — read relevance 1.61 DONE — query recovery 1.60 DONE — source recovery 1.59 DONE — research activity 1.58 DONE — research scope 1.57 DONE — question assessment 1.56 DONE — episode progress 1.55 DONE — saved-check continuation 1.54 DONE — adaptive orientation 1.53 DONE — early orientation 1.52 DONE — research-first 1.51 DONE — overview simplicity 1.50 DONE — reading summary 1.49 DONE — one-question start 1.48 DONE — shared journey verification 1.47 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — source relationships 1.38 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier coverage 1.33 DONE; dossier templates 1.32 DONE; structured context 1.31 DONE; dossier clarity 1.30 DONE; domain setup 1.29 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — one-question start 1.48 DONE — shared journey verification 1.47 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — uncertainty audit 1.37 DONE — research reader 1.36 DONE — research evaluation 1.35 DONE — iterative research 1.34 DONE — dossier templates 1.32 DONE; structured context 1.31 DONE; domain setup 1.29 DONE; scoped global Ask and retrieval 4f DONE | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
-| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — capture history 1.73 DONE — next check 1.72 DONE — direction answer 1.71 DONE — selected direction 1.70 DONE — early clarification 1.69 DONE — research purpose 1.68 DONE — useful research updates 1.67 DONE — brief recovery 1.66 DONE — question renewal 1.65 DONE — branch assessment 1.64 DONE — ordinary checks 1.63 DONE — informed research 1.62 DONE — read relevance 1.61 DONE — query recovery 1.60 DONE — source recovery 1.59 DONE — research activity 1.58 DONE — research scope 1.57 DONE — question assessment 1.56 DONE — episode progress 1.55 DONE — saved-check continuation 1.54 DONE — adaptive orientation 1.53 DONE — early orientation 1.52 DONE — research-first 1.51 DONE — overview simplicity 1.50 DONE — reading summary 1.49 DONE — one-question start 1.48 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
+| [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — query journal 1.74 VERIFYING — capture history 1.73 DONE — next check 1.72 DONE — direction answer 1.71 DONE — selected direction 1.70 DONE — early clarification 1.69 DONE — research purpose 1.68 DONE — useful research updates 1.67 DONE — brief recovery 1.66 DONE — question renewal 1.65 DONE — branch assessment 1.64 DONE — ordinary checks 1.63 DONE — informed research 1.62 DONE — read relevance 1.61 DONE — query recovery 1.60 DONE — source recovery 1.59 DONE — research activity 1.58 DONE — research scope 1.57 DONE — question assessment 1.56 DONE — episode progress 1.55 DONE — saved-check continuation 1.54 DONE — adaptive orientation 1.53 DONE — early orientation 1.52 DONE — research-first 1.51 DONE — overview simplicity 1.50 DONE — reading summary 1.49 DONE — one-question start 1.48 DONE — source/AI output 1.46 DONE — reviewed synthesis 1.45 DONE — source roles 1.44 DONE — reviewed claim kinds 1.43 DONE — claim synthesis 1.42 DONE — reviewed search 1.41 DONE — human claim review 1.40 DONE — entity identity 1.39 DONE — research reader 1.36 DONE — dossier coverage 1.33 DONE; dossier clarity 1.30 DONE; scoped version context/Legal rename/saved comparison/source reading DONE | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
 | [MV2-027](#mv2-027) | Possible future implementation: C4 currency, thresholds, history and digest | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-008](#mv2-008), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-022](#mv2-022), [MV2-026](#mv2-026) |
@@ -1875,6 +1879,8 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 <a id="mv2-002"></a>
 
 ### MV2-002 — Validate first-value journeys and shared navigation
+
+Scoped query journal 1.74 VERIFYING: [scope, dependencies, readiness and acceptance](docs/PRODUCT_OBSERVED_QUERIES.md).
 
 Scoped capture history 1.73 DONE: [scope, dependencies, readiness and acceptance](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md).
 
@@ -2757,6 +2763,8 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+Scoped query journal 1.74 VERIFYING: [scope, dependencies, readiness and acceptance](docs/PRODUCT_OBSERVED_QUERIES.md).
+
 Scoped capture history 1.73 DONE: [scope, dependencies, readiness and acceptance](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md).
 
 Scoped next check 1.72 DONE: [scope, dependencies, readiness and acceptance](docs/PRODUCT_ANSWER_NEXT_CHECK.md).
@@ -3203,6 +3211,8 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+Scoped query journal 1.74 VERIFYING: [scope, dependencies, readiness and acceptance](docs/PRODUCT_OBSERVED_QUERIES.md).
 
 Scoped capture history 1.73 DONE: [scope, dependencies, readiness and acceptance](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md).
 

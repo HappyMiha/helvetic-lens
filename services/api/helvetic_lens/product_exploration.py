@@ -179,6 +179,7 @@ def initial(*, previous=None):
     from . import product_branch_assessment as branch_assessment
     from . import product_direction_assessment as direction_assessment
     from . import product_exploration_progress as progress
+    from . import product_observed_queries as queries
     from . import product_question_renewal as renewal
     from .product_early_clarification import CONTEXT_CONTRACT as DIRECTION_CONTEXT_CONTRACT
     from .product_early_clarification import CONTRACT as CLARIFICATION_CONTRACT
@@ -199,6 +200,7 @@ def initial(*, previous=None):
             "direction_assessment_contract": direction_assessment.CONTRACT,
             "next_check_contract": direction_assessment.NEXT_CHECK_CONTRACT,
             "capture_history_contract": progress.HISTORY_CONTRACT,
+            "query_journal_contract": queries.CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -400,11 +402,12 @@ def validated_question_points(session, run, supplied, assessment):
 def adaptive_current(session, run):
     from . import product_branch_assessment as branch_assessment
     from . import product_direction_assessment as direction_assessment
+    from . import product_observed_queries as queries
     from . import product_question_renewal as renewal
     from .product_exploration_followups import references_current
     from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run) and direction_assessment.current(session, run)
+    return local_dependencies_current(session, run) and current(session, run) and queries.current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run) and direction_assessment.current(session, run)
 
 
 def local_dependencies_current(session, run):
@@ -457,6 +460,9 @@ def projection(session, run):
     value.pop("adaptive_dependencies", None)
     value.pop("capture_comparison", None)
     value.pop("capture_history_contract", None)
+    value.pop("query_journal_contract", None)
+    value.pop("observed_query_context", None)
+    value.pop("query_inputs_invalid", None)
     value.pop("assessment_contract", None)
     value.pop("branch_assessment_contract", None)
     value.pop("research_update_contract", None)

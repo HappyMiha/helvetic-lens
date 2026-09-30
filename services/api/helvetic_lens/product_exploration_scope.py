@@ -1,4 +1,5 @@
 """Observed public research work, never a score for coverage or answer quality."""
+from . import product_observed_queries as queries
 from . import product_query_recovery as query_recovery
 from . import product_read_relevance as read_relevance
 from . import product_source_recovery as recovery
@@ -91,6 +92,7 @@ def observed(session, run, available, *, invalid=False):
             "unknown_reader_scope": sum(not isinstance(s.snapshot.get("text_truncated"), bool) for s in material)},
         "questions": {"open": len(pending), "not_started": sum(not q.get("branch_id") for q in pending)},
         "budget_stops": sorted(stops & RESOURCES),
+        "observed_queries": queries.projection(session, run),
         "source_recovery": recovery.projection(session, run, available),
         "query_recovery": query_recovery.projection(session, run, available),
         "read_relevance": read_relevance.projection(session, run, available)}
