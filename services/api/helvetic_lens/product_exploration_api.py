@@ -5,6 +5,7 @@ from fastapi import Request
 from pydantic import Field, model_validator
 from sqlalchemy import select
 
+from . import jobs
 from . import product_early_clarification as clarification
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
@@ -17,13 +18,16 @@ from .product_question_start import Explore
 
 
 class Reply(Explore):
-    expected_revision: int = Field(ge=1, strict=True)
+    continue_research: bool = Field(default=False, strict=True)
+    expected_revision: int = Field(ge=0, strict=True)
     direction: int | None = Field(default=None, ge=0, le=2, strict=True)
     follow_up_id: UUID | None = None
     orientation_revision: int | None = Field(default=None, ge=1, strict=True)
 
     @model_validator(mode="after")
     def single_choice(self):
+        if not self.continue_research and self.expected_revision == 0:
+            raise ValueError("A legacy reply requires a saved checkpoint.")
         if self.direction is not None and self.follow_up_id is not None:
             raise ValueError("Choose one saved check or one briefing direction.")
         if self.orientation_revision is not None and self.direction is None:
@@ -55,6 +59,8 @@ def routes(router, service, actor):
                 fail("This research does not have an exploratory checkpoint.", 409)
             state = previous.research_state["exploration"]
             command = data.model_dump(mode="json")
+            if not data.continue_research:
+                command.pop("continue_research")  # Preserve existing reply fingerprints.
             if data.orientation_revision is None:
                 command.pop("orientation_revision")  # Preserve existing reply fingerprints.
             if data.follow_up_id is None:
@@ -67,10 +73,13 @@ def routes(router, service, actor):
             if state.get("continued_by") or data.expected_revision != state["revision"]:
                 fail("This research checkpoint changed. Refresh to see the next episode.", 409)
             current = exploration.projection(session, previous)
-            if (current["status"] == "exploring" and previous.status not in {"paused", "cancelled"}) or previous.status in ACTIVE:
+            if not data.continue_research and ((current["status"] == "exploring" and previous.status not in {"paused", "cancelled"}) or previous.status in ACTIVE):
                 fail("Pause or finish the preliminary episode before changing direction.", 409)
             if latest(session, dossier_id).id != previous.id:
                 fail("A newer research episode exists. Reply to its checkpoint.", 409)
+            if data.continue_research and (current["status"] == "evidence_changed"
+                    or not exploration.adaptive_current(session, previous)):
+                fail("Earlier research changed. Refresh it before continuing with its context.", 409)
             selected = {}
             if data.orientation_revision is not None:
                 selected = clarification.select(session, previous, current, data.direction,
@@ -80,6 +89,7 @@ def routes(router, service, actor):
                 if data.direction >= len(choices) or choices[data.direction]["question"] != data.question:
                     fail("The evidence-backed direction changed. Refresh before choosing.", 409)
             if session.scalar(select(Investigation.id).where(Investigation.dossier_id == dossier_id,
+                    Investigation.id != previous.id,
                     Investigation.status.in_(ACTIVE)).limit(1)):
                 fail("Another investigation is running. Pause or finish it first.", 409)
             if session.scalar(select(Investigation.id).where(Investigation.dossier_id == dossier_id,
@@ -87,6 +97,16 @@ def routes(router, service, actor):
                 fail("This request key is already used in the dossier.", 409)
             if data.follow_up_id:
                 selected = followups.select(session, previous, str(data.follow_up_id), data.question)
+            if data.continue_research and not selected:
+                selected = {"user_refinement": {"question": data.question,
+                    "original_question": previous.question, "reply_fingerprint": key}}
+            # Validate before stopping. Rejection or enqueue failure rolls back
+            # the entire handoff, including cancellation of the old worker lease.
+            if previous.status in ACTIVE:
+                if previous.job_id:
+                    jobs.cancel(session, previous.job_id)
+                previous.status, previous.stop_reason = "paused", "Continued with the user's refined question. Saved evidence is retained."
+                event(session, previous, "investigation_pause", status=previous.status)
             run = Investigation(dossier_id=dossier_id, organization_id=identity.organization_id,
                 request_key=str(data.request_key), question=data.question,
                 created_by_user_id=identity.user_id, actor_user_id=identity.user_id,

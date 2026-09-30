@@ -37,7 +37,8 @@ def typed_history(run):
 
 def linked(run, *, early):
     reference = followups.reference(run)
-    return bool(reference.get("follow_up_id") or (early and "early_direction" in reference))
+    return bool(reference.get("follow_up_id") or (early and (
+        "early_direction" in reference or "user_refinement" in reference)))
 
 
 def ancestry(session, run, *, early, limit):

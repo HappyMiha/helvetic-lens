@@ -1,5 +1,9 @@
 # Helvetic Lens project map
 
+[Natural research refinement](docs/PRODUCT_RESEARCH_REFINEMENT.md) is implemented and locally validated:
+one action corrects active research and carries bounded earlier public work into
+the next planner. Production activation is tracked in the parent checkpoint.
+
 [Balanced research delivery](docs/PRODUCT_RESEARCH_DELIVERY.md) is implemented and locally validated:
 initial directions share time, useful sources are analysed as found, final briefing
 time is retained, and both product readers accumulate current cited findings.

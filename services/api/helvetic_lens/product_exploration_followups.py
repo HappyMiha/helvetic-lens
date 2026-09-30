@@ -81,7 +81,7 @@ def saved_context(session, run, question_id):
     if not exploration.enabled(run):
         return None
     prior = reference(run)
-    if prior and not prior.get("follow_up_id") and "early_direction" not in prior:
+    if prior and not prior.get("follow_up_id") and "early_direction" not in prior and "user_refinement" not in prior:
         return None
     from . import product_question_renewal, product_read_relevance
     from .product_exploration_progress import current
@@ -134,7 +134,8 @@ def references_current(session, run):
 
     seen = set()
     current = run
-    while reference(current).get("follow_up_id") or "early_direction" in reference(current):
+    while (reference(current).get("follow_up_id") or "early_direction" in reference(current)
+            or "user_refinement" in reference(current)):
         if current.id in seen:
             return False
         seen.add(current.id)
@@ -144,7 +145,15 @@ def references_current(session, run):
                 or parent.research_state.get("exploration", {}).get("continued_by") != current.id
                 or not queries.current(session, parent) or not memory.current(session, parent) or not applicability.current(session, parent)):
             return False
-        if "early_direction" in link:
+        if "user_refinement" in link:
+            refinement = link["user_refinement"]
+            if (not isinstance(refinement, dict) or not parent.external_discovery
+                    or parent.status in ACTIVE or current.question != refinement.get("question")
+                    or parent.question != refinement.get("original_question")
+                    or parent.research_state["exploration"].get("reply_fingerprint") != refinement.get("reply_fingerprint")
+                    or not exploration.local_dependencies_current(session, parent)):
+                return False
+        elif "early_direction" in link:
             from . import product_early_clarification as clarification
 
             context = clarification.selected_context(session, parent, link["early_direction"], link.get("orientation_revision"))
