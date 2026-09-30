@@ -744,3 +744,31 @@ DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.m
 ## Renew question assessments — 1.65
 
 DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Question assessment during research — 1.64
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Ordinary saved checks — 1.63
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Read-informed research — 1.62
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Usefulness of read passages — 1.61
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Bounded query reformulation — 1.60
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Bounded source recovery — 1.59
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Current research activity — 1.58
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).

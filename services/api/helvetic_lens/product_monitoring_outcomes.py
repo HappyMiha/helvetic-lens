@@ -1,6 +1,7 @@
 """Current, bounded reading of a scheduled check; no inference or copied evidence."""
 from sqlalchemy import select
 
+from .product_check_source_coverage import project as source_coverage
 from .product_claim_evolution import evidence_payload
 from .product_claim_evolution import payload as change_payload
 from .product_claim_evolution import query as change_query
@@ -62,12 +63,16 @@ def project(session, run, trigger, branches):
     result = {"contract": CONTRACT, "state": run.status, "finding_state": "pending",
         "limitations": [], "findings": [], "comparisons": [],
         "scope": "This saved question and the sources captured in this check. Coverage is not exhaustive."}
-    if run.status in {"queued", "running", "paused", "cancelled"}:
-        return result
     if (run.question != trigger.question or run.publication_id
             or not session.scalar(select(Investigation.id).where(Investigation.id == run.id, sources_visible()))):
         result.update(state="unavailable", finding_state="unavailable")
         result["limitations"] = ["The evidence for this check is no longer available in its original scope."]
+        return result
+
+    if not branches and run.status in {"queued", "running", "paused", "cancelled"}:
+        return result
+    result["source_coverage"] = source_coverage(session, run, branches)
+    if run.status in {"queued", "running", "paused", "cancelled"}:
         return result
 
     phases = {step.get("phase") for branch in branches for step in branch.checkpoint.get("steps", [])

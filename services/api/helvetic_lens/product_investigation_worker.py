@@ -10,6 +10,7 @@ from uuid import uuid4
 from sqlalchemy import case, select
 
 from . import decision_search, decision_sources, jobs
+from . import product_check_source_coverage as check_coverage
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
 from . import product_evidence_applicability as applicability
@@ -356,6 +357,7 @@ async def execute(service, job_id, worker):
                             work.get("remaining_seconds", 90), work.get("timeout_seconds", 90))
                         state.setdefault("steps", []).append({"id": state["inflight"], "phase": branch.phase,
                             "status": "running", "started_at": iso(utcnow())})
+                        check_coverage.record(state, work)
                         queries.record(session, run, branch, state, work)
                         activity.record(run, job, state, work)
                         checkpoint(session, run, branch, "step_started", state)
@@ -487,6 +489,7 @@ async def execute(service, job_id, worker):
 
                         source, fresh = web_capture(session, run, {**result, "title": work["item"]["title"],
                             "retrieval_queries": [work["query"]]})
+                        state["steps"][-1]["source_id"] = source.id
                         if source.snapshot.get("unchanged_from"):
                             state["unchanged"] = state.get("unchanged", 0) + 1
                     elif work.get("public_file_id"):
@@ -542,7 +545,7 @@ async def execute(service, job_id, worker):
                     read_relevance.remember(run, state, work, assessed)
                     applicability.remember(run, source, scoped)
                     if state.get("recurring_web"):
-                        source.snapshot = {**source.snapshot, "analysis_completed": True}
+                        source.snapshot = {**source.snapshot, "analysis_completed": True, "analysis_completed_at": iso(utcnow())}
                     next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
         if not failed:

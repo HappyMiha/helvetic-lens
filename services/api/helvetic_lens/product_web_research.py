@@ -72,9 +72,11 @@ def worker_access(session, run, trigger):
 
 
 def seed(session, run, trigger):
+    from .product_check_source_coverage import seed as coverage_seed
+
     # Deliberately exclude private saved material and automatic entity expansion.
     session.add(InvestigationBranch(**scope(run), query=trigger.question,
-        reason="The explicitly authorized recurring public question is due.", checkpoint={"recurring_web": True}))
+        reason="The explicitly authorized recurring public question is due.", checkpoint={"recurring_web": True, "source_coverage": coverage_seed(session, run)}))
     run.status = "running"
     plan(session, run, "Search the saved public question once; read new evidence and compare earlier private findings.",
          trigger={"web_research_trigger_id": trigger.id, "policy_revision": trigger.policy_revision})
@@ -100,7 +102,9 @@ def capture(session, run, item):
     duplicate = prior if prior and prior.snapshot.get("web_content_fingerprint") == content_key else None
     source, fresh = snapshot(session, run, {**item, "allow_discovery": False,
         "web_question_fingerprint": question_key, "web_content_fingerprint": content_key,
-        "analysis_completed": False, "unchanged_from": duplicate.id if duplicate else None}, public=True)
+        "analysis_completed": False, "unchanged_from": duplicate.id if duplicate else None,
+        "previous_analysed_source_id": prior.id if prior else None,
+        "capture_state": "unchanged" if duplicate else "changed" if prior else "first_capture"}, public=True)
     if duplicate:
         event(session, run, "source_unchanged", source_id=source.id, previous_source_id=duplicate.id,
               reason="The same captured body and excerpts were already analysed for this question.")
