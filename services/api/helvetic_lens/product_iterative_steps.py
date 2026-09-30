@@ -104,6 +104,9 @@ async def execute(service, work, seconds):
     if phase == "brief" and work["input"].get("direction_assessment_target"):
         schema = direction_assessment.RenewedDirectionBriefing if work["input"].get("question_renewal_targets") else direction_assessment.DirectionBriefing
         system += direction_assessment.SYSTEM
+        if "next_check_candidates" in work["input"]:
+            schema = direction_assessment.RenewedSuggestedDirectionBriefing if work["input"].get("question_renewal_targets") else direction_assessment.SuggestedDirectionBriefing
+            system += direction_assessment.NEXT_CHECK_SYSTEM
     if phase == "brief" and work["input"].get("research_scope"):
         system += research_scope.SYSTEM
     if phase in {"orient", "reflect", "brief"} and work["input"].get("read_context"):
@@ -127,6 +130,8 @@ async def execute(service, work, seconds):
         optional = {}
         if work["input"].get("direction_assessment_target"):
             optional["direction_assessment"] = "_direction_unavailable"
+        if "next_check_candidates" in work["input"]:
+            optional["next_check_choice"] = "_next_check_unavailable"
         if work["input"].get("question_renewal_targets") and work["input"].get("question_renewal_recovery") == renewal.RECOVERY_CONTRACT:
             optional["question_renewals"] = "_renewal_unavailable"
         if optional:

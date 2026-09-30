@@ -13,6 +13,19 @@ from .product_api import fail
 from .product_operations import fingerprint
 
 CONTRACT = "selected-direction-assessment/v1"
+NEXT_CHECK_CONTRACT = "selected-direction-next-check/v1"
+NEXT_CHECK_SYSTEM = """next_check_candidates contains up to six existing public
+checks or exact question_renewal_targets. Optionally return next_check_choice only
+when your valid direction_assessment is partial, conflicting or not_found and one
+candidate would investigate a specific remaining limitation of that assessment.
+Copy its question_id and the exact query from current_check, or from a valid
+further_check you return for that SAME ID in question_renewals. limitation_index
+is the zero-based index of the actual direction_assessment.limitations item this
+check would address. Prefer usefulness for the chosen goal over candidate order.
+Do not invent a question ID, query, new rationale or new work here. Return null
+when no supplied check helps. This is a tentative link, not a claim that a check
+will resolve the uncertainty. No automatic continuation or monitoring.
+"""
 SYSTEM = """direction_assessment_target identifies the exact early research goal
 the user chose. In this SAME briefing optionally return direction_assessment with
 its selection unchanged. It has no saved-question ID. Assess the chosen question,
@@ -53,9 +66,47 @@ class RenewedDirectionBriefing(renewal.RenewalBriefing):
     _direction_unavailable: bool = PrivateAttr(default=False)
 
 
+class NextCheckChoice(legal_profiles.Input):
+    question_id: str = Field(min_length=1, max_length=36)
+    query: str = Field(min_length=3, max_length=300)
+    limitation_index: int = Field(ge=0, le=3, strict=True)
+
+
+class SuggestedDirectionBriefing(DirectionBriefing):
+    next_check_choice: NextCheckChoice | None = None
+    _next_check_unavailable: bool = PrivateAttr(default=False)
+
+
+class RenewedSuggestedDirectionBriefing(RenewedDirectionBriefing):
+    next_check_choice: NextCheckChoice | None = None
+    _next_check_unavailable: bool = PrivateAttr(default=False)
+
+
 def enabled(run):
     state = (run.research_state or {}).get("exploration", {})
     return state.get("direction_assessment_contract") == CONTRACT and "early_direction" in (state.get("previous") or {})
+
+
+def next_check_enabled(run):
+    return enabled(run) and run.research_state["exploration"].get("next_check_contract") == NEXT_CHECK_CONTRACT
+
+
+def next_candidates(session, run):
+    from .product_exploration_followups import saved_context
+
+    renewable = {q["question_id"] for q in renewal.targets(session, run)}
+    items = []
+    for question in sorted(run.research_state["questions"], key=lambda q: (-q["priority"], q["created_at"], q["id"])):
+        value = saved_context(session, run, question["id"])
+        if value is None and question["id"] not in renewable:
+            continue
+        items.append({"question_id": question["id"], "question": question["question"],
+            "state_fingerprint": fingerprint(question), "may_renew": question["id"] in renewable,
+            "current_check": {k: deepcopy(value[k]) for k in
+                ("query", "purpose", "quote", "locator", "source")} if value else None})
+        if len(items) == 6:
+            break
+    return {"contract": NEXT_CHECK_CONTRACT, "items": items}
 
 
 def target(session, run):
@@ -75,6 +126,8 @@ def prepare(session, run, supplied):
     supplied["sources"] = [clarification.source_record(available[s["id"]]) for s in supplied["sources"]]
     supplied["claims"] = []
     informed.prepare(session, run, supplied)
+    if next_check_enabled(run):
+        supplied["next_check_candidates"] = next_candidates(session, run)
     validate_inputs(session, run, supplied)
 
 
@@ -85,6 +138,9 @@ def validate_inputs(session, run, supplied):
     informed.validate(session, run, supplied)
     if supplied.get("claims") != informed.public_claims(session, run, {s["id"] for s in supplied["sources"]}):
         fail("The direction assessment claim context changed.", 422, "invalid_evidence")
+    if "next_check_candidates" in supplied and (
+            not next_check_enabled(run) or supplied["next_check_candidates"] != next_candidates(session, run)):
+        fail("The next-check candidates changed.", 422, "invalid_evidence")
 
 
 def input_current(session, run, supplied):
@@ -124,11 +180,79 @@ def apply(session, run, supplied, result, value):
     exploration.update(run, direction_assessment_context={**context, "fingerprint": fingerprint(context)})
 
 
+def remember_next_check(session, run, supplied, result, value):
+    """Bind only after independently validated renewals have reached saved_context."""
+    from .product_exploration_followups import saved_context
+
+    candidates = supplied.get("next_check_candidates")
+    if candidates is None:
+        return
+    assessment = value.get("assessment")
+    draft = getattr(result, "next_check_choice", None)
+    choice = None
+    if (draft and not getattr(result, "_next_check_unavailable", False)
+            and assessment and assessment["status"] in {"partial", "conflicting", "not_found"}
+            and draft.limitation_index < len(assessment["limitations"])
+            and any(c["question_id"] == draft.question_id for c in candidates["items"])):
+        current_check = saved_context(session, run, draft.question_id)
+        if current_check and current_check["query"] == draft.query:
+            choice = {"question_id": draft.question_id, "limitation_index": draft.limitation_index,
+                "context_fingerprint": fingerprint(current_check)}
+    context = deepcopy(run.research_state["exploration"]["direction_assessment_context"])
+    context.pop("fingerprint")
+    ids = {c["question_id"] for c in candidates["items"]}
+    context["next_check_receipt"] = {
+        "contract": NEXT_CHECK_CONTRACT, "supplied_candidates": deepcopy(candidates),
+        "question_fingerprints": {q["id"]: fingerprint(q) for q in run.research_state["questions"] if q["id"] in ids},
+        "assessment_fingerprint": fingerprint(assessment), "choice": choice,
+    }
+    exploration.update(run, direction_assessment_context={**context, "fingerprint": fingerprint(context)})
+
+
 def current(session, run):
     state = (run.research_state or {}).get("exploration", {})
+    if state.get("next_check_inputs_invalid"):
+        return False
     context = state.get("direction_assessment_context")
     if context is None:
         return not (enabled(run) and state.get("briefing"))
     if context.get("fingerprint") != fingerprint({k: v for k, v in context.items() if k != "fingerprint"}):
         return False
+    receipt = context.get("next_check_receipt")
+    if receipt is None and next_check_enabled(run) and state.get("briefing"):
+        return False
+    if receipt is not None:
+        ids = {c["question_id"] for c in receipt["supplied_candidates"]["items"]}
+        if (not next_check_enabled(run) or receipt["contract"] != NEXT_CHECK_CONTRACT
+                or receipt["assessment_fingerprint"] != fingerprint((state.get("briefing") or {}).get("assessment"))
+                or receipt["question_fingerprints"] != {q["id"]: fingerprint(q)
+                    for q in run.research_state["questions"] if q["id"] in ids}):
+            return False
     return input_current(session, run, context)
+
+
+def preferred_check(session, run):
+    from .product_exploration_followups import saved_context
+
+    if not current(session, run):
+        return None
+    context = run.research_state["exploration"].get("direction_assessment_context") or {}
+    choice = context.get("next_check_receipt", {}).get("choice")
+    if choice:
+        value = saved_context(session, run, choice["question_id"])
+        if value and fingerprint(value) == choice["context_fingerprint"]:
+            return value
+    return None
+
+
+def answer_link(run, value):
+    """Projection only: do not alter canonical selection/ancestry fingerprints."""
+    state = run.research_state["exploration"]
+    context = state.get("direction_assessment_context") or {}
+    choice = context.get("next_check_receipt", {}).get("choice")
+    if value and choice and fingerprint(value) == choice["context_fingerprint"]:
+        assessment = state["briefing"]["assessment"]
+        index = choice["limitation_index"]
+        return {"contract": NEXT_CHECK_CONTRACT, "question": assessment["question"],
+            "limitation_index": index, "limitation": assessment["limitations"][index]}
+    return None

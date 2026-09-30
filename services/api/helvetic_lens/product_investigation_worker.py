@@ -423,6 +423,9 @@ async def execute(service, job_id, worker):
                 or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", []))
                 or not clarification.input_current(session, run, work.get("input", {}).get("selected_direction"))
                 or not direction_assessment.input_current(session, run, work.get("input", {}))):
+            if ("next_check_candidates" in work.get("input", {})
+                    and not direction_assessment.input_current(session, run, work["input"])):
+                exploration.update(run, next_check_inputs_invalid=True)
             failed = True
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1

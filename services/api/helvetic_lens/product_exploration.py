@@ -196,6 +196,7 @@ def initial(*, previous=None):
             "clarification_contract": CLARIFICATION_CONTRACT,
             "direction_context_contract": DIRECTION_CONTEXT_CONTRACT,
             "direction_assessment_contract": direction_assessment.CONTRACT,
+            "next_check_contract": direction_assessment.NEXT_CHECK_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -342,6 +343,7 @@ def apply(session, run, supplied, result):
     value = validated(session, run, supplied, result, ("findings", "directions"))
     value.pop("question_renewals", None)
     value.pop("direction_assessment", None)
+    value.pop("next_check_choice", None)
     if getattr(result, "_renewal_unavailable", False):
         value["question_updates"] = {"status": "unavailable"}
     if run.research_state["exploration"].get("assessment_contract") == ASSESSMENT_CONTRACT:
@@ -350,6 +352,7 @@ def apply(session, run, supplied, result):
     if "research_scope" in supplied:
         value["research_scope_at_briefing"] = deepcopy(supplied["research_scope"])
     renewal.remember(session, run, supplied, renewals)
+    direction_assessment.remember_next_check(session, run, supplied, result, value)
     update(run, status="ready", briefing=value, revision=run.event_sequence + 1)
     event(session, run, "briefing_ready", finding_count=len(result.findings), direction_count=len(result.directions))
 
@@ -464,6 +467,8 @@ def projection(session, run):
     value.pop("direction_context_contract", None)
     value.pop("direction_assessment_contract", None)
     value.pop("direction_assessment_context", None)
+    value.pop("next_check_contract", None)
+    value.pop("next_check_inputs_invalid", None)
     value.pop("orientation_context", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
@@ -520,6 +525,12 @@ def projection(session, run):
         orientation.update(status="evidence_changed", briefing=None)
     next_check = suggestion(session, run)
     value["next_check"] = public_context(next_check) if next_check else None
+    if next_check:
+        from . import product_direction_assessment as direction_assessment
+
+        link = direction_assessment.answer_link(run, next_check)
+        if link:
+            value["next_check"]["answer_link"] = link
     from . import product_branch_assessment as branch_assessment
 
     value["question_assessments"] = branch_assessment.projection(session, run, invalid=value["status"] == "evidence_changed")

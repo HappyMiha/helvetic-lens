@@ -170,11 +170,15 @@ def context(session, run):
 
 def suggestion(session, run):
     from . import product_branch_assessment as branch_assessment
+    from . import product_direction_assessment as direction_assessment
 
     if (not exploration.enabled(run) or run.status in ACTIVE
             or run.research_state["exploration"].get("continued_by") or not references_current(session, run)
-            or not branch_assessment.current(session, run)):
+            or not branch_assessment.current(session, run) or not direction_assessment.current(session, run)):
         return None
+    preferred = direction_assessment.preferred_check(session, run)
+    if preferred:
+        return preferred
     for question in sorted(run.research_state["questions"], key=lambda q: (-q["priority"], q["created_at"], q["id"])):
         if question["status"] not in {"open", "unresolved", "investigating"} and not question.get("branch_assessment"):
             continue
