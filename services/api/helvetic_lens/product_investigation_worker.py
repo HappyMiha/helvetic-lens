@@ -23,6 +23,7 @@ from . import product_observed_queries as queries
 from . import product_query_recovery as query_recovery
 from . import product_read_relevance as read_relevance
 from . import product_research_memory as memory
+from . import product_research_pacing as pacing
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .config import DomainError
@@ -253,15 +254,19 @@ async def execute(service, job_id, worker):
             return {"id": job_id, "state": run.status}
         candidates = [b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE]
         if research.enabled(run):
-            candidates.sort(key=lambda b: (-b.checkpoint.get("priority", 6), b.created_at, b.id))
+            candidates.sort(key=pacing.order if pacing.enabled(run) else
+                            lambda b: (-b.checkpoint.get("priority", 6), b.created_at, b.id))
         branch = next(iter(candidates), None)
         if branch:
             state = deepcopy(branch.checkpoint)
             if research.enabled(run):
                 state["iterative"] = True
+                if pacing.enabled(run) and recovery.public_state(state):
+                    state["read_as_found"] = True
             if state.pop("inflight", None):
                 if research.enabled(run):
-                    research.elapsed(run, min(90, service.settings.job_lease_seconds - 5))
+                    research.elapsed(run, min(90, service.settings.job_lease_seconds - 5,
+                        (state.get("steps") or [{}])[-1].get("deadline_seconds", 90)))
                 if state.get("steps"):
                     state["steps"][-1].update(status="interrupted", finished_at=iso(utcnow()))
                 advance(branch, state, interrupted=True)
@@ -335,7 +340,8 @@ async def execute(service, job_id, worker):
                         memory.prepare(session, run, work)
                         applicability.prepare(session, run, work)
                         budget_before = deepcopy(run.research_state)
-                        if not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
+                        skipped_read = pacing.enabled(run) and branch.phase == "read" and work.get("skip")
+                        if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
                             work = None
                         elif branch.phase == "search":
                             try:
@@ -347,7 +353,7 @@ async def execute(service, job_id, worker):
                                 work = None
                     if work:
                         if research.enabled(run):
-                            work["remaining_seconds"] = max(0.001, run.research_state["limits"]["active_seconds"] - run.research_state["used"].get("active_seconds", 0))
+                            work["remaining_seconds"] = max(0.001, pacing.remaining_seconds(run, branch.phase))
                         if research.enabled(run) and branch.phase == "read":
                             state.setdefault("attempted_urls", []).append(work["item"]["url"])
                         branch.status = run.status = "running"
@@ -356,7 +362,8 @@ async def execute(service, job_id, worker):
                         work["deadline_seconds"] = min(90, service.settings.job_lease_seconds - 5,
                             work.get("remaining_seconds", 90), work.get("timeout_seconds", 90))
                         state.setdefault("steps", []).append({"id": state["inflight"], "phase": branch.phase,
-                            "status": "running", "started_at": iso(utcnow())})
+                            "status": "running", "started_at": iso(utcnow()),
+                            "deadline_seconds": work["deadline_seconds"]})
                         check_coverage.record(state, work)
                         queries.record(session, run, branch, state, work)
                         activity.record(run, job, state, work)

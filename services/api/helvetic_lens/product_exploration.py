@@ -190,7 +190,7 @@ def initial(*, previous=None):
         candidates_per_branch=4, search_requests=12, source_fetches=6,
         model_calls=16, decision_calls=40, active_seconds=360)
     return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
-        "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0,
+        "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0, "pacing_version": 1,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
             "open_check_contract": OPEN_CHECK_CONTRACT, "branch_assessment_contract": branch_assessment.CONTRACT,
             "renewal_contract": renewal.CONTRACT,
@@ -255,12 +255,14 @@ def update(run, **values):
 
 
 def schedule(session, run, branches):
-    if not enabled(run) or run.status not in ACTIVE:
+    if not enabled(run):
         return False
     early = next((b for b in branches if b.phase == "orient"), None)
     if early and early.status not in ACTIVE and run.research_state["exploration"].get("orientation", {}).get("status") == "scheduled":
         update(run, orientation={"contract": "orientation/v1", "status": "unavailable", "briefing": None})
-        event(session, run, "orientation_unavailable", reason="An early interpretation was not validated. Research continues within this episode.")
+        event(session, run, "orientation_unavailable", reason="An early interpretation was not validated.")
+    if run.status not in ACTIVE:
+        return False
     if any(b.status in ACTIVE for b in branches):
         data = run.research_state
         # One optional checkpoint, from read evidence only. Retain a request for

@@ -1,5 +1,10 @@
 # Helvetic Lens project map
 
+[Balanced research delivery](docs/PRODUCT_RESEARCH_DELIVERY.md) is implemented and locally validated:
+initial directions share time, useful sources are analysed as found, final briefing
+time is retained, and both product readers accumulate current cited findings.
+Production activation is tracked by the parent release checkpoint.
+
 [Shared feed-check history 1.80](docs/PRODUCT_FEED_CHECK_HISTORY.md) is DONE within verified scope:
 current source selection gates bounded native collection history and safe failures;
 reported event counts remain distinct from document membership or dossier research.

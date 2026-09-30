@@ -317,4 +317,7 @@ def test_early_source_identity_and_unquoted_passages_are_rechecked_after_inferen
     final = complete(client, service, root + '/investigations', run)
     assert final['exploration']['orientation']['status'] == 'unavailable'
     assert final['exploration']['orientation']['briefing'] is None
-    assert final['exploration']['briefing']
+    # Interleaved research has already pinned this capture for another branch.
+    # Its changed input pauses the episode instead of publishing stale analysis.
+    assert final['status'] == 'paused'
+    assert final['exploration']['briefing'] is None

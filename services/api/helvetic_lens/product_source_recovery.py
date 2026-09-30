@@ -38,6 +38,7 @@ def settle(branch, state):
     if (recorded(state) and branch.phase == "read"
             and state.get("read_index", 0) >= len(state.get("items", []))
             and state["source_recovery"]["failed_reads"]
+            and len(state.get("items", [])) >= state.get("source_limit", 2)
             and len(state.get("items", [])) < selection_limit(state)
             and state.get("gate_index", 0) < len(state.get("candidates", []))):
         value = state["source_recovery"]

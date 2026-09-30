@@ -216,6 +216,8 @@ def seed(session, run):
 
 
 def reserve_step(session, run, branch, state, phase, product):
+    from . import product_research_pacing as pacing
+
     if not enabled(run):
         return True
     data = deepcopy(run.research_state)
@@ -228,7 +230,7 @@ def reserve_step(session, run, branch, state, phase, product):
     # Keep the final model request for a useful orientation when exploration
     # exhausts other analysis work; the same cumulative cap still applies.
     reserved = int(bool(data.get("exploration")) and resource == "model_calls" and phase != "brief")
-    exceeded = "active_seconds" if data["used"].get("active_seconds", 0) >= data["limits"]["active_seconds"] else (
+    exceeded = "active_seconds" if pacing.remaining_seconds(run, phase) <= 0.001 else (
         resource if data["used"].get(resource, 0) + amount > (data["limits"][resource] - reserved) else None)
     if not exceeded and phase == "reformulate":
         # Do not spend a model request when no actual search, gate or read can

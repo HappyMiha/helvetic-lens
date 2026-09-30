@@ -19,6 +19,7 @@ from . import product_query_recovery as query_recovery
 from . import product_question_renewal as renewal
 from . import product_read_relevance as read_relevance
 from . import product_research_memory as memory
+from . import product_research_pacing as pacing
 from . import product_source_recovery as recovery
 from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -155,6 +156,8 @@ async def execute(service, work, seconds):
 def settle(branch, state):
     read_relevance.settle(branch, state)
     recovery.settle(branch, state)
+    if pacing.settle(branch, state):
+        return
     if branch.phase == "gate" and (state.get("gate_index", 0) >= len(state.get("candidates", []))
             or len(state.get("items", [])) >= recovery.selection_limit(state)):
         state.setdefault("candidate_counts", {})["not_evaluated_within_source_budget"] = max(0, len(state.get("candidates", [])) - state.get("gate_index", 0))

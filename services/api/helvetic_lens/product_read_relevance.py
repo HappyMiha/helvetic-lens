@@ -156,6 +156,7 @@ def settle(branch, state):
         selection_slots(state)
         and branch.phase == "extract"
         and state.get("extract_index", 0) >= len(state.get("source_ids", []))
+        and len(state.get("items", [])) >= state.get("source_limit", 2)
         and len(state.get("items", [])) < recovery.selection_limit(state)
         and state.get("gate_index", 0) < len(state.get("candidates", []))
     ):
