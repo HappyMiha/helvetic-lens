@@ -229,7 +229,14 @@ def test_every_supplied_planner_field_is_rechecked_after_inference(signed, monke
     monkeypatch.setattr(model, 'complete', response)
     plan(client, service, root, child)
     current = client.get(root + '/investigations/' + child['id']).json()
-    assert current['status'] == 'paused' and not current['research']['questions']
+    assert current['status'] == 'paused'
+    if change == 'capture_time':
+        # The new capture baseline invalidates the whole derived research view.
+        assert current['research'] is None
+        assert current['plans'] == current['branches'] == []
+        assert current['exploration']['status'] == 'evidence_changed'
+    else:
+        assert not current['research']['questions']
     assert len(trace['queries']) == before and not current['sources']
 
 

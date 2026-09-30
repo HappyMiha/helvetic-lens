@@ -35,6 +35,7 @@ native workflows are preserved during incremental migration.
 The new default entry uses [research before monitoring](docs/PRODUCT_RESEARCH_FIRST.md):
 bounded exploration, cited orientation and an explicit next direction; no recurrence
 is inferred from the first question.
+[Typed capture history](docs/PRODUCT_TYPED_CAPTURE_HISTORY.md) is VERIFYING production activation: retain bounded source comparisons through early-direction and saved-check ancestry.
 [Answer-linked next check](docs/PRODUCT_ANSWER_NEXT_CHECK.md) is verified within scope: connect one existing saved check to a specific remaining limitation of the selected answer.
 [Selected direction answer](docs/PRODUCT_DIRECTION_ASSESSMENT.md) is verified within scope: assess the chosen early goal using the existing final request and primary reader.
 [Selected direction context](docs/PRODUCT_SELECTED_DIRECTION.md) is verified within scope: retain the chosen rationale and earlier passage in the existing planner and reader.

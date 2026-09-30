@@ -2,11 +2,12 @@
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_source_relationships as relationships
-from .product_api import iso
+from .product_api import fail, iso
 from .product_investigation_models import Investigation
 from .product_operations import fingerprint
 
 CONTRACT = "episode-capture-progress/v1"
+HISTORY_CONTRACT = "typed-capture-history/v1"
 MAX_EPISODES, MAX_PREVIOUS, MAX_CURRENT = 8, 48, 24
 SYSTEM = """The capture_progress is a deterministic comparison of saved public
 material within its stated bounded scope, not proof of new facts or independent
@@ -30,33 +31,71 @@ def state(run):
     return (run.research_state or {}).get("exploration", {}).get("capture_comparison")
 
 
+def typed_history(run):
+    return (run.research_state or {}).get("exploration", {}).get("capture_history_contract") == HISTORY_CONTRACT
+
+
+def linked(run, *, early):
+    reference = followups.reference(run)
+    return bool(reference.get("follow_up_id") or (early and "early_direction" in reference))
+
+
+def ancestry(session, run, *, early, limit):
+    """Pin bounded link identity; the existing full guard validates its meaning."""
+    parents, links, seen = [], [], {run.id}
+    while linked(run, early=early):
+        if len(parents) >= limit:
+            return parents, fingerprint({"links": links, "truncated": True}), True
+        reference = followups.reference(run)
+        parent = session.get(Investigation, reference.get("investigation_id"))
+        if (not parent or parent.id in seen or parent.dossier_id != run.dossier_id
+                or parent.organization_id != run.organization_id
+                or parent.research_state.get("exploration", {}).get("continued_by") != run.id):
+            return None
+        links.append({"investigation_id": run.id, "question": run.question, "previous": reference})
+        parents.append(parent)
+        seen.add(parent.id)
+        run = parent
+    return parents, fingerprint({"links": links, "truncated": False}), False
+
+
 def initialize(session, run):
-    if not followups.reference(run).get("follow_up_id") or state(run):
+    typed = typed_history(run)
+    if not linked(run, early=typed) or state(run):
         return
-    current_run, previous, episodes, truncated = run, [], [], False
-    while followups.reference(current_run).get("follow_up_id"):
-        if len(episodes) >= MAX_EPISODES:
-            truncated = True
-            break
-        parent = session.get(Investigation, followups.reference(current_run)["investigation_id"])
-        # Called only after the full typed ancestry has passed its current fences.
-        assert parent and parent.dossier_id == run.dossier_id and parent.organization_id == run.organization_id
+    lineage = ancestry(session, run, early=typed, limit=MAX_EPISODES)
+    if lineage is None:
+        fail("The earlier research context changed.", 409)
+    parents, signature, truncated = lineage
+    previous, episodes = [], []
+    for parent in parents:
         episodes.append(parent.id)
         available = sorted(exploration.sources(session, parent).values(), key=lambda s: (s.created_at, s.id), reverse=True)
         capacity = MAX_PREVIOUS - len(previous)
         previous.extend(record(s) for s in available[:capacity])
         truncated |= len(available) > capacity
-        current_run = parent
     exploration.update(run, capture_comparison={"contract": CONTRACT, "episodes": episodes,
-        "previous": previous, "truncated": truncated, "input_dependencies": []})
+        "previous": previous, "truncated": truncated, "input_dependencies": [],
+        **({"history": {"contract": HISTORY_CONTRACT, "limit": MAX_EPISODES,
+            "fingerprint": signature}} if typed else {})})
 
 
 def current(session, run):
     saved = state(run)
     if saved is None:
-        return True
+        return not (typed_history(run) and linked(run, early=True) and run.plan_version)
     if saved.get("contract") != CONTRACT:
         return False
+    history = saved.get("history")
+    if history is not None or typed_history(run):
+        if (not typed_history(run) or not isinstance(history, dict)
+                or history.get("contract") != HISTORY_CONTRACT
+                or type(history.get("limit")) is not int or not 1 <= history["limit"] <= 8):
+            return False
+        lineage = ancestry(session, run, early=True, limit=history["limit"])
+        if (lineage is None or history.get("fingerprint") != lineage[1]
+                or saved["episodes"] != [p.id for p in lineage[0]]):
+            return False
     return references_current(session, run, saved["previous"] + saved["input_dependencies"])
 
 

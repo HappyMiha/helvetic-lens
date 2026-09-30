@@ -178,6 +178,7 @@ def enabled(run):
 def initial(*, previous=None):
     from . import product_branch_assessment as branch_assessment
     from . import product_direction_assessment as direction_assessment
+    from . import product_exploration_progress as progress
     from . import product_question_renewal as renewal
     from .product_early_clarification import CONTEXT_CONTRACT as DIRECTION_CONTEXT_CONTRACT
     from .product_early_clarification import CONTRACT as CLARIFICATION_CONTRACT
@@ -197,6 +198,7 @@ def initial(*, previous=None):
             "direction_context_contract": DIRECTION_CONTEXT_CONTRACT,
             "direction_assessment_contract": direction_assessment.CONTRACT,
             "next_check_contract": direction_assessment.NEXT_CHECK_CONTRACT,
+            "capture_history_contract": progress.HISTORY_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -454,6 +456,7 @@ def projection(session, run):
     value.pop("reply_key", None)
     value.pop("adaptive_dependencies", None)
     value.pop("capture_comparison", None)
+    value.pop("capture_history_contract", None)
     value.pop("assessment_contract", None)
     value.pop("branch_assessment_contract", None)
     value.pop("research_update_contract", None)
