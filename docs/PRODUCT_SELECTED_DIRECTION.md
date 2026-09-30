@@ -1,6 +1,6 @@
 # Preserve the meaning of the selected direction — 1.70
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. Parent tasks
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. Parent tasks
 MV2-002/020/024 and full architecture/live semantic/human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -90,8 +90,32 @@ case passed separately. Exact API lint passed.
 Both clients passed 376 tests, lint, types and production builds. Nine added reader
 cases cover queued/running/paused/saved views, closed original source context,
 unavailable/legacy/unknown data and actual overlapping-poll/access-denial races.
-Source/privacy/parity and final backlog status gates are release prerequisites.
+Source/privacy/parity and final backlog status gates passed.
 No paid/private live research, browser QA, new credentials or frozen validation.
 These fixtures establish mechanics and access boundaries, not interpretation
-accuracy or professional/human acceptance. Production activation remains pending;
+accuracy or professional/human acceptance. Production activation is recorded below;
 full architecture and parent tasks remain OPEN.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `650a3d7f74d51760dfd88236d7f4ff285f66a8b0` activated as
+`git-650a3d7f74d5` at 2026-09-30T11:44:37+00:00 through the normal
+release controller. Legal `7717947200bcb27b77bfa93d814cb731a793b37f` and Pharma
+`06f4385c483da90947aed0b537411c9a3e342f83` are active in the existing public Sites
+69/69, since
+2026-09-30T11:42:58.247062+00:00 and
+2026-09-30T11:43:42.822091+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T11:49:48.058211+00:00 confirmed 56 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 53 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`selected-direction-1.70-production.json`, SHA256
+`09909453a8ea268452a7d8e61ab4cadedc32c8c40b6d7f76b8f09eb7ab63411f`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: assess how the final briefing answers an explicitly selected early direction, using current evidence and existing final requests.
