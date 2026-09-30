@@ -1,6 +1,6 @@
 # What each scheduled check actually read — 1.78
 
-Scope recorded before implementation, 30 September 2026. VERIFYING production activation.
+Scope recorded before implementation, 30 September 2026. DONE within the verified scope below.
 MV2-002/012/020/024 and target C20–C24 remain OPEN beyond this bounded outcome.
 
 ## Outcome and existing behavior
@@ -80,3 +80,19 @@ Both 1.78.0 readers use one expandable list, safe original links, retained-captu
 navigation, honest incomplete states and a limited-lookback explanation. No
 browser, live/private/paid research or human professional evaluation was used.
 Exact source/privacy/parity and deployment evidence follow separately.
+
+
+## Verified production activation
+
+Core dd3e68077a56b5b7aaba3b812786a3b9081e463c / git-dd3e68077a56 activated
+2026-09-30T18:58:07+00:00. Verification matched 63 native modules, DomainPacks
+1.5.0, the current schema, five serving containers and nine Monitoring routes.
+Legal 43f899a946584567385de4d72dca78dd9343ba64 and Pharma f7a71067530adf533fa54af358e5a355032c8a8e are published in their
+existing public Sites projects, both version 74. Every public client asset was
+compared with its exact validated local build; home, API access and origin guards
+passed. All three mains were clean and aligned with their fetched origins.
+Production receipt SHA-256: 905b35ff684f2fb4b9be7758da1639b28b1d2bc6d9d2892ec43283b7435151fe.
+
+No browser, private production dossier or paid/live research was used. These
+checks prove activation and bounded behavior; full architecture, professional
+accuracy, source coverage and human acceptance remain OPEN.
