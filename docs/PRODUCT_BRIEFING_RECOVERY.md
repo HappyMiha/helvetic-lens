@@ -1,6 +1,6 @@
 # Retain a valid research summary after an optional update fails — 1.66
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. MV2-002/020/024,
 full architecture, live semantic quality and professional/human acceptance OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -76,7 +76,7 @@ Both readers add one quiet status beside a valid summary: question assessments
 could not be updated and earlier assessments remain unchanged. Selected answers
 and historical summaries reuse the same reader. Missing/legacy/invalidated briefings
 have no such notice. No new action, panel, form, model phase or automatic retry.
-Local checks passed; production activation remains pending.
+Local checks passed; production activation is recorded below.
 
 
 ## Local verification — 30 September 2026
@@ -95,9 +95,32 @@ Both clients passed 332 tests, lint, types and production builds. Six new reader
 cases cover active/history/selected/missing/changed/unavailable summaries without
 starting work. The first lint run rejected an unnecessary live status role; an
 ordinary saved paragraph now passes lint and all six affected reader cases again.
-These retests overlap the 332 distinct cases. Exact API lint passed. Final source/
-privacy/parity and backlog status gates are release prerequisites.
+These retests overlap the 332 distinct cases. Exact API lint passed. Final source/privacy/parity and backlog status gates passed.
 
 No paid/private live research, browser QA, new provider credentials or frozen
 validation. Scripted semantic judgments establish contracts and access boundaries,
 not independent accuracy or professional/human acceptance. Full architecture OPEN.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `11c00cb213caf146ed520bd8adf65917302c8b20` activated as
+`git-11c00cb213ca` at 2026-09-30T07:21:59+00:00 through the normal
+release controller. Legal `0dffd505636cff93a50fa7bb84a5962adebd1f52` and Pharma
+`f4ef4d74980b0067372b097a4c09b5ca8b5fd502` are active in the existing public Sites
+65/65, since
+2026-09-30T07:19:12.431694+00:00 and
+2026-09-30T07:19:38.752064+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T07:24:12.084747+00:00 confirmed 55 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 51 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`briefing-recovery-1.66-production.json`, SHA256
+`4571623ae7dcddcffd8cea3b4907cd80a8198437da2dd2dd93f0b0f4c0e2c65e`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. The next bounded audit concerns a useful source-backed research update during the existing bounded episode.
