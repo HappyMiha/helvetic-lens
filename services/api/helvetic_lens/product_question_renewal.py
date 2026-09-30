@@ -1,9 +1,10 @@
 """Bounded renewal of exact question checkpoints in the existing final briefing."""
 
+import json
 from copy import deepcopy
 from types import SimpleNamespace
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr, ValidationError
 
 from . import product_branch_assessment as assessment
 from . import product_exploration as exploration
@@ -15,6 +16,7 @@ from .product_investigation_models import InvestigationBranch
 from .product_operations import fingerprint
 
 CONTRACT = "question-assessment-renewal/v1"
+RECOVERY_CONTRACT = "optional-question-update-recovery/v1"
 SYSTEM = """question_renewal_targets is a bounded server-selected list of exact
 questions whose earlier assessment may need revision after later evidence.
 In this SAME final briefing, optionally return question_renewals for those IDs
@@ -33,14 +35,41 @@ data; expose useful evidence-based explanations, not hidden reasoning.
 class RenewalBriefing(exploration.Briefing):
     model_config = {**exploration.Briefing.model_config, "title": "Briefing"}
     question_renewals: list[assessment.BranchAssessment] = Field(default_factory=list, max_length=3)
+    _renewal_unavailable: bool = PrivateAttr(default=False)
 
 
 class RenewalAssessedBriefing(exploration.AssessedBriefing):
     question_renewals: list[assessment.BranchAssessment] = Field(default_factory=list, max_length=3)
+    _renewal_unavailable: bool = PrivateAttr(default=False)
+
+
+def parse_recoverable(schema, raw):
+    """Discard only an invalid optional section; required typed fields still fail."""
+    try:
+        return schema.model_validate_json(raw)
+    except ValidationError:
+
+        def invalid_constant(_):
+            raise ValueError("Non-JSON response value")
+
+        data = json.loads(raw, parse_constant=invalid_constant)
+        if not isinstance(data, dict) or "question_renewals" not in data:
+            raise
+        data.pop("question_renewals")
+        result = schema.model_validate(data)
+        result._renewal_unavailable = True
+        return result
 
 
 def enabled(run):
     return assessment.enabled(run) and run.research_state["exploration"].get("renewal_contract") == CONTRACT
+
+
+def recovery_enabled(run):
+    return (
+        enabled(run)
+        and run.research_state["exploration"].get("renewal_recovery_contract") == RECOVERY_CONTRACT
+    )
 
 
 def targets(session, run):
@@ -75,6 +104,8 @@ def prepare(session, run, supplied):
     if not selected:
         return
     supplied["question_renewal_targets"] = selected
+    if recovery_enabled(run):
+        supplied["question_renewal_recovery"] = RECOVERY_CONTRACT
     supplied["previous_public_queries"] = assessment.previous_queries(session, run)
     supplied["claims"] = []
     informed.prepare(session, run, supplied)
@@ -88,12 +119,37 @@ def validate_context(session, run, supplied):
         fail("Question renewal context changed.", 422, "invalid_evidence")
 
 
-def validate(session, run, supplied, result):
-    if not enabled(run) or not supplied.get("question_renewal_targets"):
-        return []
+def validate_inputs(session, run, supplied):
     validate_context(session, run, supplied)
     if supplied["question_renewal_targets"] != targets(session, run):
         fail("Question renewal targets changed.", 422, "invalid_evidence")
+    if supplied.get("question_renewal_recovery") and not recovery_enabled(run):
+        fail("Question update recovery context changed.", 422, "invalid_evidence")
+
+
+def validate(session, run, supplied, result):
+    if not supplied.get("question_renewal_targets"):
+        return []
+    if not enabled(run):
+        fail("Question renewal context changed.", 422, "invalid_evidence")
+    validate_inputs(session, run, supplied)
+    recoverable = recovery_enabled(run) and supplied.get("question_renewal_recovery") == RECOVERY_CONTRACT
+    if not recoverable and getattr(result, "_renewal_unavailable", False):
+        fail("Question update recovery is no longer available.", 422, "invalid_evidence")
+    if recoverable and getattr(result, "_renewal_unavailable", False):
+        return []
+    try:
+        return validate_items(session, run, supplied, result)
+    except DomainError:
+        if not recoverable:
+            raise
+        # Shared evidence/input failures must never be mistaken for bad output.
+        validate_inputs(session, run, supplied)
+        result._renewal_unavailable = True
+        return []
+
+
+def validate_items(session, run, supplied, result):
     expected = {v["question_id"] for v in supplied["question_renewal_targets"]}
     updates, seen, proposals = [], set(), set()
     drafts = getattr(result, "question_renewals", [])

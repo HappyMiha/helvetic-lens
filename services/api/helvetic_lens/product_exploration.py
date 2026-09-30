@@ -167,6 +167,7 @@ def initial(*, previous=None):
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
             "open_check_contract": OPEN_CHECK_CONTRACT, "branch_assessment_contract": branch_assessment.CONTRACT,
             "renewal_contract": renewal.CONTRACT,
+            "renewal_recovery_contract": renewal.RECOVERY_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -290,6 +291,8 @@ def apply(session, run, supplied, result):
     renewals = renewal.validate(session, run, supplied, result)
     value = validated(session, run, supplied, result, ("findings", "directions"))
     value.pop("question_renewals", None)
+    if getattr(result, "_renewal_unavailable", False):
+        value["question_updates"] = {"status": "unavailable"}
     if run.research_state["exploration"].get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment"] = validated_assessment(session, run, supplied, result)
     if "research_scope" in supplied:
@@ -398,6 +401,7 @@ def projection(session, run):
     value.pop("assessment_contract", None)
     value.pop("branch_assessment_contract", None)
     value.pop("renewal_contract", None)
+    value.pop("renewal_recovery_contract", None)
     value.pop("renewal_context", None)
     value.pop("scope_contract", None)
     value.pop("activity_contract", None)

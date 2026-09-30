@@ -182,7 +182,9 @@ def test_missing_or_invalid_renewal_never_rewrites_earlier_checkpoint(signed, mo
     root, run, trace, observed, before = configured(signed, monkeypatch, invalid=invalid)
     final = complete(client, service, root + "/investigations", run)
     assert observed and before
-    assert final["exploration"]["status"] == ("ready" if invalid == "missing" else "unavailable")
+    assert final["exploration"]["status"] == "ready"
+    notice = final["exploration"]["briefing"].get("question_updates")
+    assert notice == (None if invalid == "missing" else {"status": "unavailable"})
     assert final["exploration"]["next_check"] is None and QUERY not in trace["queries"]
     assert final["exploration"]["question_assessments"]["outdated"] == 1
     with service.db.session() as session:

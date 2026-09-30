@@ -3,6 +3,7 @@
 import json
 from types import SimpleNamespace
 
+import pytest
 from test_product_dossiers import post
 from test_product_dossiers import signed as signed
 from test_product_episode_progress import extra_source
@@ -57,7 +58,8 @@ def test_selection_prefers_outdated_then_priority_and_bounds_context(monkeypatch
     assert len(chosen) == 3
 
 
-def test_selected_answer_and_current_branch_renewal_have_distinct_targets(signed, monkeypatch):
+@pytest.mark.parametrize("mode", ["valid", "optional_invalid", "required_invalid"])
+def test_selected_answer_and_current_branch_renewal_have_distinct_targets(signed, monkeypatch, mode):
     client, service, _, model = signed
     root, run, trace, _, _ = configured(signed, monkeypatch)
     parent = complete(client, service, root + "/investigations", run)
@@ -113,6 +115,10 @@ def test_selected_answer_and_current_branch_renewal_have_distinct_targets(signed
                     "limitations": ["No conclusive reconciliation in the retained passages."],
                 }
             ]
+            if mode != "valid":
+                raw["question_renewals"] = "Invalid optional output"
+            if mode == "required_invalid":
+                raw["assessment"]["question_id"] = "wrong-required-question"
         return json.dumps(raw)
 
     monkeypatch.setattr(model, "complete", respond)
@@ -122,9 +128,19 @@ def test_selected_answer_and_current_branch_renewal_have_distinct_targets(signed
         extra_source(session, session.get(Investigation, child["id"]))
         session.commit()
     final = complete(client, service, root + "/investigations", child)
-    assert observed and final["exploration"]["status"] == "ready", final["stop_reason"]
+    assert observed
+    if mode == "required_invalid":
+        assert final["exploration"]["briefing"] is None
+        return
+    assert final["exploration"]["status"] == "ready", final["stop_reason"]
     selected = final["exploration"]["briefing"]["assessment"]["question_id"]
     current = final["exploration"]["question_assessments"]["assessments"][0]
     assert selected == parent["exploration"]["next_check"]["question_id"]
-    assert current["question_id"] != selected and current["stage"] == "final_briefing"
+    assert current["question_id"] != selected
+    if mode == "optional_invalid":
+        assert final["exploration"]["briefing"]["question_updates"] == {"status": "unavailable"}
+        assert "stage" not in current and "earlier" not in current
+        assert final["exploration"]["briefing"]["assessment"]["points"]
+        return
+    assert current["stage"] == "final_briefing"
     assert current["earlier"] and current["status"] == "partial"

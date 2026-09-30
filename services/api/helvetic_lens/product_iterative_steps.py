@@ -109,7 +109,10 @@ async def execute(service, work, seconds):
         response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
     if not isinstance(raw, str) or len(raw) > 30000:
         raise ValueError("Unbounded research response")
-    return schema.model_validate_json(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    if phase == "brief" and work["input"].get("question_renewal_targets") and work["input"].get("question_renewal_recovery") == renewal.RECOVERY_CONTRACT:
+        return renewal.parse_recoverable(schema, raw)
+    return schema.model_validate_json(raw)
 
 
 def settle(branch, state):
