@@ -137,11 +137,14 @@ class AssessmentPoint(legal_profiles.Input):
     evidence: list[AssessmentEvidence] = Field(min_length=1, max_length=3)
 
 
-class QuestionAssessment(legal_profiles.Input):
-    question_id: str = Field(min_length=1, max_length=36)
+class AssessmentOutcome(legal_profiles.Input):
     status: Literal["possible_answer", "partial", "conflicting", "not_found"]
     points: list[AssessmentPoint] = Field(max_length=4)
     limitations: list[str] = Field(min_length=1, max_length=4)
+
+
+class QuestionAssessment(AssessmentOutcome):
+    question_id: str = Field(min_length=1, max_length=36)
 
 
 class AssessedBriefing(Briefing):
@@ -174,6 +177,7 @@ def enabled(run):
 
 def initial(*, previous=None):
     from . import product_branch_assessment as branch_assessment
+    from . import product_direction_assessment as direction_assessment
     from . import product_question_renewal as renewal
     from .product_early_clarification import CONTEXT_CONTRACT as DIRECTION_CONTEXT_CONTRACT
     from .product_early_clarification import CONTRACT as CLARIFICATION_CONTRACT
@@ -191,6 +195,7 @@ def initial(*, previous=None):
             "purpose_contract": activity.PURPOSE_CONTRACT,
             "clarification_contract": CLARIFICATION_CONTRACT,
             "direction_context_contract": DIRECTION_CONTEXT_CONTRACT,
+            "direction_assessment_contract": direction_assessment.CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -222,6 +227,9 @@ def prepare(session, run, *, early=False):
         from . import product_question_renewal as renewal
 
         renewal.prepare(session, run, value)
+        from . import product_direction_assessment as direction_assessment
+
+        direction_assessment.prepare(session, run, value)
     if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment_question"] = {"contract": ASSESSMENT_CONTRACT,
             "question_id": state["previous"]["follow_up_id"], "question": run.question}
@@ -326,16 +334,19 @@ def validate_directions(result):
 
 
 def apply(session, run, supplied, result):
+    from . import product_direction_assessment as direction_assessment
     from . import product_question_renewal as renewal
 
     validate_directions(result)
     renewals = renewal.validate(session, run, supplied, result)
     value = validated(session, run, supplied, result, ("findings", "directions"))
     value.pop("question_renewals", None)
+    value.pop("direction_assessment", None)
     if getattr(result, "_renewal_unavailable", False):
         value["question_updates"] = {"status": "unavailable"}
     if run.research_state["exploration"].get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment"] = validated_assessment(session, run, supplied, result)
+    direction_assessment.apply(session, run, supplied, result, value)
     if "research_scope" in supplied:
         value["research_scope_at_briefing"] = deepcopy(supplied["research_scope"])
     renewal.remember(session, run, supplied, renewals)
@@ -383,11 +394,12 @@ def validated_question_points(session, run, supplied, assessment):
 
 def adaptive_current(session, run):
     from . import product_branch_assessment as branch_assessment
+    from . import product_direction_assessment as direction_assessment
     from . import product_question_renewal as renewal
     from .product_exploration_followups import references_current
     from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run)
+    return local_dependencies_current(session, run) and current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run) and direction_assessment.current(session, run)
 
 
 def local_dependencies_current(session, run):
@@ -450,6 +462,8 @@ def projection(session, run):
     value.pop("purpose_contract", None)
     value.pop("clarification_contract", None)
     value.pop("direction_context_contract", None)
+    value.pop("direction_assessment_contract", None)
+    value.pop("direction_assessment_context", None)
     value.pop("orientation_context", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)

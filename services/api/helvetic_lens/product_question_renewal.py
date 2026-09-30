@@ -43,21 +43,25 @@ class RenewalAssessedBriefing(exploration.AssessedBriefing):
     _renewal_unavailable: bool = PrivateAttr(default=False)
 
 
-def parse_recoverable(schema, raw):
+def parse_recoverable(schema, raw, optional_fields=None):
     """Discard only an invalid optional section; required typed fields still fail."""
     try:
         return schema.model_validate_json(raw)
-    except ValidationError:
+    except ValidationError as error:
 
         def invalid_constant(_):
             raise ValueError("Non-JSON response value")
 
         data = json.loads(raw, parse_constant=invalid_constant)
-        if not isinstance(data, dict) or "question_renewals" not in data:
+        optional = optional_fields or {"question_renewals": "_renewal_unavailable"}
+        invalid = {e["loc"][0] for e in error.errors() if e["loc"]} & optional.keys()
+        if not isinstance(data, dict) or not invalid:
             raise
-        data.pop("question_renewals")
+        for field in invalid:
+            data.pop(field, None)
         result = schema.model_validate(data)
-        result._renewal_unavailable = True
+        for field in invalid:
+            setattr(result, optional[field], True)
         return result
 
 

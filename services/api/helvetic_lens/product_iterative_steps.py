@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from . import decision_search, decision_sources
 from . import product_branch_assessment as branch_assessment
+from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
@@ -100,6 +101,9 @@ async def execute(service, work, seconds):
     if phase == "brief" and work["input"].get("question_renewal_targets"):
         schema = renewal.RenewalAssessedBriefing if work["input"].get("assessment_question") else renewal.RenewalBriefing
         system += renewal.SYSTEM
+    if phase == "brief" and work["input"].get("direction_assessment_target"):
+        schema = direction_assessment.RenewedDirectionBriefing if work["input"].get("question_renewal_targets") else direction_assessment.DirectionBriefing
+        system += direction_assessment.SYSTEM
     if phase == "brief" and work["input"].get("research_scope"):
         system += research_scope.SYSTEM
     if phase in {"orient", "reflect", "brief"} and work["input"].get("read_context"):
@@ -119,8 +123,14 @@ async def execute(service, work, seconds):
     if not isinstance(raw, str) or len(raw) > 30000:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
-    if phase == "brief" and work["input"].get("question_renewal_targets") and work["input"].get("question_renewal_recovery") == renewal.RECOVERY_CONTRACT:
-        return renewal.parse_recoverable(schema, raw)
+    if phase == "brief":
+        optional = {}
+        if work["input"].get("direction_assessment_target"):
+            optional["direction_assessment"] = "_direction_unavailable"
+        if work["input"].get("question_renewal_targets") and work["input"].get("question_renewal_recovery") == renewal.RECOVERY_CONTRACT:
+            optional["question_renewals"] = "_renewal_unavailable"
+        if optional:
+            return renewal.parse_recoverable(schema, raw, optional)
     return schema.model_validate_json(raw)
 
 
