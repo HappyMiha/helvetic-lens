@@ -1,6 +1,6 @@
 # Useful cited updates during research — 1.67
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation.
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope.
 MV2-002/020/024, full architecture, semantic and human acceptance remain OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -75,7 +75,7 @@ roles, quotes, links and limitations reuse QuestionCheckpointContent. There is n
 live announcement, focus/scroll effect, extra form or polling loop. ResourceReader
 already rejects obsolete request generations and clears data on failed authority.
 
-Local checks passed; production activation remains pending.
+Local checks passed; production activation is recorded below.
 
 
 ## Local verification — 30 September 2026
@@ -101,7 +101,32 @@ initial duplicate local variable was renamed before all client checks. Build chi
 PATH was corrected to the existing runtime before successful builds, without
 changing product source/dependencies. Initial focused reader checks overlap.
 
-Final source/privacy/parity and backlog status gates are release prerequisites.
+Final source/privacy/parity and backlog status gates passed.
 No paid/private live research, browser QA, new credentials or frozen evaluation.
 These fixtures establish contracts and access behavior, not independent semantic
 accuracy or professional/human acceptance. Full architecture remains OPEN.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `22a4284268f48524243eb624524bf4b4e30b1b9f` activated as
+`git-22a4284268f4` at 2026-09-30T08:38:00+00:00 through the normal
+release controller. Legal `5caa25a44162d2c019f93300faa5da14bb6bb9fb` and Pharma
+`925bbd6f7452d4a459b53565f396cfab85c57116` are active in the existing public Sites
+66/66, since
+2026-09-30T08:35:34.122043+00:00 and
+2026-09-30T08:36:01.832759+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T08:38:45.263954+00:00 confirmed 55 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 51 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`research-updates-1.67-production.json`, SHA256
+`6a5a8744700d704b1101689d0de25490dadb54caf23d85c98cfe3cf76da07380`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. Next bounded audit: explain the saved purpose of the
+current research check within its existing live activity, without new inference.
