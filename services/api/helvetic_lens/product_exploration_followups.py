@@ -39,8 +39,10 @@ def remember_open_context(run, supplied, question_id):
         return
     data = deepcopy(run.research_state)
     question = next(q for q in data["questions"] if q["id"] == question_id)
-    if question.get("reconsideration"):
-        return  # Keep the established adaptive-check fingerprint unchanged.
+    from .product_exploration_activity import PURPOSE_CONTRACT
+
+    if question.get("reconsideration") and state.get("purpose_contract") != PURPOSE_CONTRACT:
+        return  # Legacy adaptive checks have no retrofitted context receipt.
     context = {
         "contract": exploration.OPEN_CHECK_CONTRACT,
         "question_fingerprint": question_fingerprint(run, question),

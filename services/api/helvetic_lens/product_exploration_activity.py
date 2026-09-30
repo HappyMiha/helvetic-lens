@@ -7,8 +7,10 @@ from .models import Job
 from .product_api import iso
 from .product_investigation_models import InvestigationBranch
 from .product_investigations import ACTIVE, rows
+from .product_operations import fingerprint
 
 CONTRACT = "research-activity/v1"
+PURPOSE_CONTRACT = "research-purpose/v1"
 PHASES = {"plan", "search", "gate", "gate_review", "read", "extract", "reflect", "orient", "brief", "compare", "reformulate"}
 
 
@@ -18,6 +20,66 @@ def record(run, job, state, work):
     state["current_activity"] = {"contract": CONTRACT, "step_id": work["token"],
         "job_id": job.id, "leased_at": iso(job.leased_at),
         "expires_at": iso(utcnow() + timedelta(seconds=work["deadline_seconds"]))}
+    if run.research_state["exploration"].get("purpose_contract") == PURPOSE_CONTRACT:
+        question = next((q for q in run.research_state["questions"]
+            if q["id"] == state.get("question_id") and q.get("branch_id") == work["branch_id"]), None)
+        if question:
+            state["current_activity"]["purpose_fingerprint"] = purpose_binding(run, question)
+
+
+def purpose_binding(run, question):
+    return fingerprint({"original_question": run.question, **{k: question.get(k) for k in
+        ("id", "question", "query", "purpose", "priority", "trigger", "claim_id",
+            "branch_id", "parent_branch_id", "kind")}})
+
+
+def purpose(session, run, question, receipt, available):
+    """A saved research rationale, never reconstructed from queries or model thoughts."""
+    from pydantic import ValidationError
+
+    from . import product_exploration_followups as followups
+    from .config import DomainError
+    from .product_investigations import Citation, citation
+
+    state = run.research_state["exploration"]
+    if (state.get("purpose_contract") != PURPOSE_CONTRACT or not question
+            or receipt.get("purpose_fingerprint") != purpose_binding(run, question)):
+        return None
+    text = question.get("purpose")
+    if not isinstance(text, str) or not 5 <= len(text.strip()) <= 500:
+        return None
+    value = {"contract": PURPOSE_CONTRACT, "text": text.strip()}
+    trigger = question.get("trigger")
+    if trigger:
+        dependencies = state.get("adaptive_dependencies", [])
+        if not followups.open_context_current(session, run, question, dependencies):
+            return None
+        if not isinstance(trigger, dict):
+            return None
+        source = available.get(trigger.get("source_id"))
+        if (not source or source.sha256 != trigger.get("sha256") or not any(
+                d["source_id"] == source.id and d["sha256"] == source.sha256 for d in dependencies)):
+            return None
+        try:
+            cited = citation(source, Citation(quote=trigger["quote"], locator=trigger["locator"]))
+        except (DomainError, ValidationError, KeyError):
+            return None
+        return {**value, "kind": "source_follow_up", "trigger": {
+            "quote": cited["quote"], "locator": cited["locator"],
+            "source": {"id": source.id, "title": source.title, "url": source.url}}}
+    if followups.reference(run):
+        # Selected checks already have a current, typed ancestor receipt. An
+        # untyped earlier briefing is not enough to reconstruct this provenance.
+        context = followups.context(session, run)
+        if (not context or context["status"] != "ready" or context["question"] != question["question"]
+                or context["purpose"] != text):
+            return None
+        return {**value, "kind": "source_follow_up", "trigger": {
+            "quote": context["quote"], "locator": context["locator"],
+            "source": {k: context["source"][k] for k in ("id", "title", "url")}}}
+    if question.get("kind") == "planned" and not question.get("parent_branch_id"):
+        return {**value, "kind": "planned"}
+    return None
 
 
 def projection(session, run, available, *, invalid=False):
@@ -69,6 +131,7 @@ def projection(session, run, available, *, invalid=False):
     latest = max(available.values(), key=lambda source: (source.created_at.replace(tzinfo=source.created_at.tzinfo or UTC).timestamp(), source.id), default=None)
     return {**value, "status": "working", "phase": branch.phase,
         "question": question["question"] if question else run.question,
+        "purpose": purpose(session, run, question, receipt, available),
         "observed_at": iso(now), "valid_for_ms": remaining,
         "checking_alternative": recovery.alternative(state, branch.phase),
         "testing_query": bool(state.get("query_recovery", {}).get("query")) and branch.phase == "search",

@@ -169,6 +169,7 @@ def initial(*, previous=None):
             "renewal_contract": renewal.CONTRACT,
             "renewal_recovery_contract": renewal.RECOVERY_CONTRACT,
             "research_update_contract": branch_assessment.UPDATE_CONTRACT,
+            "purpose_contract": activity.PURPOSE_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -407,6 +408,7 @@ def projection(session, run):
     value.pop("renewal_context", None)
     value.pop("scope_contract", None)
     value.pop("activity_contract", None)
+    value.pop("purpose_contract", None)
     value.pop("recovery_contract", None)
     value.pop("query_recovery_contract", None)
     value.pop("informed_contract", None)
