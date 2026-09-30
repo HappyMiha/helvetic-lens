@@ -10,10 +10,11 @@ from . import product_iterative_research as research
 from .db import utcnow
 from .product_api import fail, iso
 from .product_investigation_models import Investigation, InvestigationBranch
-from .product_investigations import Citation, citation, rows
+from .product_investigations import Citation, citation, event, rows
 from .product_operations import fingerprint
 
 CONTRACT = "branch-question-assessment/v1"
+UPDATE_CONTRACT = "question-research-update/v1"
 SYSTEM = """Assess branch_assessment_question, the exact server-selected branch question,
 in this SAME reflection. Return question_id unchanged. Use possible_answer,
 partial, conflicting or not_found IN THE MATERIAL READ, independently of claims
@@ -149,7 +150,7 @@ def validate(session, run, branch, supplied, result):
     return value
 
 
-def remember(run, branch, supplied, value, *, renewal=False):
+def remember(session, run, branch, supplied, value, *, renewal=False):
     if value is None:
         return
     from .product_exploration_followups import question_fingerprint
@@ -175,8 +176,41 @@ def remember(run, branch, supplied, value, *, renewal=False):
         question.setdefault("branch_assessment_history", []).append(deepcopy(old))
         receipt.update(revision=old.get("revision", 1) + 1, stage="final_briefing",
             saved_at=iso(utcnow()), previous_fingerprint=old["fingerprint"])
+    elif data["exploration"].get("research_update_contract") == UPDATE_CONTRACT:
+        event(session, run, "question_assessment_saved", question_id=question["id"], branch_id=branch.id)
+        receipt["research_update"] = {
+            "contract": UPDATE_CONTRACT,
+            "event_sequence": run.event_sequence,
+            "saved_at": iso(run.updated_at),
+        }
     question["branch_assessment"] = {**receipt, "fingerprint": fingerprint(receipt)}
     run.research_state = data
+
+
+def latest_update(run, assessments):
+    """Select only currently projected evidence, ordered by its actual saved event."""
+    if (
+        not enabled(run)
+        or run.research_state["exploration"].get("research_update_contract") != UPDATE_CONTRACT
+        or assessments["status"] != "ready"
+    ):
+        return None
+    eligible = {a["question_id"] for a in assessments["assessments"]}
+    updates = []
+    for question in run.research_state["questions"]:
+        receipt = question.get("branch_assessment") or {}
+        saved = receipt.get("research_update") or {}
+        sequence = saved.get("event_sequence")
+        if (
+            question["id"] in eligible
+            and saved.get("contract") == UPDATE_CONTRACT
+            and type(sequence) is int
+            and 0 < sequence <= run.event_sequence
+            and saved.get("saved_at")
+            and receipt.get("stage") != "final_briefing"
+        ):
+            updates.append({**saved, "question_id": question["id"]})
+    return max(updates, key=lambda item: item["event_sequence"], default=None)
 
 
 def receipt_current(session, run, question, *, allow_public_progress=False, receipt=None):

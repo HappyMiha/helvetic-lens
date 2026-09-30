@@ -168,6 +168,7 @@ def initial(*, previous=None):
             "open_check_contract": OPEN_CHECK_CONTRACT, "branch_assessment_contract": branch_assessment.CONTRACT,
             "renewal_contract": renewal.CONTRACT,
             "renewal_recovery_contract": renewal.RECOVERY_CONTRACT,
+            "research_update_contract": branch_assessment.UPDATE_CONTRACT,
             "informed_contract": informed.CONTRACT, "read_relevance_contract": read_relevance.CONTRACT, "query_recovery_contract": query_recovery.CONTRACT, "activity_contract": activity.CONTRACT, "recovery_contract": recovery.CONTRACT}}
 
 
@@ -400,6 +401,7 @@ def projection(session, run):
     value.pop("capture_comparison", None)
     value.pop("assessment_contract", None)
     value.pop("branch_assessment_contract", None)
+    value.pop("research_update_contract", None)
     value.pop("renewal_contract", None)
     value.pop("renewal_recovery_contract", None)
     value.pop("renewal_context", None)
@@ -456,6 +458,10 @@ def projection(session, run):
     from . import product_branch_assessment as branch_assessment
 
     value["question_assessments"] = branch_assessment.projection(session, run, invalid=value["status"] == "evidence_changed")
+    value["research_update"] = (
+        branch_assessment.latest_update(run, value["question_assessments"])
+        if not value.get("briefing") else None
+    )
     value["research_scope"] = research_scope.observed(session, run, available,
         invalid=value["status"] == "evidence_changed")
     value["current_activity"] = activity.projection(session, run, available,

@@ -47,6 +47,7 @@ new passages to actual follow-up research; release evidence is tracked separatel
 [Current research activity](docs/PRODUCT_RESEARCH_ACTIVITY.md) binds visible work to a current worker receipt and expires stale activity; Core and both clients verified.
 [Observed research scope](docs/PRODUCT_RESEARCH_SCOPE.md) explains captured passages and unfinished work beside the conclusion; Core and both clients verified.
 [Episode progress](docs/PRODUCT_EPISODE_PROGRESS.md) distinguishes repeated and changed captured material across continued research; Core and both clients verified.
+[Useful research updates](docs/PRODUCT_RESEARCH_UPDATES.md) are VERIFYING production activation: surface a saved cited assessment while research continues.
 [Optional question-update recovery](docs/PRODUCT_BRIEFING_RECOVERY.md) is verified within scope; preserve an independently valid research summary.
 [Question assessment renewal](docs/PRODUCT_QUESTION_RENEWAL.md) is verified within scope; later evidence can inform the existing final briefing.
 [Branch question assessment](docs/PRODUCT_BRANCH_ASSESSMENT.md) is verified within scope; capture counts remain separate from an evidence-bound tentative answer.

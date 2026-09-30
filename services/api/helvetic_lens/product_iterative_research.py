@@ -362,7 +362,7 @@ def apply_reflection(session, run, branch, supplied, result):
     if dependencies:
         exploration.update(run, adaptive_dependencies=dependencies)
     informed.remember(session, run, supplied)
-    branch_assessment.remember(run, branch, supplied, assessment)
+    branch_assessment.remember(session, run, branch, supplied, assessment)
     for draft, change in zip(result.gaps, changes, strict=True):
         identifier = add_question(session, run, draft, parent=branch, trigger=citation(sources[draft.source_id], draft),
             claim=session.get(DossierClaim, draft.claim_id) if draft.claim_id else None, reconsideration=change)

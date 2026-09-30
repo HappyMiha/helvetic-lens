@@ -184,7 +184,7 @@ def remember(session, run, supplied, updates):
         return
     informed.remember(session, run, supplied)
     for branch, bound, value in updates:
-        assessment.remember(run, branch, bound, value, renewal=True)
+        assessment.remember(session, run, branch, bound, value, renewal=True)
     # The briefing itself used this context, even when optional renewals are absent.
     context = {k: deepcopy(supplied[k]) for k in ("original_question", "sources", "claims", "read_context")}
     exploration.update(run, renewal_context={**context, "fingerprint": fingerprint(context)})
