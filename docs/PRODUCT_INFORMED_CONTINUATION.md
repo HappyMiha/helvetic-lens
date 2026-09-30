@@ -1,6 +1,6 @@
 # Continue an investigation with its earlier public work — 1.75
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. DONE within the verified scope below. MV2-002/020/024,
 full architecture, live semantic and professional/human acceptance remain OPEN.
 
 ## Journey audit and complete outcome
@@ -115,4 +115,22 @@ quality, source completeness or professional/human acceptance.
 Client source and artifacts are unchanged at existing public Sites 72. The retained
 1.74 full client checks and production asset receipt are not counted as new runs.
 No new client build or publication is needed. Normal Core activation and fresh
-product availability/access checks remain pending; full architecture stays OPEN.
+product availability/access checks passed as recorded below; full architecture stays OPEN.
+
+
+## Verified production activation
+
+Feature Core 315dd80489dcd2c1745ab2635693de8c9fa8b5a4 / git-315dd80489dc activated
+2026-09-30T16:54:04+00:00. Fresh runtime verification matched 59 modules,
+schema, five containers and nine native routes. Both products passed fresh home,
+authenticated-reader denial and same-/foreign-origin boundaries: four checks each.
+
+Legal 511516e2eabbbb5f14da6a29c06f2fb70a47c69a and Pharma 9f4e8e538d11967aa45880aaf5fcdb6cb5675549 retain existing public
+Sites 72. All 47 local asset hashes per product match the retained exact 1.74
+production receipt. No new client build, deployment or full HTTP asset sweep.
+All mains were clean and aligned. Production receipt SHA-256:
+baa84c9bca46228a2b48b7f6d9c20cc467c2b249d4bf7a40af288d4214215c17.
+
+These checks establish deployment and existing access boundaries. No authenticated
+private production research, paid probe, browser QA, new key or frozen validation
+was run. Live research quality, full architecture and human acceptance stay OPEN.
