@@ -1,6 +1,6 @@
 # Renew question assessments from later evidence — 1.65
 
-Scope recorded before code, 30 September 2026. VERIFYING production activation. MV2-002/020/024,
+Scope recorded before code, 30 September 2026. DONE within the bounded verified scope. MV2-002/020/024,
 full architecture, live semantic quality and professional/human acceptance OPEN.
 
 ## Outcome, dependencies and source readiness
@@ -78,7 +78,7 @@ Both clients reuse the existing closed question details and citation renderer.
 The current checkpoint is marked Updated in the research summary; Earlier
 assessment opens the old cited interpretation without another question heading,
 form, control or automatic request. Existing typed child outcomes remain separate.
-Local checks passed; production activation remains pending.
+Local checks passed; production activation is recorded below.
 
 
 ## Local verification — 30 September 2026
@@ -102,6 +102,29 @@ establish real-world accuracy or professional/human acceptance.
 Both clients passed 326 tests, lint, types and production builds. Four new reader
 cases cover current/history/changed/legacy rendering, one question heading and no
 new form or action on reads. A missing JSX brace was fixed before final checks.
-Exact API lint passed. Source/parity/privacy and the final backlog status gate
-are release prerequisites. No paid/private live probe, browser QA, new provider
+Exact API lint passed. Source/parity/privacy and the final backlog status gate passed. No paid/private live probe, browser QA, new provider
 credential or frozen validation. Full architecture and broader acceptance OPEN.
+
+
+## Production activation — 30 September 2026
+
+Feature Core `b2a427ac96a7898ce3205239df72f24c548284bb` activated as
+`git-b2a427ac96a7` at 2026-09-30T06:27:58+00:00 through the normal
+release controller. Legal `60bf0674b704fae6d67b3d57140593c105296eca` and Pharma
+`032428e8e8fd6d63d94e733520d5767a41832376` are active in the existing public Sites
+64/64, since
+2026-09-30T06:24:35.654608+00:00 and
+2026-09-30T06:24:44.251862+00:00. Exact source was pushed to all GitHub
+mains and both existing Sites source repositories before publication.
+
+Read-only verification at 2026-09-30T06:28:39.969260+00:00 confirmed 55 exact native modules,
+current schema, five healthy containers and all nine Monitoring navigation routes.
+Each product served 47 exact validated assets and passed 51 HTTP/access checks.
+All mains were clean/aligned. Production receipt:
+`question-renewal-1.65-production.json`, SHA256
+`db2cd1441686d65914131b0596ea507e167341e949e3e78e3ba16f81e4c731c8`.
+
+These checks establish deployed artifacts and access boundaries, not authenticated
+live research quality or browser/human acceptance. Both clients remain unchanged
+for the final evidence-only Core publication. Full architecture and parent tasks
+MV2-002/020/024 remain OPEN. The next bounded audit concerns retaining a valid cited summary when only an optional question update is invalid.
