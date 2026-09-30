@@ -206,11 +206,13 @@ def enqueue_due(database, settings):
 
 
 def trigger_payload(session, trigger):
+    from .product_monitoring_outcomes import project
+
     run = session.get(Investigation, trigger.investigation_id)
     branches = rows(session, InvestigationBranch, run)
     return {"id": trigger.id, "policy_revision": trigger.policy_revision, "question": trigger.question,
         "scheduled_for": iso(trigger.scheduled_for), "created_at": iso(trigger.created_at),
-        "investigation": summary(run),
+        "investigation": summary(run), "outcome": project(session, run, trigger, branches),
         "analysed_sources": sum(b.checkpoint.get("analysed", 0) for b in branches),
         "unchanged_sources": sum(b.checkpoint.get("unchanged", 0) for b in branches),
         "coverage": [b.checkpoint["coverage"] for b in branches if b.checkpoint.get("coverage")]}

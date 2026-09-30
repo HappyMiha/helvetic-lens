@@ -723,3 +723,24 @@ DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 ## Selected direction context — 1.70
 
 DONE within scope; [verified history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+
+## Useful early clarification — 1.69
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Current research purpose — 1.68
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Useful research updates — 1.67
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Recover valid research summaries — 1.66
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
+
+## Renew question assessments — 1.65
+
+DONE within scope; [verified commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
