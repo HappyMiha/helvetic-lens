@@ -1,5 +1,7 @@
 """Dossier-scoped saved coverage, without fetching sources or claiming a scan."""
-from fastapi import Request
+from datetime import datetime
+
+from fastapi import Query, Request
 from sqlalchemy import select
 
 from .db import utcnow
@@ -12,9 +14,9 @@ from .product_sources import document_statuses
 from .topic_coverage import _iso, snapshot
 
 
-def payload(session, parent):
+def selection(session, parent):
     profile = session.get(LegalMonitoringProfile, parent.profile_id)
-    now, topics, pack_ids = utcnow(), [], []
+    topics, pack_ids = [], []
     # Never reuse the original profile selection after a topic has been revised.
     for identifier in dict.fromkeys(profile.topic_ids_json):
         topic = session.get(MonitoringTopic, identifier)
@@ -34,6 +36,12 @@ def payload(session, parent):
     if profile.status == "draft":
         pack_ids.extend(profile.config_json.get("source_pack_ids", []))
     pack_ids = list(dict.fromkeys(pack_ids))
+    return profile, topics, pack_ids
+
+
+def payload(session, parent):
+    profile, topics, pack_ids = selection(session, parent)
+    now = utcnow()
     packs = []
     for offset in range(0, len(pack_ids), 20):
         packs.extend(snapshot(session, pack_ids[offset:offset + 20], now=now,
@@ -73,3 +81,15 @@ def routes(router, service, actor):
         with service.db.session() as session:
             parent = access(session, identity, product, dossier_id)
             return payload(session, parent)
+
+    @router.get("/dossiers/{dossier_id}/coverage/history")
+    def history(product: Product, dossier_id: str, request: Request,
+                pack_id: str = Query(max_length=120), connector: str = Query(max_length=80),
+                stream: str = Query(max_length=200), offset: int = Query(default=0, ge=0, le=100000),
+                as_of: datetime | None = None):
+        from .product_feed_check_history import payload as checks
+
+        identity = actor(request)
+        with service.db.session() as session:
+            parent = access(session, identity, product, dossier_id)
+            return checks(session, parent, pack_id, connector, stream, offset=offset, as_of=as_of)

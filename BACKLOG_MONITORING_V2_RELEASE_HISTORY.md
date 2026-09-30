@@ -788,3 +788,7 @@ DONE within scope; [verified evidence](docs/PRODUCT_EVIDENCE_APPLICABILITY.md). 
 ## Informed continuation — 1.75
 
 DONE within scope; [verified evidence](docs/PRODUCT_INFORMED_CONTINUATION.md). MV2-002/020/024 remain OPEN.
+
+## Connected-page check history — 1.79
+
+DONE within scope; [verified evidence](docs/PRODUCT_PAGE_CHECK_HISTORY.md). MV2-002/011/020/024 remain OPEN.
