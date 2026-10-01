@@ -65,7 +65,7 @@ LEGAL = DomainPack(
     ),
     topic_task="legal_profile_topics", context_schema_id="legal-context/v1", claim_types=LEGAL_TYPES, source_roles=LEGAL_ROLES,
     research_policy_id="legal-research/v1",
-    source_ids=("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "fedlex", "public_web", "public_url"),
+    source_ids=("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "fedlex", "federal_court", "finma_news", "public_web", "public_url"),
 )
 PHARMA = DomainPack(
     id="PharmaPack", version="2.0.0", domain="PHARMA", label="Pharmaceutical monitoring",
@@ -80,7 +80,7 @@ PHARMA = DomainPack(
     ),
     topic_task="pharma_profile_topics", context_schema_id="pharma-context/v1", claim_types=PHARMA_TYPES, source_roles=PHARMA_ROLES, scientific_literature=True,
     research_policy_id="pharma-research/v1",
-    source_ids=("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "europepmc", "public_web", "public_url"),
+    source_ids=("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "europepmc", "clinicaltrials", "fda_labels", "ema_news", "public_web", "public_url"),
 )
 GENERAL = DomainPack(id="GeneralPack", version="2.0.0", domain="GENERAL", label="Research",
     focus="Evidence relevant to the user's question, with explicit uncertainty and source scope.",

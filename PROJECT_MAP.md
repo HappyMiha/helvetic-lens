@@ -1,8 +1,13 @@
 # Helvetic Lens project map
 
+[Sources, memory and readable updates](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md)
+connects diagram blocks 1, 2, 3, 6 and 7 in Legal and Pharma. Free public catalogues
+and local SearXNG have no application query quota; paid allowances never block
+free discovery. Exact activation is tracked in the parent release checkpoint.
+
 [Unified research core](docs/UNIFIED_RESEARCH_CORE.md): five connected outcomes for
 Legal and Pharma — common routing, retained evidence memory, saved-first discovery,
-per-run coverage and versioned domain capabilities. Production activation pending.
+per-run coverage and versioned domain capabilities. Activated as b3dde23ef289.
 
 [Independent source access and local SearXNG](docs/PRODUCT_SOURCE_ACCESS.md) was activated on 1 October at Core `e97043209b7a`.
 

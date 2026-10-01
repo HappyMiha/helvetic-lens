@@ -146,7 +146,7 @@ def test_recurring_evidence_deduplicates_then_updates_and_keeps_query_private(si
     assert client.get(root.split('/dossiers/')[0] + "/public-dossiers").json()["total"] == 0
     with service.db.session() as session:
         assert all(r.session_id is None and r.publication_id is None for r in session.scalars(select(Investigation)))
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 12
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 6
 
 
 def test_reappearing_content_and_changed_question_are_new_analysis(signed, monkeypatch):
@@ -238,7 +238,7 @@ def test_limits_replay_consent_cadence_and_readiness(signed, monkeypatch):
     assert due(service)["started"] == 1
     run = newest(client, root)
     result = complete(client, service, root + "/investigations", run)
-    assert result["status"] == "paused" and state["queries"] == []
+    assert result["status"] == "completed" and state["queries"]
     enable(client, root, enabled=False)
     enable(client, root)
     assert due(service)["started"] == 1
@@ -246,7 +246,7 @@ def test_limits_replay_consent_cadence_and_readiness(signed, monkeypatch):
     enable(client, root)
     assert due(service)["started"] == 0
     assert client.get(root + "/web-research").json()["policy"]["used_today"] == 2
-    assert state["queries"] == []
+    assert len(state["queries"]) >= 2
 
 
 def test_interrupted_search_is_not_repeated_and_explicit_retry_is_bounded(signed, monkeypatch):

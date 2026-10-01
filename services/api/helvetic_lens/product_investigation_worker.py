@@ -48,7 +48,7 @@ from .product_investigations import (
 )
 from .product_models import DossierEntry, ProductDossier
 from .product_research import research_sources
-from .product_search_budget import reserve
+from .product_search_budget import reserve_paid_or_skip
 from .product_source_reviews import current_reviews
 
 SYSTEM = """Extract a small evidence ledger relevant to the research question.
@@ -94,8 +94,9 @@ def seed(session, run, parent, settings):
 
         return seed_contribution(session, run, parent, settings)
     if research.enabled(run):
-        research_knowledge.recall(session, run, parent.product)
         research.seed(session, run)
+        from . import research_recall
+        research_recall.seed(session, run, parent.product)
         saved = research_sources(session, parent, run.question, run.organization_id)[:MAX_SOURCES]
         source_ids = [snapshot(session, run, item)[0].id for item in saved]
         if source_ids:
@@ -253,8 +254,8 @@ async def execute(service, job_id, worker):
             return {"id": job_id, "state": run.status}
         candidates = [b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE]
         if research.enabled(run):
-            candidates.sort(key=pacing.order if pacing.enabled(run) else
-                            lambda b: (-b.checkpoint.get("priority", 6), b.created_at, b.id))
+            candidates.sort(key=lambda b: (b.phase != "recall", pacing.order(b) if pacing.enabled(run) else
+                            (-b.checkpoint.get("priority", 6), b.created_at, b.id)))
         branch = next(iter(candidates), None)
         if branch:
             state = deepcopy(branch.checkpoint)
@@ -279,18 +280,14 @@ async def execute(service, job_id, worker):
                         "phase": branch.phase, "product": parent.product, "generation": run.generation}
                     if research.enabled(run):
                         research_steps.prepare(session, run, branch, state, work)
-                    if research.enabled(run) and branch.phase in {"plan", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
+                    if research.enabled(run) and branch.phase in {"recall", "plan", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                         pass
                     elif branch.phase == "search":
                         if not run.external_discovery:
                             raise RuntimeError("Private contribution cannot contain a discovery branch")
-                        try:
-                            if not research.enabled(run):
-                                reserve(session, service.settings, units=search_channels.request_count(service.settings))
-                        except DomainError as error:
-                            run.status, run.stop_reason = "paused", error.message
-                            event(session, run, "investigation_paused", reason=run.stop_reason)
-                            work = None
+                        if not research.enabled(run):
+                            work["skipped_paid_search"] = reserve_paid_or_skip(session, service.settings,
+                                search_channels.paid_request_count(service.settings))
                     elif branch.phase == "read":
                         item = state["items"][state.get("read_index", 0)]
                         work["item"] = item
@@ -339,20 +336,22 @@ async def execute(service, job_id, worker):
                         memory.prepare(session, run, work)
                         research_knowledge.prepare(session, run, work)
                         applicability.prepare(session, run, work)
-                        budget_before = deepcopy(run.research_state)
                         skipped_read = pacing.enabled(run) and branch.phase == "read" and work.get("skip")
-                        search_requests = search_channels.request_count(service.settings)
+                        search_requests = search_channels.paid_request_count(service.settings) if branch.phase == "search" else 0
+                        if search_requests and (run.research_state["used"].get("search_requests", 0) + search_requests
+                                > run.research_state["limits"]["search_requests"]):
+                            work["skipped_paid_search"] = "Episode paid-search allowance reached; free sources continue."
+                            search_requests = 0
                         if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product,
                                 search_requests=search_requests):
                             work = None
                         elif branch.phase == "search":
-                            try:
-                                reserve(session, service.settings, units=search_requests)
-                            except DomainError as error:
-                                run.research_state = budget_before
-                                run.status, run.stop_reason = "paused", error.message
-                                event(session, run, "investigation_paused", reason=run.stop_reason)
-                                work = None
+                            skipped = reserve_paid_or_skip(session, service.settings, search_requests)
+                            if skipped:
+                                work["skipped_paid_search"] = skipped
+                                adjusted = deepcopy(run.research_state)
+                                adjusted["used"]["search_requests"] -= search_requests
+                                run.research_state = adjusted
                     if work:
                         if research.enabled(run):
                             work["remaining_seconds"] = max(0.001, pacing.remaining_seconds(run, branch.phase))
@@ -445,7 +444,7 @@ async def execute(service, job_id, worker):
             if work.get("model_route") and (work["phase"] == "extract" or failed):
                 state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
         if not failed:
-            if work.get("research") and work["phase"] in {"plan", "search", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
+            if work.get("research") and work["phase"] in {"recall", "plan", "search", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                 try:
                     research_steps.apply(session, run, branch, state, work, result)
                 except DomainError:

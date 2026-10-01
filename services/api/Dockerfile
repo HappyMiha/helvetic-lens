@@ -1,6 +1,9 @@
 FROM python:3.11-slim@sha256:90744cff8f32887f075c47d747a173ff333e9e98801667af93c357fa9f5e28ff
 WORKDIR /app
 LABEL org.opencontainers.image.licenses="Apache-2.0"
+RUN apt-get update && apt-get install -y --no-install-recommends poppler-utils tesseract-ocr \
+    tesseract-ocr-eng tesseract-ocr-deu tesseract-ocr-fra tesseract-ocr-ita \
+    && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock LICENSE NOTICE THIRD_PARTY_NOTICES.md ./
 RUN uv sync --frozen --no-dev --no-install-project

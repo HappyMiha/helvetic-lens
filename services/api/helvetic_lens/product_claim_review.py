@@ -43,7 +43,8 @@ def evidence(session, row):
     if isinstance(saved, dict) and saved.get("version_id"):
         from .models import Version
 
-        retained = session.get(Version, saved["version_id"])
+        retained = session.execute(select(Version.evidence_revision, Version.content_hash)
+            .where(Version.id == saved["version_id"])).first()
         version = {"id": saved["version_id"], "recorded_revision": saved.get("revision"),
             "current_revision": retained.evidence_revision if retained else None,
             "content_hash": retained.content_hash if retained else None}

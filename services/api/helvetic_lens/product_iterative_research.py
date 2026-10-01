@@ -222,8 +222,9 @@ def reserve_step(session, run, branch, state, phase, product, *, search_requests
     if not enabled(run):
         return True
     data = deepcopy(run.research_state)
+    data["search_budget_scope"] = "paid_provider_requests"
     search_requests = search_requests if search_requests is not None else (3 if product == "pharma" else 2)
-    units = {"search": ("search_requests", search_requests),
+    units = {"recall": ("source_fetches", 0), "search": ("search_requests", search_requests),
         "gate": ("decision_calls", 2), "read": ("source_fetches", 1),
         "reformulate": ("model_calls", 1), "plan": ("model_calls", 1), "extract": ("model_calls", 1),
         "reflect": ("model_calls", 1), "gate_review": ("model_calls", 1),
@@ -233,13 +234,13 @@ def reserve_step(session, run, branch, state, phase, product, *, search_requests
     # exhausts other analysis work; the same cumulative cap still applies.
     reserved = int(bool(data.get("exploration")) and resource == "model_calls" and phase != "brief")
     exceeded = "active_seconds" if pacing.remaining_seconds(run, phase) <= 0.001 else (
-        resource if data["used"].get(resource, 0) + amount > (data["limits"][resource] - reserved) else None)
+        resource if amount and data["used"].get(resource, 0) + amount > (data["limits"][resource] - reserved) else None)
     if not exceeded and phase == "reformulate":
         # Do not spend a model request when no actual search, gate or read can
         # follow. These are availability checks, not extra quota reservations.
         exceeded = next((key for key, minimum in (("search_requests", search_requests),
             ("source_fetches", 1), ("decision_calls", 2))
-            if data["used"].get(key, 0) + minimum > data["limits"][key]), None)
+            if minimum and data["used"].get(key, 0) + minimum > data["limits"][key]), None)
     if exceeded:
         state["budget_blocked"] = exceeded
         for question in data["questions"]:
@@ -508,4 +509,6 @@ def projection(run):
     data.pop("exploration", None)  # Read through the current-source-checked projection only.
     data["questions"] = public_questions(data["questions"])
     data["budget_basis"] = "Cumulative reservations, including interrupted attempts. Gate reserves both possible providers; unused fallback capacity is not a bill. Active seconds count execution, not queue/pause time."
+    if data.get("search_budget_scope") == "paid_provider_requests":
+        data["budget_basis"] += " Search allowances cover paid provider requests only; free catalogues and local SearXNG have no application query quota. Older reservations remain carried forward."
     return data

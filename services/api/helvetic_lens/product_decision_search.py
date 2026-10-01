@@ -7,7 +7,7 @@ from uuid import UUID
 
 from fastapi import Query, Request
 from pydantic import Field, field_validator, model_validator
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from . import decision_search, legal_profiles, search_channels
 from .db import utcnow
@@ -17,7 +17,7 @@ from .product_api import Product, fail, iso
 from .product_models import DecisionSearchRun
 from .product_operations import fingerprint
 from .product_provenance import prepare, principal
-from .product_search_budget import reserve
+from .product_search_budget import reserve_paid_or_skip
 
 
 class SearchInput(legal_profiles.Input):
@@ -119,8 +119,6 @@ def decision_search_routes(router, service, actor):
             inspections = result.setdefault("inspections", {})
             if data.source_id in inspections:
                 return payload(session, identity, product, row)
-            if len(inspections) >= 3:
-                fail("Three sources have already been inspected for this search. Open their links or start a new search.", 429)
             inspections[data.source_id] = {"status": "running", "url": item["url"], "started_at": iso(utcnow())}
             row.result_json = result
             session.commit()
@@ -148,7 +146,8 @@ def decision_search_routes(router, service, actor):
                 "broad_search_configured": search_channels.broad_configured(s),
                 "broad_search_provider": s.web_search_provider,
                 "daily_limit": s.decision_search_daily_limit,
-                "budget_unit": "One unit per selected provider API request, including direct catalogues; SearXNG engine fan-out is bounded separately.",
+                "free_search_query_limit": None,
+                "budget_unit": "Paid Search1API requests only. Free catalogues and local SearXNG have no application query quota. Source throttling and execution timeouts still apply.",
                 "configuration_scope": "Operator-managed credentials. Configured does not guarantee provider availability.",
                 "privacy": "Public queries go to the selected web provider and public catalogues. Local SearXNG forwards queries to its configured external engines. Jev receives the main question and result snippets in Auto, Jev and Compare modes. "
                     "Laya decisions remain on this server; Laya mode still uses remote web retrieval. No private dossier material is added.",
@@ -203,7 +202,7 @@ def decision_search_routes(router, service, actor):
             marked["alternatives"] = data.alternatives
         # Preserve existing single-query retry fingerprints across this release.
         mark = fingerprint(marked)
-        units = search_channels.request_count(service.settings, data.depth, data.alternatives)
+        units = search_channels.paid_request_count(service.settings, data.depth, data.alternatives)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, identity.organization_id)
             principal(session, identity, utcnow(), write=True)
@@ -214,17 +213,18 @@ def decision_search_routes(router, service, actor):
                 return payload(session, identity, product, previous)
             now = utcnow()
             base = select(func.count()).select_from(DecisionSearchRun).execution_options(include_all_organizations=True)
-            reserve(session, service.settings, units)
+            skipped_paid = reserve_paid_or_skip(session, service.settings, units)
+            search_settings = search_channels.request_settings(service.settings, skipped_paid)
             active = session.scalar(base.where(DecisionSearchRun.status == "running", DecisionSearchRun.created_at >= now - timedelta(minutes=2)))
             if active >= 3:
                 fail("Search is busy. Please retry shortly.", 429)
-            # Retain same-day receipts so deleting older history cannot reset quotas.
-            old = list(session.scalars(visible(identity, product).order_by(DecisionSearchRun.created_at.desc()).offset(49)))
+            # The aggregate paid allowance survives rotating history; history is
+            # retention, not a same-day quota on otherwise free discovery.
+            old = list(session.scalars(visible(identity, product).where(or_(DecisionSearchRun.status != "running",
+                DecisionSearchRun.created_at < now - timedelta(minutes=2)))
+                .order_by(DecisionSearchRun.created_at.desc()).offset(49)))
             for entry in old:
-                if entry.created_at.replace(tzinfo=UTC) < now.replace(hour=0, minute=0, second=0, microsecond=0):
-                    session.delete(entry)
-            if session.scalar(select(func.count()).select_from(visible(identity, product).subquery())) >= 50:
-                fail("This workspace search history is full for today. Continue tomorrow.", 429)
+                session.delete(entry)
             row = DecisionSearchRun(product=product, owner_user_id=identity.user_id, request_key=str(data.request_key),
                 fingerprint=mark, query=query, mode=data.mode, created_at=now,
                 result_json={"queries": [query, *data.alternatives]})
@@ -233,7 +233,8 @@ def decision_search_routes(router, service, actor):
             identifier = row.id
         try:
             async with asyncio.timeout(100):
-                result = await decision_search.execute(service.settings, query, data.mode, data.depth, product, data.alternatives)
+                result = await decision_search.execute(search_settings, query, data.mode, data.depth, product, data.alternatives)
+                search_channels.note_skipped_paid(result.setdefault("retrieval", {}), skipped_paid)
         except (DecisionUnavailable, TimeoutError) as exc:
             result = {"items": [], "error": "Search could not complete. Check provider setup or credits, then submit a new search.",
                       "error_code": exc.code if isinstance(exc, DecisionUnavailable) else "timeout"}

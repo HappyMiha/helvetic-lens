@@ -148,7 +148,7 @@ def test_planner_followup_new_evidence_updates_same_claim_and_resolves_identifie
     assert any(e["id"] in follow["answer_evidence_ids"] and e["relation"] == "CONTRADICTS" for e in result["evidence"])
     assert len([a for a in result["activity"] if a["kind"] == "candidate_rejected"]) == 3
     assert len(result["plans"]) >= 3 and len(result["research"]["completion_criteria"]) == 1
-    assert result["research"]["used"]["search_requests"] == 12
+    assert result["research"]["used"]["search_requests"] == 6
     assert result["research"]["used"]["source_fetches"] == 3
     exported = client.get(root.removesuffix("/investigations") + "/export").json()
     assert exported["investigations"][0]["research"] == result["research"]
@@ -198,19 +198,22 @@ def test_unresolved_candidate_remains_distinct_from_rejection_without_source_fet
     assert result["research"]["used"]["model_calls"] <= result["research"]["limits"]["model_calls"]
 
 
-def test_budget_stops_before_queries_and_explicit_continuation_keeps_plan(signed, monkeypatch):
+def test_paid_episode_allowance_does_not_stop_free_source_research(signed, monkeypatch):
     client, service, _, model = signed
     trace = pipeline(monkeypatch, service, model)
-    limits = Limits(search_requests=2).model_dump()
-    root, run, _ = start(client, limits)
+    retrieval = decision_search.federated_retrieve
+    providers = []
+    async def capture(settings, *args, **kwargs):
+        providers.append(settings.web_search_provider)
+        return await retrieval(settings, *args, **kwargs)
+    monkeypatch.setattr(decision_search, "federated_retrieve", capture)
+    root, run, _ = start(client, Limits(search_requests=2).model_dump())
     result = complete(client, service, root, run)
-    assert not trace["queries"] and not result["sources"]
-    assert result["research"]["stops"] == ["search_requests"]
-    response = post(client, root + "/" + run["id"] + "/control", {"action": "deepen",
-        "expected_revision": result["revision"], "limits": Limits().model_dump()})
-    assert response.status_code == 200, response.text
-    result = complete(client, service, root, response.json())
-    assert result["claims"][0]["revision"] == 2
+    assert result["status"] == "completed"
+    assert len(trace["queries"]) == 3 and result["claims"][0]["revision"] == 2
+    assert providers == ["search1api", "none", "none"]
+    assert result["research"]["used"]["search_requests"] == 2
+    assert "search_requests" not in result["research"]["stops"]
     assert len([m for m in trace["models"] if m["phase"] == "ResearchPlan"]) == 1
 
 

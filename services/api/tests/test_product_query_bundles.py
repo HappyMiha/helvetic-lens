@@ -12,7 +12,7 @@ from test_product_decision_search import BASE, ITEM, command, fake_result
 from test_product_dossiers import ROOT, create, post
 from test_product_dossiers import signed as signed
 
-from helvetic_lens import decision_search, product_provenance, product_research
+from helvetic_lens import decision_search, product_provenance
 from helvetic_lens.config import Settings
 from helvetic_lens.db import utcnow
 from helvetic_lens.decision_engines import DecisionUnavailable
@@ -118,9 +118,9 @@ def test_bundle_budget_replay_and_signed_exact_query_import(signed, monkeypatch)
         return result
     monkeypatch.setattr(decision_search, "execute", execute)
     data = command(alternatives=alternatives)
-    service.environment_settings.decision_search_daily_limit = 2
-    assert post(client, BASE + "/decision", data).status_code == 429 and not calls
-    service.environment_settings.decision_search_daily_limit = 3
+    from pydantic import SecretStr
+    service.environment_settings.search1api_api_key = SecretStr("fixture")
+    service.environment_settings.decision_search_daily_limit = 4
     response = post(client, BASE + "/decision", data)
     assert response.status_code == 200, response.text
     result = response.json()
@@ -128,7 +128,7 @@ def test_bundle_budget_replay_and_signed_exact_query_import(signed, monkeypatch)
     assert post(client, BASE + "/decision", data).json()["id"] == result["id"] and len(calls) == 1
     assert post(client, BASE + "/decision", {**data, "alternatives": ["other wording"]}).status_code == 409
     with service.db.session() as session:
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 3
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 4
     doc, _ = create(client)
     path = ROOT + "/" + doc["id"]
     imported = post(client, path + "/discovery-references", {"request_key": str(uuid4()), "receipt": result["items"][0]["discovery_receipt"]})
@@ -160,12 +160,13 @@ def test_each_alternative_has_attributable_partial_lane_and_one_deduplicated_poo
         return {"items": [deepcopy(ITEM)], "omitted_records": 0}
     async def literature(*args): return {"items": [], "omitted_records": 0}
     monkeypatch.setattr(decision_search, "retrieve", retrieve)
-    monkeypatch.setattr(product_research, "public_search", literature)
+    from helvetic_lens import search_channels
+    monkeypatch.setattr(search_channels, "direct_search", literature)
     result = asyncio.run(decision_search.federated_retrieve(Settings(), "English", "web", "deep", "pharma", ["Deutsch", "français"]))
     assert calls == [("English", "google"), ("English", "bing"), ("Deutsch", "google"), ("français", "google")]
-    assert len(result["items"]) == 1 and result["candidate_limit"] == 36 and result["search_requests"] == 5
+    assert len(result["items"]) == 1 and result["candidate_limit"] == 36 and result["search_requests"] == 9
     assert result["items"][0]["retrieval_queries"] == ["English", "Deutsch"]
-    assert result["lanes"][-1] == {"name": "Google alternative 2", "query": "français", "status": "unavailable", "count": 0}
+    assert result["lanes"][3] == {"name": "Google web alternative 2", "query": "français", "status": "unavailable", "count": 0, "reason": "unavailable"}
     assert result["omitted_records"] == 2
 
 

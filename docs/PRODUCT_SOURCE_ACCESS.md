@@ -39,10 +39,14 @@ own corpus; full text, robots, access rights and source relevance are checked by
 the existing reader and decision pipeline. Fedlex title search benefits from short
 German/French/Italian terms. It is not a general legal full-text search engine.
 
-Reservations count the maximum selected provider API requests: balanced SearXNG
-uses three (one broad request plus two direct catalogues); balanced Search1API
-uses four; direct-only uses two. A SearXNG request fans out to at most the configured
-engines (three in production). Daily and per-investigation limits are preserved.
+As amended by the owner on 1 October, direct catalogues and local SearXNG have
+no application daily or per-investigation query quota. Only configured paid
+Search1API dispatch reserves an allowance (two broad requests for balanced search,
+plus explicitly requested alternatives). Exhausting that allowance skips the paid
+channel and keeps free sources available. Telemetry separately records all source
+requests, including the court adapter's three HTTP requests. Provider throttling,
+configured SearXNG engines, source permissions and execution timeouts remain.
+See [expanded sources and memory](RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
 Failed channels do not erase successful candidates or imply no relevant evidence.
 Partial SearXNG success exposes returned candidates and separate failed engines
 using the existing client coverage display. No client rebuild is required.

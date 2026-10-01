@@ -25,6 +25,9 @@ COVERAGE = ("Completed research with newly captured evidence only. Unchanged rep
 
 def new_source():
     return (InvestigationSource.snapshot["unchanged_from"].as_string().is_(None)
+        & InvestigationSource.snapshot["retained_origin"]["source_id"].as_string().is_(None)
+        & InvestigationSource.snapshot["duplicate_of"].as_string().is_(None)
+        & InvestigationSource.snapshot["capture_state"].as_string().is_distinct_from("unchanged")
         & InvestigationSource.snapshot["excerpts"][0]["text"].as_string().is_not(None))
 
 
@@ -57,6 +60,7 @@ def marker(research):
 
 
 def update_payload(session, run, finished_at, saved, publication):
+    from .product_monitoring_outcomes import project
     sources = select(InvestigationSource).where(InvestigationSource.investigation_id == run.id, new_source())
     claims = select(DossierClaim).where(DossierClaim.investigation_id == run.id)
     changes = change_query(run.dossier_id, publication).where(ClaimChange.investigation_id == run.id,
@@ -83,7 +87,7 @@ def update_payload(session, run, finished_at, saved, publication):
         "comparison_counts": counts, "sources": samples, "findings": findings,
         "comparisons": [change_payload(session, change) for change in session.scalars(
             changes.order_by(ClaimChange.created_at.desc(), ClaimChange.id).limit(3))],
-        "completion_note": run.stop_reason}
+        "completion_note": run.stop_reason, "outcome": project(session, run) if publication is None else None}
 
 
 def page(session, dossier_id, saved, publication=None, *, offset=0):

@@ -11,7 +11,8 @@ from .config import DomainError
 from .db import utcnow
 from .decision_engines import DecisionUnavailable, engines, rank
 from .decision_search import lexical_order, plain, public_url
-from .extraction import extract, validate_public_url
+from .extraction import validate_public_url
+from .product_contribution_extract import FORMATS, extract_file
 
 USER_AGENT = "HelveticLens/1.6 (+https://helveticlens.ch)"
 
@@ -32,7 +33,7 @@ async def inspect_source(settings, query, item, mode, *, rank_passages=True, exc
     if not url:
         raise DecisionUnavailable("unsafe_source")
     parts = urlsplit(url)
-    async with asyncio.timeout(55):
+    async with asyncio.timeout(90):
         async with httpx.AsyncClient(timeout=12, follow_redirects=False, trust_env=False,
                                     headers={"User-Agent": USER_AGENT}) as client:
             code, _, robots = await read_bytes(client, f"https://{parts.netloc}/robots.txt", 65536)
@@ -48,7 +49,10 @@ async def inspect_source(settings, query, item, mode, *, rank_passages=True, exc
                 # No cookies, login, paywall/challenge handling or redirect bypass.
                 raise DecisionUnavailable("source_unavailable")
         media = content_type.split(";")[0].lower()
-        if media not in ("text/html", "application/xhtml+xml", "text/plain", "application/pdf"):
+        suffix = next((suffix for suffix, types in FORMATS.items() if media in types), None)
+        if media == "application/xhtml+xml":
+            suffix, media = ".html", "text/html"
+        if not suffix or suffix == ".eml":
             raise DecisionUnavailable("unsupported_source")
         links = []
         if media in ("text/html", "application/xhtml+xml"):
@@ -65,12 +69,11 @@ async def inspect_source(settings, query, item, mode, *, rank_passages=True, exc
                     seen.add(target)
                 if len(links) >= 20:
                     break
-        document = await asyncio.to_thread(extract, body, media,
-            "source.pdf" if media == "application/pdf" else "source.html", "native")
-        text = document.text[:24000]
-        # Stable non-overlapping passages; bounded candidate selection is disclosed.
-        passages = [{"id": f"p{i // 600 + 1}", "title": item["title"], "summary": text[i:i + 600]}
-                    for i in range(0, len(text), 600) if text[i:i + 600].strip()]
+        document = await extract_file(body, "source" + suffix, media)
+        if document.get("error"):
+            raise DecisionUnavailable("source_extraction_unavailable")
+        passages = [{"id": passage["passage"], "title": item["title"], "summary": passage["text"]}
+                    for passage in document["excerpts"]]
         order = lexical_order(query, passages)
         by_id = {v["id"]: v for v in passages}
         selected = [by_id[i] for i in order[:8]]
@@ -94,7 +97,9 @@ async def inspect_source(settings, query, item, mode, *, rank_passages=True, exc
             "scope": "Anonymous fetch, at most 1 MB; redirects and access barriers are not followed. "
                 f"Up to the first 24,000 extracted characters, eight lexical candidate passages and {excerpt_limit} verbatim excerpts. "
                 "Links are present in the page, not verified citations or approved monitoring sources.",
-            "text_truncated": len(document.text) > 24000, "extracted_characters": len(document.text)}
+            "text_truncated": document["text_truncated"], "extracted_characters": document["extracted_characters"],
+            "extraction_methods": document["extraction_methods"], "extraction_scope": document["scope"],
+            "warnings": document["warnings"], "page_count": document["page_count"]}
 
 
 async def safe_inspect(settings, query, item, mode, *, rank_passages=True, excerpt_limit=3):

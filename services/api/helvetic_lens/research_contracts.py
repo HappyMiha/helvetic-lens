@@ -27,7 +27,7 @@ class Skill:
 
 
 SKILLS = MappingProxyType({s.id: s for s in (
-    Skill("recall", "Read saved evidence", "database", "dossier-question/v1", "evidence-pack/v1", deterministic=True, cost_class="local"),
+    Skill("recall", "Read saved evidence", "local_retrieval", "dossier-question/v1", "evidence-pack/v1", version="1.1.0", cost_class="local"),
     Skill("plan", "Choose useful research directions", "synthesis", "research-context/v1", "research-plan/v1"),
     Skill("search", "Find source candidates", "source_search", "public-query/v1", "source-candidates/v1", cost_class="provider_dependent"),
     Skill("gate", "Assess candidate relevance", "decision", "candidate-question/v1", "relevance-decision/v1"),
@@ -63,6 +63,11 @@ SOURCES = MappingProxyType({s.id: s for s in (
     SourceAdapter("crossref", "Crossref publication metadata", "catalogue", ("discovery",)),
     SourceAdapter("fedlex", "Fedlex legislation titles", "catalogue", ("discovery",)),
     SourceAdapter("europepmc", "Europe PMC literature", "catalogue", ("discovery",)),
+    SourceAdapter("clinicaltrials", "ClinicalTrials.gov trial registry", "catalogue", ("discovery",)),
+    SourceAdapter("fda_labels", "openFDA drug labels", "catalogue", ("discovery",)),
+    SourceAdapter("ema_news", "EMA current news feed", "catalogue", ("discovery",)),
+    SourceAdapter("finma_news", "FINMA current news feed", "catalogue", ("discovery",)),
+    SourceAdapter("federal_court", "Federal Supreme Court latest publication day", "catalogue", ("discovery",)),
     SourceAdapter("public_web", "Configured web search", "web", ("discovery",)),
     SourceAdapter("public_url", "Submitted public source", "web", ("capture",)),
 )})

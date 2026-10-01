@@ -67,7 +67,9 @@ def research_result(session, parent, watch_id, captured, item):
     if not run:
         return {"state": trigger.state if not trigger.investigation_id else "unavailable", "investigation_id": None, "finding": None}
     evidence = findings(session, run) if run.status in {"completed", "failed"} else []
-    return {"state": run.status, "investigation_id": run.id, "finding": evidence[0] if evidence else None}
+    from .product_monitoring_outcomes import project
+    return {"state": run.status, "investigation_id": run.id, "finding": evidence[0] if evidence else None,
+        "outcome": project(session, run, trigger)}
 
 
 def check_payload(session, parent, watch_id, item, blocked):

@@ -12,7 +12,7 @@ CONTRACT = "research-coverage/v1"
 def project(session, run):
     branches = rows(session, InvestigationBranch, run)
     sources = rows(session, InvestigationSource, run)
-    channels, executions = [], []
+    channels, executions, skipped_channels = [], [], []
     candidates = {}
     for branch in branches:
         state = branch.checkpoint
@@ -36,6 +36,7 @@ def project(session, run):
                         "step_id": step.get("id"), "reason": "No completed channel receipt."})
                 else:
                     channels.extend({**deepcopy(lane), "step_id": step.get("id")} for lane in recorded)
+                    skipped_channels.extend(deepcopy(execution.get("skipped_channels", [])))
             if step["phase"] == "read" and step.get("source_url"):
                 item = candidates.setdefault(step["source_url"], {"title": step["source_url"], "url": step["source_url"]})
                 item.update(read_status="not_checked" if step.get("skipped") else {
@@ -51,11 +52,14 @@ def project(session, run):
         extraction = [step for step in steps if step["phase"] == "extract" and step.get("source_id") == source.id]
         latest = extraction[-1] if extraction else None
         reused = bool(source.snapshot.get("retained_origin"))
-        unchanged = bool(source.snapshot.get("unchanged_from") or source.snapshot.get("duplicate_of"))
+        unchanged = bool(source.snapshot.get("unchanged_from") or source.snapshot.get("duplicate_of") or source.snapshot.get("capture_state") == "unchanged")
         state = ("reused" if reused else "unchanged" if unchanged else "captured")
         analysis = ({"completed": "analysed", "unavailable": "failed", "interrupted": "interrupted", "running": "analysing"}
             .get(latest["status"], "unknown") if latest else "not_needed" if unchanged else "not_started")
         captured.append({**source_ref(source), "read_status": state, "analysis_status": analysis,
+            "extraction_methods": source.snapshot.get("extraction_methods", []),
+            "extraction_warnings": source.snapshot.get("warnings", []),
+            "text_truncated": bool(source.snapshot.get("text_truncated")),
             "fresh_source_check": not reused and source.kind == "public_source", "analysed_at": latest.get("finished_at") if latest else None})
         if source.url in candidates:
             candidates[source.url].update(source_id=source.id, read_status=state, analysis_status=analysis)
@@ -75,8 +79,8 @@ def project(session, run):
             "failed_steps": failures, "unavailable_channels": partial_channels,
             "unchecked_sources": pending_sources, "open_questions": len(unresolved), "omitted_candidates": omitted},
         "search_order": core.get("search_order"), "pack_id": core.get("pack_id"), "pack_version": core.get("pack_version"),
-        "saved_evidence": {k: memory.get(k) for k in ("eligible_sources", "examined_sources", "selected_sources", "truncated", "method")},
-        "channels": channels, "sources": captured, "candidates": list(candidates.values()),
+        "saved_evidence": {k: memory.get(k) for k in ("eligible_sources", "examined_sources", "selected_sources", "truncated", "method", "retrieval")},
+        "channels": channels, "skipped_channels": skipped_channels, "sources": captured, "candidates": list(candidates.values()),
         "open_questions": unresolved, "stops": list(run.research_state.get("stops", [])),
         "executions": executions,
         "limitations": ["Coverage describes this bounded research episode, not the whole internet.",

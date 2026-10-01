@@ -83,6 +83,8 @@ def reply(value, **changes):
 @pytest.mark.parametrize("product", ["legal", "pharma"])
 def test_explore_read_brief_choose_and_explicit_monitoring(signed, monkeypatch, product):
     client, service, _, model = signed
+    # This journey exercises two complete episodes; quota behavior is tested separately.
+    service.environment_settings.decision_search_daily_limit = 100
     trace = adapters(monkeypatch, service, model)
     root, run, command = start(client, product)
     assert client.get(root).json()["exploration"]["investigation_id"] == run["id"]
@@ -123,8 +125,9 @@ def test_explore_read_brief_choose_and_explicit_monitoring(signed, monkeypatch, 
     enable(client, root, enabled=False, question="Check the disclosed Alpine Foundation grant.")
     resumed, _ = enable(client, root, question="Check the disclosed Alpine Foundation grant.")
     assert resumed["policy"]["enabled"]
-    complete(client, service, root + "/investigations", new)
-    assert trace["queries"][3:].count("River Trust recipient disclosure Alpine Foundation legal identity") == 1
+    continued = complete(client, service, root + "/investigations", new)
+    assert continued["status"] == "completed", continued
+    assert trace["queries"][3:].count("River Trust recipient disclosure Alpine Foundation legal identity") == 1, continued
     assert client.get(root + "/investigations").json()["total"] == 2
     assert client.get(root + "/investigations/" + run["id"]).json()["exploration"]["briefing"] == brief["briefing"]
     client.cookies.clear()

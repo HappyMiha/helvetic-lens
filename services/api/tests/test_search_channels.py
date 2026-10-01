@@ -53,16 +53,17 @@ def test_direct_catalogue_survives_web_outage_and_records_empty_distinctly(monke
         return httpx.Response(200, json={"message": {"items": [{"DOI": "10.123/test", "URL": "https://doi.org/10.123/test",
             "title": ["Building material reuse"], "abstract": "<jats:p>Publisher-supplied abstract.</jats:p>"}]}})
     transport(monkeypatch, handle)
-    from helvetic_lens import product_research
+    from helvetic_lens import product_research, research_catalogues
     async def empty(provider, query):
-        assert provider == "fedlex"
+        assert provider in {"fedlex", "finma_news", "federal_court"}
         return {"items": []}
     monkeypatch.setattr(product_research, "public_search", empty)
+    monkeypatch.setattr(research_catalogues, "search", empty)
     settings = Settings(web_search_provider="searxng", searxng_base_url="http://local-search")
     result = asyncio.run(decision_search.federated_retrieve(settings, "building reuse", "web", "balanced", "legal"))
     assert calls == ["local-search", "api.crossref.org"]
-    assert result["search_requests"] == search_channels.request_count(settings) == 3
-    assert [lane["status"] for lane in result["lanes"]] == ["unavailable", "complete", "complete"]
+    assert result["search_requests"] == search_channels.request_count(settings, product="legal") == 7
+    assert [lane["status"] for lane in result["lanes"]] == ["unavailable", "complete", "complete", "complete", "complete"]
     assert result["lanes"][-1]["count"] == 0
     assert SourceRecord.model_validate(result["items"][0]).provider == "Crossref"
 
@@ -76,8 +77,8 @@ def test_submitted_url_survives_all_discovery_failures_and_none_skips_broad_sear
     settings = Settings(web_search_provider="none")
     result = asyncio.run(decision_search.federated_retrieve(settings, "material reuse", "web", "balanced", "legal",
         public_sources=["https://example.org/report", "https://127.0.0.1/private"]))
-    assert calls == ["crossref", "fedlex"]
-    assert result["search_requests"] == 2
+    assert calls == ["crossref", "fedlex", "federal_court", "finma_news"]
+    assert result["search_requests"] == 6
     assert [v["url"] for v in result["items"]] == ["https://example.org/report"]
     assert result["items"][0]["provider"] == "Submitted public source"
 
@@ -89,6 +90,7 @@ def test_native_research_reads_and_analyses_direct_sources_when_web_is_down(sign
     trace = pipeline(monkeypatch, service, model)
     fixture_retrieval = decision_search.federated_retrieve
     monkeypatch.setattr(decision_search, "federated_retrieve", native_federation)
+    service.settings.decision_search_daily_limit = 0
     service.settings.web_search_provider = "searxng"
     service.settings.searxng_base_url = "http://local-search"
     service.settings.search1api_api_key = SecretStr("")
@@ -108,7 +110,7 @@ def test_native_research_reads_and_analyses_direct_sources_when_web_is_down(sign
     assert result["status"] == "completed", result
     assert len(result["sources"]) == 3 and len(trace["reads"]) == 3
     assert result["claims"][0]["status"] == "CONTESTED"
-    assert result["research"]["used"]["search_requests"] == 9
+    assert result["research"]["used"]["search_requests"] == 0
     coverages = [b["coverage"] for b in result["branches"] if b.get("coverage")]
     assert coverages and all(c["retrieval"]["lanes"][0]["status"] == "unavailable" for c in coverages)
 
@@ -123,3 +125,34 @@ def test_new_provider_results_retain_signed_discovery_receipts(signed, monkeypat
     result = post(client, BASE + "/decision", command())
     assert result.status_code == 200, result.text
     assert result.json()["items"][0]["discovery_receipt"]
+
+
+def test_free_search_rotates_same_day_history_without_consuming_paid_allowance(signed, monkeypatch):
+    from uuid import uuid4
+
+    from sqlalchemy import func, select
+
+    from helvetic_lens.db import utcnow
+    from helvetic_lens.product_models import DecisionSearchBudget, DecisionSearchRun
+    client, service, person, _ = signed
+    service.environment_settings.web_search_provider = "searxng"
+    service.environment_settings.searxng_base_url = "http://local-search"
+    service.environment_settings.decision_search_daily_limit = 0
+    with service.db.session() as session:
+        session.add(DecisionSearchBudget(day=utcnow().date(), used=1000))
+        for _ in range(50):
+            session.add(DecisionSearchRun(product="pharma", organization_id=person["organization"]["id"],
+                owner_user_id=person["user"]["id"], request_key=str(uuid4()), fingerprint="a" * 64,
+                query="Saved public search", mode="laya", status="complete"))
+        session.commit()
+    async def execute(settings, *args):
+        assert settings.web_search_provider == "searxng"
+        return {"items": [], "engines": []}
+    monkeypatch.setattr(decision_search, "execute", execute)
+    response = post(client, BASE + "/decision", command(mode="laya"))
+    assert response.status_code == 200, response.text
+    assert response.json()["status"] == "complete"
+    with service.db.session() as session:
+        assert session.scalar(select(func.count()).select_from(DecisionSearchRun)) == 50
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 1000
+    assert client.get(BASE + "/engines").json()["free_search_query_limit"] is None

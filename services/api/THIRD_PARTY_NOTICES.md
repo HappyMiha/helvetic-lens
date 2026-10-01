@@ -125,3 +125,8 @@ project's license does not override them.
 Before redistributing a combined build or offering a separately licensed service,
 review the actual bundled components and preserve their notices. Licenses for
 system packages and optional assets must travel with those components.
+
+Local document OCR uses Tesseract (Apache-2.0) and Poppler utilities (GPL-2.0-or-later),
+installed as separately distributed operating-system packages. Their package
+licenses, notices and source availability remain applicable; they are not relicensed
+under the application license. OCR language data retains its upstream terms.

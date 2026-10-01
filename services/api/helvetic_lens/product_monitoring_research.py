@@ -113,10 +113,12 @@ def worker_access(session, run, trigger):
 
 def seed(session, run, parent, settings, trigger):
     source, _ = snapshot(session, run, trigger.source_json)
+    from .research_change_capture import unchanged
+    reused = unchanged(session, run, source)
     page = trigger.source_kind == "watched_page"
-    session.add(InvestigationBranch(**scope(run), query="New monitoring evidence", phase="extract",
+    session.add(InvestigationBranch(**scope(run), query="New monitoring evidence", phase="extract", status="completed" if reused else "queued",
         reason="A linked page has a new retained text version." if page else "A new, current signal matched this dossier's enabled monitoring topics.",
-        checkpoint={"saved": True, "source_ids": [source.id], "extract_index": 0}))
+        checkpoint={"saved": True, "source_ids": [source.id], "extract_index": 1 if reused else 0, "unchanged": int(reused)}))
     run.status = "running"
     plan(session, run, "Investigate the exact saved monitoring signal, then compare independently extracted findings.",
         trigger={"monitoring_trigger_id": trigger.id, "source_id": source.id})
@@ -255,6 +257,7 @@ def enqueue_due(database, settings):
 
 
 def trigger_payload(session, trigger):
+    from .product_monitoring_outcomes import project
     run = session.get(Investigation, trigger.investigation_id) if trigger.investigation_id else None
     source = trigger.source_json
     readable = product_page_research.readable(session, session.get(ProductDossier, trigger.dossier_id), source)
@@ -267,7 +270,8 @@ def trigger_payload(session, trigger):
         "created_at": iso(trigger.created_at), "state": trigger.state,
         "reason": trigger.reason if readable else "The retained page evidence is no longer accessible in this dossier.",
         "source": {k: source.get(k, "") for k in ("title", "url", "sha256")},
-        "investigation": summary(run) if run and readable else None}
+        "investigation": summary(run) if run and readable else None,
+        "outcome": project(session, run, trigger) if run and readable else None}
 
 
 def payload(session, parent, policy, can_manage, offset=0):

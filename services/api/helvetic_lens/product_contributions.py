@@ -1,8 +1,5 @@
 """Retained human originals and private, serialized contribution analysis."""
-import asyncio
 import hashlib
-import json
-import sys
 from copy import deepcopy
 from uuid import uuid4
 
@@ -103,22 +100,9 @@ async def read_file(folder, data):
         return {"error": "Original retained. Automatic extraction accepts files up to 2 MB."}
     if hashlib.sha256(body).hexdigest() != data["sha256"]:
         return {"error": "Original integrity check failed. No text was analysed."}
-    process = await asyncio.create_subprocess_exec(sys.executable, "-m", "helvetic_lens.product_contribution_extract",
-        data["title"], data["content_type"], stdin=asyncio.subprocess.PIPE,
-        stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
-    try:
-        async with asyncio.timeout(25):
-            output, _ = await process.communicate(body)
-        if process.returncode or len(output) > 250000:
-            return {"error": "Original retained. Local extraction could not finish within its resource limits."}
-        result = json.loads(output)
-        return {**result, "sha256": data["sha256"]}
-    except TimeoutError:
-        return {"error": "Original retained. Local extraction reached its time limit."}
-    finally:
-        if process.returncode is None:
-            process.kill()
-        await process.wait()
+    from .product_contribution_extract import extract_file
+    result = await extract_file(body, data["title"], data["content_type"])
+    return {**result, "sha256": data["sha256"]}
 
 
 def retry(session, run):

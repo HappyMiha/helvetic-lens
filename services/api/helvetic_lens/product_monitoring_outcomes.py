@@ -5,7 +5,13 @@ from .product_check_source_coverage import project as source_coverage
 from .product_claim_evolution import evidence_payload
 from .product_claim_evolution import payload as change_payload
 from .product_claim_evolution import query as change_query
-from .product_investigation_models import ClaimChange, DossierClaim, Investigation, InvestigationSource
+from .product_investigation_models import (
+    ClaimChange,
+    DossierClaim,
+    Investigation,
+    InvestigationBranch,
+    InvestigationSource,
+)
 from .product_public_research import sources_visible
 
 CONTRACT = "monitoring-outcome/v1"
@@ -23,6 +29,11 @@ def quotation_current(session, evidence):
 
 
 def findings(session, run):
+    from .domain_packs import for_product
+    from .product_claim_review import projection
+    from .product_models import ProductDossier
+    from .research_contracts import review_requirement
+
     # The full record retains every finding. This is a small, source-backed preview.
     candidates = session.scalars(select(DossierClaim).where(DossierClaim.investigation_id == run.id,
         DossierClaim.status.in_(SUPPORTED)).order_by(DossierClaim.created_at.desc(), DossierClaim.id).limit(24))
@@ -30,8 +41,11 @@ def findings(session, run):
     for claim in candidates:
         evidence = evidence_payload(session, claim)
         if quotation_current(session, evidence):
+            review = projection(session, claim)
+            pack = for_product(session.get(ProductDossier, run.dossier_id).product)
             result.append({"id": claim.id, "investigation_id": run.id, "statement": claim.statement,
-                "status": claim.status, "revision": claim.revision, "evidence": evidence})
+                "status": claim.status, "revision": claim.revision, "evidence": evidence,
+                "human_status": review["human_status"], "review_requirement": review_requirement(review, pack.review_policy)})
         if len(result) == 3:
             break
     return result
@@ -59,11 +73,15 @@ def comparisons(session, run):
     return result
 
 
-def project(session, run, trigger, branches):
+def project(session, run, trigger=None, branches=None):
+    from .product_investigations import rows
+    from .research_coverage import project as coverage
+
+    branches = branches if branches is not None else rows(session, InvestigationBranch, run)
     result = {"contract": CONTRACT, "state": run.status, "finding_state": "pending",
         "limitations": [], "findings": [], "comparisons": [],
         "scope": "This saved question and the sources captured in this check. Coverage is not exhaustive."}
-    if (run.question != trigger.question or run.publication_id
+    if (run.question != getattr(trigger, "question", run.question) or run.publication_id
             or not session.scalar(select(Investigation.id).where(Investigation.id == run.id, sources_visible()))):
         result.update(state="unavailable", finding_state="unavailable")
         result["limitations"] = ["The evidence for this check is no longer available in its original scope."]
@@ -72,6 +90,8 @@ def project(session, run, trigger, branches):
     if not branches and run.status in {"queued", "running", "paused", "cancelled"}:
         return result
     result["source_coverage"] = source_coverage(session, run, branches)
+    result["coverage_manifest"] = coverage(session, run)
+    result["question"] = run.question
     if run.status in {"queued", "running", "paused", "cancelled"}:
         return result
 
@@ -88,8 +108,8 @@ def project(session, run, trigger, branches):
         found = "findings"
     elif recurring and all(s.get("empty_search") for s in recurring):
         found = "no_matches"
-    elif (recurring and sum(s.get("unchanged", 0) for s in recurring)
-            and not sum(s.get("analysed", 0) for s in recurring)):
+    elif (sum(b.checkpoint.get("unchanged", 0) for b in branches)
+            and not sum(b.checkpoint.get("analysed", 0) for b in branches)):
         found = "unchanged"
     else:
         found = "no_findings"

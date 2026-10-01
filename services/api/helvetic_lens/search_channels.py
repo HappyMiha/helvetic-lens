@@ -23,11 +23,30 @@ def catalogue_names(product):
     return for_product(product).discovery_sources
 
 
-def request_count(settings, depth="balanced", alternatives=()):
+def request_count(settings, depth="balanced", alternatives=(), *, product=None):
     # Counts requests to provider APIs, not the engines behind a metasearch API.
     broad = 0 if settings.web_search_provider == "none" else (
         2 if settings.web_search_provider == "search1api" and depth != "quick" else 1)
-    return broad + (len(alternatives) if broad else 0) + (1 if depth == "quick" else 2)
+    names = catalogue_names(product)[:1] if depth == "quick" else catalogue_names(product)
+    direct = sum(3 if name == "federal_court" else 1 for name in names) if product else (1 if depth == "quick" else 2)
+    return broad + (len(alternatives) if broad else 0) + direct
+
+
+def paid_request_count(settings, depth="balanced", alternatives=()):
+    """Only a configured paid broad-web provider consumes a query allowance."""
+    if settings.web_search_provider != "search1api" or not broad_configured(settings):
+        return 0
+    return (1 if depth == "quick" else 2) + len(alternatives)
+
+
+def request_settings(settings, skipped_paid=None):
+    return settings.model_copy(update={"web_search_provider": "none"}) if skipped_paid else settings
+
+
+def note_skipped_paid(result, reason):
+    if reason:
+        result.setdefault("skipped_channels", []).append({"name": "Search1API", "reason": reason})
+    return result
 
 
 async def bounded_get(url, params, *, timeout=15):
@@ -93,6 +112,9 @@ async def direct_search(provider, query):
     from .decision_search import plain, public_url
     from .product_research import public_search
 
+    if provider in {"clinicaltrials", "fda_labels", "ema_news", "finma_news", "federal_court"}:
+        from .research_catalogues import search
+        return await search(provider, query)
     if provider != "crossref":
         return await public_search(provider, query)
     result = await bounded_get("https://api.crossref.org/works", {"query.bibliographic": query,

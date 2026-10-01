@@ -162,7 +162,7 @@ def routes(router, service, actor):
         if not body or len(body) > MAX_BYTES:
             fail("Choose a non-empty public document of at most 2 MB.", 413)
         if suffix not in FORMATS or media not in FORMATS[suffix] | {"application/octet-stream"}:
-            fail("Public files support TXT, Markdown, CSV, HTML and text PDF with matching content types.")
+            fail("Public files support TXT, Markdown, CSV, HTML, PDF, DOCX, XLSX, PPTX and EML with matching content types.")
         if suffix == ".pdf":
             if not body.startswith(b"%PDF"):
                 fail("This file does not contain a PDF document.")

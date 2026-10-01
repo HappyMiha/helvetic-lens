@@ -123,7 +123,8 @@ def test_receipts_history_labels_and_replay_use_real_private_storage(signed, mon
 def test_history_does_not_renew_old_source_receipts_and_quota_survives_erasure(signed, monkeypatch):
     client, service, _, _ = signed
     mock_pipeline(monkeypatch)
-    service.environment_settings.decision_search_daily_limit = 4
+    service.environment_settings.search1api_api_key = SecretStr("fixture")
+    service.environment_settings.decision_search_daily_limit = 2
     data = command()
     found = post(client, BASE + "/decision", data).json()
     with service.db.session() as session:
@@ -139,8 +140,10 @@ def test_history_does_not_renew_old_source_receipts_and_quota_survives_erasure(s
     with service.db.session() as session:
         session.execute(delete(DecisionSearchRun))
         session.commit()
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 4
-    assert post(client, BASE + "/decision", command()).status_code == 429
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 2
+    fallback = post(client, BASE + "/decision", command())
+    assert fallback.status_code == 200
+    assert fallback.json()["retrieval"]["skipped_channels"][0]["name"] == "Search1API"
 
 
 def test_finished_network_failure_is_saved_and_not_repeated_by_retry(signed, monkeypatch):
@@ -207,7 +210,13 @@ def test_federation_deduplicates_and_reports_partial_source_failure(monkeypatch)
 def test_inspection_is_explicit_cached_and_does_not_create_monitoring(signed, monkeypatch):
     client, service, _, _ = signed
     mock_pipeline(monkeypatch)
+    service.environment_settings.search1api_api_key = SecretStr("fixture")
     found = post(client, BASE + "/decision", command()).json()
+    with service.db.session() as session:
+        saved = session.get(DecisionSearchRun, found["id"])
+        saved.result_json = {**saved.result_json, "inspections": {
+            character * 32: {"status": "complete"} for character in "bcd"}}
+        session.commit()
     calls = []
     async def inspect(*args):
         calls.append(args[1:])
@@ -323,6 +332,7 @@ def test_real_native_erasure_removes_private_search_but_preserves_aggregate_budg
     from helvetic_lens.models import User
     client, service, person, _ = signed
     mock_pipeline(monkeypatch)
+    service.environment_settings.search1api_api_key = SecretStr("fixture")
     found = post(client, BASE + "/decision", command()).json()
     with service.db.session(include_all_organizations=True) as session:
         user = session.get(User, person["user"]["id"])
@@ -332,5 +342,5 @@ def test_real_native_erasure_removes_private_search_but_preserves_aggregate_budg
         erase_selected(session, user, selection)
         session.commit()
         assert session.get(DecisionSearchRun, found["id"]) is None
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 4
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 2
         assert session.connection().exec_driver_sql("PRAGMA foreign_key_check").all() == []

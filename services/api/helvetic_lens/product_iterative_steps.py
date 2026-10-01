@@ -2,7 +2,14 @@
 import re
 from copy import deepcopy
 
-from . import decision_search, decision_sources, research_gateway, research_knowledge, search_channels
+from . import (
+    decision_search,
+    decision_sources,
+    research_gateway,
+    research_knowledge,
+    research_recall,
+    search_channels,
+)
 from . import product_branch_assessment as branch_assessment
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
@@ -37,7 +44,9 @@ def prepare(session, run, branch, state, work):
     work["decision_order"] = run.research_state.get("decision_order", "jev_first")
     work["question"] = run.question
     work["limits"] = run.research_state["limits"]
-    if branch.phase == "plan":
+    if branch.phase == "recall":
+        research_recall.prepare(session, run, state, work)
+    elif branch.phase == "plan":
         work["input"] = {"question": run.question, "branch_slots": min(6, max(2, work["limits"]["branches"] // 2))}
         direction = clarification.context(session, run)
         if direction and direction["status"] == "ready":
@@ -73,11 +82,14 @@ def prepare(session, run, branch, state, work):
 
 
 async def execute(service, work, seconds):
+    if work["phase"] == "recall":
+        return await research_recall.execute(service, work)
     phase = work["phase"]
     if phase == "search":
         urls = [v["url"] for v in search_channels.explicit_sources(work["question"])]
-        result = await decision_search.federated_retrieve(service.settings, work["query"], "web", "balanced", work["product"],
+        result = await decision_search.federated_retrieve(search_channels.request_settings(service.settings, work.get("skipped_paid_search")), work["query"], "web", "balanced", work["product"],
             **({"public_sources": urls} if urls else {}))
+        search_channels.note_skipped_paid(result, work.get("skipped_paid_search"))
         return {"items": result.pop("items"), "retrieval": result,
             "coverage": "Federated candidate retrieval only. Each candidate requires a separate relevance gate before reading."}
     if phase == "gate":
@@ -171,7 +183,14 @@ def settle(branch, state):
 def failed(branch, state, *, interrupted=False):
     if branch.phase == "read":
         recovery.failed_read(state)
-    if branch.phase in {"plan", "reflect", "brief", "orient", "reformulate"}:
+    if branch.phase == "recall":
+        # A failed/interrupted local preparation never repeats an external model
+        # request. Continue planning without memory; cached batches are retained.
+        branch.phase = "plan"
+        state["recall_unavailable"] = True
+        if state.get("recall_only"):
+            branch.status = "completed"
+    elif branch.phase in {"plan", "reflect", "brief", "orient", "reformulate"}:
         branch.status = "failed"
     if branch.phase in {"gate", "gate_review"}:
         item = state.get("candidates", [])[state.get("gate_index", 0)]
@@ -185,7 +204,9 @@ def apply(session, run, branch, state, work, result):
     phase = work["phase"]
     if work.get("model_route"):
         state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": phase, **work["model_route"]})
-    if phase == "plan":
+    if phase == "recall":
+        research_recall.apply(session, run, branch, state, work, result)
+    elif phase == "plan":
         research.apply_plan(session, run, result)
         branch.status = "completed"
         state["planning_done"] = True

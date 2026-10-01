@@ -102,8 +102,10 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
             lanes.append(("Bing web", query, retrieve(settings, query, "web", service="bing", limit=limit)))
         for number, alternative in enumerate(alternatives, 1):
             lanes.append((f"{name} alternative {number}", alternative, retrieve(settings, alternative, "web", limit=limit)))
-    catalogues = search_channels.catalogue_names(product)[:1 if depth == "quick" else 2]
-    labels = {"crossref": "Crossref publication metadata", "europepmc": "Europe PMC literature", "fedlex": "Fedlex legislation titles"}
+    from .research_contracts import SOURCES
+    available = search_channels.catalogue_names(product)
+    catalogues = available[:1] if depth == "quick" else available
+    labels = {key: SOURCES[key].label for key in available}
     for provider in catalogues:
         lanes.append((labels[provider], query, search_channels.direct_search(provider, query)))
     outcomes = await asyncio.gather(*(work for _, _, work in lanes), return_exceptions=True)
@@ -135,7 +137,10 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
         omitted += result.get("omitted_records", 0)
         partial = result.get("status") == "partial"
         coverage.append({"name": name + (" (available engines)" if partial else ""), "query": lane_query,
-            "status": "complete", "count": len(ranking)})
+            "status": "complete", "count": len(ranking),
+            "scope": result.get("scope") or "Bounded catalogue or search response; not exhaustive coverage.",
+            "more_available": result.get("more_available") or bool(result.get("next_cursor")),
+            "examined_records": result.get("examined_records")})
         if partial:
             for engine in result.get("unavailable_engines") or ["upstream engine"]:
                 coverage.append({"name": name + " / " + engine, "query": lane_query,
@@ -160,7 +165,8 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
         "omitted_records": omitted, "candidate_limit": maximum, "discovered_count": len(items),
         "status": "complete" if all(c["status"] == "complete" for c in coverage) else "partial" if rankings else "unavailable",
         "lanes": coverage, "origins": {v["id"]: origins[v["id"]] for v in candidates},
-        "search_requests": len(lanes), "depth": depth}
+        "skipped_channels": [{"name": labels[key], "reason": "Outside quick-search budget."} for key in available if key not in catalogues],
+        "search_requests": search_channels.request_count(settings, depth, alternatives, product=product), "depth": depth}
 
 
 async def execute(settings, query, mode, depth="balanced", product="pharma", alternatives=()):

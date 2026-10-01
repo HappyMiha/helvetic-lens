@@ -199,7 +199,9 @@ def test_capacity_and_service_failures_preserve_words_and_uncertain_candidates(s
     retained(service, doc)
     calls = encoder(monkeypatch, service, failure="timeout")
     local(monkeypatch, service)
-    assert search(client, root, mode="corpus").status_code == 503
+    degraded = search(client, root, mode="corpus")
+    assert degraded.status_code == 200 and degraded.json()["method"] == "lexical_graph_fallback"
+    assert degraded.json()["total_records"] == 2 and not degraded.json()["semantic_available"]
     assert search(client, root, "two eight", mode="literal").json()["matching_records"] == 2
     monkeypatch.setattr(embeddings, "MAX_RECORDS", 1)
     assert search(client, root, mode="corpus").status_code == 409 and len(calls) == 1

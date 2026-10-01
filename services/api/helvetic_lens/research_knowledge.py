@@ -85,7 +85,7 @@ def eligible_sources(run):
         source.snapshot["retained_origin"]["source_id"].as_string().is_(None))
 
 
-def recall(session, run, product):
+def recall(session, run, product, *, selected_ids=None, retrieval=None):
     """Deterministic first step, before planning; never performs a web/model call."""
     from . import product_claim_review as reviews
     from .product_investigations import event, snapshot
@@ -96,13 +96,15 @@ def recall(session, run, product):
         return
     query = eligible_sources(run)
     total = session.scalar(select(func.count()).select_from(query.subquery()))
+    if selected_ids is not None:
+        query = query.where(InvestigationSource.id.in_(selected_ids))
     available = list(session.scalars(query.order_by(InvestigationSource.created_at.desc(), InvestigationSource.id)
         .limit(RECALL_RECORD_LIMIT)))
     candidates = [{"id": s.id, "title": s.title,
         "summary": " ".join(p.get("text", "") for p in s.snapshot.get("excerpts", []))[:12000]} for s in available]
-    ranked = lexical_order(run.question, candidates)
+    ranked = selected_ids if selected_ids is not None else lexical_order(run.question, candidates)
     by_id = {s.id: s for s in available}
-    selected = [by_id[key] for key in ranked[:RECALL_SOURCE_LIMIT]]
+    selected = [by_id[key] for key in ranked[:RECALL_SOURCE_LIMIT] if key in by_id]
     pins, saved, claims = [], [], []
     source_map = {}
     for source in selected:
@@ -143,7 +145,8 @@ def recall(session, run, product):
     core["recall"] = {"sources": saved, "origin_pins": pins, "claims": claims,
         "eligible_sources": total, "examined_sources": len(available), "selected_sources": len(saved),
         "truncated": total > len(available) or len(available) > len(saved),
-        "method": "BM25 over retained public captures, then current human review within selected sources",
+        "method": (retrieval or {}).get("method", "BM25 over retained public captures, then current human review within selected sources"),
+        "retrieval": deepcopy(retrieval),
         "fresh_source_check": False}
     run.research_state = {**run.research_state, "core": core}
     event(session, run, "saved_evidence_recalled", examined_sources=len(available),

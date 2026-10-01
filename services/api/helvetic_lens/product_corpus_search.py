@@ -12,6 +12,7 @@ from sqlalchemy.exc import OperationalError
 
 from . import decision_engines as decisions
 from . import evidence_embeddings as embeddings
+from . import evidence_graph_retrieval as graph
 from .decision_search import lexical_order
 from .product_api import fail, iso
 from .product_evidence_search import (
@@ -85,7 +86,7 @@ def save_batch(service, identity, product, dossier_id, command, captured_fingerp
         session.commit()
 
 
-def rank_records(query, items, vectors, query_vector):
+def rank_records(query, items, vectors, query_vector, relationships=None):
     similarities = {item["id"]: sum(a * b for a, b in zip(query_vector, vectors[item["id"]]["vector"])) for item in items}
     dense = sorted(similarities, key=lambda key: (-similarities[key], key))
     # Stable ID ties match the preselected independent development experiment.
@@ -99,10 +100,28 @@ def rank_records(query, items, vectors, query_vector):
     for index, key in enumerate(lexical, 1):
         scores[key] += 1 / (60 + index)
     by_id = {item["id"]: item for item in items}
-    return [{**by_id[key], "rank_score": scores[key], "semantic_similarity": similarities[key],
+    ranked = [{**by_id[key], "rank_score": scores[key], "semantic_similarity": similarities[key],
         "embedding_truncated": vectors[key]["truncated"], "semantic_match": False,
         "literal_match": literal_match(query, by_id[key]), "relevance_probability": None, "confidence": None}
         for key in sorted(scores, key=lambda key: (-scores[key], key))]
+    return graph.fuse(ranked, relationships)
+
+
+def relationships(service, identity, product, dossier_id, items, query):
+    with service.db.session() as session:
+        row = access(session, identity, product, dossier_id)
+        if session.get_bind().dialect.name == "postgresql":
+            session.connection().exec_driver_sql("SET LOCAL statement_timeout = '3000ms'")
+        return graph.project(session, row, items, query)
+
+
+def lexical_fallback(query, items, links):
+    by_id = {i["id"]: i for i in items}
+    order = lexical_order(query, [{**i, "summary": i["statement"] + " " + i["quote"]} for i in items])
+    ranked = [{**by_id[key], "rank_score": 1 / (60 + number), "semantic_similarity": None,
+        "semantic_match": False, "embedding_truncated": False, "literal_match": literal_match(query, by_id[key]),
+        "relevance_probability": None, "confidence": None} for number, key in enumerate(order, 1)]
+    return graph.fuse(ranked, links)
 
 
 async def search_corpus(service, identity, product, dossier_id, command, request, before,
@@ -119,6 +138,7 @@ async def search_corpus(service, identity, product, dossier_id, command, request
     answers, error, embedding_calls, response_items = [], None, 0, []
     prepared = len(cached)
     preparing = bool(missing)
+    links = {"ranked_ids": [], "links": {}, "truncated": False}
     async def current():
         if await request.is_disconnected():
             fail("The search connection was closed.", 499, "search_cancelled")
@@ -132,13 +152,13 @@ async def search_corpus(service, identity, product, dossier_id, command, request
             encoded = await encoder.encode([embeddings.passage(item) for item in batch])
         except decisions.DecisionUnavailable:
             await current()
-            fail("Meaning-search preparation is unavailable. Prepared work is retained. Try again, or use Words or Direct comparison.",
-                 503, "evidence_preparation_unavailable")
-        embedding_calls = 1
-        await current()
-        await database(save_batch, service, identity, product, dossier_id, command,
+            error, preparing, encoded = "evidence_preparation_unavailable", False, None
+        if encoded is not None:
+            embedding_calls = 1
+            await current()
+            await database(save_batch, service, identity, product, dossier_id, command,
                                 captured_fingerprint, batch, encoded)
-        prepared += len(batch)
+            prepared += len(batch)
         # A separate request ranks; each preparation checkpoint has a finite cost
         # and is safely resumable after closing the tab or losing the connection.
     elif items:
@@ -149,16 +169,17 @@ async def search_corpus(service, identity, product, dossier_id, command, request
             encoded = await encoder.encode(["query: " + command.query])
         except decisions.DecisionUnavailable:
             await current()
-            fail("Meaning search is temporarily unavailable. Use Words or Direct comparison, or try again.",
-                 503, "evidence_ranking_unavailable")
-        embedding_calls = 1
+            error, encoded = "evidence_ranking_unavailable", None
+        embedding_calls = int(encoded is not None)
         await current()
-        ranked = await asyncio.to_thread(rank_records, command.query, items, cached, encoded[0]["vector"])
+        links = await database(relationships, service, identity, product, dossier_id, items, command.query)
+        ranked = (await asyncio.to_thread(rank_records, command.query, items, cached, encoded[0]["vector"], links)
+            if encoded else lexical_fallback(command.query, items, links))
         response_items = ranked[command.offset:command.offset + BATCH_SIZE]
         engine = decisions.LayaEngine(service.settings)
         try:
             async with asyncio.timeout(max(0.01, TIME_LIMIT - (perf_counter() - started))):
-                for item in response_items:
+                for item in response_items if encoded else []:
                     await current()
                     answer = await engine.choose(semantic_state(command.query, item), INSTRUCTIONS, RELEVANCE)
                     answers.append((item["id"], answer))
@@ -169,6 +190,10 @@ async def search_corpus(service, identity, product, dossier_id, command, request
             if answer := by_id.get(item["id"]):
                 item.update(semantic_match=answer.choice == "A", relevance_probability=answer.probabilities["A"],
                             confidence=answer.confidence)
+    fallback = error in {"evidence_preparation_unavailable", "evidence_ranking_unavailable"}
+    if fallback:
+        links = await database(relationships, service, identity, product, dossier_id, items, command.query)
+        response_items = lexical_fallback(command.query, items, links)[command.offset:command.offset + BATCH_SIZE]
     await current()
     measure = decisions.measurement("laya", [answer for _, answer in answers], service.settings, error=error)
     measure.update({"engine": "local_retrieval", "models": sorted(set(measure["models"] + ([embeddings.MODEL] if embedding_calls else []))),
@@ -177,17 +202,19 @@ async def search_corpus(service, identity, product, dossier_id, command, request
         "cost_scope": "Local preparation, query and decision compute are not metered; cost unknown, not zero.",
         "accuracy": None, "accuracy_basis": "Independent NoMIRACL sample evaluates retrieval, not this dossier's relevance or medical/legal accuracy."})
     end = command.offset + len(response_items)
-    return {"dossier_id": dossier_id, "query": command.query, "mode": "corpus", "method": "local_corpus_hybrid",
+    return {"dossier_id": dossier_id, "query": command.query, "mode": "corpus", "method": "lexical_graph_fallback" if fallback else "local_corpus_hybrid",
+        "semantic_available": not fallback, "graph_truncated": links["truncated"],
         "items": response_items, "total_records": before["total"], "matching_records": None,
         "examined_records": 0 if preparing else len(items), "offset": command.offset, "batch_size": BATCH_SIZE,
         "next_offset": end if not preparing and end < len(items) else None, "as_of": iso(command.as_of),
         "fingerprint": captured_fingerprint, "measurement": measure, "preparing": preparing,
         "prepared_records": prepared, "preparation_batch": embeddings.BATCH,
         "coverage": "All currently permitted captured passages and source-linked findings in completed private investigations in this dossier are ranked, up to 20,000 records. "
-            "Every ranked candidate remains available, including uncertain or model-negative records. Exact names also influence ranking. "
+            "Every ranked candidate remains available, including uncertain or model-negative records. Exact names and currently cited evidence relationships also influence ranking. "
             "Uncaptured files, public discussions and the live web are outside this saved-evidence search. "
             "Local preparation considers up to 512 tokens from each title, finding and the first 2,400 passage characters; longer text can be truncated. "
             "Laya independently comments on the displayed 12 candidates without suppressing or changing their corpus ranking. "
             "Similarity and model opinions do not verify truth. "
-            + ("Preparation is incomplete; no whole-dossier ranking is claimed yet." if preparing else
+            + ("Local meaning search is unavailable. Results use words and cited relationships; prepared vectors are retained for a retry." if fallback else
+               "Preparation is incomplete; no whole-dossier ranking is claimed yet." if preparing else
                "Direct comparison is partly unavailable; corpus ranking remains complete." if error else "")}

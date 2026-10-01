@@ -130,20 +130,24 @@ def event(session, run, kind, **detail):
 
 
 def capabilities(settings, product):
+    import shutil
+
     from . import search_channels
+    from .research_contracts import SOURCES
 
     search = search_channels.broad_configured(settings)
     pack = domain_packs.for_product(product)
     return [
         {"id": "public_web", "available": search, "description": "Broad public-web discovery via " + settings.web_search_provider + "; live availability checked per search"},
-        {"id": "public_catalogues", "available": True, "description": "Direct Crossref publication metadata and " + ("Europe PMC literature" if pack.scientific_literature else "Fedlex legislation titles") + "; independent of broad web search"},
+        {"id": "public_catalogues", "available": True, "description": ", ".join(SOURCES[key].label for key in pack.discovery_sources) + "; independent bounded official/catalogue channels"},
         {"id": "scientific_literature", "available": pack.scientific_literature, "description": "Europe PMC literature discovery"},
-        {"id": "source_reader", "available": True, "description": "Permitted anonymous HTML, text and PDF excerpts; robots and size limits apply"},
+        {"id": "source_reader", "available": True, "description": "Permitted HTML, text, JSON, PDF and Office excerpts; robots, format and size limits apply"},
         {"id": "saved_evidence", "available": True, "description": "Current dossier contributions and saved monitored extracts"},
         {"id": "evidence_analysis", "available": settings.model_configured, "description": "Configured workspace model; source-grounded proposals, availability checked during execution"},
         {"id": "evidence_comparison", "available": settings.model_configured, "description": "Compare independently captured findings with earlier claims in the same dossier audience"},
         {"id": "authenticated_sources", "available": False, "description": "No authenticated archive or paid database connector attached"},
-        {"id": "ocr", "available": False, "description": "Scanned-image OCR is not available in this workflow"},
+        {"id": "ocr", "available": bool(shutil.which("tesseract") and shutil.which("pdftoppm")),
+            "description": "Local OCR of up to four scanned PDF pages, when installed; recognition is not independent verification"},
     ]
 
 
@@ -295,6 +299,7 @@ def page_result_visible(session, run):
 def payload(session, run, *, include_retained=False):
     from .product_claim_evolution import projection
     from .product_contributions import original
+    from .product_monitoring_outcomes import project as outcome
     from .product_monitoring_research import trigger_for, trigger_payload
     from .product_observed_queries import public_steps
     from .research_coverage import project as coverage_manifest
@@ -327,6 +332,7 @@ def payload(session, run, *, include_retained=False):
         "research": research_projection(run) if adaptive_valid else None,
         "exploration": exploration,
         "coverage_manifest": coverage_manifest(session, run) if adaptive_valid else None,
+        "outcome": outcome(session, run) if adaptive_valid and not run.publication_id and not exploration else None,
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)] if adaptive_valid else [],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
@@ -351,7 +357,7 @@ def payload(session, run, *, include_retained=False):
         "evidence_basis": "Supported means the linked source supports the statement, not independently established truth. "
             "Machine extraction may be wrong. Contradictions remain visible. Names alone do not establish identity; exact source identifiers may group mentions within a run, without independent verification.",
         "coverage": "Bounded investigation of accessible sources, not exhaustive internet coverage. "
-            "Submitted text and supported file excerpts can be analysed; OCR and authenticated archives are unavailable. "
+            "Submitted text and supported file excerpts can be analysed, with bounded local OCR for scanned PDF pages. Authenticated archives require an authorized connection. "
             "Contribution reviews never perform public discovery; source reading and file extraction have explicit bounds."}
 
 

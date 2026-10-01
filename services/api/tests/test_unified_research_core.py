@@ -161,6 +161,7 @@ def test_recall_never_promotes_private_or_mixed_source_claims(signed, monkeypatc
             session.add(ClaimEvidence(**scope(old), claim_id=claim.id, source_id=source.id, relation="SUPPORTS", quote=text, locator="p1"))
         session.commit()
     tick(service, run["id"])
+    tick(service, run["id"])  # The separate local recall phase precedes planning.
     with service.db.session() as session:
         saved = session.get(Investigation, run["id"])
         context = deepcopy(saved.research_state["core"]["recall"])

@@ -7,6 +7,7 @@ import json
 import re
 from copy import deepcopy
 
+from . import search_channels
 from .analysis import InferenceBudget
 from .domain_packs import for_product
 from .product_operations import fingerprint
@@ -46,7 +47,8 @@ def route(settings, work):
         value.update(provider=settings.apertus_provider, model=settings.apertus_model)
     if skill.id == "search":
         value["source_adapters"] = list(pack.discovery_sources)
-        value["broad_provider"] = settings.web_search_provider
+        value["broad_provider"] = "none" if work.get("skipped_paid_search") else settings.web_search_provider
+        value["skipped_paid_search"] = work.get("skipped_paid_search")
     return value
 
 
@@ -84,6 +86,11 @@ def finish(state, work, result, *, failed, elapsed):
             receipt["cost_basis"] = deepcopy(result["usage"]["cost_basis"])
     if isinstance(result, dict) and work["phase"] == "search":
         receipt["channels"] = deepcopy(result.get("retrieval", {}).get("lanes", []))
+        receipt["skipped_channels"] = deepcopy(result.get("retrieval", {}).get("skipped_channels", []))
+    if isinstance(result, dict) and work["phase"] == "recall":
+        from .evidence_embeddings import MODEL
+        receipt.update(model=MODEL, fallback=result.get("semantic_status"),
+            prepared_records=result.get("prepared_records"), preparing=result.get("pending", False))
 
 
 async def complete(service, work, system, schema, seconds):
@@ -106,7 +113,10 @@ async def execute(service, work, seconds):
     if work.get("research") and work["phase"] != "compare":
         return await product_iterative_steps.execute(service, work, seconds)
     if work["phase"] == "search":
-        return await decision_search.execute(service.settings, work["query"], "auto", "balanced", work["product"])
+        result = await decision_search.execute(search_channels.request_settings(service.settings, work.get("skipped_paid_search")),
+            work["query"], "auto", "balanced", work["product"])
+        search_channels.note_skipped_paid(result.setdefault("retrieval", {}), work.get("skipped_paid_search"))
+        return result
     if work["phase"] == "read":
         if work.get("file"):
             from .product_contributions import read_file

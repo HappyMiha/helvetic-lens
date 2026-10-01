@@ -36,6 +36,7 @@ def check(client, service, root):
 @pytest.mark.parametrize("product", ["legal", "pharma"])
 def test_understood_question_to_consent_and_cited_monitoring_result(signed, monkeypatch, product):
     client, service, _, model = signed
+    service.settings.decision_search_daily_limit = 100
     adapters(monkeypatch, service, model)
     root, run, _ = start(client, product)
     brief = finish_exploration(client, service, root + "/investigations", run)
@@ -91,7 +92,7 @@ def test_no_evidence_and_failures_have_distinct_results(signed, monkeypatch, fai
             value = await search(*args, **kwargs)
             value["items"].append({"id": "b", "title": "Unavailable source", "url": URL + "/unavailable"})
             return value
-        async def broken_read(settings, query, item, mode):
+        async def broken_read(settings, query, item, mode, **kwargs):
             if failure == "read" or item["url"].endswith("/unavailable"):
                 return {"status": "unavailable", "error": "PRIVATE ERROR DETAIL"}
             return await inspect(settings, query, item, mode)

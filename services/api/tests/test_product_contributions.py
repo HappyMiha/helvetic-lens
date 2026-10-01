@@ -142,8 +142,8 @@ def test_original_file_download_and_real_bounded_parser(signed, monkeypatch, nam
 
 
 @pytest.mark.parametrize("name,media,body,reason", [
-    ("scan.pdf", "application/pdf", make_pdf([""]), "OCR"),
-    ("binary.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", b"not-docx", "supports"),
+    ("scan.pdf", "application/pdf", make_pdf([""]), "No readable text"),
+    ("binary.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", b"not-docx", "damaged"),
     ("spoof.txt", "image/png", TEXT.encode(), "content types"),
     ("large.txt", "text/plain", b"a" * (2 * 1024 * 1024 + 1), "2 MB"),
     ("broken.pdf", "application/pdf", b"not pdf", "PDF"),
@@ -312,6 +312,11 @@ def test_migration_retains_existing_originals_and_completed_evidence(signed, mon
     # A legacy save-only upload survives both SQLite batch replacements.
     saved = client.post(route + "/files", headers=_csrf(client), files={"file": ("memo.txt", TEXT.encode(), "text/plain")}).json()
     tables = {"product_investigations", "product_dossier_entries"}
+    # Simulate the original legacy record. Current core checkpoints deliberately
+    # block removal of the additive research_state column on downgrade.
+    with service.db.session() as session:
+        session.get(Investigation, run["id"]).research_state = {}
+        session.commit()
     with service.db.engine.connect() as connection:
         command.downgrade(config(connection), "fac495bef124")
         command.upgrade(config(connection), "head")
