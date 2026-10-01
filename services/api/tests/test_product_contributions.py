@@ -102,7 +102,7 @@ def test_url_reads_only_submitted_url_with_fixed_nonprivate_purpose(signed, monk
     model_output(monkeypatch, model)
     queries, external = [], no_discovery(monkeypatch)
 
-    async def inspect(settings, query, item, mode):
+    async def inspect(settings, query, item, mode, **kwargs):
         queries.append((query, item))
         return {"status": "complete", "url": item["url"], "sha256": "a" * 64,
             "excerpts": [{"passage": "p1", "text": TEXT}], "scope": "Fixture public document"}
@@ -358,7 +358,7 @@ def test_excluded_source_blocks_attached_text_and_late_url_capture(signed, monke
     review_route = route + "/sources/" + entry["id"] + "/reviews"
     calls, reads = model_output(monkeypatch, model), []
 
-    async def inspect(settings, query, item, mode):
+    async def inspect(settings, query, item, mode, **kwargs):
         reads.append(item["url"])
         assert post(client, review_route, request()).status_code == 201
         return {"status": "complete", "url": item["url"], "sha256": "b" * 64,

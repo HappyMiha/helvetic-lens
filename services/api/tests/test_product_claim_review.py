@@ -377,7 +377,7 @@ def test_saved_page_revision_correction_stales_claim_review_without_rewriting_ca
     run = complete(client, service, root + "/investigations", last_run(client, root))
     value = item(client, root, run["claims"][0]["id"])
     saved = post(client, root + "/claim-reviews/review", body(value, source_assessments={
-        "schema_version": 1, "domain_pack_version": "1.4.0", "items": [{
+        "schema_version": 1, "domain_pack_version": "2.0.0", "items": [{
             "source_id": value["evidence"][0]["source"]["id"], "evidence_id": value["evidence"][0]["id"],
             "category": "SECONDARY_COMMENTARY", "reason": "Fictional saved-page role for version-pinning test."}]}))
     assert saved.status_code == 200, saved.text

@@ -411,10 +411,11 @@ def adaptive_current(session, run):
     from . import product_observed_queries as queries
     from . import product_question_renewal as renewal
     from . import product_research_memory as memory
+    from . import research_knowledge
     from .product_exploration_followups import references_current
     from .product_exploration_progress import current
 
-    return local_dependencies_current(session, run) and current(session, run) and queries.current(session, run) and memory.current(session, run) and applicability.current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run) and direction_assessment.current(session, run)
+    return research_knowledge.current(session, run) and local_dependencies_current(session, run) and current(session, run) and queries.current(session, run) and memory.current(session, run) and applicability.current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run) and direction_assessment.current(session, run)
 
 
 def local_dependencies_current(session, run):

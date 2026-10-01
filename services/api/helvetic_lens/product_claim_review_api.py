@@ -66,6 +66,7 @@ def apply_review(session, parent, identity, data, published=None):
     if revision != data.expected_revision or revision >= 100:
         fail("This finding changed or reached its review limit. Reload its history before reviewing.", 409)
     basis = dict(current["basis"])
+    basis["review_policy"] = for_product(parent.product).review_policy
     if data.interpretation is not None:
         basis["interpretation"] = resolve(for_product(parent.product), data.interpretation)
     elif previous and previous.basis.get("interpretation"):

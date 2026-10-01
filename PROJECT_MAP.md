@@ -1,6 +1,10 @@
 # Helvetic Lens project map
 
-[Independent source access and local SearXNG](docs/PRODUCT_SOURCE_ACCESS.md) is implemented and locally validated; production activation pending.
+[Unified research core](docs/UNIFIED_RESEARCH_CORE.md): five connected outcomes for
+Legal and Pharma — common routing, retained evidence memory, saved-first discovery,
+per-run coverage and versioned domain capabilities. Production activation pending.
+
+[Independent source access and local SearXNG](docs/PRODUCT_SOURCE_ACCESS.md) was activated on 1 October at Core `e97043209b7a`.
 
 [Continuous dossier reading](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation)
 is implemented and locally validated: useful linked findings stay readable during

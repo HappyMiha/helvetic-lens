@@ -27,7 +27,12 @@ def read(service, identity, product, dossier_id, command, captured_fingerprint, 
 
 
 def decorate(service, identity, product, dossier_id, command, captured_fingerprint, result):
+    from .domain_packs import for_product
+    from .research_contracts import review_requirement
+
     identifiers = sorted({item["claim_id"] for item in result["items"] if item["kind"] == "claim"})
     current = read(service, identity, product, dossier_id, command, captured_fingerprint, identifiers)
     return {**result, "review_claim_ids": identifiers, "review_fingerprint": fingerprint(current),
-        "items": [{**item, "human_review": current.get(item["claim_id"])} for item in result["items"]]}
+        "items": [{**item, "human_review": current.get(item["claim_id"]),
+            "review_requirement": review_requirement(current[item["claim_id"]], for_product(product).review_policy)
+            if item["claim_id"] in current else None} for item in result["items"]]}

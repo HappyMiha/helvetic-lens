@@ -41,7 +41,7 @@ def test_registered_templates_create_reload_change_clear_and_creation_replay(sig
     items = catalog.json()['items']
     assert len(items) == 3 and all(x['domain'] == catalog.json()['domain'] for x in items)
     for item in items:
-        assert item['context_fields'] and item['questions'] and item['pack_version'] == '1.4.0'
+        assert item['context_fields'] and item['questions'] and item['pack_version'] == '2.0.0'
     body = {'creation_key': str(uuid4()), 'config': config(), 'template': {'id': first, 'version': '1.0.0'}}
     created = post(client, root + '/dossiers', body)
     assert created.status_code == 201, created.text

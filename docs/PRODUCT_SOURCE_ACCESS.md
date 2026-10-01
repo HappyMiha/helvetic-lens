@@ -1,6 +1,6 @@
 # Independent source access
 
-Status: implemented and locally validated (1 October 2026); Core activation pending.
+Status: implemented and locally validated (1 October 2026); Core activated as `e97043209b7a` on 1 October 2026.
 
 One native research pipeline discovers, gates, reads and analyses public sources.
 Direct catalogue requests and public source URLs remain usable when the selected

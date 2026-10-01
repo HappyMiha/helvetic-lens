@@ -87,7 +87,7 @@ def pipeline(monkeypatch, service, target, *, during=None):
             "engines": [{"engine": "jev", "error": "quota", "estimated_cost_usd": None},
                 {"engine": "laya", "latency_ms": 12, "estimated_cost_usd": None,
                  "mean_confidence": 0.9, "confidence_definition": "Not measured accuracy.", "cost_scope": "Inference only."}]}
-    async def inspect(settings, query, item, mode):
+    async def inspect(settings, query, item, mode, **kwargs):
         state["reads"].append((query, item["url"]))
         hook("read")
         return {"status": "complete", "url": item["url"], "sha256": hashlib.sha256(state["text"].encode()).hexdigest(),
@@ -146,7 +146,7 @@ def test_recurring_evidence_deduplicates_then_updates_and_keeps_query_private(si
     assert client.get(root.split('/dossiers/')[0] + "/public-dossiers").json()["total"] == 0
     with service.db.session() as session:
         assert all(r.session_id is None and r.publication_id is None for r in session.scalars(select(Investigation)))
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 3
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 12
 
 
 def test_reappearing_content_and_changed_question_are_new_analysis(signed, monkeypatch):

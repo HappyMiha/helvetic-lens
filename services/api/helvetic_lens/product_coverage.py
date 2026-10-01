@@ -75,6 +75,44 @@ def payload(session, parent):
 
 
 def routes(router, service, actor):
+    @router.get("/research-capabilities")
+    def capabilities(product: Product, request: Request):
+        from .domain_packs import REGISTRY, for_product
+        from .product_provenance import principal
+
+        identity = actor(request)
+        with service.db.session() as session:
+            principal(session, identity, utcnow())
+            return {"contract": "research-capabilities/v1", "selected": for_product(product).id,
+                "packs": [pack.descriptor() for pack in REGISTRY.values()]}
+
+    @router.get("/dossiers/{dossier_id}/knowledge")
+    def knowledge(product: Product, dossier_id: str, request: Request,
+                  offset: int = Query(default=0, ge=0, le=100000)):
+        from .research_knowledge import ledger_page
+
+        identity = actor(request)
+        with service.db.session() as session:
+            return ledger_page(session, access(session, identity, product, dossier_id), offset=offset)
+
+    @router.get("/dossiers/{dossier_id}/coverage/research")
+    def research_history(product: Product, dossier_id: str, request: Request,
+                         offset: int = Query(default=0, ge=0, le=100000)):
+        from .product_exploration import adaptive_current
+        from .product_public_research import sources_visible
+        from .research_coverage import project
+
+        identity = actor(request)
+        with service.db.session() as session:
+            parent = access(session, identity, product, dossier_id)
+            query = select(Investigation).where(Investigation.dossier_id == parent.id,
+                Investigation.publication_id.is_(None), sources_visible()).order_by(
+                    Investigation.created_at.desc(), Investigation.id).offset(offset).limit(11)
+            runs = list(session.scalars(query))
+            return {"items": [project(session, run) if adaptive_current(session, run) else {
+                "investigation_id": run.id, "status": "evidence_changed", "recorded": False} for run in runs[:10]],
+                "offset": offset, "next_offset": offset + 10 if len(runs) > 10 else None}
+
     @router.get("/dossiers/{dossier_id}/coverage")
     def read(product: Product, dossier_id: str, request: Request):
         identity = actor(request)

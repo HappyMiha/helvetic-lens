@@ -149,8 +149,6 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
     if submitted:
         rankings.append([v["id"] for v in submitted])
         coverage.append({"name": "Submitted public sources", "query": query, "status": "complete", "count": len(submitted)})
-    if not rankings:
-        raise decision.DecisionUnavailable("search_unavailable")
     fusion = reciprocal_fusion(rankings)
     maximum = 8 if depth == "quick" else 36 if depth == "deep" else 24
     candidates = sorted(items.values(), key=lambda item: -fusion[item["id"]])[:maximum]
@@ -160,6 +158,7 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
         "service": "federated", "provider": "Public catalogues / " + broad,
         "latency_ms": round((perf_counter() - started) * 1000, 2), "cost_usd": None,
         "omitted_records": omitted, "candidate_limit": maximum, "discovered_count": len(items),
+        "status": "complete" if all(c["status"] == "complete" for c in coverage) else "partial" if rankings else "unavailable",
         "lanes": coverage, "origins": {v["id"]: origins[v["id"]] for v in candidates},
         "search_requests": len(lanes), "depth": depth}
 
@@ -207,7 +206,13 @@ async def execute(settings, query, mode, depth="balanced", product="pharma", alt
                 break
     selected = next((name for name in asked if name in plans), None)
     if selected is None:
-        return {"items": [], "error": "No decision engine is available. Check provider setup and try again.",
+        retrieval = await federated_retrieve(settings, query, "web", depth, product, alternatives)
+        items = retrieval.pop("items")
+        return {"items": items, "retrieval": retrieval, "selected_engine": None,
+                "candidates_sha256": hashlib.sha256(canonical({"query": query, "items": items}).encode()).hexdigest(),
+                "latency_ms": round((perf_counter() - started) * 1000, 2),
+                "coverage": "Source candidates in discovery order; decision providers were unavailable. Pages have not been read.",
+                "error": "Decision providers are unavailable. Showing source discovery without semantic ranking.",
                 "engines": [{**decision.measurement(name, [], settings, error=errors.get(name)),
                              "latency_ms": round(times.get(name, 0), 2), "scores": {}} for name in asked]}
     retrieval = await federated_retrieve(settings, query, plans[selected], depth, product, alternatives)

@@ -59,7 +59,7 @@ def pipeline(monkeypatch, service, model, *, invalid=False, fail_search=False):
         return {"items": [{"id": "a" * 32, "title": "Registry record", "url": url,
                            "retrieval_queries": [query]}], "selected_engine": "jev"}
 
-    async def inspect(settings, query, item, mode):
+    async def inspect(settings, query, item, mode, **kwargs):
         text = QUOTE if item["url"].endswith("registry") else OTHER
         return {"status": "complete", "url": item["url"], "sha256": hashlib.sha256(text.encode()).hexdigest(),
                 "excerpts": [{"text": text, "passage": "p1"}], "scope": "Fixture public source"}
@@ -112,7 +112,7 @@ def test_evidence_discovers_entity_changes_plan_and_preserves_contradiction(sign
     assert all(e["evidence"]["identity"] == "unresolved_source_mention" for e in result["entities"])
     assert all(step["status"] == "completed" for branch in result["branches"] for step in branch["steps"])
     with service.db.session() as session:
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 2
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 8
         job_id = session.get(Investigation, run["id"]).job_id
     assert client.get("/api/jobs/" + job_id).status_code == 404
     assert job_id not in client.get("/api/jobs").text
@@ -215,13 +215,13 @@ def test_revocation_during_search_discards_output_and_pauses(signed, monkeypatch
 def test_budget_pauses_before_network_and_is_shared_with_search(signed, monkeypatch):
     client, service, _, model = signed
     queries = pipeline(monkeypatch, service, model)
-    service.settings.decision_search_daily_limit = 1
+    service.settings.decision_search_daily_limit = 4
     root, run, _ = start(client)
     result = complete(client, service, root, run)
     assert result["status"] == "paused" and len(queries) == 1
     assert len(result["claims"]) == 1
     with service.db.session() as session:
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 1
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 4
 
 
 def test_partial_search_failure_is_sanitized_and_saved_evidence_completes(signed, monkeypatch):

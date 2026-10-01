@@ -18,7 +18,7 @@ def assessment(source, evidence, category="SECONDARY_COMMENTARY", **extra):
 
 
 def choices(*items, **extra):
-    return {"schema_version": 1, "domain_pack_version": "1.4.0", "items": list(items), **extra}
+    return {"schema_version": 1, "domain_pack_version": "2.0.0", "items": list(items), **extra}
 
 
 @pytest.mark.parametrize("product,primary,other", [
@@ -36,7 +36,7 @@ def test_same_address_mixed_sources_retain_individual_roles_and_history(signed, 
     first = item(client, root, ids[0])
     assert "source_assessments" not in first
     options = client.get(root + "/claim-reviews").json()["source_assessment_options"]
-    assert options["limit"] == 12 and options["domain_pack_version"] == "1.4.0"
+    assert options["limit"] == 12 and options["domain_pack_version"] == "2.0.0"
     assert primary in {row["category"] for row in options["categories"]}
     assert other not in {row["category"] for row in options["categories"]}
     payload = choices(assessment(sources[0], evidence[0], primary), assessment(sources[1], evidence[1]))

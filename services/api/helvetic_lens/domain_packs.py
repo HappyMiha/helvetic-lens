@@ -14,13 +14,14 @@ from .config import DomainError
 from .product_claim_interpretation import LEGAL_TYPES, PHARMA_TYPES
 from .product_models import ProductDossier
 from .product_source_authority import LEGAL_ROLES, PHARMA_ROLES
+from .research_contracts import REVIEW_POLICIES, SKILLS, SOURCES, validate_pack
 
 
 @dataclass(frozen=True)
 class DomainPack:
     id: str
     version: str
-    domain: Literal["LEGAL", "PHARMA"]
+    domain: Literal["GENERAL", "LEGAL", "PHARMA"]
     label: str
     focus: str
     topic_instructions: str
@@ -30,6 +31,16 @@ class DomainPack:
     source_roles: tuple[tuple[str, str], ...] = ()
     scientific_literature: bool = False
     research_policy_id: str = ""
+    skill_ids: tuple[str, ...] = tuple(SKILLS)
+    source_ids: tuple[str, ...] = ("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "public_web", "public_url")
+
+    @property
+    def review_policy(self):
+        return deepcopy(REVIEW_POLICIES[self.domain])
+
+    @property
+    def discovery_sources(self):
+        return tuple(key for key in self.source_ids if SOURCES[key].kind == "catalogue")
 
     def descriptor(self):
         from .dossier_templates import available
@@ -38,12 +49,14 @@ class DomainPack:
                 "label": self.label, "focus": self.focus, "context_schema_id": self.context_schema_id,
                 "template_ids": [item.id for item in available(self.domain)],
                 "research_policy_id": self.research_policy_id,
+                "contract": "domain-pack/v2", "skills": [SKILLS[key].descriptor() for key in self.skill_ids],
+                "sources": [SOURCES[key].descriptor() for key in self.source_ids], "review_policy": self.review_policy,
                 "source_roles": [{"category": code, "label": label} for code, label in self.source_roles],
                 "claim_types": [{"kind": kind, "claim_type": code, "label": label} for kind, code, label in self.claim_types]}
 
 
 LEGAL = DomainPack(
-    id="LegalPack", version="1.5.0", domain="LEGAL", label="Legal monitoring",
+    id="LegalPack", version="2.0.0", domain="LEGAL", label="Legal monitoring",
     focus="Legal developments, proceedings and regulatory changes relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct legal monitoring topics for the supplied context and feedback. "
@@ -52,9 +65,10 @@ LEGAL = DomainPack(
     ),
     topic_task="legal_profile_topics", context_schema_id="legal-context/v1", claim_types=LEGAL_TYPES, source_roles=LEGAL_ROLES,
     research_policy_id="legal-research/v1",
+    source_ids=("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "fedlex", "public_web", "public_url"),
 )
 PHARMA = DomainPack(
-    id="PharmaPack", version="1.5.0", domain="PHARMA", label="Pharmaceutical monitoring",
+    id="PharmaPack", version="2.0.0", domain="PHARMA", label="Pharmaceutical monitoring",
     focus="Medicines, safety, clinical evidence, regulation and market access relevant to your question.",
     topic_instructions=(
         "Propose up to six distinct pharmaceutical monitoring topics for the supplied context and feedback. "
@@ -66,12 +80,22 @@ PHARMA = DomainPack(
     ),
     topic_task="pharma_profile_topics", context_schema_id="pharma-context/v1", claim_types=PHARMA_TYPES, source_roles=PHARMA_ROLES, scientific_literature=True,
     research_policy_id="pharma-research/v1",
+    source_ids=("saved_evidence", "connected_pages", "native_feeds", "uploaded_files", "crossref", "europepmc", "public_web", "public_url"),
 )
+GENERAL = DomainPack(id="GeneralPack", version="2.0.0", domain="GENERAL", label="Research",
+    focus="Evidence relevant to the user's question, with explicit uncertainty and source scope.",
+    topic_instructions="Identify useful, distinct research directions without inventing evidence or source coverage.",
+    topic_task="general_research_topics", context_schema_id="general-context/v1", research_policy_id="general-research/v1")
+REGISTRY = MappingProxyType({pack.id: validate_pack(pack) for pack in (GENERAL, LEGAL, PHARMA)})
 _PRODUCTS = MappingProxyType({"legal": LEGAL, "loyer": LEGAL, "pharma": PHARMA})
 
 # Retain supported versions when introducing a later policy. These application
 # definitions contain no dossier data, source approvals or inferred user intent.
 RESEARCH_POLICIES = {
+    "general-research/v1": {"id": "general-research/v1", "domain": "GENERAL", "dimensions": {
+        "subject": "The people, entities or problem actually addressed by the source.",
+        "period": "The evidence date and period, separately from capture time.",
+        "provenance": "Original record, independent evidence, commentary or assertion; do not infer truth from repetition."}},
     "legal-research/v1": {"id": "legal-research/v1", "domain": "LEGAL", "dimensions": {
         "jurisdiction": "Territory and legal level; a different canton or country may offer analogy, not the applicable rule.",
         "period": "The requested date versus the quoted version/effective period; capture date is not an effective date.",

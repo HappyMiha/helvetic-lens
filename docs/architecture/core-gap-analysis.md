@@ -21,6 +21,12 @@ Implementation update, 28 September 2026: [domain-aware setup 1.29](../PRODUCT_D
 Phase 0 baseline. Rows below identify those bounded additions; the frozen audit
 receipt remains historical. Full target and human acceptance remain open.
 
+Implementation update, 1 October 2026: the [unified research core](../UNIFIED_RESEARCH_CORE.md)
+connects C06/07/09/12/14–18/23/26/27/33 through a common product gateway,
+retained-source recall, a linked knowledge view and per-run coverage receipts.
+The historical matrix below still includes broader enterprise, domain-specific and
+all-platform requirements; these are not closed by the five product outcomes.
+
 ## Component matrix
 
 Paths below are relative to `services/api/helvetic_lens` unless stated otherwise.

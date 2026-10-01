@@ -18,7 +18,9 @@ def broad_configured(settings):
 
 
 def catalogue_names(product):
-    return ("crossref", "europepmc" if product == "pharma" else "fedlex")
+    from .domain_packs import for_product
+
+    return for_product(product).discovery_sources
 
 
 def request_count(settings, depth="balanced", alternatives=()):

@@ -1,9 +1,8 @@
 """Additional phases executed by the existing investigation worker lease."""
-import json
 import re
 from copy import deepcopy
 
-from . import decision_search, decision_sources, search_channels
+from . import decision_search, decision_sources, research_gateway, research_knowledge, search_channels
 from . import product_branch_assessment as branch_assessment
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
@@ -21,7 +20,6 @@ from . import product_read_relevance as read_relevance
 from . import product_research_memory as memory
 from . import product_research_pacing as pacing
 from . import product_source_recovery as recovery
-from .analysis import InferenceBudget
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import event, rows
 from .product_research_gate import evaluate
@@ -133,10 +131,9 @@ async def execute(service, work, seconds):
         system += exploration.PLAN
     if phase == "plan" and work["input"].get("selected_direction"):
         system += clarification.CONTEXT_SYSTEM
-    work["model_route"] = {"provider": service.settings.apertus_provider, "model": service.settings.apertus_model,
-        "basis": "Workspace configuration used for this request; provider response does not expose model identity here."}
-    raw = await service.model_client.complete(system, json.dumps(work["input"], ensure_ascii=False),
-        response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
+    if work["input"].get("saved_knowledge"):
+        system += research_knowledge.SYSTEM
+    raw = await research_gateway.complete(service, work, system, schema, seconds)
     if not isinstance(raw, str) or len(raw) > 30000:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
@@ -201,7 +198,8 @@ def apply(session, run, branch, state, work, result):
         exploration.apply_orientation(session, run, work["input"], result)
         branch.status = "completed"
     elif phase == "search":
-        seen = {s.url for s in rows(session, InvestigationSource, run)}
+        seen = {s.url for s in rows(session, InvestigationSource, run)
+            if not (state.get("refresh_retained_sources") and s.snapshot.get("retained_origin"))}
         for other in rows(session, InvestigationBranch, run):
             seen.update(other.checkpoint.get("attempted_urls", []))
         from .product_investigation_worker import excluded
@@ -223,6 +221,9 @@ def apply(session, run, branch, state, work, result):
                 "outside_candidate_budget": max(0, len(candidates) - limit)},
             coverage={"retrieval": result["retrieval"], "scope": result["coverage"]})
         branch.phase = "gate"
+        if result["retrieval"].get("status") == "unavailable":
+            branch.status = "failed"
+            state["error"] = "All discovery channels were unavailable. No absence of evidence can be inferred."
         event(session, run, "search_completed", branch_id=branch.id, **state["candidate_counts"])
     elif phase in {"gate", "gate_review"}:
         item = work["item"]

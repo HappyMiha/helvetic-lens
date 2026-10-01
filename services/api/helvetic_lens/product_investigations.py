@@ -281,6 +281,11 @@ def page_result_visible(session, run):
     from .product_models import ProductDossier
     from .product_monitoring_research import trigger_for
     from .product_page_research import readable
+    from .research_knowledge import retained_visible
+
+    if (run.research_state.get("core", {}).get("recall") or {}).get("origin_pins"):
+        if not session.scalar(select(Investigation.id).where(Investigation.id == run.id, retained_visible(Investigation))):
+            return False
 
     trigger = trigger_for(session, run)
     return not trigger or trigger.source_kind != "watched_page" or readable(
@@ -292,6 +297,7 @@ def payload(session, run, *, include_retained=False):
     from .product_contributions import original
     from .product_monitoring_research import trigger_for, trigger_payload
     from .product_observed_queries import public_steps
+    from .research_coverage import project as coverage_manifest
 
     trigger = trigger_for(session, run)
     if not page_result_visible(session, run):
@@ -320,6 +326,7 @@ def payload(session, run, *, include_retained=False):
         "original": original(session, run.trigger_entry_id),
         "research": research_projection(run) if adaptive_valid else None,
         "exploration": exploration,
+        "coverage_manifest": coverage_manifest(session, run) if adaptive_valid else None,
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)] if adaptive_valid else [],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,

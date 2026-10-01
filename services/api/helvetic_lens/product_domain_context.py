@@ -30,6 +30,8 @@ class ContextField:
 
 
 FIELDS = MappingProxyType({
+    "general-context/v1": (ContextField("subjects", "Subjects"), ContextField("questions", "Research questions"),
+        ContextField("places", "Places"), ContextField("relevant_dates", "Relevant dates", "dates")),
     "legal-context/v1": (
         ContextField("jurisdictions", "Jurisdictions"),
         ContextField("legal_areas", "Legal areas"),

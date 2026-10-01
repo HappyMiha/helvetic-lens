@@ -1,7 +1,5 @@
 """One bounded, durable coordinator step per native job delivery."""
 import asyncio
-import json
-import re
 from copy import deepcopy
 from datetime import UTC, timedelta
 from time import perf_counter
@@ -9,7 +7,7 @@ from uuid import uuid4
 
 from sqlalchemy import case, select
 
-from . import decision_search, decision_sources, jobs, search_channels
+from . import jobs, research_gateway, research_knowledge, search_channels
 from . import product_check_source_coverage as check_coverage
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
@@ -25,7 +23,6 @@ from . import product_read_relevance as read_relevance
 from . import product_research_memory as memory
 from . import product_research_pacing as pacing
 from . import product_source_recovery as recovery
-from .analysis import InferenceBudget
 from .config import DomainError
 from .db import utcnow
 from .membership_locks import lock_organization
@@ -40,7 +37,6 @@ from .product_investigation_models import (
 from .product_investigations import (
     ACTIVE,
     MAX_SOURCES,
-    Extraction,
     apply_extraction,
     capabilities,
     event,
@@ -79,6 +75,7 @@ def seed(session, run, parent, settings):
     from .product_web_research import seed as web_seed
     from .product_web_research import trigger_for as web_trigger_for
 
+    research_knowledge.initialize(session, run, parent.product)
     web_trigger = web_trigger_for(session, run)
     if web_trigger:
         return web_seed(session, run, web_trigger)
@@ -97,6 +94,7 @@ def seed(session, run, parent, settings):
 
         return seed_contribution(session, run, parent, settings)
     if research.enabled(run):
+        research_knowledge.recall(session, run, parent.product)
         research.seed(session, run)
         saved = research_sources(session, parent, run.question, run.organization_id)[:MAX_SOURCES]
         source_ids = [snapshot(session, run, item)[0].id for item in saved]
@@ -242,7 +240,8 @@ async def execute(service, job_id, worker):
         if not exploration.adaptive_current(session, run):
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1
-            exploration.update(run, revision=run.event_sequence + 1)
+            if exploration.enabled(run):
+                exploration.update(run, revision=run.event_sequence + 1)
             event(session, run, "investigation_paused", reason=run.stop_reason)
             finish_or_yield(session, run, job)
             session.commit()
@@ -338,6 +337,7 @@ async def execute(service, job_id, worker):
                         if branch.phase == "extract":
                             read_relevance.prepare(session, run, branch, state, source, work)
                         memory.prepare(session, run, work)
+                        research_knowledge.prepare(session, run, work)
                         applicability.prepare(session, run, work)
                         budget_before = deepcopy(run.research_state)
                         skipped_read = pacing.enabled(run) and branch.phase == "read" and work.get("skip")
@@ -366,6 +366,7 @@ async def execute(service, job_id, worker):
                         state.setdefault("steps", []).append({"id": state["inflight"], "phase": branch.phase,
                             "status": "running", "started_at": iso(utcnow()),
                             "deadline_seconds": work["deadline_seconds"]})
+                        research_gateway.record(service.settings, state, work)
                         check_coverage.record(state, work)
                         queries.record(session, run, branch, state, work)
                         activity.record(run, job, state, work)
@@ -385,34 +386,8 @@ async def execute(service, job_id, worker):
         async with asyncio.timeout(seconds):
             if work.get("skip"):
                 failed = True
-            elif work.get("research") and work["phase"] != "compare":
-                result = await research_steps.execute(service, work, seconds)
-            elif work["phase"] == "search":
-                result = await decision_search.execute(service.settings, work["query"], "auto", "balanced", work["product"])
-            elif work["phase"] == "read" and work.get("file"):
-                from .product_contributions import read_file
-
-                result = await read_file(service.environment_settings.storage_path / "artifacts", work["file"])
-            elif work["phase"] == "read":
-                result = await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto")
-            elif work["phase"] == "compare":
-                from .product_claim_evolution import SYSTEM as COMPARE_SYSTEM
-                from .product_claim_evolution import Comparison
-
-                if not work["input"]["current"] or not work["input"]["previous"]:
-                    result = Comparison()
-                else:
-                    raw = await service.model_client.complete(COMPARE_SYSTEM, json.dumps(work["input"], ensure_ascii=False),
-                        response_schema=Comparison.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
-                    if not isinstance(raw, str) or len(raw) > 10000:
-                        raise ValueError("Unbounded comparison")
-                    result = Comparison.model_validate_json(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
             else:
-                raw = await service.model_client.complete(SYSTEM, json.dumps(work["input"], ensure_ascii=False),
-                    response_schema=Extraction.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
-                if not isinstance(raw, str) or len(raw) > 30000:
-                    raise ValueError("Unbounded extraction")
-                result = Extraction.model_validate_json(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
+                result = await research_gateway.execute(service, work, seconds)
     except Exception:
         # Provider bodies and untrusted source strings never become job errors,
         # integration-log messages or publicly observable reasoning.
@@ -456,7 +431,8 @@ async def execute(service, job_id, worker):
                 exploration.update(run, query_inputs_invalid=True)
             run.status, run.stop_reason = "paused", "Supporting evidence changed. Review the sources or start a corrected research question."
             run.revision += 1
-            exploration.update(run, revision=run.event_sequence + 1)
+            if exploration.enabled(run):
+                exploration.update(run, revision=run.event_sequence + 1)
             event(session, run, "investigation_paused", reason=run.stop_reason)
         if work["phase"] == "read" and work["item"]["url"] in blocked:
             failed = True
@@ -527,6 +503,7 @@ async def execute(service, job_id, worker):
                             fresh = False
                             state["unchanged"] = state.get("unchanged", 0) + 1
                             event(session, run, "duplicate_document", source_id=source.id, original_source_id=duplicate.id)
+                    state["steps"][-1]["source_id"] = source.id
                     recovery.captured(state, source, fresh)
                     if fresh:
                         state.setdefault("source_ids", []).append(source.id)
@@ -564,6 +541,7 @@ async def execute(service, job_id, worker):
             advance(branch, state)
             if work.get("file") and isinstance(result, dict) and result.get("error"):
                 state["error"] = result["error"]
+        research_gateway.finish(state, work, result, failed=failed, elapsed=perf_counter() - started)
         state.pop("inflight", None)
         queries.finish(state, work, result, failed)
         state["steps"][-1].update(status="unavailable" if failed else "completed", finished_at=iso(utcnow()))

@@ -55,6 +55,7 @@ class BranchDraft(legal_profiles.Input):
     query: str = Field(min_length=3, max_length=300)
     purpose: str = Field(min_length=5, max_length=500)
     priority: int = Field(ge=1, le=5, strict=True)
+    refresh_retained_sources: bool = False
 
     @field_validator("question", "query", "purpose")
     @classmethod
@@ -277,6 +278,7 @@ def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, 
     # are validated before this function is called.
     question = {"id": str(uuid4()), "question": draft.question, "query": draft.query,
         "purpose": draft.purpose, "priority": draft.priority, "query_key": key,
+        "refresh_retained_sources": draft.refresh_retained_sources,
         "kind": draft.kind if isinstance(draft, Gap) else "planned",
         "parent_branch_id": parent.id if parent else None,
         "depth": parent.checkpoint.get("depth", 0) + 1 if parent else 0,
@@ -304,6 +306,7 @@ def schedule_questions(session, run):
         branch = InvestigationBranch(**scope(run), query=question["query"], reason=question["purpose"],
             checkpoint={"question_id": question["id"], "depth": question["depth"],
                 "priority": question["priority"], "parent_branch_id": question["parent_branch_id"],
+                "refresh_retained_sources": question.get("refresh_retained_sources", False),
                 "trigger": question["trigger"]})
         session.add(branch)
         session.flush()

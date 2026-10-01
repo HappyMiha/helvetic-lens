@@ -10,7 +10,7 @@ from test_product_dossiers import active, create, post
 from test_product_dossiers import signed as signed
 from test_product_teams import accept, colleague, invite, managed, switch
 
-from helvetic_lens import decision_search, domain_packs, product_investigations, product_research
+from helvetic_lens import decision_search, domain_packs, product_investigations, search_channels
 from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.legal_profile_models import LegalMonitoringProfile
 from helvetic_lens.product_models import DossierEntry, DossierMember
@@ -32,7 +32,7 @@ def test_common_profile_setup_resolves_saved_product_and_preserves_proposal_prov
     profile = result.json()["profile"] if product else result.json()
     route = "/api/monitoring-profiles/" + profile["id"]
     pack = profile["domain_pack"]
-    assert pack["id"] == pack_id and pack["version"] == "1.5.0"
+    assert pack["id"] == pack_id and pack["version"] == "2.0.0"
     assert client.get(route).json()["domain_pack"] == pack
     model.responses = [TOPICS]
     response = post(client, route + "/suggest", {"expected_revision": 1})
@@ -129,14 +129,14 @@ def test_pack_capabilities_and_real_federation_lanes_agree(monkeypatch, product,
         return {"items": []}
 
     monkeypatch.setattr(decision_search, "retrieve", web)
-    monkeypatch.setattr(product_research, "public_search", public)
+    monkeypatch.setattr(search_channels, "direct_search", public)
     capabilities = product_investigations.capabilities(Settings(), product)
     assert next(x for x in capabilities if x["id"] == "scientific_literature")["available"] is literature
     asyncio.run(decision_search.federated_retrieve(Settings(), "evidence", "web", "deep", product))
-    assert calls == (["europepmc"] if literature else [])
+    assert calls == ["crossref", "europepmc" if literature else "fedlex"]
     calls.clear()
     asyncio.run(decision_search.federated_retrieve(Settings(), "evidence", "web", "quick", product))
-    assert calls == []
+    assert calls == ["crossref"]
 
 
 def test_unknown_product_is_rejected_before_any_retrieval():

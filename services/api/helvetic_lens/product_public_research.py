@@ -20,7 +20,7 @@ from .product_investigations import ACTIVE, MAX_SOURCES, enqueue, event, plan, s
 from .product_models import DossierEntry, ProductPublication, PublicContribution
 
 
-def sources_visible(run=Investigation):
+def sources_visible(run=Investigation, *, retained=True):
     """The same latest source exclusions apply to every derived evidence reader."""
     from .product_page_research import results_visible, retained_visible
 
@@ -37,7 +37,12 @@ def sources_visible(run=Investigation):
     unavailable_page = exists(select(source.id).where(source.investigation_id == run.id,
         page["version_id"].as_string().is_not(None), ~retained_visible(source.dossier_id, source.organization_id,
             page["document_id"].as_string(), page["version_id"].as_string())))
-    return and_(~excluded, ~unavailable_page, results_visible(run))
+    visibility = and_(~excluded, ~unavailable_page, results_visible(run))
+    if retained:
+        from .research_knowledge import retained_visible
+
+        visibility = and_(visibility, retained_visible(run))
+    return visibility
 
 
 def eligible(run=Investigation):

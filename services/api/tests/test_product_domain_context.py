@@ -40,7 +40,7 @@ def test_optional_typed_context_roundtrip_clear_audit_and_old_work_compatibility
     root = f'/api/products/{product}/dossiers/{doc["id"]}'
     empty = client.get(root + '/domain-context').json()
     assert empty['saved'] is False and empty['revision'] == 1
-    assert empty['pack_version'] == '1.5.0'
+    assert empty['pack_version'] == '2.0.0'
     values = ({'product_names': [' Brand A ', 'Brand A'], 'active_substances': ['Substance A'],
                'countries': ['Switzerland'], 'indications': ['Recorded indication']}
               if product == 'pharma' else {'jurisdictions': ['Basel-Stadt'], 'parties': ['Party A'],
