@@ -97,9 +97,19 @@ def failure(state, phase, *, interrupted=False):
 
 def projection(state):
     # Parser buffers and storage keys are internal, never model or reader input.
-    return [{k: v for k, v in reading.items() if k not in {"retained_document", "buffer", "source_ids"}}
+    return [{k: v for k, v in reading.items() if k not in {"retained_document", "buffer", "source_ids", "review_tree"}}
         for reading in state.get("document_reads", {}).values()]
 
 
 def incomplete(branches):
     return [r for b in branches for r in projection(b.checkpoint) if not r.get("complete")]
+
+
+def model_projection(doc):
+    value = deepcopy(doc)
+    review = value.get("reconciliation", {})
+    if review.get("contract") == "document-review-tree/v1":
+        value["reconciliation"] = {k: review[k] for k in ("contract", "synopsis", "review_nodes")}
+        value["reconciliation"]["reference_checks"] = len(review["cross_reference_checks"])
+        value["reconciliation"]["scope"] = "The cited synthesis and its named gaps are supplied in whole_document_review."
+    return value

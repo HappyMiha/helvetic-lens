@@ -70,7 +70,7 @@ def context(session, run):
     return {"contract": CONTRACT, "round": state["round"], "question": run.question,
         "previous_checkpoint": state["checkpoints"][-1] if state["checkpoints"] else None,
         "completion_policy": "Finish meaningful checks and whole-document reading; no internal execution budget.",
-        "documents": [d for b in rows(session, InvestigationBranch, run) for d in document_reading.projection(b.checkpoint)],
+        "documents": [document_reading.model_projection(d) for b in rows(session, InvestigationBranch, run) for d in document_reading.projection(b.checkpoint)],
         "attempted_questions": research.public_questions(run.research_state["questions"])}
 
 

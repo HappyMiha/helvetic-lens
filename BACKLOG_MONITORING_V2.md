@@ -14,7 +14,8 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 ## Question-to-dossier research mission
 
-VERIFYING: five connected blocks and shared account dossier allowance implemented.
+Activated five-block mission and shared allowance: 4742158f1950.
+VERIFYING: complete large-document reconciliation across saved requests; see scope.
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2766,7 +2767,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** five-block mission and shared dossier allowance implemented; verifying release.
+**Current direction:** large-document reconciliation implemented; verifying release.
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in
@@ -3129,7 +3130,7 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Current direction:** five-block mission and shared dossier allowance implemented; verifying release.
+**Current direction:** large-document reconciliation implemented; verifying release.
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 One-question start 1.48 DONE: one input starts private research, daily monitoring and in-app updates. 65 Core cases and 239 tests/lint/types/build per client; exact Core 79989fa and both Sites 47 verified. Atomic retry-safe start, honest status and calm reader. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_QUESTION_START.md). Full target/human acceptance OPEN.

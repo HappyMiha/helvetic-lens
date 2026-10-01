@@ -119,3 +119,35 @@ remaining limitations are recorded in the parent research-mission checkpoint.
 Controlled evidence does not establish live professional answer quality or complete
 source coverage. Existing recurring monitoring schedules/standing authorizations
 remain separate from the new dossier admission and completion-based research policy.
+
+## Complete reconciliation beyond one model request (1 October continuation)
+
+Confirmed gap: whole-document reconciliation currently rejects an input over
+240,000 characters, even after all pages and sections were read. Dense or highly
+cross-referenced originals can therefore never finish through retry. Replace this
+whole-document cutoff with durable bounded review batches and hierarchical synthesis.
+Every original section and cross-reference target passage must enter an evidenced
+review; no section may disappear merely to fit a request. Preserve exact original
+quotes through each merge, record source/hash dependencies, and invalidate changed
+inputs. Interruptions resume committed nodes; failed analysis never marks complete.
+Small existing documents keep their validated one-request path. The reader shows
+actual reconciliation progress without asking the user to choose model parameters.
+
+Acceptance: a dense neutral original that exceeds the former aggregate limit
+finishes over multiple worker invocations, retains early/late counterevidence and
+reference checks, rejects invented merge quotes, and resumes without repeating
+completed reviews. Use isolated fixtures and affected checks only; no live or paid
+research, production fixture dossiers, new providers or domain-specific examples.
+This is a concrete continuation of MV2-020/023, not completion of all target rows.
+
+Implemented acceptance: the real worker reviews all 24 dense fixture sections and
+182 reference target passages, preserves both conflicting original quotations and
+an independently recorded section gap, and rejects an invented merge quotation.
+Retry reuses every committed node. The final model input is compact while retaining
+all 24 original source dependencies; withdrawing an uncited section invalidates the
+composite. Internal checkpoints stay out of reader responses. Both products passed
+461 client cases, lint, types and production builds. The smaller Pharma mission and
+failed-review retry checks also passed. Publication remains VERIFYING until the
+exact Core release and both custom-host assets are confirmed in the parent
+document-reconciliation checkpoint. These controlled cases do not establish live
+model answer quality or full completion of the target architecture.

@@ -137,10 +137,11 @@ def prepare(session, run, state, work):
     pack = {"document_sha256": doc["sha256"], "sections": sections, "cross_references": references}
     work.update(document_index=key, document_dependencies=[{"source_id": s.id, "fingerprint": fingerprint(s.snapshot)} for s in sources],
         input={"question": run.question, **pack, "coverage_fingerprint": fingerprint(pack)})
-    # Never silently trim whole-document coverage to fit a model context.
-    if len(json.dumps(work["input"], ensure_ascii=False)) > 240000:
-        work["skip"] = True
-        state["document_reads"][key]["error"] = "The whole-document review exceeds the configured model context; further review is required."
+    from . import product_document_reconciliation as tree
+    if len(json.dumps(work["input"], ensure_ascii=False)) > tree.INPUT_CHARACTERS or len(references) > 64 or doc.get("review_tree"):
+        work["document_review_pack"] = pack
+        tree.prepare(doc, pack, work)
+        doc["review_tree"]["source_dependencies"] = deepcopy(work["document_dependencies"])
 
 
 def current(session, run, work):
@@ -152,6 +153,13 @@ def current(session, run, work):
 
 
 def apply(session, run, state, work, result):
+    if work.get("review_tree_complete"):
+        return
+    if work.get("review_tree_node"):
+        from . import product_document_reconciliation as tree
+        if not current(session, run, work):
+            fail("Whole-document review requires every current section.", 422, "invalid_evidence")
+        return tree.apply(session, run, state["document_reads"][work["document_index"]], work["document_review_pack"], work, result)
     if result.coverage_fingerprint != work["input"]["coverage_fingerprint"] or not current(session, run, work):
         fail("Whole-document review requires every current section.", 422, "invalid_evidence")
     allowed = {entry["source_id"]: entry for entry in work["input"]["sections"]}
@@ -185,11 +193,20 @@ def compact_sources(session, run, sources):
     cited = {}
     for evidence in rows(session, ClaimEvidence, run):
         cited.setdefault(evidence.source_id, set()).add(evidence.locator)
+    sources = list(sources)
+    from .product_document_reconciliation import compact_reviews
+    reconciled = compact_reviews(session, run, sources)
     values = []
     for source in sources:
         review = section(source)
         value = {"id": source.id, "sha256": source.sha256, "title": source.title, "excerpts": source.snapshot["excerpts"]}
-        if review:
+        if source.id in reconciled:
+            document = reconciled[source.id]
+            wanted = {p["locator"] for p in document["findings"] if p["source_id"] == source.id}
+            value["excerpts"] = [p for p in value["excerpts"] if p["passage"] in wanted]
+            if source.id == document["first_source_id"]:
+                value["whole_document_review"] = {k: v for k, v in document.items() if k != "first_source_id"}
+        elif review:
             wanted = cited.get(source.id, set()) | {p["locator"] for p in [*review["observations"], *review["cross_references"]]}
             value["excerpts"] = [p for p in value["excerpts"] if p["passage"] in wanted]
             value["section_review"] = deepcopy(review)
@@ -200,7 +217,13 @@ def compact_sources(session, run, sources):
 async def execute(service, work, seconds):
     from .research_gateway import complete
 
-    raw = await complete(service, work, REVIEW_SYSTEM, DocumentReview, seconds)
+    if work.get("review_tree_complete"):
+        return None
+    system, schema = REVIEW_SYSTEM, DocumentReview
+    if work.get("review_tree_node"):
+        from .product_document_reconciliation import SYSTEM, ReviewNode
+        system, schema = SYSTEM, ReviewNode
+    raw = await complete(service, work, system, schema, seconds)
     if not isinstance(raw, str) or len(raw) > 48000:
         raise ValueError("Invalid whole-document review")
-    return DocumentReview.model_validate_json(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
+    return schema.model_validate_json(re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip()))
