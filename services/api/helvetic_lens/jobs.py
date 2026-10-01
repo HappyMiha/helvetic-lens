@@ -152,7 +152,7 @@ def claim(session: Session, job_id: str, worker: str) -> Job | None:
         cancel(session, job_id)
         return None
     # A duplicate broker delivery must not reclaim policy-delayed work early.
-    if job.error_code == "digest_quiet_hours" and job.available_at.replace(tzinfo=UTC) > now:
+    if job.error_code in {"digest_quiet_hours", "research_provider_backoff"} and job.available_at.replace(tzinfo=UTC) > now:
         return None
     if job.attempts >= job.max_attempts:
         job.state, job.finished_at, job.updated_at = "failed", now, now

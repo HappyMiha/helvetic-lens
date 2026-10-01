@@ -8,7 +8,8 @@ import pytest
 from test_product_dossiers import post
 from test_product_dossiers import signed as signed
 from test_product_early_orientation import exclude
-from test_product_exploration import QUESTION, adapters, start
+from test_product_exploration import QUESTION, adapters
+from test_product_exploration import start as start_current
 from test_product_investigations import tick
 from test_product_iterative_research import complete
 from test_product_source_recovery import projection
@@ -23,6 +24,17 @@ ORIGINAL = "Alpine Foundation legal identity"
 ALTERNATIVE = "Alpine Foundation registry legal identity"
 
 
+def start(client, product="legal"):
+    """Keep historical budget/recovery assertions on their original contract."""
+    root, run, body = start_current(client, product)
+    with client.app.state.service.db.session() as session:
+        saved = session.get(Investigation, run["id"])
+        saved.research_state = {key: value for key, value in saved.research_state.items()
+            if key not in {"admission", "mission"}}
+        session.commit()
+    return root, run, body
+
+
 def setup(monkeypatch, service, model, mode="empty"):
     trace = adapters(monkeypatch, service, model)
     retrieve, model_call, gate = (
@@ -32,8 +44,8 @@ def setup(monkeypatch, service, model, mode="empty"):
     )
     trace["reformulations"] = []
 
-    async def search(*args):
-        result = await retrieve(*args)
+    async def search(*args, **kwargs):
+        result = await retrieve(*args, **kwargs)
         if args[1] == ORIGINAL or mode == "all_empty":
             if mode == "outage":
                 raise RuntimeError("PRIVATE PROVIDER CANARY")
@@ -220,6 +232,8 @@ def test_empty_failure_access_and_duplicate_results_do_not_loop(signed, monkeypa
 @pytest.mark.parametrize("resource", ["model_calls", "search_requests", "active_seconds"])
 def test_reformulation_keeps_existing_budget(signed, monkeypatch, resource):
     client, service, _, model = signed
+    if resource == "search_requests":
+        service.settings.web_search_provider = "search1api"
     trace = setup(monkeypatch, service, model)
     root, run, _ = start(client)
     until_reformulation(service, run)
@@ -230,8 +244,13 @@ def test_reformulation_keeps_existing_budget(signed, monkeypatch, resource):
         saved.research_state = data
         session.commit()
     value = complete(client, service, root + "/investigations", run)
-    assert resource in value["research"]["stops"] and ALTERNATIVE not in trace["queries"]
-    assert recovery(value)["unfinished"] and not recovery(value)["captures"]
+    if resource == "search_requests":
+        # Paid-provider limits no longer prevent free source discovery.
+        assert resource not in value["research"]["stops"] and ALTERNATIVE in trace["queries"]
+        assert any((branch.get("coverage") or {}).get("retrieval", {}).get("skipped_channels") for branch in value["branches"])
+    else:
+        assert resource in value["research"]["stops"] and ALTERNATIVE not in trace["queries"]
+        assert recovery(value)["unfinished"] and not recovery(value)["captures"]
 
 
 @pytest.mark.parametrize("action", ["pause", "cancel"])
@@ -290,3 +309,13 @@ def test_revoked_alternate_capture_hides_recovery(signed, monkeypatch):
     value = client.get(root + "/investigations/" + run["id"]).json()
     assert value["exploration"]["research_scope"]["status"] == "evidence_changed"
     assert "query_recovery" not in value["exploration"]["research_scope"]
+
+
+def test_current_mission_reformulates_when_another_search_channel_is_unavailable(signed, monkeypatch):
+    client, service, _, model = signed
+    trace = setup(monkeypatch, service, model, 'partial')
+    root, run, _ = start_current(client)
+    value = complete(client, service, root + '/investigations', run)
+    assert len(trace['reformulations']) == 1 and ALTERNATIVE in trace['queries']
+    assert value['question'] == QUESTION and value['sources']
+    assert any((branch.get('coverage') or {}).get('retrieval', {}).get('lanes') for branch in value['branches'])

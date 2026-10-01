@@ -149,7 +149,12 @@ async def test_remote_generation_receives_the_output_contract(tmp_path, monkeypa
         if provider == "anthropic":
             return httpx.Response(200, json={"stop_reason": "end_turn", "content": [
                 {"type": "text", "text": '{"topic":"citizenship"}'}]})
-        assert payload.get("response_format") == ({"type": "json_object"} if json_mode else None)
+        if provider == "swisscom":
+            assert payload["response_format"] == {"type": "json_schema", "json_schema": {
+                "name": "structured_response", "strict": True, "schema": schema}}
+            assert "nvext" not in payload
+        else:
+            assert payload.get("response_format") == ({"type": "json_object"} if json_mode else None)
         assert payload["messages"][1] == {"role": "user", "content": "Private context"}
         return httpx.Response(200, json={"choices": [{"message": {"content": '{"topic":"citizenship"}'}}]})
 

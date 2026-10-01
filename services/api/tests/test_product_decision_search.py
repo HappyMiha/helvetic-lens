@@ -291,7 +291,8 @@ def test_inspection_extracts_original_text_hash_and_safe_links_without_following
     result = asyncio.run(decision_sources.safe_inspect(Settings(), "medicine safety", ITEM, "laya"))
     assert result["status"] == "complete" and result["engine"] == "laya"
     assert result["sha256"] == hashlib.sha256(body).hexdigest()
-    assert result["links"] == [{"title": "Primary paper", "url": "https://example.org/paper"}]
+    assert [{key: link[key] for key in ("title", "url")} for link in result["links"]] == [{"title": "Primary paper", "url": "https://example.org/paper"}]
+    assert result["links"][0]["kind"] == "document" and "Medicine safety" in result["links"][0]["context"]
     assert "Medicine safety is reviewed" in result["excerpts"][0]["text"]
     assert len(model_calls) <= 8 and calls == ["https://example.org/robots.txt", ITEM["url"]]
 
@@ -344,3 +345,61 @@ def test_real_native_erasure_removes_private_search_but_preserves_aggregate_budg
         assert session.get(DecisionSearchRun, found["id"]) is None
         assert session.get(DecisionSearchBudget, utcnow().date()).used == 2
         assert session.connection().exec_driver_sql("PRAGMA foreign_key_check").all() == []
+
+
+@pytest.mark.parametrize('target,denied', [('https://new.example.org/document', False), ('https://new.example.org/document', True), ('https://127.0.0.1/private', False)])
+def test_redirect_destinations_require_public_access_and_their_own_robots(monkeypatch, target, denied):
+    calls = []
+    async def read(client, url, limit):
+        calls.append(url)
+        if url.endswith('/robots.txt'):
+            body = b'User-agent: *\nDisallow: /' if denied and 'new.example.org' in url else b'User-agent: *\nAllow: /'
+            return decision_sources.Download(200, 'text/plain', body)
+        if url == ITEM['url']:
+            return decision_sources.Download(302, 'text/plain', b'', target)
+        return decision_sources.Download(200, 'text/html', b'<main><p>A fictional public document supplies enough readable text to inspect its original source.</p></main>')
+    monkeypatch.setattr(decision_sources, 'read_bytes', read)
+    result = asyncio.run(decision_sources.safe_inspect(Settings(), 'fictional document', ITEM, 'auto', rank_passages=False))
+    allowed = not denied and '127.0.0.1' not in target
+    assert (result['status'] == 'complete') == allowed
+    if allowed:
+        assert result['url'] == target
+        assert calls.index('https://new.example.org/robots.txt') < calls.index(target)
+    else:
+        assert target not in calls
+
+
+def test_redirect_canonicalization_cannot_bypass_a_source_exclusion(monkeypatch):
+    calls = []
+    async def read(client, url, limit):
+        calls.append(url)
+        if url.endswith('/robots.txt'):
+            return decision_sources.Download(404, 'text/plain', b'')
+        return decision_sources.Download(302, 'text/plain', b'', 'https://NEW.example.org/document#section')
+    monkeypatch.setattr(decision_sources, 'read_bytes', read)
+    result = asyncio.run(decision_sources.safe_inspect(Settings(), 'question', ITEM, 'auto', rank_passages=False,
+        blocked_urls=['https://new.example.org/document']))
+    assert result['status'] == 'unavailable' and result['error_code'] == 'source_excluded'
+    assert calls == ['https://example.org/robots.txt', ITEM['url']]
+
+
+@pytest.mark.parametrize('url', ['https://example.org/original', 'https://example.org/Reference_(unit)'])
+def test_exact_source_url_goes_straight_to_reader_without_unrelated_searches(monkeypatch, url):
+    from helvetic_lens import search_channels
+    calls = []
+    async def retrieve(*args, **kwargs):
+        calls.append('search')
+        return {"items": [], "omitted_records": 0}
+    monkeypatch.setattr(decision_search, 'retrieve', retrieve)
+    monkeypatch.setattr(search_channels, 'direct_search', retrieve)
+    settings = Settings(_env_file=None, web_search_provider='searxng')
+    result = asyncio.run(decision_search.federated_retrieve(settings, url, 'web', 'deep', 'pharma', complete_page=True))
+    assert not calls and result['search_requests'] == 0
+    assert [item['url'] for item in result['items']] == [url]
+    assert result['items'][0]['submitted_public_source']
+    assert len(result['lanes']) == 1 and result['lanes'][0]['name'] == 'Submitted public sources'
+    assert result['skipped_channels'] and not result['next_cursors']
+    with pytest.raises(DecisionUnavailable, match='invalid_source_scope'):
+        asyncio.run(decision_search.federated_retrieve(settings, 'https://example.org/original', 'web', 'deep', 'pharma', selected_catalogues=['invalid']))
+    asyncio.run(decision_search.federated_retrieve(settings, 'Compare this with https://example.org/original', 'web', 'deep', 'pharma'))
+    assert calls  # A natural-language research question still needs discovery.

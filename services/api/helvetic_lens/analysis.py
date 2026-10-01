@@ -568,7 +568,7 @@ class ModelClient:
             raise DomainError(
                 f"{provider} returned HTTP {response.status_code}. Check the integration settings and provider access.",
                 502,
-                "model_error",
+                "model_temporarily_unavailable" if response.status_code in {408, 425, 500, 502, 503, 529} else "model_error",
             )
 
     @staticmethod
@@ -749,6 +749,13 @@ class ModelClient:
                 "type": "json_object",
                 "schema": response_schema,
             }
+        elif self.settings.apertus_provider == "swisscom" and response_schema is not None:
+            # The deployed Apertus endpoint enforces this OpenAI-compatible
+            # contract (adversarial enum/array probe, 2026-10-01). Its documented
+            # nvext.guided_json accepted HTTP 200 but ignored the constraints.
+            # Application validation remains authoritative for every provider.
+            payload["response_format"] = {"type": "json_schema", "json_schema": {
+                "name": response_schema.get("title", "structured_response"), "strict": True, "schema": response_schema}}
         elif self.settings.apertus_json_mode:
             payload["response_format"] = {"type": "json_object"}
         return payload
@@ -853,6 +860,8 @@ class ModelClient:
         if runtime is not None:
             headers["X-Helvetic-Runtime-Binding"] = runtime.binding_fingerprint
         total_attempts = self.settings.apertus_request_retries + 1
+        if budget is not None:
+            total_attempts = min(total_attempts, max(1, budget.max_requests - budget.used))
         retryable_statuses = {408, 425, 429, 500, 502, 503, 504, 529}
 
         async def pause(attempt: int, response: httpx.Response | None = None):

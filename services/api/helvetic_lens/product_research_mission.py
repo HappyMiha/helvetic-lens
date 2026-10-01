@@ -46,7 +46,11 @@ class Checkpoint(Input):
 def schema(base):
     # Optional only for explicit provider inability/older response adapters. A
     # missing checkpoint cannot authorize another round or claim a final answer.
-    return create_model(base.__name__, __base__=base, mission_checkpoint=(Checkpoint | None, None))
+    # A mission can honestly establish no answer. Context-only points must not
+    # be turned into fabricated direct findings just to fill a legacy card.
+    return create_model(base.__name__, __base__=base, mission_checkpoint=(Checkpoint | None, None),
+        findings=(list[exploration.Finding], Field(default_factory=list, max_length=8)),
+        uncertainties=(list[str], Field(default_factory=list, max_length=8)))
 
 
 def initial():

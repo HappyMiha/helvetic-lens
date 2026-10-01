@@ -122,7 +122,7 @@ class Direction(Citation):
 class Briefing(legal_profiles.Input):
     understanding: str = Field(min_length=5, max_length=700)
     findings: list[Finding] = Field(min_length=1, max_length=5)
-    uncertainties: list[str] = Field(min_length=1, max_length=4)
+    uncertainties: list[str] = Field(min_length=1, max_length=8)
     clarification: str = Field(max_length=300)
     directions: list[Direction] = Field(max_length=3)
 
@@ -134,13 +134,13 @@ class AssessmentEvidence(Citation):
 
 class AssessmentPoint(legal_profiles.Input):
     statement: str = Field(min_length=5, max_length=700)
-    evidence: list[AssessmentEvidence] = Field(min_length=1, max_length=3)
+    evidence: list[AssessmentEvidence] = Field(min_length=1, max_length=8)
 
 
 class AssessmentOutcome(legal_profiles.Input):
     status: Literal["possible_answer", "partial", "conflicting", "not_found"]
-    points: list[AssessmentPoint] = Field(max_length=4)
-    limitations: list[str] = Field(min_length=1, max_length=4)
+    points: list[AssessmentPoint] = Field(max_length=8)
+    limitations: list[str] = Field(max_length=8)
 
 
 class QuestionAssessment(AssessmentOutcome):
@@ -212,7 +212,9 @@ def sources(session, run):
     excluded = {url for url, review in current_reviews(session, run.dossier_id).items()
         if review.data_json["decision"] == "exclude"}
     return {s.id: s for s in rows(session, InvestigationSource, run)
-        if s.kind == "public_source" and s.url not in excluded and s.snapshot.get("allow_discovery", True)
+        if s.kind == "public_source" and s.url not in excluded
+        and not (set(s.snapshot.get("redirect_chain", [])) | {s.snapshot.get("requested_url")}) & excluded
+        and s.snapshot.get("allow_discovery", True)
         and not s.snapshot.get("duplicate_of")}
 
 
@@ -223,6 +225,7 @@ def prepare(session, run, *, early=False):
         "sources": compact_sources(session, run, sources(session, run).values()),
         "open_questions": [{"question": q["question"], "status": q["status"]}
             for q in run.research_state["questions"]]}
+    synthesis_sources = deepcopy(value["sources"])
     state = run.research_state["exploration"]
     if early:
         from . import product_early_clarification as clarification
@@ -247,6 +250,10 @@ def prepare(session, run, *, early=False):
     if not early and orientation and orientation["status"] == "ready":
         value["early_orientation"] = orientation["briefing"]
         value["interpretation_changes"] = projection(session, run)["changes"]
+    if not early:
+        # Keep canonical source records intact for exact current-rights fences.
+        # Reconciliation selects original passages; it is not answer evidence.
+        value["synthesis_sources"] = synthesis_sources
     return value
 
 

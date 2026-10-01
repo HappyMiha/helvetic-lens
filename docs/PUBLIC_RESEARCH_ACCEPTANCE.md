@@ -1,6 +1,6 @@
 # Public research acceptance — 1 October 2026
 
-**Live answer quality: NOT ACCEPTED.** Controlled worker tests and shipped features
+**Overall live answer acceptance: INCOMPLETE. NASA rate reconciliation now passes the narrow question; other cases remain unaccepted.** Controlled worker tests and shipped features
 are separate from this judgment. Three neutral questions were selected before the
 trials, with independent primary-source expectations. Actual configured Apertus
 70B, Jev/Laya and SearXNG/source readers ran in isolated local databases. No model
@@ -61,3 +61,42 @@ unknown, never reported as zero. Detailed counts and local evidence paths are in
 the parent `product-completion-public-evaluation.json` and completion checkpoint.
 No production dossier or fixture email was created. No further live retry loop is
 started merely to turn these failures into a passing report.
+
+## Question-to-dossier repair — 1–2 October 2026
+
+The owner's renewed instruction authorized real public evaluation of coherent
+repairs. An isolated saved NASA mission now returns a cited final answer, rather
+than an empty completed job. Independent review checked the actual answer, each
+quote/locator and source identity: three exact passages from NASA originals
+support the distinction between a multi-decade rate and the 2024 annual value.
+No model answer or source was substituted. The final native retry took 34.9 s;
+this is recovery latency, not a fresh end-to-end completion time. Earlier failed
+attempts remain recorded and are not erased from the evaluation.
+
+This is a narrow substantive pass. The answer could more clearly anchor the
+historical reporting period and express both values in the same unit. It does
+not establish broader causal or local-coast coverage, reliable success on every
+question, medical/legal validation, or full target architecture acceptance.
+
+The unseeded mountain mission completed after native retained-work recovery (82.5 s
+for the final retry, not a fresh-run time). Independent review accepted its three
+measurement definitions and found 12 exact citation triples with consistent units.
+NOAA was discovered through a captured source link, read and reviewed. Chimborazo
+uses NOAA directly; the Everest and Mauna Kea points still choose secondary
+ScienceBlog quotations despite available NOAA support. Original-source citation
+coverage therefore remains partial. One displayed unresolved branch had a resolved
+outcome; do not treat that count as a verified substantive gap.
+
+The retained BIPM mission also completed (33.4 s for its final retry), correctly
+separating astronomical 1960 from atomic 1967 with exact citations. It still omitted
+the requested decision/publication comparison despite having the dates. That is an
+answer-coverage failure, not inaccessible evidence. This led to required per-request
+answer sections in the provider contract; a fresh native source-guided run read/reviewed eight sources and retained them
+through provider timeouts/rate limits. Its initial 561.6 s run failed final citation
+validation; a 48.1 s native retry completed after concise per-request responses.
+The publication comparison was still lost. Focused point repair now receives its
+exact user-request binding and short numerical source context, preserving the part
+being answered. Native continuation of that saved dossier is under evaluation.
+The full BIPM requested answer remains unaccepted until independently checked. See [delivery contract](PRODUCT_END_TO_END.md)
+and the parent end-to-end checkpoint.
+Production dossier writes and emails remain zero.

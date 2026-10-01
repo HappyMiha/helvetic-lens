@@ -93,6 +93,10 @@ def projection(session, run, available, *, invalid=False):
     branches = rows(session, InvestigationBranch, run)
     inflight = [b for b in branches if b.status in ACTIVE and b.checkpoint.get("inflight")]
     if not inflight:
+        job = session.get(Job, run.job_id) if run.job_id else None
+        if job and job.state == "queued" and job.error_code == "research_provider_backoff":
+            return {**value, "status": "waiting", "resume_at": iso(job.available_at),
+                "reason": "The analysis provider is temporarily unavailable. Saved reading is retained; this step will resume automatically."}
         return {**value, "status": "waiting"}
     if len(inflight) != 1:
         return value

@@ -72,6 +72,10 @@ def excluded(session, parent):
             if review.data_json["decision"] == "exclude"}
 
 
+def source_excluded(source, blocked):
+    return bool(({source.url, source.snapshot.get("requested_url")} | set(source.snapshot.get("redirect_chain", []))) & blocked)
+
+
 def seed(session, run, parent, settings):
     from .product_web_research import seed as web_seed
     from .product_web_research import trigger_for as web_trigger_for
@@ -230,6 +234,10 @@ def finish_or_yield(session, run, job):
                 run.stop_reason = ("Research checks finished. " if unmetered(run) else f"Research paused at its budget ({limits}). " if limits else "Bounded research finished. ") + f"{pending} questions remain open or unresolved; {failed_steps} paths include unavailable or interrupted steps. Source support is not independent verification."
             from .product_document_reading import incomplete
             unfinished_documents = incomplete(branches)
+            if (unmetered(run) and run.research_state.get("mission", {}).get("stop") == "answer_unavailable"
+                    and not run.research_state.get("exploration", {}).get("briefing")):
+                run.status = "failed"
+                run.stop_reason = "The sources were retained, but the final answer could not be validated. Retry to continue from the saved research."
             if unfinished_documents:
                 run.status = "failed"
                 unread = sum(not doc.get("read_complete") for doc in unfinished_documents)
@@ -348,6 +356,7 @@ async def execute(service, job_id, worker):
                     elif branch.phase == "read":
                         item = state["items"][state.get("read_index", 0)]
                         work["item"] = item
+                        work["blocked_urls"] = sorted(blocked)
                         work["skip"] = item["url"] in blocked or (not state.get("document_reads", {}).get(str(state.get("read_index", 0)))
                             and recovery.unavailable(session, run, branch, state, item))
                         from . import product_document_reading as document_reading
@@ -378,7 +387,7 @@ async def execute(service, job_id, worker):
                         work["input"] = prepare(session, run)
                     else:
                         source = session.get(InvestigationSource, state["source_ids"][state.get("extract_index", 0)])
-                        work.update(source_id=source.id, skip=source.url in blocked,
+                        work.update(source_id=source.id, skip=source_excluded(source, blocked),
                             input={"question": run.question,
                                 "source": {"id": source.id, "kind": source.kind, "title": source.title,
                                            "excerpts": source.snapshot["excerpts"]},
@@ -447,7 +456,7 @@ async def execute(service, job_id, worker):
 
     # Every paid/network operation has a committed receipt before it begins.
     # The hard deadline is shorter than the lease even for small operator leases.
-    result, failed = None, False
+    result, failed, transient = None, False, None
     started = perf_counter()
     try:
         seconds = work["deadline_seconds"]
@@ -456,10 +465,13 @@ async def execute(service, job_id, worker):
                 failed = True
             else:
                 result = await research_gateway.execute(service, work, seconds)
-    except Exception:
+    except Exception as exc:
         # Provider bodies and untrusted source strings never become job errors,
         # integration-log messages or publicly observable reasoning.
         failed = True
+        code = getattr(exc, "code", None)
+        if code in {"model_rate_limited", "model_temporarily_unavailable", "model_upstream_timeout", "model_timeout", "model_unreachable", "model_transport_error"}:
+            transient = code
 
     with service.write_guard, service.db.session() as session:
         lock_organization(session, service.organization_id)
@@ -505,21 +517,44 @@ async def execute(service, job_id, worker):
             if exploration.enabled(run):
                 exploration.update(run, revision=run.event_sequence + 1)
             event(session, run, "investigation_paused", reason=run.stop_reason)
-        if work["phase"] == "read" and work["item"]["url"] in blocked:
+        if work["phase"] == "read" and ({work["item"]["url"], (result or {}).get("url"), *((result or {}).get("redirect_chain", []))} & blocked):
             failed = True
         if work["phase"] == "document_review":
             from .product_document_analysis import current as document_current
             if not document_current(session, run, work) or any(
-                    session.get(InvestigationSource, d["source_id"]).url in blocked for d in work.get("document_dependencies", [])):
+                    source_excluded(session.get(InvestigationSource, d["source_id"]), blocked) for d in work.get("document_dependencies", [])):
                 failed = True
+                transient = None
         if work["phase"] == "extract":
             source = session.get(InvestigationSource, work["source_id"])
-            if source.url in blocked or (work.get("read_relevance") and not read_relevance.current(session, run, work["read_dependencies"])):
+            if source_excluded(source, blocked) or (work.get("read_relevance") and not read_relevance.current(session, run, work["read_dependencies"])):
                 failed = True
+                transient = None
         if research.enabled(run):
             research.elapsed(run, perf_counter() - started)
             if work.get("model_route") and (work["phase"] == "extract" or failed):
                 state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
+        # A temporary provider outage is not a source finding. Preserve this
+        # exact phase and its saved reading, then resume via the native job.
+        # Retry the actual provider input. Accounting/history updates in the
+        # larger canonical pack must not reset an outage's retry counter.
+        retry_key = (work.get("model_route", {}).get("evidence_transport", {}).get("input_fingerprint")
+            or work["execution_route"]["input_fingerprint"])
+        retries = state.setdefault("provider_retries", {})
+        if transient and unmetered(run) and run.status in ACTIVE and retries.get(retry_key, 0) < 3:
+            retries[retry_key] = retries.get(retry_key, 0) + 1
+            when = utcnow() + timedelta(seconds=30 * 2 ** (retries[retry_key] - 1))
+            research_gateway.finish(state, work, result, failed=True, elapsed=perf_counter() - started)
+            state.pop("inflight", None)
+            state["steps"][-1].update(status="unavailable", finished_at=iso(utcnow()),
+                error_code=transient, retry_at=iso(when))
+            checkpoint(session, run, branch, "provider_wait", state)
+            jobs.defer_until(session, job, when, code="research_provider_backoff",
+                detail="The analysis provider is temporarily unavailable. Saved reading is retained and this step will resume automatically.")
+            session.commit()
+            return {"id": job_id, "state": "waiting_for_provider"}
+        if not failed:
+            retries.pop(retry_key, None)
         if not failed:
             if work.get("research") and work["phase"] in {"recall", "plan", "search", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                 try:

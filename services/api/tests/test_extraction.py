@@ -76,7 +76,7 @@ def test_faq_keeps_sibling_answers_and_detects_changes_outside_the_first_article
     assert compare_passages(before.passages, after.passages)["counts"]["modified"] == 1
     links = discover_links(Fetched("https://example.com/faq", body, "text/html"))
     assert [item["url"] for item in links["candidates"]] == ["https://example.com/files/details.pdf"]
-    assert before.extractor == "native-html-v5"
+    assert before.extractor == "native-html-v6"
 
 
 def test_fedlex_retains_preface_and_annex_outside_main_and_detects_annex_only_change():
@@ -421,3 +421,24 @@ async def test_historical_single_format_fedlex_avoids_virtuoso_constant_order_fa
     assert result.metadata['eli_version_date'] == '2021-01-01'
     assert result.metadata['eli_work_uri'].endswith('/cc/27/317_321_377')
     assert result.url == artifact
+
+
+def test_public_document_with_peripheral_sign_in_is_read_without_authentication():
+    body = b'''<html><body><header><form><input type="password"></form></header>
+    <main><h1>Public resolution</h1><p>The public committee defines the fictional
+    reference unit in this freely available resolution, including its scope and effective date.</p></main></body></html>'''
+    result = extract(body, 'text/html')
+    assert 'freely available resolution' in result.text
+    assert 'password' not in result.text
+
+
+def test_standalone_publication_reference_and_date_survive_beside_main_paragraphs():
+    body = b'''<html><body><nav><a href="/login">Account navigation</a></nav><main>
+    <p>The committee adopted the fictional resolution in 2005, as its public record states.</p>
+    <div><a href="/proceedings.pdf">Proceedings of the 2005 meeting, published 2007, page 42</a></div>
+    <div><time datetime="2007-03-01">Published 1 March 2007</time></div>
+    <p>See <a href="/original">the original decision</a> for its exact scope.</p></main></body></html>'''
+    result = extract(body, 'text/html')
+    assert 'published 2007, page 42' in result.text and 'Published 1 March 2007' in result.text
+    assert result.text.count('the original decision') == 1
+    assert 'Account navigation' not in result.text

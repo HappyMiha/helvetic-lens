@@ -113,7 +113,7 @@ async def execute(service, work, seconds):
         return await evaluate(service.settings, work["question"], work["query"], work["item"], work["decision_order"])
     if phase == "read":
         return await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto",
-            rank_passages=False, excerpt_limit=8, **({"retain_original": {"folder": service.environment_settings.storage_path / "artifacts", "prefix": work["run_id"] + "-" + work["branch_id"]}} if "document_cursor" in work else {}), **({"document_cursor": work["document_cursor"]} if "document_cursor" in work else {}))
+            rank_passages=False, excerpt_limit=8, **({"blocked_urls": work["blocked_urls"]} if work.get("blocked_urls") else {}), **({"retain_original": {"folder": service.environment_settings.storage_path / "artifacts", "prefix": work["run_id"] + "-" + work["branch_id"]}} if "document_cursor" in work else {}), **({"document_cursor": work["document_cursor"]} if "document_cursor" in work else {}))
     schema, system = {
         "reformulate": (query_recovery.QueryReformulation, query_recovery.SYSTEM),
         "plan": (research.ResearchPlan, research.PLAN_SYSTEM),
@@ -174,7 +174,11 @@ async def execute(service, work, seconds):
         from . import product_document_analysis as document_analysis
         schema, system = document_analysis.schema(schema), system + document_analysis.SECTION_SYSTEM
     raw = await research_gateway.complete(service, work, system, schema, seconds)
-    if not isinstance(raw, str) or len(raw) > 30000:
+    # Compact provider refs expand into exact quotes in the existing answer,
+    # question assessment and compatibility cards. Bound that canonical shape,
+    # rather than rejecting valid server-expanded citations at the wire limit.
+    response_limit = 262144 if phase == "brief" and work.get("unmetered_research") else 30000
+    if not isinstance(raw, str) or len(raw) > response_limit:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
     if phase == "extract" and (work.get("applicability") or work.get("unmetered_research")):

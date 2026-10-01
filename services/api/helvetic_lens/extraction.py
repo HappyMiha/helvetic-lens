@@ -18,7 +18,7 @@ from .integration_logs import IntegrationLogger, response_snapshot
 from .pdf_reader import MAX_PDF_PAGES, PDF_EXTRACTOR_VERSION, read_pdf
 
 EXTRACTOR_VERSION = "native-v3"
-HTML_EXTRACTOR_VERSION = "html-v5"
+HTML_EXTRACTOR_VERSION = "html-v6"
 FEDLEX_DATA_ORIGIN = "https://fedlex.data.admin.ch"
 FEDLEX_SPARQL_ENDPOINT = FEDLEX_DATA_ORIGIN + "/sparqlendpoint"
 FEDLEX_ELI_HOSTS = {"fedlex.admin.ch", "www.fedlex.admin.ch", "fedlex.data.admin.ch"}
@@ -684,7 +684,15 @@ def extract(
             title_element = soup.find("h1") or soup.title
             if title_element:
                 title = normalize(title_element.get_text(" ", strip=True))
-            if soup.select_one("input[type=password]"):
+            password = soup.select_one("input[type=password]")
+            public_content = soup.find("main") or soup.find(attrs={"role": "main"}) or soup.find("article")
+            # A site-wide sign-in widget does not make its public document private.
+            # Require substantive document text outside forms; login-only pages
+            # retain the existing access-barrier result.
+            public_text = " ".join(node.get_text(" ", strip=True) for node in
+                public_content.find_all(["p", "li", "tr", "pre", "blockquote"])
+                if not node.find_parent("form")) if public_content else ""
+            if password and len(public_text.strip()) < 80:
                 raise DomainError(
                     "This appears to be a login page. Use a public document URL.", 422, "login_required"
                 )
@@ -703,7 +711,11 @@ def extract(
                 or soup.body
                 or soup
             )
-            tags = {"h1", "h2", "h3", "h4", "h5", "h6", "p", "li", "tr", "pre", "blockquote"}
+            # Standalone reference labels, dates and captions are part of the
+            # document too. Otherwise a bibliography outside <p>/<li> vanishes
+            # whenever the page also contains ordinary paragraphs.
+            tags = {"h1", "h2", "h3", "h4", "h5", "h6", "p", "li", "tr", "pre", "blockquote",
+                "a", "time", "figcaption", "dt", "dd"}
             nodes = (
                 root.select(":scope > .para")
                 if court_root is not None

@@ -205,10 +205,22 @@ def compact_sources(session, run, sources):
     values = []
     for source in sources:
         review = section(source)
-        value = {"id": source.id, "sha256": source.sha256, "title": source.title, "excerpts": source.snapshot["excerpts"]}
+        value = {"id": source.id, "sha256": source.sha256, "url": source.url, "title": source.title, "excerpts": source.snapshot["excerpts"]}
+        if source.snapshot.get("links"):
+            from .decision_search import lexical_order
+            leads = [{**link, "id": str(i), "summary": link.get("context", "")}
+                for i, link in enumerate(source.snapshot["links"])]
+            order = lexical_order(run.question, leads)
+            by_id = {lead["id"]: lead for lead in leads}
+            value["discovery_links"] = [{key: lead[key] for key in ("title", "url", "context", "kind") if key in lead}
+                for identifier in order[:24] for lead in [by_id[identifier]]]
         if source.id in reconciled:
             document = reconciled[source.id]
             wanted = {p["locator"] for p in document["findings"] if p["source_id"] == source.id}
+            # Reconciliation must not erase an observation (especially contrary
+            # evidence) merely because it was not repeated in its final notes.
+            if review:
+                wanted |= {p["locator"] for p in [*review["observations"], *review["cross_references"]]}
             value["excerpts"] = [p for p in value["excerpts"] if p["passage"] in wanted]
             if source.id == document["first_source_id"]:
                 value["whole_document_review"] = {k: v for k, v in document.items() if k != "first_source_id"}
@@ -216,6 +228,11 @@ def compact_sources(session, run, sources):
             wanted = cited.get(source.id, set()) | {p["locator"] for p in [*review["observations"], *review["cross_references"]]}
             value["excerpts"] = [p for p in value["excerpts"] if p["passage"] in wanted]
             value["section_review"] = deepcopy(review)
+        if sum(len(p["text"]) for p in source.snapshot["excerpts"]) <= 8000:
+            # Compact pages fit as originals. Keep headings, bibliographies and
+            # neighbouring qualifications, even when section notes selected
+            # only the main paragraph. Large sections still use reviewed quotes.
+            value["excerpts"] = source.snapshot["excerpts"]
         values.append(value)
     return values
 

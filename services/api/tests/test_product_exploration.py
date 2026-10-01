@@ -147,6 +147,8 @@ def test_no_fabricated_brief_and_corrected_question_recovers(signed, monkeypatch
     value = complete(client, service, root + "/investigations", run)
     assert value["exploration"]["briefing"] is None
     assert value["exploration"]["status"] in {"unavailable", "no_evidence"}
+    if mode != "no_sources":
+        assert value["status"] == "failed" and "final answer could not be validated" in value["stop_reason"]
     assert "private provider error" not in json.dumps(value)
     assert "invented and must" not in json.dumps(value)
     result = post(client, root + "/investigations/" + run["id"] + "/exploration/reply", {

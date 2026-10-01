@@ -32,4 +32,5 @@ async def read(service, work):
     result = await read_file(service.environment_settings.storage_path / "artifacts",
         {**original, "cursor": work["document_cursor"]})
     return {**result, "url": original["url"], "fetched_at": original["fetched_at"],
-        "links": original.get("links", []), "_retained_document": original}
+        "links": original.get("links", []), "_retained_document": original,
+        "requested_url": original.get("requested_url"), "redirect_chain": original.get("redirect_chain", [])}

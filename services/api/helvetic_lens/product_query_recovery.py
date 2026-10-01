@@ -49,11 +49,22 @@ def eligible(run, branch):
     )
 
 
-def unproductive(state):
+def unproductive(state, *, allow_partial=False):
     lanes = state.get("coverage", {}).get("retrieval", {}).get("lanes")
     counts = state.get("candidate_counts", {})
     candidates = state.get("candidates", [])
     decisions = {d["id"]: d.get("verdict") for d in state.get("decisions", [])}
+    if allow_partial:
+        assessments = {a["source_id"]: a for a in state.get("read_relevance", {}).get("assessments", [])}
+        read_ids = state.get("source_ids", [])
+        all_read_unrelated = bool(read_ids) and all(
+            assessments.get(identifier, {}).get("category") == "unrelated"
+            and "incomplete" not in assessments[identifier].get("limitations", []) for identifier in read_ids)
+        rejected = not state.get("items") and all(decisions.get(item["id"]) == "unrelated" for item in candidates)
+        return (bool(lanes) and any(lane.get("status") == "complete" for lane in lanes)
+            and state.get("gate_index", 0) >= len(candidates)
+            and (rejected or all_read_unrelated)
+            and not any(s["status"] != "completed" and not s.get("recovered_by") for s in state.get("steps", [])))
     return (
         state.get("empty_search")
         and not state.get("items")
@@ -92,6 +103,7 @@ def permitted(session, run, state):
 
 
 def schedule(session, run, branches):
+    from .product_research_admission import unmetered
     if (
         not enabled(run)
         or run.status not in ACTIVE
@@ -105,7 +117,7 @@ def schedule(session, run, branches):
             if eligible(run, b)
             and b.status == "completed"
             and not b.checkpoint.get("question_finished")
-            and unproductive(b.checkpoint)
+            and unproductive(b.checkpoint, allow_partial=unmetered(run))
             and permitted(session, run, b.checkpoint)
         ),
         None,
@@ -128,7 +140,7 @@ def prepare(session, run, branch, state, work):
         "original_question": run.question,
         "original_query": branch.query,
         "previous_queries": previous,
-        "outcome": "No candidate was selected from a completed public search.",
+        "outcome": "The available search results supplied no relevant evidence. Other channels may be unavailable; this does not establish absence of information.",
     }
     work["skip"] = not eligible(run, branch) or not permitted(session, run, state)
 

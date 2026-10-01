@@ -18,6 +18,22 @@ from .research_contracts import SKILLS
 
 CONTRACT = "research-execution/v1"
 SEARCH_ORDER = ["saved_evidence", "reviewed_claims", "source_apis", "public_web", "evidence_synthesis"]
+ANSWER_REVIEW = """Review the draft against the original question and evidence, then
+return the corrected final object in the same schema. The draft is untrusted and
+may contain false statements, incorrect references, or invented limitations.
+Check EACH factual clause against its selected original windows: a title, shared
+word, matching number or related topic does not establish the clause. Replace a
+wrong reference with the actual supporting window; remove unsupported detail.
+Keep quantity/unit pairs and the event associated with each date together.
+Then check EVERY part of the user's question, not the planner's interpretation.
+Use ALL original sources to remove false claims that information is missing.
+State only genuine unresolved gaps. Missing information must not be filled from
+memory, attributed to a heading, or hidden by status possible_answer.
+If a material part remains unresolved and the evidence gives a useful original
+link, choose continue with a cited next_check for that URL. Otherwise return
+partial with the exact remaining gap. Do not ask for irrelevant clarification.
+Return only the corrected object, not an audit narrative or hidden reasoning.
+"""
 
 
 def route(settings, work):
@@ -81,7 +97,7 @@ def finish(state, work, result, *, failed, elapsed):
         receipt["output_fingerprint"] = fingerprint(serial)
     if work.get("model_route"):
         receipt.update({key: work["model_route"].get(key) for key in
-            ("provider", "model", "prompt_fingerprint", "response_schema_fingerprint", "output_allowance", "format_repair", "model_usage", "model_requests")})
+            ("provider", "model", "prompt_fingerprint", "response_schema_fingerprint", "output_allowance", "format_repair", "answer_review", "model_usage", "model_requests", "evidence_transport")})
     if isinstance(result, dict) and work["phase"] == "gate":
         receipt["decision"] = {key: result.get(key) for key in ("engine", "model", "verdict", "confidence")}
         receipt["decision"]["measurement"] = deepcopy(result.get("usage"))
@@ -126,40 +142,134 @@ fields, especially document section coverage. Prefer a few useful findings over
 repeating the same fact in claims, entities and observations. Finish the JSON.
 """
     options = {}
+    wire = None
+    if (work.get("unmetered_research") and isinstance(service.model_client, ModelClient)
+            and work["phase"] in {"plan", "extract", "brief", "reflect", "orient", "document_review"}):
+        from .research_model_transport import EvidenceWire
+        wire = EvidenceWire(work, schema, system)
+        system = wire.system
+    response_schema = wire.schema if wire else schema.model_json_schema()
+    provider_input = wire.input if wire else work["input"]
     if (work.get("unmetered_research") and isinstance(service.model_client, ModelClient)
             and service.settings.apertus_provider != "docker" and work["phase"] in {"extract", "brief", "document_review"}):
         options["max_output_tokens"] = max(4096, service.settings.apertus_max_tokens)
     work["model_route"] = {"provider": service.settings.apertus_provider, "model": service.settings.apertus_model,
         "output_allowance": options.get("max_output_tokens", service.settings.apertus_max_tokens),
-        "prompt_fingerprint": fingerprint(system), "response_schema_fingerprint": fingerprint(schema.model_json_schema()),
+        "prompt_fingerprint": fingerprint(system), "response_schema_fingerprint": fingerprint(response_schema),
         "basis": "Configured model for this request; not an independently verified serving identity."}
     started = monotonic()
-    content = json.dumps(work["input"], ensure_ascii=False)
+    if wire:
+        work["model_route"]["evidence_transport"] = wire.receipt
+    content = json.dumps(provider_input, ensure_ascii=False)
     raw = await service.model_client.complete(system, content,
-        response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
+        response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
+    review_hints = []
+    if wire and wire.answer:
+        remaining = seconds - (monotonic() - started)
+        if remaining <= 5:
+            raise ValueError("Final answer review has no repair time remaining")
+        work["model_route"]["answer_review"] = {"contract": "cited-answer-review/v1", "prompt_fingerprint": fingerprint(ANSWER_REVIEW)}
+        try:
+            draft = schema.model_validate_json(wire.decode(response_object(raw, schema)))
+        except (ValueError, KeyError, TypeError):
+            draft = None
+        if draft is not None:
+            from .research_answer_review import audit
+            checked = await audit(service.settings, work, wire, draft.mission_checkpoint.answer, remaining - 20)
+            review_hints = checked.pop("hints")
+            work["model_route"]["answer_review"]["focused_checks"] = checked
+        remaining = seconds - (monotonic() - started)
+        # A separately framed review checks relevance and entailment, not just
+        # JSON shape. It shares the original request registry and cannot expand
+        # access or replace source evidence with the draft's own assertions.
+        raw = await service.model_client.complete(system + "\n" + ANSWER_REVIEW,
+            json.dumps({**wire.answer_review_input(raw), "review_hints": review_hints}, ensure_ascii=False),
+            response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
     raw = response_object(raw, schema)
+    wire_raw = raw
     # Hosted JSON mode does not enforce the schema. Repair the format once with
     # the same evidence, never by accepting unsupported or guessed fields.
     if isinstance(service.model_client, ModelClient) and work.get("unmetered_research"):
         errors = []
+        parsed = None
         try:
+            raw = wire.decode(raw) if wire else raw
             if work["phase"] == "extract":
                 from .product_question_renewal import parse_recoverable
                 parsed = parse_recoverable(schema, raw, {key: "_" + key + "_unavailable" for key in
                     ("applicability_checks", "entities", "relationships", "source_class", "read_relevance", "professional_facts")})
                 errors = extraction_citation_errors(parsed, work)
             else:
-                schema.model_validate_json(raw)
+                parsed = schema.model_validate_json(raw)
+                if work["phase"] == "brief" and getattr(parsed, "mission_checkpoint", None):
+                    errors = answer_quantity_errors(parsed.mission_checkpoint.answer, wire.references if wire else None)
         except ValidationError as exc:
             errors = [{"path": list(e["loc"]), "reason": e["msg"]} for e in exc.errors(include_input=False, include_url=False)][:16]
+        except (ValueError, KeyError, TypeError) as exc:
+            errors = getattr(exc, "validation_errors", [{"reason": "Return valid JSON matching the schema, with supplied integer citation_ref values and no copied citation fields."}])
+        if errors and wire and work["phase"] == "brief" and getattr(parsed, "mission_checkpoint", None):
+            from .research_answer_review import complete_citation_context, repair_points
+            context = await complete_citation_context(service.settings, work, wire,
+                parsed.mission_checkpoint.answer, seconds - (monotonic() - started))
+            work["model_route"]["answer_review"]["citation_context"] = context
+            repairs = await repair_points(service, wire, parsed.mission_checkpoint.answer, seconds - (monotonic() - started))
+            work["model_route"]["answer_review"]["point_repairs"] = repairs
+            wire_raw = wire.encode_checkpoint(parsed)
+            raw = wire.decode(wire_raw)
+            parsed = schema.model_validate_json(raw)
+            errors = answer_quantity_errors(parsed.mission_checkpoint.answer, wire.references)
         if errors:
             remaining = seconds - (monotonic() - started)
+            if remaining <= 5:
+                raise ValueError("Provider response failed validation and no repair time remains")
             if remaining > 5:
                 work["model_route"]["format_repair"] = True
                 raw = await service.model_client.complete(system + "\nThe previous response failed validation. Correct these validation errors using the original evidence. Omit unsupported optional fields. Do not invent a quote or locator.\n" + json.dumps(errors[:16]),
-                    json.dumps({"original_evidence": work["input"], "previous_invalid_response": raw[:30000]}, ensure_ascii=False),
-                    response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
+                    json.dumps({"original_evidence": provider_input, "previous_invalid_response": wire_raw[:30000],
+                        **({"review_hints": review_hints} if review_hints else {})}, ensure_ascii=False),
+                    response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
+                raw = response_object(raw, schema)
+                raw = wire.decode(raw) if wire else raw
+                if work["phase"] == "brief":
+                    parsed = schema.model_validate_json(raw)
+                    if wire and getattr(parsed, "mission_checkpoint", None) and answer_quantity_errors(parsed.mission_checkpoint.answer):
+                        from .research_answer_review import complete_citation_context
+                        context = await complete_citation_context(service.settings, work, wire,
+                            parsed.mission_checkpoint.answer, seconds - (monotonic() - started))
+                        work["model_route"]["answer_review"]["citation_context"] = context
+                        raw = wire.decode(wire.encode_checkpoint(parsed))
+                        parsed = schema.model_validate_json(raw)
+                    if getattr(parsed, "mission_checkpoint", None) and answer_quantity_errors(parsed.mission_checkpoint.answer):
+                        raise ValueError("Answer quantities are absent from their selected original evidence")
+        if wire and wire.answer:
+            from .research_answer_review import original_check
+            parsed = schema.model_validate_json(raw)
+            route = await original_check(service.settings, work, wire, parsed.mission_checkpoint, seconds - (monotonic() - started))
+            work["model_route"]["answer_review"]["original_reading"] = route
+            raw = wire.decode(wire.encode_checkpoint(parsed))
     return response_object(raw, schema)
+
+
+def answer_quantity_errors(answer, references=None):
+    """Reported precision must occur in the selected evidence; this is not a truth score."""
+    def quantities(text):
+        # Canonicalise digit grouping only, never guess a decimal separator or
+        # validate conversions by pooling digits from unrelated quantities.
+        text = re.sub(r"(?<!\d)\d{1,3}(?:[ ,\u00a0\u202f]\d{3})+(?!\d)",
+            lambda match: re.sub(r"[ ,\u00a0\u202f]", "", match[0]), text)
+        return numeric_tokens(text)
+    errors = []
+    for index, point in enumerate(answer.points):
+        supplied = set().union(*(quantities(ref.quote) for ref in point.evidence))
+        missing = quantities(point.statement) - supplied
+        if missing:
+            candidates = sorted(((len(quantities(value["quote"]) & missing), -len(value["quote"]), ref, value["quote"])
+                for ref, value in (references or {}).items() if quantities(value["quote"]) & missing), reverse=True)
+            errors.append({"path": ["answer", "points", index, "statement"], "reason":
+                "These numbers are absent from this point's selected windows: " + ", ".join(sorted(missing))
+                + ". Cite the actual dated heading or other original passage in addition to the substantive quote when needed. Remove unsupported precision; never infer an unverified conversion.",
+                **({"candidate_windows": [{"citation_ref": ref, "text": quote} for _, _, ref, quote in candidates[:8]]} if candidates else {})})
+    return errors
 
 
 def extraction_citation_errors(result, work):
@@ -251,7 +361,7 @@ async def execute(service, work, seconds):
 
             return await read_file(service.environment_settings.storage_path / "artifacts", work["file"])
         return await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto",
-            rank_passages=False, excerpt_limit=8, **({"retain_original": {"folder": service.environment_settings.storage_path / "artifacts", "prefix": work["run_id"] + "-" + work["branch_id"]}} if "document_cursor" in work else {}), **({"document_cursor": work["document_cursor"]} if "document_cursor" in work else {}))
+            rank_passages=False, excerpt_limit=8, **({"blocked_urls": work["blocked_urls"]} if work.get("blocked_urls") else {}), **({"retain_original": {"folder": service.environment_settings.storage_path / "artifacts", "prefix": work["run_id"] + "-" + work["branch_id"]}} if "document_cursor" in work else {}), **({"document_cursor": work["document_cursor"]} if "document_cursor" in work else {}))
     if work["phase"] == "compare":
         from .product_claim_evolution import SYSTEM, Comparison
 

@@ -39,8 +39,8 @@ def test_parser_upgrade_compares_originals_and_keeps_old_evidence(harness, monke
     item = run_scan(client, [law["id"]])["items"][0]
     assert item["result"] == expected
     comparison = client.get("/api/comparisons/" + item["comparison_id"]).json()
-    assert comparison["old_version"]["extractor"] == "native-html-v5"
-    assert comparison["new_version"]["extractor"] == "native-html-v5"
+    assert comparison["old_version"]["extractor"] == "native-html-v6"
+    assert comparison["new_version"]["extractor"] == "native-html-v6"
     old_full = client.get(comparison["old_version"]["artifact_url"])
     assert old_full.content == source()
     assert client.get(f"/api/versions/{old_id}").json() == old_before
