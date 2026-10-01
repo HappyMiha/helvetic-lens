@@ -215,13 +215,14 @@ def seed(session, run):
     plan(session, run, "Plan the submitted question before searching.")
 
 
-def reserve_step(session, run, branch, state, phase, product):
+def reserve_step(session, run, branch, state, phase, product, *, search_requests=None):
     from . import product_research_pacing as pacing
 
     if not enabled(run):
         return True
     data = deepcopy(run.research_state)
-    units = {"search": ("search_requests", 3 if product == "pharma" else 2),
+    search_requests = search_requests if search_requests is not None else (3 if product == "pharma" else 2)
+    units = {"search": ("search_requests", search_requests),
         "gate": ("decision_calls", 2), "read": ("source_fetches", 1),
         "reformulate": ("model_calls", 1), "plan": ("model_calls", 1), "extract": ("model_calls", 1),
         "reflect": ("model_calls", 1), "gate_review": ("model_calls", 1),
@@ -235,7 +236,7 @@ def reserve_step(session, run, branch, state, phase, product):
     if not exceeded and phase == "reformulate":
         # Do not spend a model request when no actual search, gate or read can
         # follow. These are availability checks, not extra quota reservations.
-        exceeded = next((key for key, minimum in (("search_requests", 3 if product == "pharma" else 2),
+        exceeded = next((key for key, minimum in (("search_requests", search_requests),
             ("source_fetches", 1), ("decision_calls", 2))
             if data["used"].get(key, 0) + minimum > data["limits"][key]), None)
     if exceeded:

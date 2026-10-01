@@ -67,6 +67,9 @@ x-api-environment: &api-environment
   APERTUS_API_KEY: ${APERTUS_API_KEY:-}
   TYPESAFE_API_KEY: ${TYPESAFE_API_KEY:-}
   SEARCH1API_API_KEY: ${SEARCH1API_API_KEY:-}
+  WEB_SEARCH_PROVIDER: ${WEB_SEARCH_PROVIDER:-searxng}
+  SEARXNG_BASE_URL: ${SEARXNG_BASE_URL:-http://searxng:8080}
+  SEARXNG_ENGINES: ${SEARXNG_ENGINES:-google,bing,yahoo}
   LAYA_API_KEY: ${LAYA_API_KEY:-}
   LAYA_BASE_URL: ${LAYA_BASE_URL:-}
   EVIDENCE_EMBEDDING_URL: ${EVIDENCE_EMBEDDING_URL:-}
@@ -119,6 +122,33 @@ x-api-service: &api-service
       max-file: "5"
 
 services:
+  searxng:
+    image: docker.io/searxng/searxng@sha256:a07a5cd2da2c63d66e559f9e4d3a3db106cfc6c32fb0ac70abe91cc28bcd7350
+    entrypoint: ["/bin/sh", "/configuration/start.sh"]
+    environment:
+      GRANIAN_WORKERS: "2"
+      GRANIAN_BLOCKING_THREADS: "4"
+    ports: ["127.0.0.1:18880:8080"]
+    volumes:
+      - ./deploy/searxng/settings.yml:/configuration/settings.yml:ro
+      - ./deploy/searxng/start.sh:/configuration/start.sh:ro
+      - searxng_config:/etc/searxng
+      - searxng_data:/var/cache/searxng
+    networks: [app, outbound]
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: 2
+    pids_limit: 160
+    healthcheck:
+      test: ["CMD", "/usr/local/searxng/.venv/bin/python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: "3"}
+
   db:
     image: postgres:17-alpine@sha256:18cfe3ef5e6815560c98237d6216d1e5119702fb0f3894c8785dd58b8bbe5d73
     environment:
@@ -381,6 +411,8 @@ services:
       retries: 6
 
 volumes:
+  searxng_config:
+  searxng_data:
   postgres_data:
   redis_data:
   document_data:

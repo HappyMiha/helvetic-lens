@@ -27,7 +27,7 @@ MAX_RECEIPT = 24576
 class SourceRecord(legal_profiles.Input):
     id: str = Field(min_length=1, max_length=2000)
     kind: Literal["literature", "official_metadata", "web_source"]
-    provider: Literal["Europe PMC", "Fedlex", "Search1API"]
+    provider: Literal["Europe PMC", "Fedlex", "Crossref", "SearXNG", "Search1API", "Submitted public source"]
     title: str = Field(max_length=700)
     summary: str = Field(max_length=700)
     url: str = Field(min_length=1, max_length=2000)

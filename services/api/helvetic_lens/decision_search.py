@@ -10,7 +10,7 @@ from time import perf_counter
 from urllib.parse import urlsplit, urlunsplit
 
 from . import decision_engines as decision
-from .domain_packs import for_product
+from . import search_channels
 from .product_provenance import canonical
 
 MAX_RESULTS = 12
@@ -40,6 +40,10 @@ def plain(value, limit):
 
 
 async def retrieve(settings, query, index, *, service="google", limit=MAX_RESULTS):
+    if settings.web_search_provider == "searxng":
+        return await search_channels.searxng(settings, query, index, limit=limit)
+    if settings.web_search_provider != "search1api":
+        raise decision.DecisionUnavailable("search_not_configured")
     key = settings.search1api_api_key.get_secret_value()
     if not key:
         raise decision.DecisionUnavailable("search_not_configured")
@@ -86,25 +90,29 @@ def reciprocal_fusion(rankings):
     return weights
 
 
-async def federated_retrieve(settings, query, index, depth, product, alternatives=()):
-    from .product_research import public_search
-
-    pack = for_product(product)
+async def federated_retrieve(settings, query, index, depth, product, alternatives=(), *, public_sources=()):
     started = perf_counter()
     limit = 8 if depth == "quick" else 20 if depth == "deep" else 12
-    lanes = [("Google " + index, query, retrieve(settings, query, index, limit=limit))]
-    if depth != "quick":
-        lanes.append(("Bing web", query, retrieve(settings, query, "web", service="bing", limit=limit)))
-        if pack.scientific_literature:
-            lanes.append(("Europe PMC literature", query, public_search("europepmc", query)))
-    for number, alternative in enumerate(alternatives, 1):
-        lanes.append((f"Google alternative {number}", alternative, retrieve(settings, alternative, "web", limit=limit)))
+    broad = settings.web_search_provider
+    name = "SearXNG web" if broad == "searxng" else "Google " + index
+    lanes = []
+    if broad != "none":
+        lanes.append((name, query, retrieve(settings, query, index, limit=limit)))
+        if depth != "quick" and broad == "search1api":
+            lanes.append(("Bing web", query, retrieve(settings, query, "web", service="bing", limit=limit)))
+        for number, alternative in enumerate(alternatives, 1):
+            lanes.append((f"{name} alternative {number}", alternative, retrieve(settings, alternative, "web", limit=limit)))
+    catalogues = search_channels.catalogue_names(product)[:1 if depth == "quick" else 2]
+    labels = {"crossref": "Crossref publication metadata", "europepmc": "Europe PMC literature", "fedlex": "Fedlex legislation titles"}
+    for provider in catalogues:
+        lanes.append((labels[provider], query, search_channels.direct_search(provider, query)))
     outcomes = await asyncio.gather(*(work for _, _, work in lanes), return_exceptions=True)
     items, rankings, coverage, origins, found_by = {}, [], [], {}, {}
     omitted = 0
     for (name, lane_query, _), result in zip(lanes, outcomes):
         if isinstance(result, Exception):
-            coverage.append({"name": name, "query": lane_query, "status": "unavailable", "count": 0})
+            code = result.code if isinstance(result, decision.DecisionUnavailable) else "unavailable"
+            coverage.append({"name": name, "query": lane_query, "status": "unavailable", "count": 0, "reason": code})
             continue
         ranking = []
         for item in result["items"]:
@@ -125,7 +133,22 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
                 found_by[identifier].append(lane_query)
         rankings.append(ranking)
         omitted += result.get("omitted_records", 0)
-        coverage.append({"name": name, "query": lane_query, "status": "complete", "count": len(ranking)})
+        partial = result.get("status") == "partial"
+        coverage.append({"name": name + (" (available engines)" if partial else ""), "query": lane_query,
+            "status": "complete", "count": len(ranking)})
+        if partial:
+            for engine in result.get("unavailable_engines") or ["upstream engine"]:
+                coverage.append({"name": name + " / " + engine, "query": lane_query,
+                    "status": "unavailable", "count": 0, "reason": "upstream_unavailable"})
+    submitted = search_channels.explicit_sources(" ".join([query, *public_sources]))
+    for item in submitted:
+        items.setdefault(item["id"], item)
+        origins.setdefault(item["id"], []).append("Submitted public source")
+        if query not in found_by.setdefault(item["id"], []):
+            found_by[item["id"]].append(query)
+    if submitted:
+        rankings.append([v["id"] for v in submitted])
+        coverage.append({"name": "Submitted public sources", "query": query, "status": "complete", "count": len(submitted)})
     if not rankings:
         raise decision.DecisionUnavailable("search_unavailable")
     fusion = reciprocal_fusion(rankings)
@@ -133,7 +156,8 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
     candidates = sorted(items.values(), key=lambda item: -fusion[item["id"]])[:maximum]
     for item in candidates:
         item["retrieval_queries"] = found_by[item["id"]]
-    return {"items": candidates, "index": index, "service": "federated", "provider": "Search1API / public catalogues",
+    return {"items": candidates, "index": "web" if broad != "search1api" else index,
+        "service": "federated", "provider": "Public catalogues / " + broad,
         "latency_ms": round((perf_counter() - started) * 1000, 2), "cost_usd": None,
         "omitted_records": omitted, "candidate_limit": maximum, "discovered_count": len(items),
         "lanes": coverage, "origins": {v["id"]: origins[v["id"]] for v in candidates},

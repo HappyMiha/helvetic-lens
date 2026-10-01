@@ -1,0 +1,38 @@
+use_default_settings:
+  engines:
+    keep_only: [google, bing, yahoo]
+
+general:
+  debug: false
+  instance_name: Helvetic Lens Search
+  enable_metrics: false
+
+server:
+  secret_key: ultrasecretkey
+  limiter: false
+  public_instance: false
+  image_proxy: false
+  bind_address: 0.0.0.0
+  port: 8080
+
+search:
+  formats: [html, json]
+  autocomplete: ""
+  favicon_resolver: ""
+  default_lang: auto
+  max_page: 1
+
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 12.0
+  pool_connections: 20
+  pool_maxsize: 8
+
+engines:
+  - name: google
+    disabled: false
+  - name: bing
+    disabled: false
+    inactive: false
+  - name: yahoo
+    disabled: false

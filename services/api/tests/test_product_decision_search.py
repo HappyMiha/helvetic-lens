@@ -123,7 +123,7 @@ def test_receipts_history_labels_and_replay_use_real_private_storage(signed, mon
 def test_history_does_not_renew_old_source_receipts_and_quota_survives_erasure(signed, monkeypatch):
     client, service, _, _ = signed
     mock_pipeline(monkeypatch)
-    service.environment_settings.decision_search_daily_limit = 1
+    service.environment_settings.decision_search_daily_limit = 4
     data = command()
     found = post(client, BASE + "/decision", data).json()
     with service.db.session() as session:
@@ -139,7 +139,7 @@ def test_history_does_not_renew_old_source_receipts_and_quota_survives_erasure(s
     with service.db.session() as session:
         session.execute(delete(DecisionSearchRun))
         session.commit()
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 1
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 4
     assert post(client, BASE + "/decision", command()).status_code == 429
 
 
@@ -195,10 +195,10 @@ def test_federation_deduplicates_and_reports_partial_source_failure(monkeypatch)
         if kwargs.get("service") == "bing":
             raise DecisionUnavailable("quota")
         return {"items": [deepcopy(ITEM), {**ITEM, "url": ITEM["url"] + "#fragment"}], "omitted_records": 0}
-    from helvetic_lens import product_research
+    from helvetic_lens import search_channels
     async def catalogue(*args): return {"items": [], "omitted_records": 0}
     monkeypatch.setattr(decision_search, "retrieve", retrieve)
-    monkeypatch.setattr(product_research, "public_search", catalogue)
+    monkeypatch.setattr(search_channels, "direct_search", catalogue)
     result = asyncio.run(decision_search.federated_retrieve(Settings(), "public", "web", "deep", "pharma"))
     assert len(result["items"]) == 1 and result["candidate_limit"] == 36
     assert result["lanes"][1]["status"] == "unavailable" and result["lanes"][2]["status"] == "complete"
@@ -332,5 +332,5 @@ def test_real_native_erasure_removes_private_search_but_preserves_aggregate_budg
         erase_selected(session, user, selection)
         session.commit()
         assert session.get(DecisionSearchRun, found["id"]) is None
-        assert session.get(DecisionSearchBudget, utcnow().date()).used == 1
+        assert session.get(DecisionSearchBudget, utcnow().date()).used == 4
         assert session.connection().exec_driver_sql("PRAGMA foreign_key_check").all() == []

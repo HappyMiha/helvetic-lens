@@ -9,7 +9,7 @@ from fastapi import Query, Request
 from pydantic import Field, field_validator, model_validator
 from sqlalchemy import func, select
 
-from . import decision_search, legal_profiles
+from . import decision_search, legal_profiles, search_channels
 from .db import utcnow
 from .decision_engines import DecisionUnavailable
 from .membership_locks import lock_organization
@@ -144,11 +144,13 @@ def decision_search_routes(router, service, actor):
         s = service.settings
         return {"jev_configured": bool(s.typesafe_api_key.get_secret_value()),
                 "laya_configured": bool(s.laya_base_url and s.laya_api_key.get_secret_value()),
-                "search_configured": bool(s.search1api_api_key.get_secret_value()),
+                "search_configured": True,
+                "broad_search_configured": search_channels.broad_configured(s),
+                "broad_search_provider": s.web_search_provider,
                 "daily_limit": s.decision_search_daily_limit,
-                "budget_unit": "Each reviewed query counts once; a bundle uses one to three units.",
+                "budget_unit": "One unit per selected provider API request, including direct catalogues; SearXNG engine fan-out is bounded separately.",
                 "configuration_scope": "Operator-managed credentials. Configured does not guarantee provider availability.",
-                "privacy": "The main question and every reviewed alternative go to Search1API. Jev receives the main question and result snippets in Auto, Jev and Compare modes. "
+                "privacy": "Public queries go to the selected web provider and public catalogues. Local SearXNG forwards queries to its configured external engines. Jev receives the main question and result snippets in Auto, Jev and Compare modes. "
                     "Laya decisions remain on this server; Laya mode still uses remote web retrieval. No private dossier material is added.",
                 "retention": "Your last 50 searches in this product/workspace. Account deletion removes them. Colleagues cannot read them."}
 
@@ -201,7 +203,7 @@ def decision_search_routes(router, service, actor):
             marked["alternatives"] = data.alternatives
         # Preserve existing single-query retry fingerprints across this release.
         mark = fingerprint(marked)
-        units = 1 + len(data.alternatives)
+        units = search_channels.request_count(service.settings, data.depth, data.alternatives)
         with service.write_guard, service.db.session() as session:
             lock_organization(session, identity.organization_id)
             principal(session, identity, utcnow(), write=True)

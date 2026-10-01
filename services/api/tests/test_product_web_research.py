@@ -229,9 +229,11 @@ def test_limits_replay_consent_cadence_and_readiness(signed, monkeypatch):
                 {"question": "  "}, {"cadence_hours": 1}, {"cadence_hours": "24"}, {"expected_revision": 0}):
         assert post(client, root + "/web-research", {**newer, **bad}).status_code in {409, 422}
     service.settings.search1api_api_key = SecretStr("")
+    service.settings.typesafe_api_key = SecretStr("")
     assert due(service)["started"] == 0 and state["queries"] == []
     assert "waiting" in client.get(root + "/web-research").json()["policy"]["reason"]
-    service.settings.search1api_api_key = SecretStr("fixture")
+    # A decision engine is required; a paid broad-search key is not.
+    service.settings.typesafe_api_key = SecretStr("fixture")
     service.settings.decision_search_daily_limit = 0
     assert due(service)["started"] == 1
     run = newest(client, root)

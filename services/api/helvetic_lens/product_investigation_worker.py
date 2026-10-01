@@ -9,7 +9,7 @@ from uuid import uuid4
 
 from sqlalchemy import case, select
 
-from . import decision_search, decision_sources, jobs
+from . import decision_search, decision_sources, jobs, search_channels
 from . import product_check_source_coverage as check_coverage
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
@@ -107,7 +107,7 @@ def seed(session, run, parent, settings):
         event(session, run, "capabilities_resolved", capabilities=capabilities(settings, parent.product))
         return
     available = capabilities(settings, parent.product)
-    if run.external_discovery and any(v["available"] and v["id"] in {"public_web", "scientific_literature"} for v in available):
+    if run.external_discovery and any(v["available"] and v["id"] in {"public_web", "public_catalogues", "scientific_literature"} for v in available):
         session.add(InvestigationBranch(**scope(run), query=run.question,
             reason="Find accessible source evidence for the submitted question.", checkpoint={}))
     saved = research_sources(session, parent, run.question, run.organization_id)[:MAX_SOURCES]
@@ -287,7 +287,7 @@ async def execute(service, job_id, worker):
                             raise RuntimeError("Private contribution cannot contain a discovery branch")
                         try:
                             if not research.enabled(run):
-                                reserve(session, service.settings)
+                                reserve(session, service.settings, units=search_channels.request_count(service.settings))
                         except DomainError as error:
                             run.status, run.stop_reason = "paused", error.message
                             event(session, run, "investigation_paused", reason=run.stop_reason)
@@ -341,11 +341,13 @@ async def execute(service, job_id, worker):
                         applicability.prepare(session, run, work)
                         budget_before = deepcopy(run.research_state)
                         skipped_read = pacing.enabled(run) and branch.phase == "read" and work.get("skip")
-                        if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product):
+                        search_requests = search_channels.request_count(service.settings)
+                        if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product,
+                                search_requests=search_requests):
                             work = None
                         elif branch.phase == "search":
                             try:
-                                reserve(session, service.settings, units=3 if parent.product == "pharma" else 2)
+                                reserve(session, service.settings, units=search_requests)
                             except DomainError as error:
                                 run.research_state = budget_before
                                 run.status, run.stop_reason = "paused", error.message

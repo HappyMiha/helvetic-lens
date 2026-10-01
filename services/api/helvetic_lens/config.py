@@ -182,6 +182,9 @@ class Settings(BaseSettings):
     apertus_api_key: SecretStr = SecretStr("")
     typesafe_api_key: SecretStr = SecretStr("")
     search1api_api_key: SecretStr = SecretStr("")
+    web_search_provider: Literal["searxng", "search1api", "none"] = "search1api"
+    searxng_base_url: str = ""
+    searxng_engines: str = Field(default="google,bing,yahoo", pattern=r"^[a-z][a-z0-9 _-]*(,[a-z][a-z0-9 _-]*){0,3}$", max_length=100)
     laya_api_key: SecretStr = SecretStr("")
     laya_base_url: str = ""
     evidence_embedding_url: str = ""

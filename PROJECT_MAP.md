@@ -1,5 +1,7 @@
 # Helvetic Lens project map
 
+[Independent source access and local SearXNG](docs/PRODUCT_SOURCE_ACCESS.md) is implemented and locally validated; production activation pending.
+
 [Continuous dossier reading](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation)
 is implemented and locally validated: useful linked findings stay readable during
 continuation and failed work, with their original question and source dates.

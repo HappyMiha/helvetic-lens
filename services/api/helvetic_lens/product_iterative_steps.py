@@ -3,7 +3,7 @@ import json
 import re
 from copy import deepcopy
 
-from . import decision_search, decision_sources
+from . import decision_search, decision_sources, search_channels
 from . import product_branch_assessment as branch_assessment
 from . import product_direction_assessment as direction_assessment
 from . import product_early_clarification as clarification
@@ -77,7 +77,9 @@ def prepare(session, run, branch, state, work):
 async def execute(service, work, seconds):
     phase = work["phase"]
     if phase == "search":
-        result = await decision_search.federated_retrieve(service.settings, work["query"], "web", "balanced", work["product"])
+        urls = [v["url"] for v in search_channels.explicit_sources(work["question"])]
+        result = await decision_search.federated_retrieve(service.settings, work["query"], "web", "balanced", work["product"],
+            **({"public_sources": urls} if urls else {}))
         return {"items": result.pop("items"), "retrieval": result,
             "coverage": "Federated candidate retrieval only. Each candidate requires a separate relevance gate before reading."}
     if phase == "gate":

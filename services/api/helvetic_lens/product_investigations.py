@@ -130,10 +130,13 @@ def event(session, run, kind, **detail):
 
 
 def capabilities(settings, product):
-    search = bool(settings.search1api_api_key.get_secret_value())
+    from . import search_channels
+
+    search = search_channels.broad_configured(settings)
     pack = domain_packs.for_product(product)
     return [
-        {"id": "public_web", "available": search, "description": "Search1API Google/Bing discovery across the public web"},
+        {"id": "public_web", "available": search, "description": "Broad public-web discovery via " + settings.web_search_provider + "; live availability checked per search"},
+        {"id": "public_catalogues", "available": True, "description": "Direct Crossref publication metadata and " + ("Europe PMC literature" if pack.scientific_literature else "Fedlex legislation titles") + "; independent of broad web search"},
         {"id": "scientific_literature", "available": pack.scientific_literature, "description": "Europe PMC literature discovery"},
         {"id": "source_reader", "available": True, "description": "Permitted anonymous HTML, text and PDF excerpts; robots and size limits apply"},
         {"id": "saved_evidence", "available": True, "description": "Current dossier contributions and saved monitored extracts"},

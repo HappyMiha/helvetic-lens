@@ -148,7 +148,7 @@ def test_planner_followup_new_evidence_updates_same_claim_and_resolves_identifie
     assert any(e["id"] in follow["answer_evidence_ids"] and e["relation"] == "CONTRADICTS" for e in result["evidence"])
     assert len([a for a in result["activity"] if a["kind"] == "candidate_rejected"]) == 3
     assert len(result["plans"]) >= 3 and len(result["research"]["completion_criteria"]) == 1
-    assert result["research"]["used"]["search_requests"] == (9 if product == "pharma" else 6)
+    assert result["research"]["used"]["search_requests"] == 12
     assert result["research"]["used"]["source_fetches"] == 3
     exported = client.get(root.removesuffix("/investigations") + "/export").json()
     assert exported["investigations"][0]["research"] == result["research"]

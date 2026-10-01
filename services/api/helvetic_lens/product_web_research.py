@@ -19,7 +19,7 @@ from .product_models import ProductDossier
 from .product_operations import fingerprint
 
 DAILY_LIMIT = 2
-DISCLOSURE = ("Repeat only this public question after signout using Search1API and Jev/TypeSafe with Laya fallback; "
+DISCLOSURE = ("Repeat only this public question after signout using the configured web provider, direct public catalogues and Jev/TypeSafe with Laya fallback; "
     "Pharma also searches Europe PMC. Read up to three permitted public sources, analyse new evidence with the "
     "configured workspace model and compare earlier private findings. No private text becomes a search query. "
     "Findings stay in this dossier's audience. No publication, email subscription or authenticated archive access. "
@@ -51,9 +51,9 @@ def readiness(settings, session):
     configured_model = resolved_settings(settings, record, decrypt_secret=lambda value: "").model_configured
     decision = bool(settings.typesafe_api_key.get_secret_value() or (
         settings.laya_base_url and settings.laya_api_key.get_secret_value()))
-    configured = bool(settings.search1api_api_key.get_secret_value() and decision and configured_model)
+    configured = bool(decision and configured_model)
     return {"configured": configured, "reason": (
-        "Search and analysis are configured. Live availability and source access are checked during each run."
+        "Direct public-source discovery and analysis are configured. Broad search and source access are checked during each run."
         if configured else "Recurring research is waiting for configured search, decision and analysis providers.")}
 
 

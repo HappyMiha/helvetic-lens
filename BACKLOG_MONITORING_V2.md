@@ -12,6 +12,18 @@
 
 DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
+## Independent source access and local SearXNG
+
+Implemented and locally validated; activation pending, MV2-002/020/024. Direct public catalogues and source URLs
+alongside interchangeable broad-web adapters (local SearXNG or Search1API).
+Dependencies: existing public-query consent, native source reader, research jobs,
+Jev/Laya gate and shared deployment. No paid Search1API retry while access is blocked.
+Acceptance: both products continue through a broad-provider outage using direct
+sources; unavailable/empty/partial channels remain distinguishable; request budgets,
+URL safety and current access rules persist. Deploy a private, pinned local SearXNG
+with bounded engines, verify real free discovery and the production integration.
+[Scope and evidence](docs/PRODUCT_SOURCE_ACCESS.md). Broader parent gates stay open.
+
 ## Refine ongoing research
 
 Implemented and locally validated; activation pending. [Acceptance](docs/PRODUCT_RESEARCH_REFINEMENT.md).
@@ -1832,6 +1844,9 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 
 ### MV2-002 — Validate first-value journeys and shared navigation
 
+Independent source access / local SearXNG: locally validated; activation pending. Evidence in
+[PRODUCT_SOURCE_ACCESS](docs/PRODUCT_SOURCE_ACCESS.md).
+
 Continuous dossier reading: [scope and acceptance](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation).
 
 Question-to-dossier completion: [scope and acceptance](docs/PRODUCT_RESEARCH_REFINEMENT.md#complete-the-question-to-dossier-journey).
@@ -2743,6 +2758,9 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
+Independent source access / local SearXNG: locally validated; activation pending. Evidence in
+[PRODUCT_SOURCE_ACCESS](docs/PRODUCT_SOURCE_ACCESS.md).
+
 Continuous dossier reading: [scope and acceptance](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation).
 
 Question-to-dossier completion: [scope and acceptance](docs/PRODUCT_RESEARCH_REFINEMENT.md#complete-the-question-to-dossier-journey).
@@ -3211,6 +3229,9 @@ contract. Broader draft/generative/human acceptance remains open.
 <a id="mv2-024"></a>
 
 ### MV2-024 — Clear guidance, accessibility and five languages
+
+Independent source access / local SearXNG: locally validated; activation pending. Evidence in
+[PRODUCT_SOURCE_ACCESS](docs/PRODUCT_SOURCE_ACCESS.md).
 
 Continuous dossier reading: [scope and acceptance](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation).
 
