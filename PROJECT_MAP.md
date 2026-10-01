@@ -1,5 +1,10 @@
 # Helvetic Lens project map
 
+[Continuous dossier reading](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation)
+is implemented and locally validated: useful linked findings stay readable during
+continuation and failed work, with their original question and source dates.
+Activation is tracked in the parent retained-reading checkpoint.
+
 [Question-to-dossier completion](docs/PRODUCT_RESEARCH_REFINEMENT.md#complete-the-question-to-dossier-journey)
 is implemented and locally validated: initial and naturally refined questions share
 the current cited answer, limitations and explicit next check in both readers.

@@ -284,7 +284,7 @@ def page_result_visible(session, run):
         session, session.get(ProductDossier, run.dossier_id), trigger.source_json)
 
 
-def payload(session, run):
+def payload(session, run, *, include_retained=False):
     from .product_claim_evolution import projection
     from .product_contributions import original
     from .product_monitoring_research import trigger_for, trigger_payload
@@ -304,12 +304,19 @@ def payload(session, run):
     from .product_iterative_research import projection as research_projection
 
     adaptive_valid = adaptive_current(session, run)
+    exploration = exploration_projection(session, run)
+    if include_retained and exploration is not None:
+        from .product_exploration import retained_reading
+
+        retained = retained_reading(session, run, exploration)
+        if retained is not None:
+            exploration["retained_research"] = retained
     return {**summary(run), "web_research_trigger": {
         "id": web_trigger.id, "policy_revision": web_trigger.policy_revision,
         "scheduled_for": iso(web_trigger.scheduled_for)} if web_trigger else None, "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,
         "original": original(session, run.trigger_entry_id),
         "research": research_projection(run) if adaptive_valid else None,
-        "exploration": exploration_projection(session, run),
+        "exploration": exploration,
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,
                    "created_at": iso(p.created_at)} for p in rows(session, InvestigationPlan, run)] if adaptive_valid else [],
         "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,

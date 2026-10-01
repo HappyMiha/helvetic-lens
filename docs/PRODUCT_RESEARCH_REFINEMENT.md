@@ -83,3 +83,36 @@ fixture was corrected to read the internally retained query, which is intentiona
 absent from the public next-check response. No production-code repair was needed.
 Production activation is tracked in the parent question-dossier checkpoint/receipt;
 this is not live semantic or human acceptance, and broader architecture stays OPEN.
+
+## Keep the dossier readable during continuation
+
+Scope recorded before code, 1 October 2026; implemented and locally validated.
+Opening a successor
+currently removes its predecessor's useful answer from the main dossier reader.
+A queued, failed or still-exploring successor can therefore look like lost work.
+Keep the last useful, explicitly linked public research checkpoint available in
+the same reader, including its original question and captured-source dates.
+Prefer a completed briefing; retain an early source-backed update if no briefing
+exists. Current results remain primary once available. This is retained reading,
+not a new synthesis or a claim that earlier material was freshly checked.
+
+Reuse existing ancestry, source permissions, projections and reader. Resolve at
+most eight linked predecessors; revalidate on each authenticated read. No writes,
+model calls, new user settings or historical evidence authority for the planner.
+Do not attach this context to public publication, exports or model payloads.
+Acceptance: both products keep cited results through queued/failed/refined work
+and reload; unrelated or inaccessible predecessors stay hidden; fresh findings
+become primary without losing the earlier reading. Existing controlled sources
+are ready; focused continuation/access cases and required client gates suffice.
+
+Acceptance evidence: both native product journeys keep the exact cited answer
+and original source timestamps through queued continuation, a real unavailable
+briefing, reload and another refinement. Revoked ancestor source rights remove
+the retained reading; anonymous access fails. An early orientation remains
+explicitly unfinished, and an unrelated new dossier receives no earlier results.
+Default payloads omit this reading, preserving publication/export/model scope.
+Reads leave research state, revision and events unchanged. Both client readers
+keep old findings open during queued/failed work and subordinate them after a
+new briefing. Focused API/backlog checks, exact lint and both required client
+test/lint/type/build gates passed. Activation is recorded in the parent
+retained-reading checkpoint/receipt; broader architecture acceptance stays open.

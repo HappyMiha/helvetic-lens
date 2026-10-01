@@ -458,6 +458,44 @@ def validate_reconsiderations(session, run, supplied, result):
     return changes, list(dependencies.values())
 
 
+def retained_reading(session, run, current):
+    """Read-only continuity, separate from model inputs and publication payloads."""
+    from . import product_exploration_progress as progress
+
+    if not current or current.get("status") == "evidence_changed" or not progress.linked(run, early=True):
+        return None
+    lineage = progress.ancestry(session, run, early=True, limit=8)
+    if lineage is None:
+        return None
+    selected = fallback = None
+    for parent in lineage[0]:
+        if not parent.external_discovery or not enabled(parent):
+            return None
+        saved = parent.research_state["exploration"]
+        if saved.get("briefing"):
+            selected = parent
+            break
+        if fallback is None and ((saved.get("orientation") or {}).get("briefing") or any(
+                q.get("branch_assessment") for q in parent.research_state.get("questions", []))):
+            fallback = parent
+    selected = selected or fallback
+    if selected is None:
+        return None
+    previous = projection(session, selected)
+    if not previous or previous["status"] == "evidence_changed" or not previous["sources"]:
+        return None
+    if not (previous.get("briefing") or (previous.get("orientation") or {}).get("briefing")
+            or (previous.get("question_assessments") or {}).get("assessments")):
+        return None
+    # Keep only the established reader's content. No controls, inferred answer to
+    # the new question, recursive history or new citation authority.
+    content = {key: previous[key] for key in (
+        "status", "revision", "briefing", "sources", "orientation", "changes",
+        "question_assessments", "research_update") if key in previous}
+    return {"investigation_id": selected.id, "question": selected.question,
+        "updated_at": iso(selected.updated_at), "exploration": content}
+
+
 def projection(session, run):
     if not enabled(run):
         return None

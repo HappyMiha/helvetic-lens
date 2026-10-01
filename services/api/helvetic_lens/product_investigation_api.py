@@ -99,7 +99,7 @@ def routes(router, service, actor):
     def read(product: Product, dossier_id: str, identifier: str, request: Request):
         identity = actor(request)
         with service.db.session() as session:
-            return payload(session, record(session, identity, product, dossier_id, identifier))
+            return payload(session, record(session, identity, product, dossier_id, identifier), include_retained=True)
 
     @router.post(root + "/{identifier}/control")
     def control(product: Product, dossier_id: str, identifier: str, data: Control, request: Request):
