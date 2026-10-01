@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Four product-completion blocks implemented; release/live quality VERIFYING. [Evidence](docs/PRODUCT_COMPLETION.md).
+Product-completion activated aaa397ba23dc; live quality NOT ACCEPTED. Document failure isolation implemented/tested; activation VERIFYING. [Scope/acceptance](docs/PRODUCT_COMPLETION.md#document-failure-isolation).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2768,7 +2768,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** product-completion implemented; live quality VERIFYING. [Evidence](docs/PRODUCT_COMPLETION.md).
+**Current direction:** document failure isolation tested; activation VERIFYING. Native mixed-failure/retry, interruption, incomplete-reading fences and dense-review recovery pass; saved pilot now selects both ready originals. Live quality NOT ACCEPTED. [Evidence](docs/PRODUCT_COMPLETION.md#document-failure-isolation).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

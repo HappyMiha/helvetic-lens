@@ -133,7 +133,12 @@ def advance(branch, state, *, interrupted=False):
 
     failure(state, branch.phase, interrupted=interrupted)
     if branch.phase == "document_review":
-        branch.status = "failed"
+        # Other complete originals still deserve their own reconciliation.
+        # Keep this failed original incomplete and retryable, without treating
+        # a review failure as another failed extraction index.
+        branch.phase = "extract"
+        state["error"] = "One document review is unavailable; other ready originals continue."
+        return
     if state.get("iterative"):
         research_steps.failed(branch, state, interrupted=interrupted)
     if branch.phase in {"search", "compare"}:
@@ -149,12 +154,18 @@ def advance(branch, state, *, interrupted=False):
 
 def settle(branch, state):
     from . import product_document_analysis as document_analysis
-    from .product_document_reading import pending_read
+    from .product_document_reading import failed_analysis, pending_read
 
     if branch.status not in ACTIVE:
         branch.checkpoint = deepcopy(state)
         return
     if branch.phase in {"read", "extract", "reflect", "document_review"}:
+        # A resumed earlier read must not restart already captured siblings at
+        # cursor zero or reset their completed analysis. Failed reads retain
+        # their own saved cursor and are never silently skipped here.
+        documents = state.get("document_reads", {})
+        while documents.get(str(state.get("read_index", 0)), {}).get("read_complete"):
+            state["read_index"] = state.get("read_index", 0) + 1
         if pending_read(state):
             branch.phase = "read"
             branch.checkpoint = deepcopy(state)
@@ -175,7 +186,7 @@ def settle(branch, state):
     if branch.phase == "read" and state.get("read_index", 0) >= len(state.get("items", [])):
         branch.phase = "extract"
     if branch.phase == "extract" and state.get("extract_index", 0) >= len(state.get("source_ids", [])):
-        branch.status = "completed" if (state.get("analysed", 0) or state.get("unchanged", 0) or state.get("empty_search")) and not state.get("failed_extract_indices") else "failed"
+        branch.status = "completed" if (state.get("analysed", 0) or state.get("unchanged", 0) or state.get("empty_search")) and not failed_analysis(state) else "failed"
     if state.get("iterative"):
         research_steps.settle(branch, state)
     branch.checkpoint = deepcopy(state)
@@ -587,6 +598,7 @@ async def execute(service, job_id, worker):
                 from . import product_document_analysis as document_analysis
                 try:
                     document_analysis.apply(session, run, state, work, result)
+                    state.pop("review_document_index", None)
                     branch.phase = "extract"
                 except DomainError:
                     failed = True
@@ -647,6 +659,7 @@ async def execute(service, job_id, worker):
             for previous in state["steps"][:-1]:
                 if (previous.get("status") == "unavailable" and previous.get("phase") == work["phase"]
                         and previous.get("source_id") == work.get("source_id")
+                        and previous.get("document_index") == work.get("document_index")
                         and previous.get("source_url") == work.get("item", {}).get("url")):
                     previous["recovered_by"] = work["token"]
         settle(branch, state)

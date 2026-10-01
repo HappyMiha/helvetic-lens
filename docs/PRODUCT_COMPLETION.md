@@ -65,7 +65,7 @@ SMTP result requires explicit retry rather than an automatic duplicate message.
 
 Live trials reproduced truncated/incorrect JSON, invented optional metadata,
 paraphrased quotes, unsupported arithmetic and premature final-answer retries.
-Hosted research now has sufficient per-request output space, recognizes a single
+Hosted research now has an increased per-request output allowance, recognizes a single
 schema-name wrapper, and attempts one format/citation repair with the original
 input. Exact-cited sibling findings survive rejected proposals; rejected claims
 and observations are recorded as unresolved interpretation gaps, with the answer
@@ -89,9 +89,46 @@ baselines), NASA (annual versus multi-year sea-level rates), and original BIPM
 resolutions (adoption versus publication dates). The criteria and final measured
 outcomes are recorded in `PUBLIC_RESEARCH_ACCEPTANCE.md`.
 
-The pre-repair mountain and sea-level trials did not produce accepted answers.
-Source acquisition succeeded, but model formatting/citation failures and actual
-provider 429/timeout responses blocked synthesis. These failures are retained as
+Mountain and sea-level trials, including recovery attempts, did not produce accepted answers.
+Relevant NOAA evidence was captured; sea-level discovery mostly found irrelevant
+NASA pages. Model formatting/citation failures and actual provider 429/timeout
+responses blocked synthesis. These failures are retained as
 quality evidence, not renamed successful pilots. Model token usage is recorded
 when returned; missing billing costs remain unknown. This release does not claim
 exhaustive web coverage or validated professional accuracy.
+
+## Document failure isolation
+
+MV2-020, following aaa397ba23dc. Saved public-pilot state reproduces two fully
+read, section-validated originals blocked by a third document's failed extraction.
+No whole-document model request was attempted. A review failure also marked every
+unfinished document failed, and a reflection retry could skip failed extractions.
+
+Scope: reconcile ready originals independently, identify the exact failed review,
+and retry only unavailable sections/reviews before reflection. Dependencies are
+the existing immutable reader, exact-citation validation, native worker and retry
+authorization. Saved public traces provide reproduction; no new live calls or
+source credentials are needed. Access and source-dependency fences remain strict.
+
+Acceptance: a failed extraction cannot starve another complete original; a failed
+or interrupted whole-document review cannot poison its siblings; failed documents
+remain incomplete; authorized retry preserves completed source/review work and
+unresolved interpretation gaps. Verify these through the native worker, plus the
+existing whole-document recovery case, exact API lint and backlog guard. Release
+and live quality remain separate; this repair alone cannot prove live answers.
+
+Implementation isolates review selection and failure receipts by original. A
+failed reflection retry first resumes failed sections; completed reviews stay
+saved. Interrupted review marks only its persisted original. Previously completed
+originals are skipped when resuming an earlier read. Parser warnings still leave
+coverage incomplete; this change neither clears them nor proves OCR recovery.
+
+Controlled native recovery with three originals passes: a failed extraction and
+failed review leave the third original completed; explicit retry extracts only
+the failed section and reviews only the unfinished originals. Rejected-proposal
+limitations survive. Interruption, unreadable-page completion and resumed-read
+fences pass, along with existing contribution retry and dense reconciliation
+recovery. Read-only replay of the saved public pilot now selects its two valid
+originals despite the unrelated failed extraction. No network/model request or
+database write is part of that replay. Release receipt follows in the parent
+checkpoint; live final-answer quality remains NOT ACCEPTED.

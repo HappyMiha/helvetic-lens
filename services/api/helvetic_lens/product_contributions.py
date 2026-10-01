@@ -116,7 +116,12 @@ def retry(session, run):
     for branch in failed:
         state = deepcopy(branch.checkpoint)
         state.pop("inflight", None)
+        state.pop("review_document_index", None)
         state.pop("error", None)
+        iterative = (run.research_state or {}).get("version") == "iterative-v1"
+        if iterative:
+            state.pop("question_finished", None)
+            state.pop("reflection_done", None)
         documents = state.get("document_reads", {})
         unread = next(((key, doc) for key, doc in documents.items() if doc.get("error") and not doc.get("read_complete")), None)
         for doc in documents.values():
@@ -128,14 +133,17 @@ def retry(session, run):
             branch.phase = "read"
             branch.status, branch.checkpoint = "queued", state
             continue
-        if branch.phase == "document_review":
-            branch.status, branch.checkpoint = "queued", state
-            continue
-        iterative = (run.research_state or {}).get("version") == "iterative-v1"
-        if iterative:
-            state.pop("question_finished", None)
-            state.pop("reflection_done", None)
-        if iterative and branch.phase in {"plan", "reflect", "brief", "orient", "reformulate"}:
+        if state.get("failed_extract_indices"):
+            # A failed reflection must not bypass the section failures that
+            # preceded it. Successful sections remain untouched.
+            state["retry_indices"] = sorted(set(state["failed_extract_indices"]))
+            state["extract_index"] = state["retry_indices"].pop(0)
+            state["failed_extract_indices"] = []
+            branch.phase = "extract"
+        elif any(doc.get("read_complete") and not doc.get("analysis_complete") for doc in documents.values()):
+            state["extract_index"] = len(state.get("source_ids", []))
+            branch.phase = "extract"
+        elif iterative and branch.phase in {"plan", "reflect", "brief", "orient", "reformulate"}:
             # Retry the explicitly requested failed model phase only. Completed
             # source reads and extractions must not be repeated for a failed plan.
             pass

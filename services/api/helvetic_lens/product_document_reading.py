@@ -90,9 +90,21 @@ def failure(state, phase, *, interrupted=False):
             reading.update(complete=False, read_complete=False,
                 error="Reading was interrupted; the original and next position are saved." if interrupted else "A document portion could not be read.")
     elif phase == "document_review":
-        for reading in state.get("document_reads", {}).values():
-            if not reading.get("complete"):
-                reading["review_failed"] = True
+        key = state.pop("review_document_index", None)
+        if key is None:
+            # Compatibility for a request dispatched by the preceding worker.
+            from .product_document_analysis import next_document
+            selected = next_document(state)
+            key = selected[0] if selected else None
+        reading = state.get("document_reads", {}).get(key)
+        if reading and not reading.get("complete"):
+            reading["review_failed"] = True
+
+
+def failed_analysis(state):
+    return bool(state.get("failed_extract_indices") or any(
+        doc.get("review_failed") or doc.get("error") or doc.get("read_complete") is False
+        for doc in state.get("document_reads", {}).values()))
 
 
 def projection(state):

@@ -64,6 +64,8 @@ def record(settings, state, work):
         state["steps"][-1]["source_url"] = work["item"]["url"]
     if work.get("source_id"):
         state["steps"][-1]["source_id"] = work["source_id"]
+    if "document_index" in work:
+        state["steps"][-1]["document_index"] = work["document_index"]
     if work.get("skip"):
         state["steps"][-1]["skipped"] = True
 

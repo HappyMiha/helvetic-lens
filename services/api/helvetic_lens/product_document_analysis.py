@@ -108,19 +108,25 @@ def section(source):
 
 
 def next_document(state):
+    sources = state.get("source_ids", [])
+    failed = {sources[i] for i in state.get("failed_extract_indices", []) if 0 <= i < len(sources)}
     return next(((key, doc) for key, doc in state.get("document_reads", {}).items()
         if doc.get("read_complete") and doc.get("source_ids") and not doc.get("analysis_complete")
-        and not doc.get("review_failed")), None)
+        and not doc.get("review_failed") and not failed.intersection(doc["source_ids"])), None)
 
 
 def ready_to_review(state):
     return (state.get("extract_index", 0) >= len(state.get("source_ids", []))
         and state.get("read_index", 0) >= len(state.get("items", []))
-        and not state.get("failed_extract_indices") and next_document(state) is not None)
+        and next_document(state) is not None)
 
 
 def prepare(session, run, state, work):
     key, doc = next_document(state)
+    # Persist the selected document before dispatch so an interrupted worker
+    # fences this original only, including a saved reconciliation-tree node.
+    state["review_document_index"] = key
+    work["document_index"] = key
     sources = [session.get(InvestigationSource, identifier) for identifier in doc["source_ids"]]
     if any(not s or s.investigation_id != run.id or s.sha256 != doc["sha256"] or not section(s) for s in sources):
         work["skip"] = True

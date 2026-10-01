@@ -332,7 +332,8 @@ def apply(session, run, branch, state, work, result):
     elif phase == "reflect":
         research.apply_reflection(session, run, branch, work["input"], result)
         state.update(reflection_done=True, outcome=result.outcome)
-        branch.status = "failed" if state.get("failed_extract_indices") else "completed"
+        from .product_document_reading import failed_analysis
+        branch.status = "failed" if failed_analysis(state) else "completed"
         if branch.status == "completed" and result.search_deeper and discovery_available(state):
             continue_discovery(branch, state)
     branch.checkpoint = deepcopy(state)
