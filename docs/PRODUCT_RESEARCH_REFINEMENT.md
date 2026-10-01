@@ -48,3 +48,38 @@ session-change handling, early free text and retained input after rejection.
 API lint and affected integration/backlog checks pass. Initial test fixture
 mistakes were corrected; production code needed no subsequent repair. These are
 mechanical and evidence-boundary checks, not live semantic or human acceptance.
+
+## Complete the question-to-dossier journey
+
+Scope recorded before code, 1 October 2026; implemented and locally validated.
+The initial question
+and own-word refinement currently lack the primary evidence assessment available
+for an early suggested direction. Reuse that existing final request, validation,
+next-check selection and reader for new ordinary research episodes too. Keep
+legacy episodes and explicitly selected saved-question behavior unchanged.
+No additional model call, provider, budget, form or automatic monitoring.
+
+Acceptance: a neutral ambiguous foundation/funding question reaches actual
+retrieval and a cited, qualified answer; a natural refinement retains earlier
+work, changes retrieval and answers the refined question with current evidence.
+An existing next check can address a stated limitation. Both readers lead with
+the answer and keep background/research detail subordinate. Invalid optional
+answers fall back to cited findings, changed sources hide stale results, and
+legacy summaries stay readable. Existing adapters and controlled fixtures are
+ready; live search quality and human acceptance remain OPEN. Run affected
+integration cases plus required lint/client/backlog gates once on final source.
+
+Acceptance evidence: both native worker journeys now go from the initial ambiguous
+question through actual retrieval, a cited conflicting answer, natural refinement
+with retained research memory, a current-source answer and an explicit next check
+that reaches its saved query. Revoked source access hides the dependent briefing.
+An invalid optional answer keeps valid cited findings without another model call.
+Older initial/free-text summaries and selected-direction answers remain compatible.
+Both readers lead with the answer, retain exact source links, subordinate research
+detail and perform one explicit continuation write. Focused integration, backlog
+and exact API lint gates passed; both client test/lint/type/build gates passed.
+The broader initial check was stopped in favor of these affected journeys; a
+fixture was corrected to read the internally retained query, which is intentionally
+absent from the public next-check response. No production-code repair was needed.
+Production activation is tracked in the parent question-dossier checkpoint/receipt;
+this is not live semantic or human acceptance, and broader architecture stays OPEN.

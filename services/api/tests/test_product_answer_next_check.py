@@ -88,11 +88,15 @@ def episode(signed, monkeypatch, *, product="legal", mode="current", invalid=Non
     trace = setup(monkeypatch, service, model, mode=mode, invalid=invalid, callback=callback)
     root, old, _ = start(client, product)
     _, _, child, _ = choose(client, service, root, old, free_text=free_text)
-    if legacy:
+    if legacy or free_text:
         with service.db.session() as session:
             run = session.get(Investigation, child["id"])
             state = deepcopy(run.research_state)
-            state["exploration"].pop("next_check_contract")
+            if legacy:
+                state["exploration"].pop("next_check_contract")
+            if free_text:
+                # Keep this older-context fixture at its original generation.
+                state["exploration"]["direction_assessment_contract"] = direction.CONTRACT
             run.research_state = state
             session.commit()
     final = complete(client, service, root + "/investigations", child)

@@ -199,7 +199,7 @@ def initial(*, previous=None):
             "purpose_contract": activity.PURPOSE_CONTRACT,
             "clarification_contract": CLARIFICATION_CONTRACT,
             "direction_context_contract": DIRECTION_CONTEXT_CONTRACT,
-            "direction_assessment_contract": direction_assessment.CONTRACT,
+            "direction_assessment_contract": direction_assessment.QUESTION_CONTRACT,
             "next_check_contract": direction_assessment.NEXT_CHECK_CONTRACT,
             "capture_history_contract": progress.HISTORY_CONTRACT,
             "query_journal_contract": queries.CONTRACT,

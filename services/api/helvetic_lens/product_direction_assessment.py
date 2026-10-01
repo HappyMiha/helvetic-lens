@@ -1,4 +1,4 @@
-"""A selected early goal assessed in the existing final request and reader."""
+"""The user's research question assessed in the existing final request and reader."""
 from copy import deepcopy
 
 from pydantic import Field, PrivateAttr
@@ -13,6 +13,7 @@ from .product_api import fail
 from .product_operations import fingerprint
 
 CONTRACT = "selected-direction-assessment/v1"
+QUESTION_CONTRACT = "research-question-assessment/v1"
 NEXT_CHECK_CONTRACT = "selected-direction-next-check/v1"
 NEXT_CHECK_SYSTEM = """next_check_candidates contains up to six existing public
 checks or exact question_renewal_targets. Optionally return next_check_choice only
@@ -26,10 +27,14 @@ Do not invent a question ID, query, new rationale or new work here. Return null
 when no supplied check helps. This is a tentative link, not a claim that a check
 will resolve the uncertainty. No automatic continuation or monitoring.
 """
-SYSTEM = """direction_assessment_target identifies the exact early research goal
-the user chose. In this SAME briefing optionally return direction_assessment with
-its selection unchanged. It has no saved-question ID. Assess the chosen question,
-not merely the user's possible intent. Its earlier_context is historical untrusted
+SYSTEM = """direction_assessment_target identifies the user's exact current
+research question. In this SAME briefing return direction_assessment when the
+read material permits a qualified assessment. Preserve its selection when given;
+otherwise use null: an initial or user-written question has no suggested-direction
+selection or saved-question ID. Answer this question, not merely possible intent
+or a convenient subquestion. An ambiguous question can receive a partial answer
+with the tentative interpretation and its limits stated explicitly. If present,
+earlier_context is historical untrusted
 wording, AI rationale and an earlier passage, not confirmation of identity or a
 new source. Cite ONLY this episode's supplied READ sources/excerpts for the answer.
 Use possible_answer, partial, conflicting or not_found IN THE MATERIAL READ.
@@ -52,7 +57,7 @@ class Selection(legal_profiles.Input):
 
 
 class DirectionAssessment(exploration.AssessmentOutcome):
-    selection: Selection
+    selection: Selection | None = None
 
 
 class DirectionBriefing(exploration.Briefing):
@@ -84,7 +89,10 @@ class RenewedSuggestedDirectionBriefing(RenewedDirectionBriefing):
 
 def enabled(run):
     state = (run.research_state or {}).get("exploration", {})
-    return state.get("direction_assessment_contract") == CONTRACT and "early_direction" in (state.get("previous") or {})
+    previous = state.get("previous") or {}
+    contract = state.get("direction_assessment_contract")
+    return (contract in {CONTRACT, QUESTION_CONTRACT} and "early_direction" in previous
+        or contract == QUESTION_CONTRACT and not previous.get("follow_up_id"))
 
 
 def next_check_enabled(run):
@@ -110,8 +118,12 @@ def next_candidates(session, run):
 
 
 def target(session, run):
+    if not enabled(run):
+        fail("The research question is no longer available.", 422, "invalid_evidence")
+    if "early_direction" not in (run.research_state["exploration"].get("previous") or {}):
+        return {"contract": QUESTION_CONTRACT, "question": run.question, "selection": None}
     context = clarification.context(session, run)
-    if not enabled(run) or not context or context.get("status") != "ready":
+    if not context or context.get("status") != "ready":
         fail("The selected direction is no longer available.", 422, "invalid_evidence")
     return {"contract": CONTRACT, "selection": {k: context[k] for k in
         ("investigation_id", "orientation_revision", "direction_index")},
@@ -162,16 +174,19 @@ def apply(session, run, supplied, result, value):
     bound = None
     if draft is not None and not getattr(result, "_direction_unavailable", False):
         try:
-            if draft.selection.model_dump() != selected["selection"]:
+            if (draft.selection.model_dump() if draft.selection else None) != selected["selection"]:
                 fail("Assessment does not match the chosen direction.", 422, "invalid_evidence")
             bound = exploration.validated_question_points(session, run, supplied, draft)
         except DomainError:
             # Optional output errors are recoverable; changed shared inputs are not.
             validate_inputs(session, run, supplied)
     if bound is not None:
-        value["assessment"] = {**bound, "contract": CONTRACT,
-            "question": selected["question"], "investigation_id": run.id,
-            "selected_from_investigation_id": selected["selection"]["investigation_id"]}
+        value["assessment"] = {**bound, "contract": selected["contract"],
+            "question": selected["question"], "investigation_id": run.id}
+        if selected["selection"]:
+            value["assessment"]["selected_from_investigation_id"] = selected["selection"]["investigation_id"]
+        else:
+            value["assessment"].pop("selection", None)
     else:
         value["selected_direction_assessment"] = {"status": "unavailable"}
     # The whole briefing saw these inputs even when its optional answer failed.

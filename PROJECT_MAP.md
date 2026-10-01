@@ -1,5 +1,10 @@
 # Helvetic Lens project map
 
+[Question-to-dossier completion](docs/PRODUCT_RESEARCH_REFINEMENT.md#complete-the-question-to-dossier-journey)
+is implemented and locally validated: initial and naturally refined questions share
+the current cited answer, limitations and explicit next check in both readers.
+Activation is tracked in the parent question-dossier checkpoint.
+
 [Natural research refinement](docs/PRODUCT_RESEARCH_REFINEMENT.md) is implemented and locally validated:
 one action corrects active research and carries bounded earlier public work into
 the next planner. Production activation is tracked in the parent checkpoint.

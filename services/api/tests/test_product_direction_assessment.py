@@ -227,11 +227,15 @@ def test_legacy_no_read_and_required_output_keep_their_boundaries(signed, monkey
     trace = setup(monkeypatch, service, model, invalid="base" if mode == "bad_base" else None)
     root, old, _ = start(client)
     _, _, child, _ = choose(client, service, root, old, free_text=mode == "free_text")
-    if mode == "legacy":
+    if mode in {"legacy", "free_text"}:
         with service.db.session() as session:
             run = session.get(Investigation, child["id"])
             state = deepcopy(run.research_state)
-            state["exploration"].pop("direction_assessment_contract")
+            if mode == "legacy":
+                state["exploration"].pop("direction_assessment_contract")
+            else:
+                # A saved free-text episode from before ordinary-question answers.
+                state["exploration"]["direction_assessment_contract"] = assessment.CONTRACT
             run.research_state = state
             session.commit()
     if mode == "no_read":
