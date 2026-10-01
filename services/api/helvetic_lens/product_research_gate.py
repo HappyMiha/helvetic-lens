@@ -16,6 +16,10 @@ POLICY_VERSION = "topical-snippet/v1"
 
 
 async def evaluate(settings, question, query, item, order="jev_first"):
+    if item.get("provider") == "Submitted public source":
+        return {"verdict": "relevant", "engine": "deterministic", "model": None,
+            "policy_version": POLICY_VERSION,
+            "basis": "Explicitly submitted public source selected for reading; relevance and evidence remain unassessed. Normal source access checks still apply."}
     engines = decision.engines(settings)
     failures = []
     for name in (("laya", "jev") if order == "laya_first" else ("jev", "laya")):

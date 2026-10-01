@@ -52,7 +52,7 @@ def pipeline(monkeypatch, service, model, *, uncertain=False, jev_fails=False, i
     service.settings.search1api_api_key = SecretStr("fixture")
     trace = {"queries": [], "reads": [], "models": [], "gates": []}
 
-    async def retrieve(settings, query, index, depth, product):
+    async def retrieve(settings, query, index, depth, product, **kwargs):
         trace["queries"].append(query)
         name = "recipient" if "recipient disclosure" in query else "identity" if "legal identity" in query else "grant"
         def item(key, title):

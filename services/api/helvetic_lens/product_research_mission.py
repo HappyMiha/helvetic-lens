@@ -20,6 +20,9 @@ answer.limitations for specific unresolved gaps. No hidden reasoning or unsuppor
 summary. Keep professional applicability and independent origins explicit.
 Choose continue only for consequential, evidence-backed checks that could improve
 this answer, and provide up to three next_checks with literal source citations.
+For missing evidence beyond initial search pages, use deepen_branches with the
+exact branch ids listed in discovery_frontiers. This resumes saved source cursors;
+never invent ids. Choose the useful frontier rather than repeating its query.
 Their purpose explains the missing evidence; search queries contain public material
 only. Prefer original documents, deeper sections and contrary evidence over repeats.
 Choose clarify only when this briefing offers at least two cited alternatives and
@@ -37,6 +40,7 @@ class Checkpoint(Input):
     action: Literal["continue", "finish", "clarify"]
     reason: str = Field(min_length=5, max_length=500)
     next_checks: list[research.Gap] = Field(default_factory=list, max_length=3)
+    deepen_branches: list[str] = Field(default_factory=list, max_length=3)
 
 
 def schema(base):
@@ -65,12 +69,20 @@ def branch_capacity(run):
 
 def context(session, run):
     from . import product_document_reading as document_reading
+    from .product_iterative_steps import discovery_available
 
     state = run.research_state["mission"]
     return {"contract": CONTRACT, "round": state["round"], "question": run.question,
         "previous_checkpoint": state["checkpoints"][-1] if state["checkpoints"] else None,
         "completion_policy": "Finish meaningful checks and whole-document reading; no internal execution budget.",
+        "unvalidated_proposals": [{"source_id": s.id, "rejected": s.snapshot["analysis_gaps"]}
+            for s in exploration.sources(session, run).values() if s.snapshot.get("analysis_gaps")],
         "documents": [document_reading.model_projection(d) for b in rows(session, InvestigationBranch, run) for d in document_reading.projection(b.checkpoint)],
+        "discovery_frontiers": [{"branch_id": b.id, "query": b.query,
+            "channels": list(b.checkpoint.get("next_discovery_cursors", {})),
+            "remaining_candidates": max(0, len(b.checkpoint.get("candidates", [])) - b.checkpoint.get("gate_index", 0)),
+            "pages_checked": len(b.checkpoint.get("discovery_history", []))}
+            for b in rows(session, InvestigationBranch, run) if b.status == "completed" and discovery_available(b.checkpoint)],
         "attempted_questions": research.public_questions(run.research_state["questions"])}
 
 
@@ -87,6 +99,13 @@ def apply(session, run, supplied, result):
         update(run, stage="finished", stop="answer_unavailable")
         return
     answer = exploration.validated_question_points(session, run, supplied, checkpoint.answer)
+    gaps_in_analysis = [s for s in exploration.sources(session, run).values() if s.snapshot.get("analysis_gaps")]
+    if gaps_in_analysis:
+        if answer["status"] == "possible_answer":
+            answer["status"] = "partial"
+        answer["limitations"] = list(dict.fromkeys([*answer["limitations"],
+            "Some proposed findings could not be verified against exact passages in: "
+            + "; ".join(s.title for s in gaps_in_analysis) + ". Validated findings are retained; these interpretation gaps remain unresolved."]))
     from .product_document_reading import incomplete
 
     unfinished = incomplete(rows(session, InvestigationBranch, run))
@@ -110,8 +129,18 @@ def apply(session, run, supplied, result):
     signature = evidence_signature(session, run)
     record = {"round": state["round"], "answer": answer, "reason": checkpoint.reason,
         "evidence_signature": signature, "action": checkpoint.action,
+        "deepen_branches": checkpoint.deepen_branches,
         "gaps": [{"question": g.question, "purpose": g.purpose, **pin} for g, pin in gaps]}
     previous = state["checkpoints"][-1] if state["checkpoints"] else None
+    deeper = []
+    from .product_iterative_steps import discovery_available
+    for identifier in dict.fromkeys(checkpoint.deepen_branches):
+        branch = session.get(InvestigationBranch, identifier)
+        if not branch or branch.investigation_id != run.id or branch.status != "completed" or not discovery_available(branch.checkpoint):
+            fail("Deeper discovery requires a current supplied search frontier.", 422)
+        if not any(f["branch_id"] == identifier for f in supplied.get("research_mission", {}).get("discovery_frontiers", [])):
+            fail("The search frontier was not supplied for this assessment.", 422)
+        deeper.append(branch)
     stop = None
     if unfinished:
         stop = "documents_incomplete"
@@ -119,13 +148,25 @@ def apply(session, run, supplied, result):
         stop = "needs_direction"
     elif checkpoint.action == "finish":
         stop = "available_checks_complete"
-    elif previous and previous["evidence_signature"] == signature:
+    elif previous and previous["evidence_signature"] == signature and not deeper:
         stop = "no_new_evidence"
     if not stop:
         from . import product_exploration_followups as followups
         from . import product_informed_research as informed
 
         informed.remember(session, run, supplied)
+        from .product_iterative_steps import continue_discovery
+        for branch in deeper:
+            branch_state = deepcopy(branch.checkpoint)
+            continue_discovery(branch, branch_state)
+            branch_state.pop("question_finished", None)
+            branch.checkpoint = branch_state
+        if deeper:
+            data = deepcopy(run.research_state)
+            for question in data["questions"]:
+                if question.get("branch_id") in {branch.id for branch in deeper}:
+                    question.update(status="investigating", waiting_reason=None)
+            run.research_state = data
         for draft, pin in gaps:
             identifier = research.add_question(session, run, draft, trigger=pin)
             followups.remember_open_context(run, {**supplied, "claims": supplied.get("claims", [])}, identifier)

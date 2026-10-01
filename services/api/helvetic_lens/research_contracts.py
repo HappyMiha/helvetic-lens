@@ -68,7 +68,7 @@ SOURCES = MappingProxyType({s.id: s for s in (
     SourceAdapter("fda_labels", "openFDA drug labels", "catalogue", ("discovery",)),
     SourceAdapter("ema_news", "EMA current news feed", "catalogue", ("discovery",)),
     SourceAdapter("finma_news", "FINMA current news feed", "catalogue", ("discovery",)),
-    SourceAdapter("federal_court", "Federal Supreme Court latest publication day", "catalogue", ("discovery",)),
+    SourceAdapter("federal_court", "Swiss Federal Supreme Court indexed publication days", "catalogue", ("discovery",)),
     SourceAdapter("public_web", "Configured web search", "web", ("discovery",)),
     SourceAdapter("public_url", "Submitted public source", "web", ("capture",)),
 )})

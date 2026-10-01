@@ -135,7 +135,7 @@ def retry(session, run):
         if iterative:
             state.pop("question_finished", None)
             state.pop("reflection_done", None)
-        if iterative and branch.phase in {"plan", "reflect"}:
+        if iterative and branch.phase in {"plan", "reflect", "brief", "orient", "reformulate"}:
             # Retry the explicitly requested failed model phase only. Completed
             # source reads and extractions must not be repeated for a failed plan.
             pass

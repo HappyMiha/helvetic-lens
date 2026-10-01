@@ -140,9 +140,9 @@ def thread_record(session, product, identifier, thread_id, identity):
     return parent, profile, thread
 
 
-async def public_search(provider, terms, cursor=None):
+async def public_search(provider, terms, cursor=None, *, unlimited=False):
     """Only the explicitly entered query leaves the workspace; hosts are fixed."""
-    offset, mark = cursor_position(provider, terms, cursor)
+    offset, mark = cursor_position(provider, terms, cursor, unlimited=unlimited)
     if provider == "europepmc":
         url = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
         params = {"query": terms, "format": "json", "pageSize": str(PAGE_SIZE), "resultType": "lite", "cursorMark": mark}
@@ -206,7 +206,7 @@ SELECT ?work (MIN(STR(?label)) AS ?title) WHERE {{ ?work jolux:isRealizedBy ?exp
             except ValidationError:
                 continue
         items = list(usable.values())
-        limit_reached = more and offset + PAGE_SIZE >= MAX_RECORDS
+        limit_reached = not unlimited and more and offset + PAGE_SIZE >= MAX_RECORDS
         return {"items": items, "total": total,
                 "next_cursor": next_cursor(provider, terms, offset + PAGE_SIZE, following) if more and not limit_reached else None,
                 "page_number": offset // PAGE_SIZE + 1, "page_size": PAGE_SIZE,

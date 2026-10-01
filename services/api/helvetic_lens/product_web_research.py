@@ -18,13 +18,12 @@ from .product_investigations import ACTIVE, enqueue, event, plan, rows, scope, s
 from .product_models import ProductDossier
 from .product_operations import fingerprint
 
-DAILY_LIMIT = 2
 DISCLOSURE = ("Repeat only this public question after signout using the configured web provider, direct public catalogues and Jev/TypeSafe with Laya fallback; "
-    "Pharma also searches Europe PMC. Read up to three permitted public sources, analyse new evidence with the "
+    "Read the permitted public sources needed to address the question, analyse new evidence with the "
     "configured workspace model and compare earlier private findings. No private text becomes a search query. "
     "Findings stay in this dossier's audience. No publication, email subscription or authenticated archive access. "
-    "One query per start, at most two starts/retries per UTC day. Source reading still runs for unchanged pages. "
-    "Request limits are not a monetary cap; unmetered costs remain unknown. Coverage is not exhaustive.")
+    "Each scheduled check uses the same research mission as the original question, with no internal daily start or execution quota. "
+    "Only one investigation runs in a dossier at a time; missed schedules do not accumulate. Costs remain observable, not a completion cutoff. Coverage is not exhaustive.")
 
 
 def audience_key(parent, profile):
@@ -72,6 +71,12 @@ def worker_access(session, run, trigger):
 
 
 def seed(session, run, trigger):
+    from . import product_iterative_research as research
+    from . import product_research_mission as mission
+
+    if mission.enabled(run):
+        research.seed(session, run)
+        return
     from .product_check_source_coverage import seed as coverage_seed
 
     # Deliberately exclude private saved material and automatic entity expansion.
@@ -84,7 +89,7 @@ def seed(session, run, trigger):
           scheduled_for=iso(trigger.scheduled_for), disclosure=DISCLOSURE)
 
 
-def capture(session, run, item):
+def capture(session, run, item, *, refresh_analysis=False):
     """Keep every observation, deduplicate only against the last successful analysis.
 
     A -> B -> A is new again. Failed extraction and unchanged observations never
@@ -93,14 +98,24 @@ def capture(session, run, item):
     question_key = fingerprint(run.question)
     content_key = fingerprint({"sha256": item["sha256"], "excerpts": sorted(
         [(p["passage"], p["text"]) for p in item["excerpts"]])})
-    prior = session.scalar(select(InvestigationSource).join(Trigger,
-        Trigger.investigation_id == InvestigationSource.investigation_id)
+    prior_query = (select(InvestigationSource).join(Investigation,
+        Investigation.id == InvestigationSource.investigation_id)
         .where(InvestigationSource.dossier_id == run.dossier_id, InvestigationSource.url == item["url"],
-            InvestigationSource.investigation_id != run.id, Trigger.question == run.question,
-            InvestigationSource.snapshot["analysis_completed"].as_boolean().is_(True))
-        .order_by(InvestigationSource.created_at.desc(), InvestigationSource.id.desc()).limit(1))
-    duplicate = prior if prior and prior.snapshot.get("web_content_fingerprint") == content_key else None
-    source, fresh = snapshot(session, run, {**item, "allow_discovery": False,
+            InvestigationSource.investigation_id != run.id, Investigation.question == run.question,
+            Investigation.publication_id.is_(None), InvestigationSource.kind == "public_source",
+            InvestigationSource.snapshot["analysis_completed"].as_boolean().is_(True)))
+    cursor = item.get("reading", {}).get("cursor")
+    if cursor is not None:
+        prior_query = prior_query.where(
+            InvestigationSource.snapshot["reading"]["cursor"]["page"].as_integer() == cursor["page"],
+            InvestigationSource.snapshot["reading"]["cursor"]["offset"].as_integer() == cursor["offset"])
+    else:
+        prior_query = prior_query.where(InvestigationSource.snapshot["reading"]["cursor"]["page"].as_integer().is_(None))
+    prior = session.scalar(prior_query.order_by(InvestigationSource.created_at.desc(), InvestigationSource.id.desc()).limit(1))
+    prior_key = (prior.snapshot.get("web_content_fingerprint") or fingerprint({"sha256": prior.sha256,
+        "excerpts": sorted((p["passage"], p["text"]) for p in prior.snapshot.get("excerpts", []))})) if prior else None
+    duplicate = prior if prior_key == content_key else None
+    source, fresh = snapshot(session, run, {**item, "allow_discovery": refresh_analysis,
         "web_question_fingerprint": question_key, "web_content_fingerprint": content_key,
         "analysis_completed": False, "unchanged_from": duplicate.id if duplicate else None,
         "previous_analysed_source_id": prior.id if prior else None,
@@ -108,7 +123,7 @@ def capture(session, run, item):
     if duplicate:
         event(session, run, "source_unchanged", source_id=source.id, previous_source_id=duplicate.id,
               reason="The same captured body and excerpts were already analysed for this question.")
-    return source, fresh and not duplicate
+    return source, fresh and (refresh_analysis or not duplicate)
 
 
 def used_today(policy):
@@ -119,8 +134,6 @@ def reserve_start(policy):
     day = utcnow().date().isoformat()
     if policy.budget_day != day:
         policy.budget_day, policy.budget_used = day, 0
-    if policy.budget_used >= DAILY_LIMIT:
-        fail("The recurring-search limit of two starts/retries per UTC day has been reached.", 409)
     policy.budget_used += 1
 
 
@@ -165,18 +178,19 @@ def check_policy(session, policy, settings, now):
     if policy.next_run_at.replace(tzinfo=UTC) > now:
         policy.next_check_at = policy.next_run_at
         return 0
-    if used_today(policy) >= DAILY_LIMIT:
-        policy.reason = "Daily start limit reached. The next attempt waits until the next UTC day."
-        policy.next_check_at = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
-        return 0
     if session.scalar(select(Investigation.id).where(Investigation.dossier_id == parent.id,
             Investigation.status.in_(ACTIVE)).limit(1)):
         policy.reason = "Waiting for the active dossier investigation to finish."
         return 0
     reserve_start(policy)
+    from . import product_exploration as exploration
+    from .product_research_admission import policy as admission
+
     run = Investigation(dossier_id=parent.id, organization_id=parent.organization_id, request_key=str(uuid4()),
         question=policy.question, external_discovery=True, created_by_user_id=policy.authorized_by_user_id,
-        actor_user_id=policy.authorized_by_user_id)
+        actor_user_id=policy.authorized_by_user_id,
+        research_state={**exploration.initial(), "admission": admission(parent.id), "decision_order": "jev_first",
+            "scheduled_mission": {"policy_id": policy.id, "revision": policy.revision}})
     session.add(run)
     session.flush()
     trigger = Trigger(dossier_id=parent.id, organization_id=parent.organization_id, policy_id=policy.id,
@@ -227,7 +241,7 @@ def payload(session, parent, policy, can_manage, settings, offset=0):
     return {"dossier_id": parent.id, "can_manage": can_manage, "policy": {
         "enabled": policy.enabled if policy else False, "revision": policy.revision if policy else 0,
         "question": policy.question if policy else "", "cadence_hours": policy.cadence_hours if policy else 24,
-        "daily_limit": DAILY_LIMIT, "used_today": used_today(policy), "readiness": readiness(settings, session),
+        "daily_limit": None, "used_today": used_today(policy), "readiness": readiness(settings, session),
         "next_run_at": iso(policy.next_run_at) if policy and policy.enabled else None,
         "checked_at": iso(policy.checked_at) if policy and policy.checked_at else None,
         "reason": policy.reason if policy else "Recurring public search is off.",

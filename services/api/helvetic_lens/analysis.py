@@ -827,9 +827,17 @@ class ModelClient:
     async def complete(
         self, system: str, user: str, *, response_schema: dict | None = None,
         budget: InferenceBudget | None = None,
+        max_output_tokens: int | None = None,
     ) -> str:
         self.check_capability()
         payload = self.chat_payload(system, user, response_schema=response_schema)
+        if max_output_tokens is not None and self.settings.apertus_provider != "docker":
+            if type(max_output_tokens) is not int or not 128 <= max_output_tokens <= 8192:
+                raise ValueError("Invalid per-request output allowance")
+            field = "max_completion_tokens" if "max_completion_tokens" in payload else "max_tokens"
+            payload[field] = max_output_tokens
+            if self.active_capability is not None and self.active_capability.budget is not None:
+                payload[field] = min(payload[field], self.active_capability.budget.output_tokens)
         runtime = await self.bound_runtime(budget)
         if self.active_capability is not None and self.active_capability.budget is not None:
             measured = await self.count_prompt(system, user, response_schema=response_schema, budget=budget)

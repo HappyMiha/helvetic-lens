@@ -15,7 +15,7 @@ def project(outcome):
         reasons = [c["explanation"] for c in changes]
     elif outcome.get("state") in {"failed", "partial", "unavailable"}:
         category, reasons = "coverage_gap", outcome.get("limitations") or ["This check could not establish whether the evidence changed."]
-    elif any(f.get("human_status") != "REJECTED" for f in outcome.get("findings", [])):
+    elif not outcome.get("repeated_evidence") and any(f.get("human_status") != "REJECTED" for f in outcome.get("findings", [])):
         category, reasons = "findings", ["New supported findings are available for review; their effect on the answer is not yet established."]
     else:
         category, reasons = "quiet", ["No consequential evidence change was established in this check."]

@@ -44,13 +44,19 @@ def prepare(session, run, branch, state, work):
         work["capture_dependencies"] = progress.dependencies(session, run)
     work["decision_order"] = run.research_state.get("decision_order", "jev_first")
     work["question"] = run.question
+    if state.get("catalogues") is not None:
+        work["catalogues"] = state["catalogues"]
     work["limits"] = run.research_state["limits"]
     from .product_research_admission import unmetered
     work["unmetered_research"] = unmetered(run)
+    if branch.phase == "search" and state.get("discovery_cursor") is not None:
+        work["discovery_cursor"] = deepcopy(state["discovery_cursor"])
     if branch.phase == "recall":
         research_recall.prepare(session, run, state, work)
     elif branch.phase == "plan":
         work["input"] = {"question": run.question, "branch_slots": 2 if mission.enabled(run) else min(6, max(2, work["limits"]["branches"] // 2))}
+        from .research_contracts import SOURCES
+        work["input"]["available_catalogues"] = {key: adapter.label for key, adapter in SOURCES.items() if adapter.kind == "catalogue"}
         direction = clarification.context(session, run)
         if direction and direction["status"] == "ready":
             work["input"]["selected_direction"] = direction
@@ -75,7 +81,7 @@ def prepare(session, run, branch, state, work):
             work["input"]["research_mission"] = mission.context(session, run)
         if branch.phase == "orient":
             work["early_clarification"] = clarification.enabled(run)
-            work["timeout_seconds"] = 20
+            work["timeout_seconds"] = 45 if work.get("unmetered_research") else 20
             work["skip"] = len(work["input"]["sources"]) < 2
     elif branch.phase in {"gate", "gate_review"}:
         work["item"] = state["candidates"][state.get("gate_index", 0)]
@@ -84,6 +90,9 @@ def prepare(session, run, branch, state, work):
             "title": work["item"]["title"], "snippet": work["item"].get("summary", "")}
     elif branch.phase == "reflect":
         work["input"] = research.prepare_reflection(session, run, branch)
+        work["input"]["search_continuation"] = {"available_channels": list(state.get("next_discovery_cursors", {})),
+            "remaining_candidates": max(0, len(state.get("candidates", [])) - state.get("gate_index", 0)),
+            "pages_checked": len(state.get("discovery_history", [])), "scope": "More source-owned results may be available; exhaustive coverage is not implied."}
 
 
 async def execute(service, work, seconds):
@@ -93,7 +102,10 @@ async def execute(service, work, seconds):
     if phase == "search":
         urls = [v["url"] for v in search_channels.explicit_sources(work["question"])]
         result = await decision_search.federated_retrieve(search_channels.request_settings(service.settings, work.get("skipped_paid_search")), work["query"], "web", "balanced", work["product"],
-            **({"public_sources": urls} if urls else {}))
+            **({"public_sources": urls} if urls else {}),
+            **({"cursors": work["discovery_cursor"]} if "discovery_cursor" in work else {}),
+            **({"selected_catalogues": work["catalogues"]} if "catalogues" in work else {}),
+            **({"complete_page": True} if work.get("unmetered_research") else {}))
         search_channels.note_skipped_paid(result, work.get("skipped_paid_search"))
         return {"items": result.pop("items"), "retrieval": result,
             "coverage": "Federated candidate retrieval only. Each candidate requires a separate relevance gate before reading."}
@@ -165,8 +177,18 @@ async def execute(service, work, seconds):
     if not isinstance(raw, str) or len(raw) > 30000:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
-    if phase == "extract" and work.get("applicability"):
-        return renewal.parse_recoverable(schema, raw, {"applicability_checks": "_applicability_unavailable"})
+    if phase == "extract" and (work.get("applicability") or work.get("unmetered_research")):
+        optional = {"applicability_checks": "_applicability_unavailable"} if work.get("applicability") else {}
+        if work.get("unmetered_research"):
+            optional.update({key: "_" + key + "_unavailable" for key in
+                ("entities", "relationships", "source_class", "read_relevance", "professional_facts")})
+        result = renewal.parse_recoverable(schema, raw, optional)
+        omitted = [key for key, flag in optional.items() if getattr(result, flag, False)]
+        if "entities" in omitted:
+            result.relationships = []  # Edges cannot outlive their rejected identity input.
+        if omitted:
+            result._optional_omissions = omitted
+        return result
     if phase == "brief":
         optional = {}
         if work["input"].get("direction_assessment_target"):
@@ -216,6 +238,24 @@ def failed(branch, state, *, interrupted=False):
         branch.phase = "gate"
 
 
+def continue_discovery(branch, state):
+    state["reflection_done"] = False
+    state["empty_search"] = False
+    if state.get("gate_index", 0) < len(state.get("candidates", [])):
+        # A reading batch is a checkpoint, not a research quota. Keep every
+        # remaining candidate and resume it only when useful to the answer.
+        state["source_limit"] = len(state.get("items", [])) + 3
+        branch.phase = "gate"
+    else:
+        state["discovery_cursor"] = deepcopy(state["next_discovery_cursors"])
+        branch.phase = "search"
+    branch.status = "running"
+
+
+def discovery_available(state):
+    return bool(state.get("next_discovery_cursors") or state.get("gate_index", 0) < len(state.get("candidates", [])))
+
+
 def apply(session, run, branch, state, work, result):
     phase = work["phase"]
     if work.get("model_route"):
@@ -236,6 +276,7 @@ def apply(session, run, branch, state, work, result):
         exploration.apply_orientation(session, run, work["input"], result)
         branch.status = "completed"
     elif phase == "search":
+        seen_page = set(state.get("discovery_seen_urls", []))
         seen = {s.url for s in rows(session, InvestigationSource, run)
             if not (state.get("refresh_retained_sources") and s.snapshot.get("retained_origin"))}
         for other in rows(session, InvestigationBranch, run):
@@ -247,14 +288,21 @@ def apply(session, run, branch, state, work, result):
         recover = recovery.enabled(run, branch, state)
         candidates = []
         for item in result["items"]:
-            if item["url"] not in seen | blocked:
+            if item["url"] not in seen | blocked | seen_page:
                 candidates.append(item)
                 if recover:
                     seen.add(item["url"])
         if recover:
             state["source_recovery"] = {"contract": recovery.CONTRACT, "failed_reads": 0}
         limit = len(candidates) if work.get("unmetered_research") else work["limits"]["candidates_per_branch"]
-        state.update(candidates=candidates[:limit], gate_index=0, items=[], source_limit=limit if work.get("unmetered_research") else work["limits"]["sources_per_branch"],
+        state["discovery_seen_urls"] = list(dict.fromkeys([*seen_page, *(i["url"] for i in result["items"])]))
+        state.setdefault("discovery_history", []).append({"cursor": work.get("discovery_cursor"), "retrieval": deepcopy(result["retrieval"])})
+        state["next_discovery_cursors"] = deepcopy(result["retrieval"].get("next_cursors", {})) if candidates else {}
+        state["page_has_new_candidates"] = bool(candidates)
+        previous_candidates = state.get("candidates", []) if "discovery_cursor" in work else []
+        previous_items = state.get("items", []) if "discovery_cursor" in work else []
+        state.update(candidates=[*previous_candidates, *candidates[:limit]], gate_index=len(previous_candidates), items=previous_items,
+            source_limit=len(previous_items) + min(3, limit) if work.get("unmetered_research") else work["limits"]["sources_per_branch"],
             candidate_counts={"retrieved": len(result["items"]), "duplicate_or_excluded": len(result["items"]) - len(candidates),
                 "outside_candidate_budget": max(0, len(candidates) - limit)},
             coverage={"retrieval": result["retrieval"], "scope": result["coverage"]})
@@ -285,4 +333,6 @@ def apply(session, run, branch, state, work, result):
         research.apply_reflection(session, run, branch, work["input"], result)
         state.update(reflection_done=True, outcome=result.outcome)
         branch.status = "failed" if state.get("failed_extract_indices") else "completed"
+        if branch.status == "completed" and result.search_deeper and discovery_available(state):
+            continue_discovery(branch, state)
     branch.checkpoint = deepcopy(state)

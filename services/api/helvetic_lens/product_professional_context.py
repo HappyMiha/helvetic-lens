@@ -3,6 +3,7 @@ from typing import Literal
 
 from pydantic import Field
 
+from .config import DomainError
 from .product_api import fail
 from .product_investigations import Citation, Extraction, citation
 
@@ -20,6 +21,9 @@ different statuses. A date of capture is not an effective date. A trial is not a
 authorization. A source's description is not a verified applicability verdict.
 Extract relevant cross-domain facts when present; omit unsupported fields instead
 of filling them from prior knowledge, branding or a user's ambiguous words.
+For topics outside law, regulation and medicine, return professional_facts: [].
+An ordinary date is not automatically legal effectiveness; a measurement is not
+a study phase or legal procedure. Do not fill these dimensions to satisfy a form.
 """
 
 
@@ -36,14 +40,19 @@ class ProfessionalExtraction(Extraction):
     professional_facts: list[Fact] = Field(default_factory=list, max_length=12)
 
 
-def validate(source, supplied, result):
+def validate(source, supplied, result, *, omit_invalid=False):
     facts = []
     for draft in getattr(result, "professional_facts", []):
-        if (draft.source_id != source.id or draft.dimension not in (LEGAL if draft.domain == "legal" else PHARMA)
+        try:
+            if (draft.source_id != source.id or draft.dimension not in (LEGAL if draft.domain == "legal" else PHARMA)
                 or not draft.value.strip() or draft.value not in draft.quote or not any(
                     p["passage"] == draft.locator and draft.quote in p["text"] for p in supplied["source"]["excerpts"])):
-            fail("Professional context needs the source's exact words.", 422, "invalid_evidence")
-        facts.append({**draft.model_dump(), **citation(source, draft)})
+                fail("Professional context needs the source's exact words.", 422, "invalid_evidence")
+            facts.append({**draft.model_dump(), **citation(source, draft)})
+        except DomainError:
+            if not omit_invalid:
+                raise
+            result._optional_omissions = list(dict.fromkeys([*getattr(result, "_optional_omissions", []), "professional_facts"]))
     return facts
 
 

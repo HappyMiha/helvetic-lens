@@ -15,7 +15,7 @@ def next_cursor(provider, terms, offset, mark=""):
     return base64.urlsafe_b64encode(json.dumps(value, separators=(",", ":")).encode()).decode().rstrip("=")
 
 
-def cursor_position(provider, terms, cursor):
+def cursor_position(provider, terms, cursor, *, unlimited=False):
     if cursor is None:
         return 0, "*" if provider == "europepmc" else ""
     try:
@@ -27,7 +27,7 @@ def cursor_position(provider, terms, cursor):
         offset, mark = value["offset"], value["mark"]
         if value["provider"] != provider or value["query_hash"] != hashlib.sha256(terms.encode()).hexdigest():
             raise ValueError
-        if type(offset) is not int or not 0 < offset < MAX_RECORDS or offset % PAGE_SIZE:
+        if type(offset) is not int or offset <= 0 or (not unlimited and offset >= MAX_RECORDS) or offset % PAGE_SIZE:
             raise ValueError
         if not isinstance(mark, str) or (provider == "fedlex" and mark) or (provider == "europepmc" and not re.fullmatch(r"[A-Za-z0-9+/=_-]{1,512}", mark)):
             raise ValueError

@@ -39,9 +39,9 @@ def plain(value, limit):
     return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]*>", " ", value))).strip()[:limit]
 
 
-async def retrieve(settings, query, index, *, service="google", limit=MAX_RESULTS):
+async def retrieve(settings, query, index, *, service="google", limit=MAX_RESULTS, cursor=None):
     if settings.web_search_provider == "searxng":
-        return await search_channels.searxng(settings, query, index, limit=limit)
+        return await search_channels.searxng(settings, query, index, limit=limit, **({"cursor": cursor} if cursor else {}))
     if settings.web_search_provider != "search1api":
         raise decision.DecisionUnavailable("search_not_configured")
     key = settings.search1api_api_key.get_secret_value()
@@ -90,33 +90,51 @@ def reciprocal_fusion(rankings):
     return weights
 
 
-async def federated_retrieve(settings, query, index, depth, product, alternatives=(), *, public_sources=()):
+async def federated_retrieve(settings, query, index, depth, product, alternatives=(), *, public_sources=(), cursors=None, complete_page=False, selected_catalogues=None):
     started = perf_counter()
     limit = 8 if depth == "quick" else 20 if depth == "deep" else 12
     broad = settings.web_search_provider
     name = "SearXNG web" if broad == "searxng" else "Google " + index
     lanes = []
-    if broad != "none":
-        lanes.append((name, query, retrieve(settings, query, index, limit=limit)))
+    lane_keys = {}
+    if broad != "none" and (cursors is None or "broad" in cursors):
+        lanes.append((name, query, retrieve(settings, query, index,
+            limit=200 if complete_page and broad == "searxng" else limit,
+            **({"cursor": cursors["broad"]} if cursors else {}))))
+        lane_keys[name] = "broad"
         if depth != "quick" and broad == "search1api":
             lanes.append(("Bing web", query, retrieve(settings, query, "web", service="bing", limit=limit)))
         for number, alternative in enumerate(alternatives, 1):
             lanes.append((f"{name} alternative {number}", alternative, retrieve(settings, alternative, "web", limit=limit)))
     from .research_contracts import SOURCES
-    available = search_channels.catalogue_names(product)
+    available = tuple(key for key, adapter in SOURCES.items() if adapter.kind == "catalogue") if selected_catalogues is not None else search_channels.catalogue_names(product)
+    if selected_catalogues is not None and (not isinstance(selected_catalogues, list) or any(key not in available for key in selected_catalogues)):
+        raise decision.DecisionUnavailable("invalid_source_scope")
+    if cursors is not None and (not isinstance(cursors, dict) or any(
+            key not in {"broad", *available} or not isinstance(value, str) or not value or len(value) > 16000
+            for key, value in cursors.items())):
+        raise decision.DecisionUnavailable("invalid_search_cursor")
     catalogues = available[:1] if depth == "quick" else available
+    if selected_catalogues is not None:
+        catalogues = [key for key in catalogues if key in selected_catalogues]
     labels = {key: SOURCES[key].label for key in available}
     for provider in catalogues:
-        lanes.append((labels[provider], query, search_channels.direct_search(provider, query)))
+        if cursors is not None and provider not in cursors:
+            continue
+        lanes.append((labels[provider], query, search_channels.direct_search(provider, query, **({"cursor": cursors[provider]} if cursors else {}))))
+        lane_keys[labels[provider]] = provider
     outcomes = await asyncio.gather(*(work for _, _, work in lanes), return_exceptions=True)
     items, rankings, coverage, origins, found_by = {}, [], [], {}, {}
-    omitted = 0
+    omitted, next_cursors = 0, {}
     for (name, lane_query, _), result in zip(lanes, outcomes):
         if isinstance(result, Exception):
             code = result.code if isinstance(result, decision.DecisionUnavailable) else "unavailable"
             coverage.append({"name": name, "query": lane_query, "status": "unavailable", "count": 0, "reason": code})
             continue
         ranking = []
+        next_cursor = result.get("next_cursor")
+        if isinstance(next_cursor, str) and 0 < len(next_cursor) <= 16000 and name in lane_keys:
+            next_cursors[lane_keys[name]] = next_cursor
         for item in result["items"]:
             safe = public_url(item["url"])
             if not safe:
@@ -145,7 +163,7 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
             for engine in result.get("unavailable_engines") or ["upstream engine"]:
                 coverage.append({"name": name + " / " + engine, "query": lane_query,
                     "status": "unavailable", "count": 0, "reason": "upstream_unavailable"})
-    submitted = search_channels.explicit_sources(" ".join([query, *public_sources]))
+    submitted = search_channels.explicit_sources(" ".join([query, *public_sources])) if cursors is None else []
     for item in submitted:
         items.setdefault(item["id"], item)
         origins.setdefault(item["id"], []).append("Submitted public source")
@@ -156,17 +174,20 @@ async def federated_retrieve(settings, query, index, depth, product, alternative
         coverage.append({"name": "Submitted public sources", "query": query, "status": "complete", "count": len(submitted)})
     fusion = reciprocal_fusion(rankings)
     maximum = 8 if depth == "quick" else 36 if depth == "deep" else 24
-    candidates = sorted(items.values(), key=lambda item: -fusion[item["id"]])[:maximum]
+    submitted_ids = {item["id"] for item in submitted}
+    candidates = sorted(items.values(), key=lambda item: (item["id"] not in submitted_ids, -fusion[item["id"]]))
+    if not complete_page:
+        candidates = candidates[:maximum]
     for item in candidates:
         item["retrieval_queries"] = found_by[item["id"]]
     return {"items": candidates, "index": "web" if broad != "search1api" else index,
-        "service": "federated", "provider": "Public catalogues / " + broad,
+        "service": "federated", "provider": "Public catalogues / " + broad, "next_cursors": next_cursors,
         "latency_ms": round((perf_counter() - started) * 1000, 2), "cost_usd": None,
         "omitted_records": omitted, "candidate_limit": maximum, "discovered_count": len(items),
         "status": "complete" if all(c["status"] == "complete" for c in coverage) else "partial" if rankings else "unavailable",
         "lanes": coverage, "origins": {v["id"]: origins[v["id"]] for v in candidates},
-        "skipped_channels": [{"name": labels[key], "reason": "Outside quick-search budget."} for key in available if key not in catalogues],
-        "search_requests": search_channels.request_count(settings, depth, alternatives, product=product), "depth": depth}
+        "skipped_channels": [{"name": labels[key], "reason": "Outside this question's planned source scope." if selected_catalogues is not None else "Outside quick-search budget."} for key in available if key not in catalogues],
+        "search_requests": len(lanes) + 2 * int(labels.get("federal_court") in lane_keys), "depth": depth}
 
 
 async def execute(settings, query, mode, depth="balanced", product="pharma", alternatives=()):

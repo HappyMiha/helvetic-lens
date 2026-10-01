@@ -96,11 +96,15 @@ def project(session, run, trigger=None, branches=None):
         return result
 
     phases = {step.get("phase") for branch in branches for step in branch.checkpoint.get("steps", [])
-        if step.get("status") != "completed"}
+        if step.get("status") != "completed" and not step.get("recovered_by")}
     result["limitations"] = [label + " was not completed." for phase, label in PHASES.items() if phase in phases]
     incomplete = bool(phases or any(b.status != "completed" for b in branches))
     result["findings"] = findings(session, run)
     result["comparisons"] = comparisons(session, run)
+    if run.research_state.get("scheduled_mission"):
+        from .product_research_updates import new_source
+        result["repeated_evidence"] = not bool(session.scalar(select(InvestigationSource.id).where(
+            InvestigationSource.investigation_id == run.id, new_source()).limit(1)))
     recurring = [b.checkpoint for b in branches if b.checkpoint.get("recurring_web")]
     if result["comparisons"]:
         found = "changes"

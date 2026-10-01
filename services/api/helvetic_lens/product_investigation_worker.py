@@ -208,7 +208,7 @@ def finish_or_yield(session, run, job):
         if run.status in ACTIVE:
             success = sum(b.status == "completed" and not b.checkpoint.get("research_control") for b in branches)
             run.status = "completed" if success else "failed"
-            failed_steps = sum(any(s["status"] != "completed" for s in b.checkpoint.get("steps", [])) for b in branches)
+            failed_steps = sum(any(s["status"] != "completed" and not s.get("recovered_by") for s in b.checkpoint.get("steps", [])) for b in branches)
             run.stop_reason = (f"Finished {success} of {len(branches)} branches within the research budget. "
                 f"{failed_steps} branches contain unavailable or interrupted steps. Coverage is not exhaustive.")
             if research.enabled(run):
@@ -221,7 +221,8 @@ def finish_or_yield(session, run, job):
             unfinished_documents = incomplete(branches)
             if unfinished_documents:
                 run.status = "failed"
-                run.stop_reason = f"{len(unfinished_documents)} document(s) still need reading or analysis. Saved progress is retained; research is incomplete."
+                unread = sum(not doc.get("read_complete") for doc in unfinished_documents)
+                run.stop_reason = f"Research is incomplete: {unread} document(s) still need reading; {len(unfinished_documents) - unread} were read but still need validated analysis. Saved progress is retained; retry the unavailable steps to continue."
             from .product_monitoring_outcomes import project as monitoring_outcome
             from .product_research_materiality import project as materiality
 
@@ -291,7 +292,8 @@ async def execute(service, job_id, worker):
             return {"id": job_id, "state": run.status}
         candidates = [b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE]
         if research.enabled(run):
-            candidates.sort(key=lambda b: (b.phase != "recall", pacing.order(b) if pacing.enabled(run) else
+            # A retried final answer must wait for retried source analysis too.
+            candidates.sort(key=lambda b: (b.phase == "brief", b.phase != "recall", pacing.order(b) if pacing.enabled(run) else
                             (-b.checkpoint.get("priority", 6), b.created_at, b.id)))
         branch = next(iter(candidates), None)
         if branch:
@@ -540,11 +542,11 @@ async def execute(service, job_id, worker):
                 else:
                     result = document_reading.remember(session, run, state, work, result)
                 if not failed and result and result.get("excerpts"):
-                    if state.get("recurring_web"):
+                    if state.get("recurring_web") or run.research_state.get("scheduled_mission"):
                         from .product_web_research import capture as web_capture
 
                         source, fresh = web_capture(session, run, {**result, "title": work["item"]["title"],
-                            "retrieval_queries": [work["query"]]})
+                            "retrieval_queries": [work["query"]]}, refresh_analysis=bool(run.research_state.get("scheduled_mission")))
                         state["steps"][-1]["source_id"] = source.id
                         if source.snapshot.get("unchanged_from"):
                             state["unchanged"] = state.get("unchanged", 0) + 1
@@ -568,6 +570,7 @@ async def execute(service, job_id, worker):
                     if work.get("research") and source.kind == "public_source":
                         duplicate = next((other for other in rows(session, InvestigationSource, run)
                             if other.id != source.id and other.kind == "public_source" and other.sha256 == source.sha256
+                            and not (state.get("refresh_retained_sources") and other.snapshot.get("retained_origin"))
                             and not (source.snapshot.get("reading") and other.snapshot.get("reading") and other.url == source.url)), None)
                         if duplicate:
                             source.snapshot = {**source.snapshot, "duplicate_of": duplicate.id,
@@ -601,8 +604,10 @@ async def execute(service, job_id, worker):
                     from . import product_document_analysis as document_analysis
                     from . import product_professional_context as professional
 
+                    if unmetered(run):
+                        research_gateway.retain_grounded_items(result, work)
                     section_review = document_analysis.validate_section(source, work, result)
-                    facts = professional.validate(source, work["input"], result)
+                    facts = professional.validate(source, work["input"], result, omit_invalid=unmetered(run))
                     scoped = applicability.validate(session, run, source, work, result)
                     assessed = read_relevance.validate(session, run, source, work, result)
                     if research.enabled(run):
@@ -614,12 +619,17 @@ async def execute(service, job_id, worker):
                 if not failed:
                     read_relevance.remember(run, state, work, assessed)
                     if section_review:
+                        if getattr(result, "_optional_omissions", None):
+                            section_review["limitations"] = [*section_review["limitations"],
+                                "Some additional proposed source details could not be validated and were omitted. Retained findings still require exact source quotations."]
                         source.snapshot = {**source.snapshot, "section_review": section_review}
+                    if getattr(result, "_analysis_gaps", None):
+                        source.snapshot = {**source.snapshot, "analysis_gaps": result._analysis_gaps}
                     if facts:
                         source.snapshot = {**source.snapshot, "professional_facts": facts}
-                    applicability.remember(run, source, scoped)
-                    if state.get("recurring_web"):
+                    if state.get("recurring_web") or work.get("research"):
                         source.snapshot = {**source.snapshot, "analysis_completed": True, "analysis_completed_at": iso(utcnow())}
+                    applicability.remember(run, source, scoped)
                     next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
         if not failed:
@@ -633,6 +643,12 @@ async def execute(service, job_id, worker):
         state.pop("inflight", None)
         queries.finish(state, work, result, failed)
         state["steps"][-1].update(status="unavailable" if failed else "completed", finished_at=iso(utcnow()))
+        if not failed:
+            for previous in state["steps"][:-1]:
+                if (previous.get("status") == "unavailable" and previous.get("phase") == work["phase"]
+                        and previous.get("source_id") == work.get("source_id")
+                        and previous.get("source_url") == work.get("item", {}).get("url")):
+                    previous["recovered_by"] = work["token"]
         settle(branch, state)
         checkpoint(session, run, branch, "step_failed" if failed else "step_completed", state)
         jobs.heartbeat(session, job.id, lease)

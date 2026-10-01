@@ -54,7 +54,7 @@ def test_direct_catalogue_survives_web_outage_and_records_empty_distinctly(monke
             "title": ["Building material reuse"], "abstract": "<jats:p>Publisher-supplied abstract.</jats:p>"}]}})
     transport(monkeypatch, handle)
     from helvetic_lens import product_research, research_catalogues
-    async def empty(provider, query):
+    async def empty(provider, query, *args, **kwargs):
         assert provider in {"fedlex", "finma_news", "federal_court"}
         return {"items": []}
     monkeypatch.setattr(product_research, "public_search", empty)

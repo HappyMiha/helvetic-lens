@@ -6,9 +6,12 @@ selects only registered capabilities and never widens a job's evidence audience.
 import json
 import re
 from copy import deepcopy
+from time import monotonic
+
+from pydantic import ValidationError
 
 from . import search_channels
-from .analysis import InferenceBudget
+from .analysis import InferenceBudget, ModelClient
 from .domain_packs import for_product
 from .product_operations import fingerprint
 from .research_contracts import SKILLS
@@ -76,7 +79,7 @@ def finish(state, work, result, *, failed, elapsed):
         receipt["output_fingerprint"] = fingerprint(serial)
     if work.get("model_route"):
         receipt.update({key: work["model_route"].get(key) for key in
-            ("provider", "model", "prompt_fingerprint", "response_schema_fingerprint")})
+            ("provider", "model", "prompt_fingerprint", "response_schema_fingerprint", "output_allowance", "format_repair", "model_usage", "model_requests")})
     if isinstance(result, dict) and work["phase"] == "gate":
         receipt["decision"] = {key: result.get(key) for key in ("engine", "model", "verdict", "confidence")}
         receipt["decision"]["measurement"] = deepcopy(result.get("usage"))
@@ -96,13 +99,128 @@ def finish(state, work, result, *, failed, elapsed):
 
 
 async def complete(service, work, system, schema, seconds):
+    client = service.model_client
+    token = client.begin_trace("background") if isinstance(client, ModelClient) else None
+    try:
+        return await _complete(service, work, system, schema, seconds)
+    finally:
+        if token is not None:
+            events = client.end_trace(token)
+            route = work.setdefault("model_route", {})
+            route["model_usage"] = [{k: v for k, v in event["usage"].items()
+                if k in {"prompt_tokens", "completion_tokens", "total_tokens", "input_tokens", "output_tokens"}
+                and type(v) is int and v >= 0} for event in events if isinstance(event.get("usage"), dict)]
+            route["model_requests"] = sum(event.get("outcome") in {"success", "error"} for event in events)
+
+
+async def _complete(service, work, system, schema, seconds):
     if SKILLS[work["phase"]].provider != "synthesis":
         raise ValueError("This registered task must not call the synthesis model")
+    system += """\nReturn one compact JSON object, with schema properties at the root, never
+wrapped in a schema name. Enum values are exact and case-sensitive. Use brief
+statements and the shortest sufficient verbatim quotes, not entire paragraphs.
+Optional unsupported details must be omitted, not invented. Keep all required
+fields, especially document section coverage. Prefer a few useful findings over
+repeating the same fact in claims, entities and observations. Finish the JSON.
+"""
+    options = {}
+    if (work.get("unmetered_research") and isinstance(service.model_client, ModelClient)
+            and service.settings.apertus_provider != "docker" and work["phase"] in {"extract", "brief", "document_review"}):
+        options["max_output_tokens"] = max(4096, service.settings.apertus_max_tokens)
     work["model_route"] = {"provider": service.settings.apertus_provider, "model": service.settings.apertus_model,
+        "output_allowance": options.get("max_output_tokens", service.settings.apertus_max_tokens),
         "prompt_fingerprint": fingerprint(system), "response_schema_fingerprint": fingerprint(schema.model_json_schema()),
         "basis": "Configured model for this request; not an independently verified serving identity."}
-    return await service.model_client.complete(system, json.dumps(work["input"], ensure_ascii=False),
-        response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds))
+    started = monotonic()
+    content = json.dumps(work["input"], ensure_ascii=False)
+    raw = await service.model_client.complete(system, content,
+        response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
+    raw = response_object(raw, schema)
+    # Hosted JSON mode does not enforce the schema. Repair the format once with
+    # the same evidence, never by accepting unsupported or guessed fields.
+    if isinstance(service.model_client, ModelClient) and work.get("unmetered_research"):
+        errors = []
+        try:
+            if work["phase"] == "extract":
+                from .product_question_renewal import parse_recoverable
+                parsed = parse_recoverable(schema, raw, {key: "_" + key + "_unavailable" for key in
+                    ("applicability_checks", "entities", "relationships", "source_class", "read_relevance", "professional_facts")})
+                errors = extraction_citation_errors(parsed, work)
+            else:
+                schema.model_validate_json(raw)
+        except ValidationError as exc:
+            errors = [{"path": list(e["loc"]), "reason": e["msg"]} for e in exc.errors(include_input=False, include_url=False)][:16]
+        if errors:
+            remaining = seconds - (monotonic() - started)
+            if remaining > 5:
+                work["model_route"]["format_repair"] = True
+                raw = await service.model_client.complete(system + "\nThe previous response failed validation. Correct these validation errors using the original evidence. Omit unsupported optional fields. Do not invent a quote or locator.\n" + json.dumps(errors[:16]),
+                    json.dumps({"original_evidence": work["input"], "previous_invalid_response": raw[:30000]}, ensure_ascii=False),
+                    response_schema=schema.model_json_schema(), budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
+    return response_object(raw, schema)
+
+
+def extraction_citation_errors(result, work):
+    """Give the model actionable feedback before the unchanged strict write gate."""
+    passages = {p["passage"]: p["text"] for p in work["input"].get("source", {}).get("excerpts", [])}
+    groups = [("claims", result.claims)]
+    review = getattr(result, "section_review", None)
+    if review:
+        groups.extend(("section_review." + key, getattr(review, key)) for key in ("observations", "cross_references"))
+    errors = [{"path": [key, i, "quote"],
+        "reason": "Quote must be an exact substring of the supplied passage at this locator. Copy its exact words; do not paraphrase, concatenate or cite the question."}
+        for key, values in groups for i, value in enumerate(values)
+        if value.locator not in passages or value.quote not in passages[value.locator]]
+    for i, value in enumerate(result.claims):
+        if (value.relation == "SUPPORTS" and not value.existing_claim_id
+                and not numeric_tokens(value.statement) <= numeric_tokens(value.quote)):
+            errors.append({"path": ["claims", i, "statement"], "reason":
+                "A directly supported new claim may not introduce numbers absent from its quote. Preserve the quoted quantities and units; leave derived calculations for an explicitly explained analysis."})
+    if review:
+        for i, value in enumerate(review.observations):
+            if value.role == "support" and not numeric_tokens(value.statement) <= numeric_tokens(value.quote):
+                errors.append({"path": ["section_review.observations", i, "statement"], "reason":
+                    "A supported observation must preserve the quoted quantities, without invented numbers or unverified calculations."})
+    return errors
+
+
+def numeric_tokens(text):
+    # Preserve decimal separators: no guessed locale or implicit unit conversion.
+    return set(re.findall(r"(?<!\w)\d+(?:[.,]\d+)*", text))
+
+
+def retain_grounded_items(result, work):
+    """Keep independently verified siblings; rejected proposals remain named gaps."""
+    errors = extraction_citation_errors(result, work)
+    rejected = {}
+    for error in errors:
+        key, index = error["path"][:2]
+        rejected.setdefault(key, set()).add(index)
+    for key, indices in rejected.items():
+        owner, field = (result.section_review, key.split(".")[1]) if key.startswith("section_review.") else (result, key)
+        setattr(owner, field, [value for i, value in enumerate(getattr(owner, field)) if i not in indices])
+    if rejected:
+        result._analysis_gaps = {key: len(indices) for key, indices in rejected.items()}
+        review = getattr(result, "section_review", None)
+        if review:
+            review.limitations = [*review.limitations,
+                "Some proposed findings could not be grounded in exact source passages and were rejected. Their absence is not a negative finding; these interpretation gaps remain unresolved."]
+    return result
+
+
+def response_object(raw, schema):
+    """Remove presentation only, never infer missing evidence or field values."""
+    if not isinstance(raw, str):
+        return raw
+    raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    try:
+        data = json.loads(raw)
+    except ValueError:
+        return raw  # Required schema validation will reject malformed JSON.
+    title = schema.model_json_schema().get("title", schema.__name__)
+    if isinstance(data, dict) and set(data) == {title} and isinstance(data[title], dict):
+        return json.dumps(data[title], ensure_ascii=False)
+    return raw
 
 
 async def execute(service, work, seconds):

@@ -62,7 +62,8 @@ def captured(state, source, fresh):
 def unavailable(session, run, branch, state, item):
     if not enabled(run, branch, state):
         return False
-    seen = {s.url for s in rows(session, InvestigationSource, run)}
+    seen = {s.url for s in rows(session, InvestigationSource, run)
+        if not (state.get("refresh_retained_sources") and s.snapshot.get("retained_origin"))}
     for other in rows(session, InvestigationBranch, run):
         seen.update(other.checkpoint.get("attempted_urls", []))
     seen.update(state.get("attempted_urls", []))

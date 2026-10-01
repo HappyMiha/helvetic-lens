@@ -15,7 +15,8 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 ## Question-to-dossier research mission
 
 Activated five-block mission and shared allowance: 4742158f1950.
-VERIFYING: complete large-document reconciliation across saved requests; see scope.
+Large-document reconciliation activated: dcfa85b6119a.
+Four product-completion blocks implemented; release/live quality VERIFYING. [Evidence](docs/PRODUCT_COMPLETION.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2767,7 +2768,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** large-document reconciliation implemented; verifying release.
+**Current direction:** product-completion implemented; live quality VERIFYING. [Evidence](docs/PRODUCT_COMPLETION.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in
@@ -3068,7 +3069,7 @@ decisions, atomic conflict handling and no external actions. See
 
 ### MV2-022 — Notifications and Digests from the same developments
 
-**Current direction:** [meaningful mission updates, scope and acceptance](docs/RESEARCH_MISSION.md).
+**Current direction:** unified dossier controls/delivery implemented; release VERIFYING. [Evidence](docs/PRODUCT_COMPLETION.md).
 
 **Completed scoped feature, 28 September 2026:** Private/public personal research
 following in Pharma/Loyer, projected from actual completed investigations with
@@ -3130,7 +3131,7 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Current direction:** large-document reconciliation implemented; verifying release.
+**Current direction:** product-completion implemented; live quality VERIFYING. [Evidence](docs/PRODUCT_COMPLETION.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 One-question start 1.48 DONE: one input starts private research, daily monitoring and in-app updates. 65 Core cases and 239 tests/lint/types/build per client; exact Core 79989fa and both Sites 47 verified. Atomic retry-safe start, honest status and calm reader. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_QUESTION_START.md). Full target/human acceptance OPEN.

@@ -1,4 +1,8 @@
-"""Recurring queries through real native scheduling, jobs, capture and comparison."""
+"""Legacy persisted recurring runs through scheduling, jobs, capture and comparison.
+
+The helper restores the pre-mission record shape to protect restart compatibility.
+New scheduled missions are covered end to end in test_product_completion.py.
+"""
 import hashlib
 import json
 from datetime import timedelta
@@ -67,6 +71,12 @@ def newest(client, root):
 
 
 def pipeline(monkeypatch, service, target, *, during=None):
+    from helvetic_lens import product_web_research
+    original_seed = product_web_research.seed
+    def legacy_seed(session, run, trigger):
+        run.research_state = {}
+        original_seed(session, run, trigger)
+    monkeypatch.setattr(product_web_research, "seed", legacy_seed)
     service.settings.search1api_api_key = SecretStr("fixture")
     service.settings.typesafe_api_key = SecretStr("fixture")
     service.settings.apertus_base_url = "http://127.0.0.1:8181/v1"
@@ -244,8 +254,8 @@ def test_limits_replay_consent_cadence_and_readiness(signed, monkeypatch):
     assert due(service)["started"] == 1
     complete(client, service, root + "/investigations", newest(client, root))
     enable(client, root)
-    assert due(service)["started"] == 0
-    assert client.get(root + "/web-research").json()["policy"]["used_today"] == 2
+    assert due(service)["started"] == 1
+    assert client.get(root + "/web-research").json()["policy"]["used_today"] == 3
     assert len(state["queries"]) >= 2
 
 
@@ -273,8 +283,8 @@ def test_interrupted_search_is_not_repeated_and_explicit_retry_is_bounded(signed
     assert retry.status_code == 200, retry.text
     result = complete(client, service, root + "/investigations", run)
     assert result["status"] == "completed" and len(state["queries"]) == 1
-    assert due(service)["started"] == 0
-    assert client.get(root + "/web-research").json()["policy"]["used_today"] == 2
+    assert due(service)["started"] == 1
+    assert client.get(root + "/web-research").json()["policy"]["used_today"] == 3
 
 
 def test_signout_does_not_manufacture_a_session_or_publish(signed, monkeypatch):
@@ -338,7 +348,7 @@ def test_migration_equivalence_retained_receipts_and_containment(signed, monkeyp
             policy_revision=1, investigation_id=trigger.investigation_id, question=QUESTION, scheduled_for=utcnow()))
         with pytest.raises(IntegrityError):
             session.commit()
-    with service.db.engine.connect() as connection, pytest.raises(RuntimeError, match="Retained public-search"):
+    with service.db.engine.connect() as connection, pytest.raises(RuntimeError, match="Retained public-search|Retain research checkpoints"):
         migrate.downgrade(migration_config(connection), "03d495bef125")
 
 

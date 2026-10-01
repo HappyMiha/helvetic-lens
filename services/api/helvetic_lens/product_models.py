@@ -339,6 +339,7 @@ class PrivateDossierFollow(Base):
     owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     following: Mapped[bool] = mapped_column(Boolean, default=True)
     delivery_mode: Mapped[str] = mapped_column(String(16), default="immediate", server_default="immediate")
+    email_settings: Mapped[dict] = mapped_column(JSON, default=dict, server_default="{}")
     revision: Mapped[int] = mapped_column(Integer, default=1)
     seen_marker: Mapped[str] = mapped_column(String(64))
     research_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -69,7 +69,7 @@ async def bounded_get(url, params, *, timeout=15):
         raise DecisionUnavailable("invalid_search_response") from exc
 
 
-async def searxng(settings, query, index, *, limit=12, **_):
+async def searxng(settings, query, index, *, limit=12, cursor=None, **_):
     from .decision_search import plain, public_url
 
     base = settings.searxng_base_url.rstrip("/")
@@ -78,10 +78,13 @@ async def searxng(settings, query, index, *, limit=12, **_):
     if (parts.scheme not in ("http", "https") or not parts.hostname or parts.username or parts.password
             or parts.query or parts.fragment):
         raise DecisionUnavailable("search_not_configured")
+    page = int(cursor or 1)
+    if page < 1:
+        raise DecisionUnavailable("invalid_search_cursor")
     started = perf_counter()
     result = await bounded_get(base + "/search", {
         "q": query, "format": "json", "categories": "general", "engines": settings.searxng_engines,
-        "language": "auto", "safesearch": 0, "pageno": 1}, timeout=20)
+        "language": "auto", "safesearch": 0, "pageno": page}, timeout=20)
     records = result.get("results")
     errors = result.get("unresponsive_engines", [])
     if not isinstance(records, list) or len(records) > 200 or not isinstance(errors, list):
@@ -102,23 +105,24 @@ async def searxng(settings, query, index, *, limit=12, **_):
     unavailable = sorted({v[0] for v in errors if isinstance(v, list) and v and isinstance(v[0], str) and v[0] in allowed})
     if unavailable and len(unavailable) == len(allowed) and not items:
         raise DecisionUnavailable("upstream_unavailable")
-    return {"items": list(items.values()), "index": "web", "service": "searxng", "provider": "SearXNG",
+    return {"items": list(items.values()), "next_cursor": str(page + 1) if items else None, "page_number": page,
+        "index": "web", "service": "searxng", "provider": "SearXNG",
         "status": "partial" if errors else "complete", "unavailable_engines": unavailable,
         "engines_requested": sorted(allowed), "latency_ms": round((perf_counter() - started) * 1000, 2),
         "cost_usd": None, "omitted_records": len(records) - len(items), "candidate_limit": limit}
 
 
-async def direct_search(provider, query):
+async def direct_search(provider, query, cursor=None):
     from .decision_search import plain, public_url
     from .product_research import public_search
 
     if provider in {"clinicaltrials", "fda_labels", "ema_news", "finma_news", "federal_court"}:
         from .research_catalogues import search
-        return await search(provider, query)
+        return await search(provider, query, **({"cursor": cursor} if cursor is not None else {}))
     if provider != "crossref":
-        return await public_search(provider, query)
+        return await public_search(provider, query, cursor, unlimited=True)
     result = await bounded_get("https://api.crossref.org/works", {"query.bibliographic": query,
-        "rows": 12, "select": "DOI,title,URL,abstract,publisher"})
+        "rows": 12, "cursor": cursor or "*", "select": "DOI,title,URL,abstract,publisher"})
     message = result.get("message")
     records = message.get("items") if isinstance(message, dict) else None
     if not isinstance(records, list) or len(records) > 12:
@@ -136,7 +140,8 @@ async def direct_search(provider, query):
         if title:
             items.append({"id": hashlib.sha256(url.encode()).hexdigest()[:32], "kind": "literature",
                 "provider": "Crossref", "title": title, "url": url, "summary": plain(abstract, 600), "date": None})
-    return {"items": items, "omitted_records": len(records) - len(items)}
+    return {"items": items, "omitted_records": len(records) - len(items),
+        "next_cursor": message.get("next-cursor") if records and message.get("next-cursor") != cursor else None}
 
 
 def explicit_sources(text):

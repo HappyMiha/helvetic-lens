@@ -1,8 +1,10 @@
 """Personal research subscriptions do not grant dossier or monitoring rights."""
 import hashlib
-from uuid import UUID
+from typing import Literal
+from uuid import UUID, uuid4
 
 from fastapi import Query, Request
+from pydantic import StrictBool
 from sqlalchemy import and_, exists, func, or_, select
 
 from .db import utcnow
@@ -15,6 +17,17 @@ from .product_investigations import access
 from .product_models import DossierMember, PrivateDossierFollow, ProductDossier
 from .product_provenance import canonical, principal
 from .product_research_updates import marker, page, summary
+
+
+class PrivateFollowInput(FollowInput):
+    email_mode: Literal["off", "immediate", "daily", "weekly"] | None = None
+    email_confirmed: StrictBool = False
+    retry_email: StrictBool = False
+
+
+def email_state(saved):
+    value = saved.email_settings if saved else {}
+    return {key: value.get(key) for key in ("state", "last_sent_at", "next_delivery_at")} | {"mode": value.get("mode", "off")}
 
 
 def visible(identity):
@@ -36,8 +49,9 @@ def visible(identity):
 
 def selected(session, identity, product, identifier, *, write=False):
     row = access(session, identity, product, str(identifier), write=write, action="read")
-    saved = session.scalar(select(PrivateDossierFollow).where(PrivateDossierFollow.dossier_id == row.id,
-        PrivateDossierFollow.owner_user_id == identity.user_id).execution_options(populate_existing=True))
+    query = select(PrivateDossierFollow).where(PrivateDossierFollow.dossier_id == row.id,
+        PrivateDossierFollow.owner_user_id == identity.user_id).execution_options(populate_existing=True)
+    saved = session.scalar(query.with_for_update() if write else query)
     return row, saved
 
 
@@ -48,6 +62,7 @@ def state(session, row, saved):
     return {"dossier_id": row.id, "title": profile.config_json.get("name") or "Untitled dossier",
         "following": bool(saved and saved.following), "available": True,
         "delivery_mode": saved.delivery_mode if saved else "immediate",
+        "email": email_state(saved),
         "revision": saved.revision if saved else 0, "marker": head,
         "unread": research["unseen"] > 0, "research": research}
 
@@ -87,18 +102,22 @@ def routes(router, service, actor):
             return page(session, row.id, saved, offset=offset)
 
     @router.post(root)
-    def change(product: Product, dossier_id: UUID, data: FollowInput, request: Request):
+    def change(product: Product, dossier_id: UUID, data: PrivateFollowInput, request: Request):
         identity = actor(request)
         with service.write_guard, service.db.session() as session:
             row, saved = selected(session, identity, product, dossier_id, write=True)
             current = state(session, row, saved)
-            if current["following"] == data.following and (data.delivery_mode is None or data.delivery_mode == current["delivery_mode"]):
+            if not data.retry_email and current["following"] == data.following and (data.delivery_mode is None or data.delivery_mode == current["delivery_mode"]) and (data.email_mode is None or data.email_mode == current["email"]["mode"]):
                 return current
             if current["revision"] != data.expected_revision:
                 fail("Your following settings changed. Refresh before trying again.", 409)
+            if data.retry_email or (data.email_mode and data.email_mode != "off"):
+                user = session.get(User, identity.user_id)
+                if not data.email_confirmed or not user or not user.active or not user.email_verified_at:
+                    fail("Verify your email and explicitly enable dossier email updates.", 422)
             if not saved:
                 saved = PrivateDossierFollow(organization_id=row.organization_id, dossier_id=row.id,
-                    owner_user_id=identity.user_id, seen_marker=current["marker"], research_seen_at=utcnow())
+                    owner_user_id=identity.user_id, following=data.following, seen_marker=current["marker"], research_seen_at=utcnow())
                 session.add(saved)
             else:
                 saved.following, saved.revision, saved.updated_at = data.following, saved.revision + 1, utcnow()
@@ -106,6 +125,16 @@ def routes(router, service, actor):
                     saved.seen_marker, saved.research_seen_at = current["marker"], utcnow()
             if data.delivery_mode is not None:
                 saved.delivery_mode = data.delivery_mode
+            if data.email_mode is not None and data.email_mode != current["email"]["mode"]:
+                from .product_dossier_delivery import next_delivery
+                now = utcnow()
+                saved.email_settings = {"mode": data.email_mode, "version": str(uuid4()), "state": "enabled" if data.email_mode != "off" else "off",
+                    "after": now.isoformat(), "next_delivery_at": next_delivery(data.email_mode, now).isoformat()}
+            if data.retry_email:
+                if saved.email_settings.get("mode", "off") == "off":
+                    fail("Enable dossier email before retrying delivery.", 422)
+                saved.email_settings = {**saved.email_settings, "version": str(uuid4()), "pending": None,
+                    "attempted": None, "state": "enabled", "next_delivery_at": utcnow().isoformat()}
             session.commit()
             return state(session, row, saved)
 

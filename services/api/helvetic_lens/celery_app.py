@@ -216,12 +216,14 @@ def schedule_connectors():
 
 @celery_app.task(name="helvetic_lens.schedule_product_monitoring_research")
 def schedule_product_monitoring_research():
+    from .product_dossier_delivery import enqueue_due as enqueue_dossier_email
     from .product_monitoring_research import enqueue_due
     from .product_web_research import enqueue_due as enqueue_web
 
     database = Database(settings)
     try:
-        return {**enqueue_due(database, settings), "web_research": enqueue_web(database, settings)}
+        return {**enqueue_due(database, settings), "web_research": enqueue_web(database, settings),
+            "dossier_email": enqueue_dossier_email(database, settings)}
     finally:
         database.engine.dispose()
 
