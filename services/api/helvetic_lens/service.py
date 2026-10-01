@@ -4418,6 +4418,11 @@ class HelveticLens:
                 result_json = await asyncio.to_thread(refresh, self.db, self.settings,
                     subject_id=target_id, run_id=payload.get("run_id"), checkpoint=pollen_checkpoint)
                 result_type, result_id, result_url = "monitoring_subject", target_id, "/pollen-watch"
+            elif job_type == "dossier_limit_email":
+                from .product_dossier_limits import deliver as deliver_limit_request
+
+                result_json = await asyncio.to_thread(deliver_limit_request, self.db, self.environment_settings, target_id)
+                result_type, result_id, result_url = "dossier_limit_request", target_id, "/account"
             elif job_type == "digest_delivery":
                 async with self.runtime_cache_scope():
                     digest_runtime = self.relation_runtime_observation()

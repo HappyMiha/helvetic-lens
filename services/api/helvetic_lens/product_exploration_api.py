@@ -113,6 +113,8 @@ def routes(router, service, actor):
                 session_id=identity.session_id, session_organization_id=identity.organization_id,
                 research_state=exploration.initial(previous={"investigation_id": previous.id,
                     "briefing_revision": state["revision"], **selected}))
+            if previous.research_state.get("admission"):
+                run.research_state["admission"] = dict(previous.research_state["admission"])
             session.add(run)
             session.flush()
             enqueue(session, run)

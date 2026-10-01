@@ -117,4 +117,9 @@ def project(session, run, trigger=None, branches=None):
     result["state"] = "failed" if run.status == "failed" else "partial" if incomplete else "completed"
     if incomplete and not result["limitations"]:
         result["limitations"] = ["Part of this check could not be completed. Open the research record for its status."]
+    from .product_professional_context import project as professional_context
+    from .product_research_materiality import project as materiality
+
+    result["materiality"] = materiality(result)
+    result["professional_context"] = professional_context(rows(session, InvestigationSource, run))
     return result

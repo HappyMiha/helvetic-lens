@@ -160,7 +160,7 @@ def routes(router, service, actor):
         media = (file.content_type or "application/octet-stream").split(";")[0].lower().strip()
         suffix = PurePath(name).suffix.lower()
         if not body or len(body) > MAX_BYTES:
-            fail("Choose a non-empty public document of at most 2 MB.", 413)
+            fail("Choose a non-empty public document of at most 100 MB.", 413)
         if suffix not in FORMATS or media not in FORMATS[suffix] | {"application/octet-stream"}:
             fail("Public files support TXT, Markdown, CSV, HTML, PDF, DOCX, XLSX, PPTX and EML with matching content types.")
         if suffix == ".pdf":

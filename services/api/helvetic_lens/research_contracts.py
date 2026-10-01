@@ -34,6 +34,7 @@ SKILLS = MappingProxyType({s.id: s for s in (
     Skill("gate_review", "Resolve uncertain relevance", "synthesis", "candidate-question/v1", "candidate-assessment/v1"),
     Skill("read", "Capture a source", "source_reader", "source-reference/v1", "captured-passages/v1", deterministic=True, cost_class="local"),
     Skill("extract", "Extract cited findings", "synthesis", "captured-passages/v1", "evidence-ledger/v1"),
+    Skill("document_review", "Reconcile the complete document", "synthesis", "document-sections/v1", "whole-document-analysis/v1"),
     Skill("compare", "Compare earlier findings", "synthesis", "claim-comparison/v1", "claim-changes/v1"),
     Skill("reflect", "Identify remaining questions", "synthesis", "evidence-pack/v1", "research-reflection/v1"),
     Skill("orient", "Explain the emerging picture", "synthesis", "evidence-pack/v1", "early-orientation/v1"),

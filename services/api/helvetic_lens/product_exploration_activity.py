@@ -11,7 +11,7 @@ from .product_operations import fingerprint
 
 CONTRACT = "research-activity/v1"
 PURPOSE_CONTRACT = "research-purpose/v1"
-PHASES = {"plan", "search", "gate", "gate_review", "read", "extract", "reflect", "orient", "brief", "compare", "reformulate"}
+PHASES = {"plan", "search", "gate", "gate_review", "read", "extract", "reflect", "orient", "brief", "compare", "reformulate", "document_review"}
 
 
 def record(run, job, state, work):

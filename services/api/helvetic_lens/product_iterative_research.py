@@ -216,7 +216,7 @@ def seed(session, run):
     plan(session, run, "Plan the submitted question before searching.")
 
 
-def reserve_step(session, run, branch, state, phase, product, *, search_requests=None):
+def reserve_step(session, run, branch, state, phase, product, *, search_requests=None, local_read=False):
     from . import product_research_pacing as pacing
 
     if not enabled(run):
@@ -225,17 +225,21 @@ def reserve_step(session, run, branch, state, phase, product, *, search_requests
     data["search_budget_scope"] = "paid_provider_requests"
     search_requests = search_requests if search_requests is not None else (3 if product == "pharma" else 2)
     units = {"recall": ("source_fetches", 0), "search": ("search_requests", search_requests),
-        "gate": ("decision_calls", 2), "read": ("source_fetches", 1),
+        "gate": ("decision_calls", 2), "read": ("source_fetches", 0 if local_read else 1),
         "reformulate": ("model_calls", 1), "plan": ("model_calls", 1), "extract": ("model_calls", 1),
         "reflect": ("model_calls", 1), "gate_review": ("model_calls", 1),
-        "compare": ("model_calls", 1), "brief": ("model_calls", 1), "orient": ("model_calls", 1)}
+        "document_review": ("model_calls", 1), "compare": ("model_calls", 1), "brief": ("model_calls", 1), "orient": ("model_calls", 1)}
     resource, amount = units[phase]
     # Keep the final model request for a useful orientation when exploration
     # exhausts other analysis work; the same cumulative cap still applies.
     reserved = int(bool(data.get("exploration")) and resource == "model_calls" and phase != "brief")
     exceeded = "active_seconds" if pacing.remaining_seconds(run, phase) <= 0.001 else (
         resource if amount and data["used"].get(resource, 0) + amount > (data["limits"][resource] - reserved) else None)
-    if not exceeded and phase == "reformulate":
+    from .product_research_admission import unmetered
+
+    if unmetered(run):
+        exceeded = None
+    if not unmetered(run) and not exceeded and phase == "reformulate":
         # Do not spend a model request when no actual search, gate or read can
         # follow. These are availability checks, not extra quota reservations.
         exceeded = next((key for key, minimum in (("search_requests", search_requests),
@@ -297,12 +301,16 @@ def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, 
 
 def schedule_questions(session, run):
     data = deepcopy(run.research_state)
+    from . import product_research_mission as mission
+    from .product_research_admission import unmetered
+
+    capacity = mission.branch_capacity(run) if mission.enabled(run) else float("inf") if unmetered(run) else data["limits"]["branches"]
     count = sum(bool(b.checkpoint.get("question_id")) for b in rows(session, InvestigationBranch, run))
     for question in sorted(data["questions"], key=lambda q: (-q["priority"], q["depth"], q["created_at"])):
         if question["branch_id"] or question["status"] != "open":
             continue
-        if count >= data["limits"]["branches"] or question["depth"] > data["limits"]["depth"]:
-            question["waiting_reason"] = "branch_budget" if count >= data["limits"]["branches"] else "depth_budget"
+        if count >= capacity or (not unmetered(run) and question["depth"] > data["limits"]["depth"]):
+            question["waiting_reason"] = "next_research_round" if unmetered(run) else "branch_budget" if count >= data["limits"]["branches"] else "depth_budget"
             continue
         branch = InvestigationBranch(**scope(run), query=question["query"], reason=question["purpose"],
             checkpoint={"question_id": question["id"], "depth": question["depth"],
@@ -324,7 +332,10 @@ def apply_plan(session, run, result):
     data = deepcopy(run.research_state)
     data.update(objective=result.objective, completion_criteria=result.completion_criteria)
     run.research_state = data
-    for draft in result.branches[:min(6, max(2, data["limits"]["branches"] // 2))]:
+    from . import product_research_mission as mission
+
+    slots = 2 if mission.enabled(run) else min(6, max(2, data["limits"]["branches"] // 2))
+    for draft in result.branches[:slots]:
         add_question(session, run, draft)
     schedule_questions(session, run)
     plan(session, run, "Research question decomposed into independent directions; capacity retained for follow-up evidence.")
@@ -342,8 +353,10 @@ def prepare_reflection(session, run, branch):
     public_ids = {s.id for s in public}
     evidence = [e for e in rows(session, ClaimEvidence, run) if e.source_id in public_ids]
     claim_ids = {e.claim_id for e in evidence}
+    from .product_document_analysis import compact_sources
+
     value = {"question": run.question, "branch": branch.query,
-        "sources": [{"id": s.id, "sha256": s.sha256, "excerpts": s.snapshot["excerpts"]} for s in public],
+        "sources": compact_sources(session, run, public),
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status}
             for c in rows(session, DossierClaim, run) if c.id in claim_ids],
         "previous_questions": [{"question": q["question"], "query": q["query"]} for q in run.research_state["questions"]]}
@@ -506,8 +519,17 @@ def projection(run):
     if not enabled(run):
         return None
     data = deepcopy(run.research_state)
+    data.pop("mission", None)
+    data.pop("materiality", None)
     data.pop("exploration", None)  # Read through the current-source-checked projection only.
     data["questions"] = public_questions(data["questions"])
+    from .product_research_admission import unmetered
+
+    if unmetered(run):
+        data["execution_policy"] = "completion_based"
+        data["stops"] = []
+        data["budget_basis"] = "Usage is recorded for operation, not as an internal research limit."
+        return data
     data["budget_basis"] = "Cumulative reservations, including interrupted attempts. Gate reserves both possible providers; unused fallback capacity is not a bill. Active seconds count execution, not queue/pause time."
     if data.get("search_budget_scope") == "paid_provider_requests":
         data["budget_basis"] += " Search allowances cover paid provider requests only; free catalogues and local SearXNG have no application query quota. Older reservations remain carried forward."

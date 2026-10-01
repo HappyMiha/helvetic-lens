@@ -25,7 +25,7 @@ from .product_models import DossierEntry, ProductDossier, ResearchThread
 
 # Public Legal paths resolve to the historical key before authorization.
 Product = Literal["pharma", "legal", "loyer"]
-MAX_FILE = 10 * 1024 * 1024
+MAX_FILE = 100 * 1024 * 1024
 
 
 class Create(legal_profiles.CreateInput):
@@ -195,6 +195,10 @@ def product_router(service):
             session.flush()
             row = ProductDossier(product=product, profile_id=profile.id, creation_key=str(data.creation_key))
             session.add(row)
+            session.flush()
+            from .product_research_admission import admit_dossier
+
+            admit_dossier(session, identity.user_id, row.id)
             if selection:
                 session.flush()
                 record(session, row, identity.user_id, selection, "dossier_template:creation")
@@ -262,7 +266,7 @@ def product_router(service):
         body = await file.read(MAX_FILE + 1)
         await file.close()
         if not body or len(body) > MAX_FILE:
-            fail("Choose a non-empty file of at most 10 MB.", 413)
+            fail("Choose a non-empty file of at most 100 MB.", 413)
         name = PurePath((file.filename or "attachment").replace("\\", "/")).name
         name = "".join(c for c in name if ord(c) >= 32)[:200] or "attachment"
         digest = hashlib.sha256(body).hexdigest()
@@ -622,6 +626,9 @@ def product_router(service):
     from .product_question_start import routes as question_start_routes
 
     question_start_routes(router, service, actor)
+    from .product_dossier_limits import routes as dossier_limit_routes
+
+    dossier_limit_routes(router, service, actor)
     from .product_exploration_api import routes as exploration_routes
 
     exploration_routes(router, service, actor)

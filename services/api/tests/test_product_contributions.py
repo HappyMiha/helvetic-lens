@@ -42,13 +42,22 @@ def model_output(monkeypatch, model, *, invalid=False):
         calls.append(data)
         if "current" in data:
             return json.dumps({"changes": []})
+        if kwargs["response_schema"]["title"] == "DocumentReview":
+            return json.dumps({"coverage_fingerprint": data["coverage_fingerprint"], "findings": [],
+                "cross_reference_checks": [], "limitations": []})
         source = data["source"]
         part = source["excerpts"][0]
         quote = "Invented evidence never present in the document." if invalid else part["text"][:500]
         entity = [{"name": "Helvetic Molecule AG", "kind": "company", "quote": quote,
                    "locator": part["passage"], "investigate": True}] if "Helvetic Molecule AG" in quote else []
-        return json.dumps({"claims": [{"statement": "The contribution describes a research report.",
-            "quote": quote, "locator": part["passage"], "relation": "SUPPORTS"}], "entities": entity})
+        value = {"claims": [{"statement": "The contribution describes a research report.",
+            "quote": quote, "locator": part["passage"], "relation": "SUPPORTS"}], "entities": entity}
+        if data.get("document_section"):
+            value["section_review"] = {"coverage_fingerprint": data["document_section"]["coverage_fingerprint"],
+                "summary": "The contribution describes a research report.", "observations": [
+                    {"statement": "The contribution describes a research report.", "quote": quote,
+                        "locator": part["passage"], "role": "support"}], "cross_references": [], "limitations": []}
+        return json.dumps(value)
 
     monkeypatch.setattr(model, "complete", extract)
     return calls
@@ -118,7 +127,7 @@ def test_url_reads_only_submitted_url_with_fixed_nonprivate_purpose(signed, monk
 
 @pytest.mark.parametrize("name,media,body,locator", [
     ("memo.txt", "text/plain", TEXT.encode(), "text-block-1-char-1"),
-    ("memo.pdf", "application/pdf", make_pdf(["", TEXT]), "page-2-block-1-char-1"),
+    ("memo.pdf", "application/pdf", make_pdf(["", TEXT]), "page-2-text-1-char-1"),
     ("memo.html", "text/html", f"<main><p>{TEXT}</p></main>".encode(), "p00001-block-1-char-1"),
 ])
 def test_original_file_download_and_real_bounded_parser(signed, monkeypatch, name, media, body, locator):
@@ -145,7 +154,7 @@ def test_original_file_download_and_real_bounded_parser(signed, monkeypatch, nam
     ("scan.pdf", "application/pdf", make_pdf([""]), "No readable text"),
     ("binary.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", b"not-docx", "damaged"),
     ("spoof.txt", "image/png", TEXT.encode(), "content types"),
-    ("large.txt", "text/plain", b"a" * (2 * 1024 * 1024 + 1), "2 MB"),
+    ("invalid.txt", "text/plain", b"\xff\xfe", "UTF-8"),
     ("broken.pdf", "application/pdf", b"not pdf", "PDF"),
 ])
 def test_unavailable_extraction_preserves_original(signed, monkeypatch, name, media, body, reason):
@@ -174,9 +183,12 @@ def test_model_retry_keeps_capture_and_original_and_does_not_repeat_completed_st
     retried = post(client, root + "/" + failed["id"] + "/control", {"action": "retry", "expected_revision": failed["revision"]})
     assert retried.status_code == 200, retried.text
     result = complete(client, service, root, retried.json())
-    assert result["status"] == "completed" and len(calls) == 1
-    assert result["sources"] == [source] and result["original"] == failed["original"]
-    assert [step["phase"] for step in result["branches"][0]["steps"]] == ["read", "extract", "extract"]
+    assert result["status"] == "completed" and len(calls) == 2
+    assert result["sources"][0]["id"] == source["id"]
+    assert result["sources"][0]["sha256"] == source["sha256"]
+    assert result["sources"][0]["snapshot"]["excerpts"] == source["snapshot"]["excerpts"]
+    assert result["original"] == failed["original"]
+    assert [step["phase"] for step in result["branches"][0]["steps"]] == ["read", "extract", "extract", "document_review"]
     assert post(client, root + "/" + result["id"] + "/control", {"action": "retry", "expected_revision": result["revision"]}).status_code == 409
 
 
@@ -275,6 +287,9 @@ def test_partial_context_retry_analyses_only_failed_source(signed, monkeypatch):
 
     async def extract(system, user, **kwargs):
         data = json.loads(user)
+        if kwargs["response_schema"]["title"] == "DocumentReview":
+            return json.dumps({"coverage_fingerprint": data["coverage_fingerprint"], "findings": [],
+                "cross_reference_checks": [], "limitations": []})
         source = data["source"]
         calls.append(source["id"])
         if source["kind"] == "team_contribution" and fail_once[0]:

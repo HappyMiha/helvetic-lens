@@ -1,5 +1,11 @@
 # Helvetic Lens project map
 
+[Complete research and shared dossier capacity](docs/RESEARCH_MISSION.md) connects
+evidence-led rounds, full-document section analysis and reconciliation, current
+knowledge, professional context and meaningful updates. Accounts start with three
+owned dossiers across Legal/Pharma; higher totals use owner-reviewed email requests.
+Production activation is tracked separately in the parent mission checkpoint.
+
 [Sources, memory and readable updates](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md)
 connects diagram blocks 1, 2, 3, 6 and 7 in Legal and Pharma. Free public catalogues
 and local SearXNG have no application query quota; paid allowances never block

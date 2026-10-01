@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import PurePath
 
-MAX_BYTES = 2 * 1024 * 1024
+MAX_BYTES = 100 * 1024 * 1024
 MAX_TEXT = 24000
 FORMATS = {
     ".txt": {"text/plain"}, ".md": {"text/plain", "text/markdown"},
@@ -19,12 +19,19 @@ FORMATS = {
 }
 
 
-def parse(body, filename, content_type, *, nested=False):
+def parse(body, filename, content_type, *, nested=False, cursor=None):
     from .extraction import extract
     from .pdf_reader import read_pdf
 
+    progressive = cursor is not None
+    cursor = cursor or {"page": 0, "offset": 0}
+    if set(cursor) != {"page", "offset"} or any(type(v) is not int or v < 0 for v in cursor.values()):
+        raise ValueError("Invalid document position")
+    start, offset = cursor["page"], cursor["offset"]
+    if start > 1000 or offset > 10_000_000:
+        raise ValueError("Document position exceeds limits")
     if not body or len(body) > MAX_BYTES:
-        return {"error": "Original retained. Automatic extraction accepts files up to 2 MB."}
+        return {"error": "Original retained. Automatic extraction accepts files up to 100 MB."}
     suffix = PurePath(filename).suffix.lower()
     media = content_type.split(";")[0].strip().lower()
     if suffix not in FORMATS or media not in FORMATS[suffix] | {"", "application/octet-stream"}:
@@ -33,10 +40,12 @@ def parse(body, filename, content_type, *, nested=False):
     if suffix == ".pdf":
         if not body.startswith(b"%PDF"):
             return {"error": "Original retained. The file does not contain a PDF document."}
-        pdf = read_pdf(body, max_pages=60, text_page_limit=20)
-        sections = [(f"page-{page.number}", block) for page in pdf.pages for block in page.blocks]
+        pdf = read_pdf(body, max_pages=1000 if progressive else 60,
+            text_page_limit=4 if progressive else 20, page_start=start)
+        sections = [(f"page-{page.number}-text-{i}", block) for page in pdf.pages
+            for i, block in enumerate(page.blocks, 1)] if progressive else [(f"page-{page.number}", block) for page in pdf.pages for block in page.blocks]
         from .document_ocr import pdf_pages
-        scanned = [page.number for page in pdf.pages if not any(b.strip() for b in page.blocks)]
+        scanned = [page.number for page in pdf.pages if page.requires_ocr]
         methods = ["pdfminer"]
         if scanned:
             recognized, warnings = pdf_pages(body, scanned)
@@ -44,7 +53,7 @@ def parse(body, filename, content_type, *, nested=False):
             if recognized:
                 methods.append("tesseract-ocr")
         page_count = pdf.page_count
-        truncated = page_count > 20
+        truncated = page_count > (start + 4 if progressive else 20)
     elif suffix in {".docx", ".xlsx", ".pptx"}:
         from .document_formats import office
         sections = office(body, suffix)
@@ -84,30 +93,47 @@ def parse(body, filename, content_type, *, nested=False):
             return {"error": "Original retained. This file contains unsupported binary content."}
         sections, truncated, page_count, methods = [("text", text)], False, None, ["utf8-text"]
     excerpts, remaining, extracted = [], MAX_TEXT, sum(len(text) for _, text in sections)
+    skipped, consumed = offset, 0
     for position, (location, text) in enumerate(sections, 1):
+        if skipped >= len(text):
+            skipped -= len(text)
+            continue
         if remaining <= 0:
             break
-        value = text[:remaining]
+        begin = skipped
+        skipped = 0
+        value = text[begin:begin + remaining]
         if len(location) > 80:
             location = location[:50] + "-" + hashlib.sha256(location.encode()).hexdigest()[:16]
-        for offset in range(0, len(value), 1200):
-            part = value[offset:offset + 1200]
+        for part_start in range(0, len(value), 1200):
+            part = value[part_start:part_start + 1200]
             if part.strip():
-                excerpts.append({"passage": f"{location}-block-{position}-char-{offset + 1}", "text": part})
+                locator = location if progressive and suffix == ".pdf" else f"{location}-block-{position}"
+                excerpts.append({"passage": f"{locator}-char-{begin + part_start + 1}", "text": part})
         remaining -= len(value)
-    if not excerpts:
+        consumed += len(value)
+    next_cursor = ({"page": start, "offset": offset + consumed} if offset + consumed < extracted else
+        {"page": start + 4, "offset": 0} if suffix == ".pdf" and truncated else None)
+    reading = {"contract": "document-reading/v1", "cursor": cursor, "next_cursor": next_cursor,
+        "pages": [start + 1, min(start + 4, page_count)] if suffix == ".pdf" else None,
+        "page_count": page_count, "characters_read": consumed,
+        "complete": next_cursor is None and not warnings,
+        "unread_reason": "More document sections remain." if next_cursor else "Extraction warnings require checking the original." if warnings else None}
+    if not excerpts and not progressive:
         return {"error": "Original retained. No readable text was found within extraction limits.", "warnings": warnings}
-    return {"status": "complete", "excerpts": excerpts, "text_truncated": truncated or extracted > MAX_TEXT,
+    return {"status": "complete", "excerpts": excerpts, "text_truncated": bool(next_cursor),
         "extracted_characters": extracted, "page_count": page_count, "extraction_methods": methods,
         "warnings": list(dict.fromkeys(warnings)), "attachments": attachments,
-        "scope": "Local extraction: at most 2 MB, 60 PDF pages, text from the first 20 pages, OCR of up to four scanned pages, "
-            "ten email attachments and 24,000 characters. Office cells use stored values; formulas and active content are not executed. "
+        **({"reading": reading} if progressive else {}),
+        "scope": ("Incremental local extraction: 100 MB originals, up to 1,000 PDF pages; four pages and 24,000 characters per saved portion. "
+            if progressive else "Local extraction: at most 100 MB, 60 PDF pages, text from the first 20 pages, OCR of up to four scanned pages, 24,000 characters. ")
+            + "Up to ten email attachments. Office cells use stored values; formulas and active content are not executed. "
             "Layout, merged cells and OCR may require checking the original. Quotes refer to extracted text, not verified facts."}
 
 
-async def extract_file(body, filename, content_type):
+async def extract_file(body, filename, content_type, *, cursor=None):
     """Fresh isolated parser with wall/CPU/memory/output bounds; no model calls."""
-    process = await asyncio.create_subprocess_exec(sys.executable, "-m", __name__, filename, content_type,
+    process = await asyncio.create_subprocess_exec(sys.executable, "-m", __name__, filename, content_type, json.dumps(cursor),
         stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL,
         start_new_session=True)
     try:
@@ -139,7 +165,8 @@ def main():
     resource.setrlimit(resource.RLIMIT_FSIZE, (32 * 1024 * 1024, 32 * 1024 * 1024))
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     try:
-        result = parse(sys.stdin.buffer.read(MAX_BYTES + 1), sys.argv[1], sys.argv[2])
+        result = parse(sys.stdin.buffer.read(MAX_BYTES + 1), sys.argv[1], sys.argv[2],
+            cursor=json.loads(sys.argv[3]) if len(sys.argv) > 3 else None)
     except Exception:
         result = {"error": "Original retained. The document is damaged, encrypted, unsupported or exceeds extraction limits."}
     sys.stdout.write(json.dumps(result, ensure_ascii=False))

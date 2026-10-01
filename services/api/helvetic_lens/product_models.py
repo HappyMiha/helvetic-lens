@@ -317,8 +317,10 @@ class PublicDossierFollow(Base):
     owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     publication_id: Mapped[str] = mapped_column(ForeignKey("product_publications.id", ondelete="CASCADE"), index=True)
     following: Mapped[bool] = mapped_column(Boolean, default=True)
+    delivery_mode: Mapped[str] = mapped_column(String(16), default="immediate", server_default="immediate")
     revision: Mapped[int] = mapped_column(Integer, default=1)
     seen_marker: Mapped[str] = mapped_column(String(64))
+    activity_seen_marker: Mapped[str | None] = mapped_column(String(64))
     research_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
@@ -336,6 +338,7 @@ class PrivateDossierFollow(Base):
     dossier_id: Mapped[str] = mapped_column(String(36), index=True)
     owner_user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
     following: Mapped[bool] = mapped_column(Boolean, default=True)
+    delivery_mode: Mapped[str] = mapped_column(String(16), default="immediate", server_default="immediate")
     revision: Mapped[int] = mapped_column(Integer, default=1)
     seen_marker: Mapped[str] = mapped_column(String(64))
     research_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -367,3 +370,36 @@ class PublicReuseReceipt(Base):
     dossier_id: Mapped[str | None] = mapped_column(ForeignKey("product_dossiers.id", ondelete="SET NULL"))
     request_key: Mapped[str] = mapped_column(String(36))
     fingerprint: Mapped[str] = mapped_column(String(64))
+
+
+class DossierAllowance(Base):
+    __tablename__ = "product_dossier_allowances"
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    limit: Mapped[int] = mapped_column(Integer, default=3, server_default="3")
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+
+
+class DossierAllowanceSlot(Base):
+    __tablename__ = "product_dossier_allowance_slots"
+    dossier_id: Mapped[str] = mapped_column(ForeignKey("product_dossiers.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+
+
+class DossierLimitRequest(Base):
+    __tablename__ = "product_dossier_limit_requests"
+    __table_args__ = (UniqueConstraint("user_id", "request_key", name="uq_dossier_limit_request"),
+        CheckConstraint("status IN ('pending', 'approved', 'rejected')", name="ck_dossier_limit_request_status"))
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    request_key: Mapped[str] = mapped_column(String(36))
+    requested_limit: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(String(1000))
+    status: Mapped[str] = mapped_column(String(16), default="pending")
+    revision: Mapped[int] = mapped_column(Integer, default=1)
+    previous_limit: Mapped[int] = mapped_column(Integer)
+    approved_limit: Mapped[int | None] = mapped_column(Integer)
+    decided_by_user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    mail_state: Mapped[str] = mapped_column(String(16), default="queued")
+    mailed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

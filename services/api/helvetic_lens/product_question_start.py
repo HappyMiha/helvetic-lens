@@ -26,7 +26,7 @@ CONTRACT = "question-start/v1"
 START_DISCLOSURE = (
     "Start private research and daily monitoring of the submitted public question. "
     "The question and follow-ups derived from public evidence may be sent to search and decision providers; "
-    "selected evidence is analysed by the workspace model. Initial research uses bounded iterative limits. "
+    "selected evidence is analysed by the workspace model. Research continues through the materials needed to address the question. "
     "Daily checks begin tomorrow under the recurring research policy. Updates stay in this dossier and "
     "in-app following; monitoring can be paused. Private notes and files are not public search queries."
 )
@@ -78,6 +78,14 @@ def monitoring_summary(session, parent, settings):
 
 
 def routes(router, service, actor):
+    @router.get("/research-allowance")
+    def allowance(product: Product, request: Request):
+        from .product_research_admission import state
+
+        identity = actor(request)
+        with service.db.session() as session:
+            return state(session, identity.user_id, product)
+
     @router.post("/start", status_code=202)
     def start(product: Product, data: Start, request: Request):
         return create(product, data, request, exploratory=False)
@@ -126,6 +134,10 @@ def routes(router, service, actor):
                 research_state={**state, "decision_order": "jev_first", "initial_limits": limits.model_dump()})
             session.add(run)
             session.flush()
+            from .product_research_admission import admit_dossier, policy
+
+            admit_dossier(session, identity.user_id, parent.id)
+            run.research_state = {**run.research_state, "admission": policy(parent.id)}
             enqueue(session, run)
             event(session, run, "investigation_queued", question=run.question, disclosure=disclosure,
                 origin=contract)

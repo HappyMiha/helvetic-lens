@@ -78,6 +78,9 @@ def routes(router, service, actor):
                 run.research_state["initial_limits"] = (data.limits or research.Limits()).model_dump()
             session.add(run)
             session.flush()
+            from .product_research_admission import policy
+
+            run.research_state = {**run.research_state, "admission": policy(dossier_id)}
             enqueue(session, run)
             event(session, run, "investigation_queued", question=run.question,
                 disclosure="The submitted question and follow-up queries derived from public-source evidence may be sent to external search. "

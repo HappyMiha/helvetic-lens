@@ -47,6 +47,7 @@ def state(session, row, saved):
     head = hashlib.sha256(canonical([row.id, marker(research)]).encode()).hexdigest()
     return {"dossier_id": row.id, "title": profile.config_json.get("name") or "Untitled dossier",
         "following": bool(saved and saved.following), "available": True,
+        "delivery_mode": saved.delivery_mode if saved else "immediate",
         "revision": saved.revision if saved else 0, "marker": head,
         "unread": research["unseen"] > 0, "research": research}
 
@@ -91,7 +92,7 @@ def routes(router, service, actor):
         with service.write_guard, service.db.session() as session:
             row, saved = selected(session, identity, product, dossier_id, write=True)
             current = state(session, row, saved)
-            if current["following"] == data.following:
+            if current["following"] == data.following and (data.delivery_mode is None or data.delivery_mode == current["delivery_mode"]):
                 return current
             if current["revision"] != data.expected_revision:
                 fail("Your following settings changed. Refresh before trying again.", 409)
@@ -101,8 +102,10 @@ def routes(router, service, actor):
                 session.add(saved)
             else:
                 saved.following, saved.revision, saved.updated_at = data.following, saved.revision + 1, utcnow()
-                if data.following:
+                if data.following and not current["following"]:
                     saved.seen_marker, saved.research_seen_at = current["marker"], utcnow()
+            if data.delivery_mode is not None:
+                saved.delivery_mode = data.delivery_mode
             session.commit()
             return state(session, row, saved)
 

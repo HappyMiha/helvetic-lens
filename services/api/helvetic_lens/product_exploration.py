@@ -183,13 +183,14 @@ def initial(*, previous=None):
     from . import product_observed_queries as queries
     from . import product_question_renewal as renewal
     from . import product_research_memory as memory
+    from . import product_research_mission as mission
     from .product_early_clarification import CONTEXT_CONTRACT as DIRECTION_CONTEXT_CONTRACT
     from .product_early_clarification import CONTRACT as CLARIFICATION_CONTRACT
 
-    limits = research.Limits(branches=4, depth=2, sources_per_branch=2,
-        candidates_per_branch=4, search_requests=12, source_fetches=6,
-        model_calls=16, decision_calls=40, active_seconds=360)
-    return {**research.initial(limits), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
+    limits = research.Limits(branches=12, depth=4, sources_per_branch=2,
+        candidates_per_branch=6, search_requests=24, source_fetches=24,
+        model_calls=48, decision_calls=160, active_seconds=1200)
+    return {**research.initial(limits), "mission": mission.initial(), "decision_order": "jev_first", "initial_limits": limits.model_dump(),
         "exploration": {"contract": CONTRACT, "status": "exploring", "revision": 0, "pacing_version": 1,
             "briefing": None, "previous": previous, "scope_contract": research_scope.CONTRACT,
             "open_check_contract": OPEN_CHECK_CONTRACT, "branch_assessment_contract": branch_assessment.CONTRACT,
@@ -216,9 +217,10 @@ def sources(session, run):
 
 
 def prepare(session, run, *, early=False):
+    from .product_document_analysis import compact_sources
+
     value = {"original_question": run.question,
-        "sources": [{"id": s.id, "sha256": s.sha256, "title": s.title, "excerpts": s.snapshot["excerpts"]}
-            for s in sources(session, run).values()],
+        "sources": compact_sources(session, run, sources(session, run).values()),
         "open_questions": [{"question": q["question"], "status": q["status"]}
             for q in run.research_state["questions"]]}
     state = run.research_state["exploration"]
@@ -278,6 +280,10 @@ def schedule(session, run, branches):
             update(run, orientation={"contract": "orientation/v1", "status": "scheduled", "briefing": None})
             return True
         return False
+    from . import product_research_mission as mission
+
+    if mission.enabled(run):
+        return mission.schedule(session, run, branches)
     if any(b.phase == "brief" for b in branches):
         if run.research_state["exploration"]["status"] == "exploring":
             update(run, status="unavailable", revision=run.event_sequence + 1)
@@ -350,6 +356,7 @@ def apply(session, run, supplied, result):
     validate_directions(result)
     renewals = renewal.validate(session, run, supplied, result)
     value = validated(session, run, supplied, result, ("findings", "directions"))
+    value.pop("mission_checkpoint", None)
     value.pop("question_renewals", None)
     value.pop("direction_assessment", None)
     value.pop("next_check_choice", None)
@@ -501,6 +508,9 @@ def projection(session, run):
     if not enabled(run):
         return None
     value = deepcopy(run.research_state["exploration"])
+    from .product_research_mission import project as mission_project
+
+    value["mission"] = mission_project(session, run)
     value.pop("reply_fingerprint", None)
     value.pop("reply_key", None)
     value.pop("adaptive_dependencies", None)

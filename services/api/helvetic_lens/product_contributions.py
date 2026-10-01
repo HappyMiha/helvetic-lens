@@ -94,14 +94,16 @@ async def read_file(folder, data):
     path = folder / data["artifact_key"]
     if path.parent != folder or not path.is_file():
         return {"error": "Original file is temporarily unavailable. Retry after storage is restored."}
+    from .product_contribution_extract import MAX_BYTES
+
     with path.open("rb") as stream:
-        body = stream.read(2 * 1024 * 1024 + 1)
-    if len(body) > 2 * 1024 * 1024:
-        return {"error": "Original retained. Automatic extraction accepts files up to 2 MB."}
+        body = stream.read(MAX_BYTES + 1)
+    if len(body) > MAX_BYTES:
+        return {"error": "Original retained. Automatic extraction accepts files up to 100 MB."}
     if hashlib.sha256(body).hexdigest() != data["sha256"]:
         return {"error": "Original integrity check failed. No text was analysed."}
     from .product_contribution_extract import extract_file
-    result = await extract_file(body, data["title"], data["content_type"])
+    result = await extract_file(body, data["title"], data["content_type"], **({"cursor": data["cursor"]} if "cursor" in data else {}))
     return {**result, "sha256": data["sha256"]}
 
 
@@ -115,6 +117,20 @@ def retry(session, run):
         state = deepcopy(branch.checkpoint)
         state.pop("inflight", None)
         state.pop("error", None)
+        documents = state.get("document_reads", {})
+        unread = next(((key, doc) for key, doc in documents.items() if doc.get("error") and not doc.get("read_complete")), None)
+        for doc in documents.values():
+            doc.pop("review_failed", None)
+        if unread:
+            key, doc = unread
+            doc.pop("error", None)
+            state["read_index"] = int(key)
+            branch.phase = "read"
+            branch.status, branch.checkpoint = "queued", state
+            continue
+        if branch.phase == "document_review":
+            branch.status, branch.checkpoint = "queued", state
+            continue
         iterative = (run.research_state or {}).get("version") == "iterative-v1"
         if iterative:
             state.pop("question_finished", None)
@@ -139,4 +155,14 @@ def retry(session, run):
             state["read_index"] = 0
             branch.phase = "read"
         branch.status, branch.checkpoint = "queued", state
+    if run.research_state.get("mission"):
+        from .product_research_mission import update
+        mission = run.research_state["mission"]
+        final_exists = any(b.query == f"Research checkpoint {mission['round']} {run.id}"
+            and b.status == "completed" for b in rows(session, InvestigationBranch, run))
+        update(run, stage="deepening", stop=None, round=mission["round"] + int(final_exists))
+        if final_exists:
+            from .product_exploration import update as update_exploration
+            update_exploration(run, status="exploring", briefing=None, observed_query_context=None,
+                renewal_context=None, direction_assessment_context=None)
     plan(session, run, "An authorized participant requested another attempt at unavailable steps; completed evidence is retained.")

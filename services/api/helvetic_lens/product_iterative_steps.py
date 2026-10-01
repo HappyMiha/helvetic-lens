@@ -25,6 +25,7 @@ from . import product_query_recovery as query_recovery
 from . import product_question_renewal as renewal
 from . import product_read_relevance as read_relevance
 from . import product_research_memory as memory
+from . import product_research_mission as mission
 from . import product_research_pacing as pacing
 from . import product_source_recovery as recovery
 from .product_investigation_models import InvestigationBranch, InvestigationSource
@@ -44,10 +45,12 @@ def prepare(session, run, branch, state, work):
     work["decision_order"] = run.research_state.get("decision_order", "jev_first")
     work["question"] = run.question
     work["limits"] = run.research_state["limits"]
+    from .product_research_admission import unmetered
+    work["unmetered_research"] = unmetered(run)
     if branch.phase == "recall":
         research_recall.prepare(session, run, state, work)
     elif branch.phase == "plan":
-        work["input"] = {"question": run.question, "branch_slots": min(6, max(2, work["limits"]["branches"] // 2))}
+        work["input"] = {"question": run.question, "branch_slots": 2 if mission.enabled(run) else min(6, max(2, work["limits"]["branches"] // 2))}
         direction = clarification.context(session, run)
         if direction and direction["status"] == "ready":
             work["input"]["selected_direction"] = direction
@@ -68,6 +71,8 @@ def prepare(session, run, branch, state, work):
         query_recovery.prepare(session, run, branch, state, work)
     elif branch.phase in {"orient", "brief"}:
         work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
+        if branch.phase == "brief" and mission.enabled(run):
+            work["input"]["research_mission"] = mission.context(session, run)
         if branch.phase == "orient":
             work["early_clarification"] = clarification.enabled(run)
             work["timeout_seconds"] = 20
@@ -96,7 +101,7 @@ async def execute(service, work, seconds):
         return await evaluate(service.settings, work["question"], work["query"], work["item"], work["decision_order"])
     if phase == "read":
         return await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto",
-            rank_passages=False, excerpt_limit=8)
+            rank_passages=False, excerpt_limit=8, **({"retain_original": {"folder": service.environment_settings.storage_path / "artifacts", "prefix": work["run_id"] + "-" + work["branch_id"]}} if "document_cursor" in work else {}), **({"document_cursor": work["document_cursor"]} if "document_cursor" in work else {}))
     schema, system = {
         "reformulate": (query_recovery.QueryReformulation, query_recovery.SYSTEM),
         "plan": (research.ResearchPlan, research.PLAN_SYSTEM),
@@ -145,6 +150,17 @@ async def execute(service, work, seconds):
         system += clarification.CONTEXT_SYSTEM
     if work["input"].get("saved_knowledge"):
         system += research_knowledge.SYSTEM
+    if work["input"].get("current_dossier_knowledge"):
+        from .product_current_knowledge import SYSTEM as knowledge_system
+        system += knowledge_system
+    if phase == "extract":
+        from .product_professional_context import SYSTEM as professional_system
+        system += professional_system
+    if phase == "brief" and work["input"].get("research_mission"):
+        schema, system = mission.schema(schema), system + mission.SYSTEM
+    if phase == "extract" and work["input"].get("document_section"):
+        from . import product_document_analysis as document_analysis
+        schema, system = document_analysis.schema(schema), system + document_analysis.SECTION_SYSTEM
     raw = await research_gateway.complete(service, work, system, schema, seconds)
     if not isinstance(raw, str) or len(raw) > 30000:
         raise ValueError("Unbounded research response")
@@ -215,6 +231,7 @@ def apply(session, run, branch, state, work, result):
     elif phase == "brief":
         exploration.apply(session, run, work["input"], result)
         branch.status = "completed"
+        mission.apply(session, run, work["input"], result)
     elif phase == "orient":
         exploration.apply_orientation(session, run, work["input"], result)
         branch.status = "completed"
@@ -236,8 +253,8 @@ def apply(session, run, branch, state, work, result):
                     seen.add(item["url"])
         if recover:
             state["source_recovery"] = {"contract": recovery.CONTRACT, "failed_reads": 0}
-        limit = work["limits"]["candidates_per_branch"]
-        state.update(candidates=candidates[:limit], gate_index=0, items=[], source_limit=work["limits"]["sources_per_branch"],
+        limit = len(candidates) if work.get("unmetered_research") else work["limits"]["candidates_per_branch"]
+        state.update(candidates=candidates[:limit], gate_index=0, items=[], source_limit=limit if work.get("unmetered_research") else work["limits"]["sources_per_branch"],
             candidate_counts={"retrieved": len(result["items"]), "duplicate_or_excluded": len(result["items"]) - len(candidates),
                 "outside_candidate_budget": max(0, len(candidates) - limit)},
             coverage={"retrieval": result["retrieval"], "scope": result["coverage"]})

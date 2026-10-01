@@ -7,6 +7,10 @@ def enabled(run):
 
 
 def remaining_seconds(run, phase):
+    from .product_research_admission import unmetered
+
+    if unmetered(run):
+        return 90
     data = run.research_state
     remaining = data["limits"]["active_seconds"] - data["used"].get("active_seconds", 0)
     if enabled(run) and phase != "brief":
@@ -28,7 +32,11 @@ def order(branch):
 def settle(branch, state):
     if not state.get("read_as_found") or branch.phase not in {"gate", "read", "extract"}:
         return False
-    if state.get("extract_index", 0) < len(state.get("source_ids", [])):
+    from .product_document_reading import pending_read
+
+    if pending_read(state):
+        branch.phase = "read"
+    elif state.get("extract_index", 0) < len(state.get("source_ids", [])):
         branch.phase = "extract"
     elif state.get("read_index", 0) < len(state.get("items", [])):
         branch.phase = "read"

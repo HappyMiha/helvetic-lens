@@ -12,6 +12,7 @@ from .product_api import fail
 from .product_investigations import Citation, citation
 from .product_models import ProductDossier
 from .product_operations import fingerprint
+from .product_professional_context import Fact
 
 CONTRACT = "evidence-applicability/v1"
 PHASES = {"plan", "extract", "reflect", "orient", "brief", "reformulate"}
@@ -55,6 +56,7 @@ class ScopeCheck(Citation):
 class ScopedExtraction(relevance.ReadExtraction):
     model_config = {"title": "ResearchExtraction"}
     applicability_checks: list[ScopeCheck] = Field(default_factory=list, max_length=4)
+    professional_facts: list[Fact] = Field(default_factory=list, max_length=12)
 
 
 def state(run):

@@ -1,6 +1,7 @@
 """Personal following of current public projections, with explicit read markers."""
 import hashlib
 import re
+from typing import Literal
 from uuid import UUID
 
 from fastapi import Query, Request
@@ -26,6 +27,7 @@ FOLLOW_WRITE = re.compile(r"^/api/products/(pharma|loyer)/public-dossiers/[0-9a-
 class FollowInput(Input):
     expected_revision: int = Field(ge=0, strict=True)
     following: bool = Field(strict=True)
+    delivery_mode: Literal["immediate", "digest", "silent"] | None = None
 
 
 class ReadInput(Input):
@@ -44,13 +46,16 @@ def follow_state(session, row, saved, activity):
     available = row.status == "published"
     research = research_summary(session, row.dossier_id, saved, row) if available else dict(EMPTY)
     head = [row.revision, activity.get(row.id, (0, None))]
+    activity_marker = hashlib.sha256(canonical(head).encode()).hexdigest() if available else None
     if research["total"]:
         head.append(research_marker(research))
     marker = hashlib.sha256(canonical(head).encode()).hexdigest() if available else None
     return {"publication_id": row.id, "publication": public_payload(row, detail=False) if available else None,
         "available": available, "following": bool(saved and saved.following),
+        "delivery_mode": saved.delivery_mode if saved else "immediate",
         "revision": saved.revision if saved else 0, "marker": marker, "research": research,
-        "unread": bool(available and saved and saved.following and saved.seen_marker != marker)}
+        "unread": bool(available and saved and saved.following and saved.delivery_mode != "silent"
+            and (research["unseen"] or (saved.activity_seen_marker != activity_marker if saved.activity_seen_marker else saved.seen_marker != marker)))}
 
 
 def owned(session, identity, identifier):
@@ -109,7 +114,7 @@ def following_routes(router, service, actor):
             state = follow_state(session, row, saved, activity)
             # A retry of an already achieved state is a no-op; an old opposite
             # command cannot undo a newer choice or acknowledge newer changes.
-            if state["following"] == data.following:
+            if state["following"] == data.following and (data.delivery_mode is None or data.delivery_mode == state["delivery_mode"]):
                 return state
             if data.expected_revision != state["revision"]:
                 fail("Your following settings changed. Refresh before trying again.", 409)
@@ -121,8 +126,12 @@ def following_routes(router, service, actor):
                 session.add(saved)
             else:
                 saved.following, saved.revision, saved.updated_at = data.following, saved.revision + 1, utcnow()
-                if data.following:
+                if data.following and not state["following"]:
                     saved.seen_marker, saved.research_seen_at = state["marker"], utcnow()
+            if data.delivery_mode is not None:
+                saved.delivery_mode = data.delivery_mode
+            if not state["following"] or saved.activity_seen_marker is None:
+                saved.activity_seen_marker = hashlib.sha256(canonical([row.revision, activity.get(row.id, (0, None))]).encode()).hexdigest()
             session.commit()
             return follow_state(session, row, saved, activity)
 
@@ -141,6 +150,7 @@ def following_routes(router, service, actor):
                 fail("Your following settings changed. Refresh before trying again.", 409)
             saved.seen_marker, saved.revision = data.marker, saved.revision + 1
             saved.research_seen_at = utcnow()
+            saved.activity_seen_marker = hashlib.sha256(canonical([row.revision, activity.get(row.id, (0, None))]).encode()).hexdigest()
             session.commit()
             return follow_state(session, row, saved, activity)
 

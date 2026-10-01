@@ -1,8 +1,9 @@
 """Read-only notifications from retained completions, never copied evidence."""
 from datetime import UTC
 
-from sqlalchemy import case, exists, func, select
+from sqlalchemy import and_, case, exists, func, or_, select
 
+from .db import utcnow
 from .product_api import iso
 from .product_claim_evolution import payload as change_payload
 from .product_claim_evolution import query as change_query
@@ -15,11 +16,13 @@ from .product_investigation_models import (
     InvestigationSource,
 )
 from .product_public_research import eligible, sources_visible
+from .product_research_materiality import CONTRACT as MATERIALITY_CONTRACT
+from .product_research_materiality import delivery
 
 PAGE_SIZE = 10
 EMPTY = {"total": 0, "unseen": 0, "latest_at": None}
-COVERAGE = ("Completed research with newly captured evidence only. Unchanged repeat captures, "
-    "unfinished or failed research and withdrawn evidence are excluded. Source/finding counts "
+COVERAGE = ("Research with new evidence and recorded monitoring gaps. Unchanged repeat captures, "
+    "unfinished research and withdrawn evidence are excluded. Source/finding counts "
     "do not measure completeness or truth. Reading does not verify a machine finding. No email is sent.")
 
 
@@ -38,9 +41,11 @@ def completed(dossier_id, publication=None):
         InvestigationSource.investigation_id == Investigation.id, new_source()))
     query = select(Investigation.id.label("id"), func.max(InvestigationEvent.created_at).label("finished_at"))\
         .join(InvestigationEvent, InvestigationEvent.investigation_id == Investigation.id).where(
-            Investigation.dossier_id == dossier_id, Investigation.status == "completed",
+            Investigation.dossier_id == dossier_id, or_(Investigation.status == "completed",
+                and_(Investigation.status == "failed", Investigation.research_state["materiality"]["category"].as_string() == "coverage_gap")),
             InvestigationEvent.kind == "investigation_finished",
-            InvestigationEvent.detail["status"].as_string() == "completed", has_evidence)
+            InvestigationEvent.detail["status"].as_string() == Investigation.status,
+            or_(has_evidence, Investigation.research_state["materiality"]["category"].as_string() == "coverage_gap"))
     query = query.where(Investigation.publication_id == publication.id, eligible()) if publication else query.where(
         Investigation.publication_id.is_(None), sources_visible())
     return query.group_by(Investigation.id)
@@ -49,8 +54,15 @@ def completed(dossier_id, publication=None):
 def summary(session, dossier_id, saved, publication=None):
     rows = completed(dossier_id, publication).subquery()
     unseen = rows.c.finished_at > saved.research_seen_at if saved and saved.research_seen_at else True
+    mode = getattr(saved, "delivery_mode", None) or "immediate"
+    midnight = utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    category = Investigation.research_state["materiality"]["category"].as_string()
+    legacy = Investigation.research_state["materiality"]["contract"].as_string().is_distinct_from(MATERIALITY_CONTRACT)
+    released = and_(category != "quiet", or_(mode == "immediate", rows.c.finished_at < midnight))
+    allowed = and_(mode != "silent", or_(and_(legacy, or_(mode == "immediate", rows.c.finished_at < midnight)), released))
     total, latest, new = session.execute(select(func.count(), func.max(rows.c.finished_at),
-        func.coalesce(func.sum(case((unseen, 1), else_=0)), 0)).select_from(rows)).one()
+        func.coalesce(func.sum(case((and_(unseen, allowed), 1), else_=0)), 0)).select_from(rows)
+        .join(Investigation, Investigation.id == rows.c.id)).one()
     return {"total": total, "latest_at": iso(latest) if latest else None, "unseen": int(new) if saved and saved.following else 0}
 
 
@@ -79,15 +91,24 @@ def update_payload(session, run, finished_at, saved, publication):
             .order_by(ClaimEvidence.created_at, ClaimEvidence.id).limit(1))
         findings.append({"id": claim.id, "statement": claim.statement, "status": claim.status,
             "source_id": citation.source_id if citation else None})
+    outcome = project(session, run) if publication is None else None
+    from .product_research_materiality import project as materiality_projection
+
+    importance = materiality_projection(outcome or {"comparisons": [change_payload(session, c) for c in session.scalars(changes)], "findings": findings})
+    mode = getattr(saved, "delivery_mode", None) or "immediate"
+    delivered = delivery(mode, importance, finished_at)
+    if "materiality" not in run.research_state and mode == "immediate":
+        delivered = "immediate"
     return {"investigation_id": run.id, "question": run.question, "completed_at": iso(finished_at),
-        "unseen": bool(saved and saved.following and (not saved.research_seen_at
+        "materiality": importance, "delivery": delivered,
+        "unseen": bool(saved and saved.following and delivered in {"immediate", "digest"} and (not saved.research_seen_at
             or finished_at.replace(tzinfo=UTC) > saved.research_seen_at.replace(tzinfo=UTC))),
         "source_count": session.scalar(select(func.count()).select_from(sources.subquery())),
         "finding_count": session.scalar(select(func.count()).select_from(claims.subquery())),
         "comparison_counts": counts, "sources": samples, "findings": findings,
         "comparisons": [change_payload(session, change) for change in session.scalars(
             changes.order_by(ClaimChange.created_at.desc(), ClaimChange.id).limit(3))],
-        "completion_note": run.stop_reason, "outcome": project(session, run) if publication is None else None}
+        "completion_note": run.stop_reason, "outcome": outcome}
 
 
 def page(session, dossier_id, saved, publication=None, *, offset=0):

@@ -12,11 +12,12 @@
 
 DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
-## Source-to-dossier research and monitoring
+## Question-to-dossier research mission
 
-Implemented and locally verified; activation pending. Owner request 1 October: blocks 1, 2, 3, 6, 7.
-Scope, dependencies, source access and acceptance are recorded in
-[the implementation plan](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
+VERIFYING: five connected blocks and shared account dossier allowance implemented.
+[Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
+Prior source/memory/update release activated as 202f1084d523;
+[implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
 Prior unified-core outcomes are activated as b3dde23ef289; [release history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 ## Independent source access and local SearXNG
@@ -1698,10 +1699,10 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — sources, memory and quota-free discovery; [scope](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md) | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — mission implemented, release verification; [scope](docs/RESEARCH_MISSION.md) | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
-| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — native email centre implemented; dossier research updates DONE within scope | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
-| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — sources, memory and quota-free discovery; [scope](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md) | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
+| [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — meaningful mission updates; [scope](docs/RESEARCH_MISSION.md) | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
+| [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — mission implemented, release verification; [scope](docs/RESEARCH_MISSION.md) | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
 | [MV2-024](#mv2-024) | Clear guidance, accessibility and five languages | F2 | P0 | L | IN PROGRESS — continuous dossier reading; [scope](docs/PRODUCT_RESEARCH_REFINEMENT.md#keep-the-dossier-readable-during-continuation); prior scoped releases in linked history | [MV2-002](#mv2-002), [MV2-017](#mv2-017), [MV2-019](#mv2-019), [MV2-020](#mv2-020), [MV2-021](#mv2-021), [MV2-022](#mv2-022) |
 | [MV2-025](#mv2-025) | Admin: accurate source capabilities and access management | F2 | P0 | M | IN PROGRESS — encrypted connector settings implemented | [MV2-003](#mv2-003), [MV2-011](#mv2-011), [MV2-018](#mv2-018) |
 | [MV2-026](#mv2-026) | Possible future implementation: C4 official customs-rate connector | LATER | P2 | M | DEFERRED — possible future implementation; do not start development | [MV2-003](#mv2-003), [MV2-007](#mv2-007), [MV2-011](#mv2-011) |
@@ -2765,8 +2766,8 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** sources, document ingestion, hybrid memory and understandable monitored changes.
-[Scope, dependencies and acceptance](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md), including the owner's removal of free-search quotas.
+**Current direction:** five-block mission and shared dossier allowance implemented; verifying release.
+[Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in
 [PRODUCT_SOURCE_ACCESS](docs/PRODUCT_SOURCE_ACCESS.md).
@@ -3066,6 +3067,8 @@ decisions, atomic conflict handling and no external actions. See
 
 ### MV2-022 — Notifications and Digests from the same developments
 
+**Current direction:** [meaningful mission updates, scope and acceptance](docs/RESEARCH_MISSION.md).
+
 **Completed scoped feature, 28 September 2026:** Private/public personal research
 following in Pharma/Loyer, projected from actual completed investigations with
 exact evidence and current permissions, explicit personal read markers and
@@ -3126,8 +3129,8 @@ Broader email/noise controls and live/human/release gates remain open.
 
 ### MV2-023 — Ask and Marvin in the context of v2 evidence
 
-**Current direction:** sources, document ingestion, hybrid memory and understandable monitored changes.
-[Scope, dependencies and acceptance](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md), including the owner's removal of free-search quotas.
+**Current direction:** five-block mission and shared dossier allowance implemented; verifying release.
+[Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 One-question start 1.48 DONE: one input starts private research, daily monitoring and in-app updates. 65 Core cases and 239 tests/lint/types/build per client; exact Core 79989fa and both Sites 47 verified. Atomic retry-safe start, honest status and calm reader. [Scope, dependencies, source readiness and acceptance](docs/PRODUCT_QUESTION_START.md). Full target/human acceptance OPEN.
 

@@ -48,6 +48,7 @@ from .product_investigations import (
 )
 from .product_models import DossierEntry, ProductDossier
 from .product_research import research_sources
+from .product_research_admission import unmetered
 from .product_search_budget import reserve_paid_or_skip
 from .product_source_reviews import current_reviews
 
@@ -128,6 +129,11 @@ def next_extraction(state):
 
 
 def advance(branch, state, *, interrupted=False):
+    from .product_document_reading import failure
+
+    failure(state, branch.phase, interrupted=interrupted)
+    if branch.phase == "document_review":
+        branch.status = "failed"
     if state.get("iterative"):
         research_steps.failed(branch, state, interrupted=interrupted)
     if branch.phase in {"search", "compare"}:
@@ -142,8 +148,28 @@ def advance(branch, state, *, interrupted=False):
 
 
 def settle(branch, state):
+    from . import product_document_analysis as document_analysis
+    from .product_document_reading import pending_read
+
+    if branch.status not in ACTIVE:
+        branch.checkpoint = deepcopy(state)
+        return
+    if branch.phase in {"read", "extract", "reflect", "document_review"}:
+        if pending_read(state):
+            branch.phase = "read"
+            branch.checkpoint = deepcopy(state)
+            return
+        if document_analysis.ready_to_review(state):
+            branch.phase = "document_review"
+            branch.checkpoint = deepcopy(state)
+            return
     if state.get("iterative"):
         research_steps.settle(branch, state)
+    elif state.get("document_reads") and branch.phase in {"read", "extract"}:
+        if state.get("extract_index", 0) < len(state.get("source_ids", [])):
+            branch.phase = "extract"
+        elif state.get("read_index", 0) < len(state.get("items", [])):
+            branch.phase = "read"
     if branch.phase == "compare" and state.get("comparison_done"):
         branch.status = "completed"
     if branch.phase == "read" and state.get("read_index", 0) >= len(state.get("items", [])):
@@ -188,9 +214,20 @@ def finish_or_yield(session, run, job):
             if research.enabled(run):
                 pending = sum(q["status"] in {"open", "investigating", "unresolved"} for q in run.research_state["questions"])
                 limits = ", ".join(run.research_state["stops"])
-                if limits:
+                if limits and not unmetered(run):
                     run.status = "paused"
-                run.stop_reason = (f"Research paused at its budget ({limits}). " if limits else "Bounded research finished. ") + f"{pending} questions remain open or unresolved; {failed_steps} paths include unavailable or interrupted steps. Source support is not independent verification."
+                run.stop_reason = ("Research checks finished. " if unmetered(run) else f"Research paused at its budget ({limits}). " if limits else "Bounded research finished. ") + f"{pending} questions remain open or unresolved; {failed_steps} paths include unavailable or interrupted steps. Source support is not independent verification."
+            from .product_document_reading import incomplete
+            unfinished_documents = incomplete(branches)
+            if unfinished_documents:
+                run.status = "failed"
+                run.stop_reason = f"{len(unfinished_documents)} document(s) still need reading or analysis. Saved progress is retained; research is incomplete."
+            from .product_monitoring_outcomes import project as monitoring_outcome
+            from .product_research_materiality import project as materiality
+
+            if not run.publication_id:
+                outcome = monitoring_outcome(session, run, branches=branches)
+                run.research_state = {**run.research_state, "materiality": materiality(outcome)}
             event(session, run, "investigation_finished", status=run.status, reason=run.stop_reason)
         jobs.complete(session, job.id, result_type="product_investigation", result_id=run.id,
                       result_json={"status": run.status})
@@ -269,7 +306,11 @@ async def execute(service, job_id, worker):
                         (state.get("steps") or [{}])[-1].get("deadline_seconds", 90)))
                 if state.get("steps"):
                     state["steps"][-1].update(status="interrupted", finished_at=iso(utcnow()))
-                advance(branch, state, interrupted=True)
+                # Replaying a local portion is safe: same original hash/cursor and
+                # deterministic parser, with no duplicate model or network request.
+                local_read = branch.phase == "read" and state.get("steps", [{}])[-1].get("execution", {}).get("provider") == "local_reader"
+                if not local_read:
+                    advance(branch, state, interrupted=True)
                 settle(branch, state)
                 checkpoint(session, run, branch, "step_interrupted", state)
             else:
@@ -282,16 +323,23 @@ async def execute(service, job_id, worker):
                         research_steps.prepare(session, run, branch, state, work)
                     if research.enabled(run) and branch.phase in {"recall", "plan", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                         pass
+                    elif branch.phase == "document_review":
+                        from . import product_document_analysis as document_analysis
+                        document_analysis.prepare(session, run, state, work)
                     elif branch.phase == "search":
                         if not run.external_discovery:
                             raise RuntimeError("Private contribution cannot contain a discovery branch")
-                        if not research.enabled(run):
+                        if not research.enabled(run) and not unmetered(run):
                             work["skipped_paid_search"] = reserve_paid_or_skip(session, service.settings,
                                 search_channels.paid_request_count(service.settings))
                     elif branch.phase == "read":
                         item = state["items"][state.get("read_index", 0)]
                         work["item"] = item
-                        work["skip"] = item["url"] in blocked or recovery.unavailable(session, run, branch, state, item)
+                        work["skip"] = item["url"] in blocked or (not state.get("document_reads", {}).get(str(state.get("read_index", 0)))
+                            and recovery.unavailable(session, run, branch, state, item))
+                        from . import product_document_reading as document_reading
+
+                        document_reading.prepare(run, state, work)
 
                         if state.get("contribution_entry_id"):
                             from .product_contributions import PUBLIC_READ_PURPOSE
@@ -309,6 +357,8 @@ async def execute(service, job_id, worker):
                             work["public_file_id"] = entry.id
                             work["file"] = {"artifact_key": entry.artifact_key, "sha256": entry.sha256,
                                 "title": entry.file_name, "content_type": entry.content_type}
+                        if work.get("file") and "document_cursor" in work:
+                            work["file"]["cursor"] = work["document_cursor"]
                     elif branch.phase == "compare":
                         from .product_claim_evolution import prepare
 
@@ -321,6 +371,9 @@ async def execute(service, job_id, worker):
                                            "excerpts": source.snapshot["excerpts"]},
                                 "existing_claims": [{"id": c.id, "statement": c.statement, "status": c.status}
                                                     for c in rows(session, DossierClaim, run)][:60]})
+                    if work and branch.phase == "extract":
+                        from . import product_document_analysis as document_analysis
+                        document_analysis.prepare_section(work, source)
                     if work and research.enabled(run):
                         if branch.phase == "extract":
                             work["input"]["branch"] = branch.query
@@ -336,16 +389,19 @@ async def execute(service, job_id, worker):
                         memory.prepare(session, run, work)
                         research_knowledge.prepare(session, run, work)
                         applicability.prepare(session, run, work)
+                        from . import product_current_knowledge as current_knowledge
+
+                        current_knowledge.prepare(session, run, work)
                         skipped_read = pacing.enabled(run) and branch.phase == "read" and work.get("skip")
                         search_requests = search_channels.paid_request_count(service.settings) if branch.phase == "search" else 0
-                        if search_requests and (run.research_state["used"].get("search_requests", 0) + search_requests
+                        if not unmetered(run) and search_requests and (run.research_state["used"].get("search_requests", 0) + search_requests
                                 > run.research_state["limits"]["search_requests"]):
                             work["skipped_paid_search"] = "Episode paid-search allowance reached; free sources continue."
                             search_requests = 0
                         if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product,
-                                search_requests=search_requests):
+                                search_requests=search_requests, local_read=bool(work.get("retained_document") or work.get("file"))):
                             work = None
-                        elif branch.phase == "search":
+                        elif branch.phase == "search" and not unmetered(run):
                             skipped = reserve_paid_or_skip(session, service.settings, search_requests)
                             if skipped:
                                 work["skipped_paid_search"] = skipped
@@ -412,9 +468,12 @@ async def execute(service, job_id, worker):
         blocked = excluded(session, parent)
         journal = work.get("input", {}).get("research_scope", {}).get("observed_queries")
         journal_current = queries.input_current(session, run, journal) and queries.dispatch_current(state, work)
+        from . import product_current_knowledge as current_knowledge
+
         applicability_current = applicability.input_current(session, run, work)
+        knowledge_current = current_knowledge.input_current(session, run, work)
         memory_current = memory.input_current(session, run, work.get("input", {}).get("research_memory"))
-        if (not exploration.adaptive_current(session, run) or not journal_current or not memory_current or not applicability_current
+        if (not exploration.adaptive_current(session, run) or not journal_current or not memory_current or not applicability_current or not knowledge_current
                 or not progress.input_current(session, run, work.get("capture_progress"), work.get("capture_dependencies", []))
                 or not clarification.input_current(session, run, work.get("input", {}).get("selected_direction"))
                 or not direction_assessment.input_current(session, run, work.get("input", {}))):
@@ -435,6 +494,11 @@ async def execute(service, job_id, worker):
             event(session, run, "investigation_paused", reason=run.stop_reason)
         if work["phase"] == "read" and work["item"]["url"] in blocked:
             failed = True
+        if work["phase"] == "document_review":
+            from .product_document_analysis import current as document_current
+            if not document_current(session, run, work) or any(
+                    session.get(InvestigationSource, d["source_id"]).url in blocked for d in work.get("document_dependencies", [])):
+                failed = True
         if work["phase"] == "extract":
             source = session.get(InvestigationSource, work["source_id"])
             if source.url in blocked or (work.get("read_relevance") and not read_relevance.current(session, run, work["read_dependencies"])):
@@ -446,7 +510,8 @@ async def execute(service, job_id, worker):
         if not failed:
             if work.get("research") and work["phase"] in {"recall", "plan", "search", "gate", "gate_review", "reflect", "brief", "orient", "reformulate"}:
                 try:
-                    research_steps.apply(session, run, branch, state, work, result)
+                    with session.begin_nested():
+                        research_steps.apply(session, run, branch, state, work, result)
                 except DomainError:
                     failed = True
             elif work["phase"] == "search":
@@ -465,9 +530,16 @@ async def execute(service, job_id, worker):
                 else:
                     branch.phase = "read"
             elif work["phase"] == "read":
-                if result.get("status") != "complete" or not result.get("excerpts"):
+                from . import product_document_reading as document_reading
+
+                if not document_reading.valid(work, result):
+                    failed = True
+                    state["document_read_error"] = "The document changed or its next portion could not be read. Earlier passages remain separate."
+                elif result.get("status") != "complete" or (not result.get("excerpts") and not result.get("reading")):
                     failed = True
                 else:
+                    result = document_reading.remember(session, run, state, work, result)
+                if not failed and result and result.get("excerpts"):
                     if state.get("recurring_web"):
                         from .product_web_research import capture as web_capture
 
@@ -495,7 +567,8 @@ async def execute(service, job_id, worker):
                             "relevance_gate": next((d for d in reversed(state.get("decisions", [])) if d["url"] == source.url and d["verdict"] == "relevant"), None)}
                     if work.get("research") and source.kind == "public_source":
                         duplicate = next((other for other in rows(session, InvestigationSource, run)
-                            if other.id != source.id and other.kind == "public_source" and other.sha256 == source.sha256), None)
+                            if other.id != source.id and other.kind == "public_source" and other.sha256 == source.sha256
+                            and not (source.snapshot.get("reading") and other.snapshot.get("reading") and other.url == source.url)), None)
                         if duplicate:
                             source.snapshot = {**source.snapshot, "duplicate_of": duplicate.id,
                                 "independence": "Identical captured document bytes; not an independent supporting source."}
@@ -506,7 +579,14 @@ async def execute(service, job_id, worker):
                     recovery.captured(state, source, fresh)
                     if fresh:
                         state.setdefault("source_ids", []).append(source.id)
-                    state["read_index"] = state.get("read_index", 0) + 1
+                    document_reading.captured(state, result, source.id)
+            elif work["phase"] == "document_review":
+                from . import product_document_analysis as document_analysis
+                try:
+                    document_analysis.apply(session, run, state, work, result)
+                    branch.phase = "extract"
+                except DomainError:
+                    failed = True
             elif work["phase"] == "compare":
                 from .product_claim_evolution import apply as apply_comparison
 
@@ -518,6 +598,11 @@ async def execute(service, job_id, worker):
                     state["comparison_done"] = True
             else:
                 try:
+                    from . import product_document_analysis as document_analysis
+                    from . import product_professional_context as professional
+
+                    section_review = document_analysis.validate_section(source, work, result)
+                    facts = professional.validate(source, work["input"], result)
                     scoped = applicability.validate(session, run, source, work, result)
                     assessed = read_relevance.validate(session, run, source, work, result)
                     if research.enabled(run):
@@ -528,6 +613,10 @@ async def execute(service, job_id, worker):
                     failed = True
                 if not failed:
                     read_relevance.remember(run, state, work, assessed)
+                    if section_review:
+                        source.snapshot = {**source.snapshot, "section_review": section_review}
+                    if facts:
+                        source.snapshot = {**source.snapshot, "professional_facts": facts}
                     applicability.remember(run, source, scoped)
                     if state.get("recurring_web"):
                         source.snapshot = {**source.snapshot, "analysis_completed": True, "analysis_completed_at": iso(utcnow())}

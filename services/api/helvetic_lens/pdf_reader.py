@@ -27,6 +27,7 @@ PDF_EXTRACTOR_VERSION = "pdfminer-v1"
 class PdfTextPage:
     number: int
     blocks: tuple[str, ...]
+    requires_ocr: bool = False
 
 
 @dataclass(frozen=True)
@@ -49,7 +50,7 @@ def _text_blocks(layout: LTContainer):
 
 
 def read_pdf(
-    body: bytes, *, max_pages: int = MAX_PDF_PAGES, text_page_limit: int | None = None
+    body: bytes, *, max_pages: int = MAX_PDF_PAGES, text_page_limit: int | None = None, page_start: int = 0
 ) -> PdfText:
     """Count real pages before layout work; optionally read only an opening excerpt.
 
@@ -84,16 +85,18 @@ def read_pdf(
             result = []
             characters = block_count = 0
             try:
-                for number, page in enumerate(pages[:text_page_limit], 1):
+                end = None if text_page_limit is None else page_start + text_page_limit
+                for number, page in enumerate(pages[page_start:end], page_start + 1):
                     interpreter.process_page(page)
-                    blocks = tuple(_text_blocks(device.get_result()))
+                    layout = device.get_result()
+                    blocks = tuple(_text_blocks(layout))
                     characters += sum(len(block) for block in blocks)
                     block_count += len(blocks)
                     if characters > 1_200_000 or block_count > 6000:
                         raise DomainError(
                             "The extracted document exceeds the MVP text limit.", 413, "document_too_large"
                         )
-                    result.append(PdfTextPage(number, blocks))
+                    result.append(PdfTextPage(number, blocks, not blocks and bool(list(layout))))
             finally:
                 device.close()
             return PdfText(title, len(pages), tuple(result))

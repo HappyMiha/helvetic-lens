@@ -179,6 +179,10 @@ def input_current(session, run, supplied):
 
 
 def remember(run, supplied):
+    from .product_research_mission import enabled as mission_enabled
+
+    if mission_enabled(run) and run.research_state["mission"]["stage"] == "deepening":
+        return  # Prior checkpoint is pinned; a new round may append query receipts.
     if enabled(run) and supplied is not None:
         exploration.update(run, observed_query_context=deepcopy(supplied))
 

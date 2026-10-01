@@ -109,6 +109,9 @@ def reuse_routes(router, service, actor):
                 profile_id=profile.id, creation_key=str(uuid4()))
             session.add(parent)
             session.flush()
+            from .product_research_admission import admit_dossier
+
+            admit_dossier(session, identity.user_id, parent.id)
             receipt = PublicDossierCopy(organization_id=identity.organization_id, dossier_id=parent.id,
                 source_url=source_url(product, row.id), snapshot_json=snapshot, snapshot_sha256=digest(snapshot))
             session.add(receipt)

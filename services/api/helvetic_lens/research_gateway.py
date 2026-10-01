@@ -25,6 +25,8 @@ def route(settings, work):
     provider, reason = skill.provider, skill.name
     if work.get("skip"):
         provider, reason = "deterministic", "Current access or source policy excludes this operation."
+    elif work.get("retained_document") or work.get("file"):
+        provider, reason = "local_reader", "Continue reading the same retained original without another web fetch."
     elif work.get("retained_capture"):
         provider, reason = "database", "Reuse an exact retained public capture; its capture date is unchanged."
     elif work["phase"] == "compare" and (not work["input"]["current"] or not work["input"]["previous"]):
@@ -33,7 +35,7 @@ def route(settings, work):
         "pack_id": pack.id, "pack_version": pack.version, "provider": provider,
         "input_schema": skill.input_schema, "output_schema": skill.output_schema,
         "input_fingerprint": fingerprint({k: v for k, v in work.items()
-            if k in {"input", "query", "item", "source_id", "retained_capture"}}),
+            if k in {"input", "query", "item", "source_id", "retained_capture", "document_cursor", "document_sha256", "retained_document"}}),
         "input_references": [work["source_id"]] if work.get("source_id") else [],
         "privacy": "public_query_only" if skill.id == "search" else "authorized_evidence_only",
         "reason": reason, "model": None, "estimated_cost_usd": None,
@@ -108,6 +110,12 @@ async def execute(service, work, seconds):
 
     if route(service.settings, work) != work["execution_route"]:
         raise ValueError("Research routing configuration changed after dispatch")
+    if work["phase"] == "document_review":
+        from .product_document_analysis import execute as review_document
+        return await review_document(service, work, seconds)
+    if work.get("retained_document"):
+        from .product_document_storage import read as read_original
+        return await read_original(service, work)
     if work.get("retained_capture"):
         return deepcopy(work["retained_capture"])
     if work.get("research") and work["phase"] != "compare":
@@ -123,7 +131,7 @@ async def execute(service, work, seconds):
 
             return await read_file(service.environment_settings.storage_path / "artifacts", work["file"])
         return await decision_sources.safe_inspect(service.settings, work["query"], work["item"], "auto",
-            rank_passages=False, excerpt_limit=8)
+            rank_passages=False, excerpt_limit=8, **({"retain_original": {"folder": service.environment_settings.storage_path / "artifacts", "prefix": work["run_id"] + "-" + work["branch_id"]}} if "document_cursor" in work else {}), **({"document_cursor": work["document_cursor"]} if "document_cursor" in work else {}))
     if work["phase"] == "compare":
         from .product_claim_evolution import SYSTEM, Comparison
 
@@ -132,9 +140,14 @@ async def execute(service, work, seconds):
         schema = Comparison
     else:
         from .product_investigation_worker import SYSTEM
-        from .product_investigations import Extraction
+        from .product_professional_context import SYSTEM as professional_system
+        from .product_professional_context import ProfessionalExtraction
 
-        schema = Extraction
+        SYSTEM += professional_system
+        schema = ProfessionalExtraction
+    if work.get("input", {}).get("document_section"):
+        from . import product_document_analysis as document_analysis
+        schema, SYSTEM = document_analysis.schema(schema), SYSTEM + document_analysis.SECTION_SYSTEM
     raw = await complete(service, work, SYSTEM, schema, seconds)
     if not isinstance(raw, str) or len(raw) > (10000 if work["phase"] == "compare" else 30000):
         raise ValueError("Unbounded research response")

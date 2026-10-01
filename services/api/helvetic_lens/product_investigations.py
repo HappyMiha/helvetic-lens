@@ -1,5 +1,6 @@
 """Dossier-scoped coordinator state, capabilities and evidence validation."""
 import hashlib
+import json
 from types import SimpleNamespace
 from typing import Literal
 
@@ -194,7 +195,8 @@ def snapshot(session, run, item, *, public=False, captured=False):
         # inspectable through the private trigger, not supplied to this model.
         data["saved_page"] = {key: item["page"][key] for key in (
             "document_id", "version_id", "revision", "content_hash", "excerpt_start", "partial")}
-    key = hashlib.sha256((item.get("url", "") + item.get("key", "") + data["sha256"]).encode()).hexdigest()
+    portion = json.dumps(item["reading"]["cursor"], sort_keys=True) if item.get("reading") else ""
+    key = hashlib.sha256((item.get("url", "") + item.get("key", "") + data["sha256"] + portion).encode()).hexdigest()
     old = session.scalar(select(InvestigationSource).where(InvestigationSource.investigation_id == run.id,
                                                           InvestigationSource.source_key == key))
     if old:
