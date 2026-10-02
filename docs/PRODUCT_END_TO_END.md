@@ -1024,3 +1024,84 @@ provider pair. The controlled eight-request path used 48 of 90 seconds for both
 fast phases, leaving 42 seconds for evidence reasoning; it preserved earlier
 known missing parts and never converted unknown coverage to completion. The
 43 final-review integration checks passed again after this shared audit change.
+
+
+### Provider-sized evidence across the complete corpus
+
+MV2-020/023: the next ordinary retry ended after 1420.78 seconds/12 steps.
+It gained one document-review node but no new answer: four identical final
+requests were rejected with HTTP429. Existing integration logs identify ITPM
+admission failures, Retry-After60 and advertised input allowance50,000/minute.
+The failed request contains271,855 input characters; prior successful drafts
+had144,697/154,971. One accepted request measured56,275 prompt tokens, so the
+allowance is not a proven exact context or per-request token ceiling. No new
+provider call was needed for this diagnosis. All terminal artifacts remain.
+
+The request aggregates798 original windows (181,816 characters) and239 discovery
+links (71,574 characters). Per-source compaction never bounds the aggregate; the
+initial draft, later reference selector and final gap review can all overflow.
+Scope: preserve every authorized original and complete reading, then construct
+a provider-sized view of exact evidence before synthesis. Process all passage
+groups through bounded, resumable source-scoped selection; consolidate selected
+originals with the whole question, requested distinctions, contrary evidence and
+known uncertainties. Preserve source identity and contextual qualifications;
+never silently slice an original quotation or permanently exclude later sources.
+Discovery links remain available to native routing instead of accompanying every
+factual synthesis. Apply the same view mechanism to targeted correction and gap
+review so overflow is not merely moved downstream. No source/page/round quota.
+
+Dependencies: existing source-group/reference selection, document batching and
+private checkpoints, current providers and source rights. Persist selection
+before any draft exists, binding successful batches to exact question/evidence/
+policy/provider inputs. Pending selection is not complete coverage. Respect
+actual provider pacing; an unchanged rejected giant request is not useful work.
+Acceptance: a late original qualification survives many repetitive early sources;
+every source is considered, all dispatched evidence groups fit the configured
+transport allowance, exact citations survive, and interruption resumes completed
+selection. Full real-provider answer quality and native completion remain open.
+
+The retained production-case envelope also shows that completed, clean document
+progress repeats source titles and URLs already available in the dossier. The
+provider view represents those entries as completion counts and retains every
+incomplete document, warning and unresolved reference, together with attempted
+queries and discovery frontiers. The complete mission stays in the host wire.
+This removes duplicated bookkeeping instead of squeezing substantive evidence
+into the remaining space. An indivisible passage/context that cannot fit is
+reported explicitly; quotation text is never sliced to meet a transport allowance.
+
+Implementation and isolated validation: the initial answer, targeted corrections
+and gap review now share resumable selections of exact original reference groups.
+A private preparing checkpoint exists before the first answer; only successful
+selection batches renew continuation. Interrupted final-gap selection also counts
+its retained progress. Draft decoding enforces the references actually dispatched,
+while later corrections retain access to the complete authorized host evidence.
+Selected support and earlier contradictory witnesses remain mandatory in review.
+
+The unchanged production transport setting is 24,000 characters. An independent
+offline replay of the retained failed final input enumerated all 658 citable
+references across 29 source records and 496 groups. Removing repeated completed
+mission metadata reduced the empty final envelope from 19,664 to 15,238 characters;
+the largest indivisible group is 22,208. Deduplicating overlapping context and
+source metadata within selection requests reduced 35 batches to 23; the largest
+request is 23,989 characters. Every original reference remains assigned, the host
+wire is unchanged, and the unfinished 55-page chapter still says analysis pending.
+These counts concern the available final-synthesis references, not proof that every
+raw stored page is represented or that all document analysis is complete.
+
+The worker integration gate passed 25 cases, including preparation continuation,
+no-progress stopping, explicit retry and source withdrawal. Gateway/resume/transport
+checks passed 80 cases. The integrated downstream check places a decisive original
+after forty earlier records: both correction and gap review visit every source,
+keep all original text intact and return its exact citation within request bounds.
+Three older deep-review fixture modules also required explicit advisory-check
+isolation; their identical failures were reproduced against the previous commit
+before changing fixtures. Product completion and real-provider content acceptance
+remain open; a normal retry of the retained native investigation follows this
+coherent change, without a new dossier or forced database state.
+
+The combined selector/correction/final-review gate passed 111 cases. Final repair
+transport was also checked: if malformed-output diagnostics would overflow a
+bounded draft, the existing single format retry reuses the original constrained
+request without the invalid text. It preserves the full selected evidence and
+citation schema; no extra retry loop is added. Both ordinary and oversized
+format-repair/resume cases passed. Exact API Ruff and backlog guards passed.

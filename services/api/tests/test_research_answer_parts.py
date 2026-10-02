@@ -313,6 +313,7 @@ async def test_many_sources_keep_their_complete_schema_with_a_supported_transpor
             assert sum(len(source['passages']) for source in payload['sources']) == len(refs)
             assert len(options['response_schema']['properties']['citation_refs']['required']) == 65
             return selection_json([], options)
-    point, _, receipt = await answer_request(SimpleNamespace(model_client=Model()),
+    point, _, receipt = await answer_request(SimpleNamespace(model_client=Model(),
+        settings=SimpleNamespace(apertus_context_chars=100000)),
         SimpleNamespace(references=refs, input={}), 'Which originals establish the requested appointment?', 60)
     assert not point and receipt['status'] == 'no_selection'

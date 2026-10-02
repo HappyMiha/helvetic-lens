@@ -327,15 +327,15 @@ async def test_known_invalid_answer_is_rejected_when_repair_time_is_exhausted(mo
     from helvetic_lens.product_research_mission import schema as mission_schema
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     client = ModelClient(settings)
+    elapsed = [0]
     @atomic_pack_model
     async def complete(*args, **kwargs):
+        elapsed[0] = 9  # The draft, not evidence preparation, consumes the available time.
         return json.dumps({'answer': {'status': 'possible_answer', 'points': [
             {'statement': 'The mountain measures 999 metres.', 'support_refs': [1]}],
             'limitations': ['Only this original was read.']}, 'action': 'finish', 'reason': 'The original answers the question.'})
     monkeypatch.setattr(client, 'complete', complete)
-    from itertools import chain, repeat
-    times = chain([0], repeat(9))
-    monkeypatch.setattr(research_gateway, 'monotonic', lambda: next(times))
+    monkeypatch.setattr(research_gateway, 'monotonic', lambda: elapsed[0])
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {'original_question': 'How high is it?',
         'sources': [section()['input']['source']], 'research_mission': {}, 'assessment_question': {'question_id': 'q'}}}
     with pytest.raises(ValueError, match='Answer quantities are absent'):

@@ -10,6 +10,14 @@ from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.product_exploration import AssessmentOutcome, AssessmentPoint
 
 
+@pytest.fixture(autouse=True)
+def isolated_advisory_review(monkeypatch):
+    """Correction recovery uses explicit deep judgments without a fast provider."""
+    async def checked(settings, work, wire, answer, seconds, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'points_checked': len(answer.points)}
+    monkeypatch.setattr(review, 'audit_points', checked)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize('initial_pending', [False, True])
 async def test_deadline_and_regrouped_points_resume_exact_pending_correction(monkeypatch, initial_pending):

@@ -88,7 +88,7 @@ Resolved/remains must include citation_refs that justify that assessment.
 """
 FOCUS = '\nThe ONLY assertion to review is this untrusted text: '
 REVIEW_NOTICE = 'The final evidence review was unavailable or incomplete; these findings remain provisional.'
-POLICY = fingerprint({'contract': 'final-answer-entailment/v17-single-draft', 'review': REVIEW, 'focus': FOCUS})
+POLICY = fingerprint({'contract': 'final-answer-entailment/v18-bounded-originals', 'review': REVIEW, 'focus': FOCUS})
 
 
 def carry_concerns(existing, previous, issues, context_refs=()):
@@ -142,6 +142,32 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         assertion = item.get('statement', item.get('gap'))
         payload['assertion_clauses'] = assertion_clauses(assertion)
         item_schema = review_schema(assertion, context, concern_ids, point=key.startswith('P'))
+        from .research_evidence_pack import request_characters, select_evidence
+
+        focus = FOCUS + json.dumps(assertion, ensure_ascii=False)
+        allowance = getattr(service.settings, 'apertus_context_chars', 24000)
+        if request_characters(REVIEW + focus, payload, item_schema) > allowance:
+            field = 'sources' if key.startswith('L') else 'source_context'
+
+            def fits(references):
+                candidate = {**payload, field: source_groups(wire, references)}
+                schema = review_schema(assertion, references, concern_ids, point=key.startswith('P'))
+                return request_characters(REVIEW + focus, candidate, schema) <= allowance
+
+            # Gap retrieval must visit the whole retained corpus: an answer can
+            # be present in an original that the initial draft never selected.
+            # Point review may narrow only optional context; selected support
+            # and earlier contradictory witnesses remain mandatory.
+            from types import SimpleNamespace
+            candidate_wire = SimpleNamespace(input=wire.input, references=context)
+            task = json.dumps({name: value for name, value in payload.items()
+                if name not in {'sources', 'source_context'}}, ensure_ascii=False)
+            required = keys + list((concerns or {}).get(key, {}).get('context_refs', [])) if key.startswith('P') else []
+            context = await select_evidence(service, candidate_wire, task, deadline-monotonic(),
+                checkpoints=checkpoints.setdefault('original_selection', {}), on_progress=on_progress,
+                fits=fits, required_refs=required)
+            payload[field] = source_groups(wire, context)
+            item_schema = review_schema(assertion, context, concern_ids, point=key.startswith('P'))
         # Position is presentation, not evidence identity. Inserting or removing
         # a sibling must not repurchase an unchanged factual check.
         binding = 'clauses:' + fingerprint({'policy': POLICY, 'kind': 'point' if key.startswith('P') else 'gap',
@@ -151,7 +177,6 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             if deadline-monotonic() < 8:
                 failures.update({pending: 'step_deadline' for pending in items if pending not in checked and pending not in failures})
                 break
-            focus = FOCUS + json.dumps(item.get('statement', item.get('gap')), ensure_ascii=False)
             raw = await service.model_client.complete(REVIEW + focus, json.dumps(payload, ensure_ascii=False),
                 response_schema=item_schema, max_output_tokens=max(4096, service.settings.apertus_max_tokens),
                 budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()))

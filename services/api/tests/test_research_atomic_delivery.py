@@ -18,6 +18,14 @@ from helvetic_lens.product_operations import fingerprint
 from helvetic_lens.research_model_transport import WireError
 
 
+@pytest.fixture(autouse=True)
+def isolated_advisory_review(monkeypatch):
+    """Delivery tests control deep review and isolate the separate fast engine."""
+    async def checked(settings, work, wire, answer, seconds, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'points_checked': len(answer.points)}
+    monkeypatch.setattr(review, 'audit_points', checked)
+
+
 @pytest.mark.asyncio
 async def test_atomic_pack_resumes_later_point_without_losing_siblings_or_rebuying_draft():
     wire, _, _ = fixture(2)
@@ -99,7 +107,8 @@ async def test_correction_retains_good_owned_siblings_and_checks_each_replacemen
             'review_signal': 'not_established', 'instruction': 'Use the original operators.'}], 'pending_checks': []}
     async def correct(*args, **kwargs):
         calls.append(kwargs)
-        return [point('New North'), point('New South')], '', {'status': 'proposed'}
+        replacements = [point('New North'), point('New South')] if gap_only else [point('New North')]
+        return replacements, '', {'status': 'proposed'}
     monkeypatch.setattr(review, 'audit', audit)
     monkeypatch.setattr(final, 'reasoned_review', reasoned)
     monkeypatch.setattr(final, 'answer_request', correct)
@@ -109,9 +118,9 @@ async def test_correction_retains_good_owned_siblings_and_checks_each_replacemen
         await final.finalize(*args, checkpoints=cache, on_progress=lambda: None, defer_pending=True)
     assert cache['final_correction_round']['completed'] == 1
     await final.finalize(*args, checkpoints=json.loads(json.dumps(cache)), on_progress=lambda: None, defer_pending=True)
-    assert len(calls) == 1 and calls[0]['max_points'] == 3
+    assert len(calls) == 1 and calls[0]['max_points'] == (3 if gap_only else 1)
     assert calls[0]['feedback']['already_answered'] == [good.model_dump()]
-    assert good in answer.points and sibling in answer.points and len(answer.points) == 4
+    assert good in answer.points and sibling in answer.points and len(answer.points) == (4 if gap_only else 3)
     assert wire.point_requests[answer.points.index(sibling)] == 'r2'
     assert not answer.limitations
     if not gap_only:

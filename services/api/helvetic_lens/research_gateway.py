@@ -12,13 +12,14 @@ from pydantic import ValidationError
 
 from . import search_channels
 from .analysis import InferenceBudget, ModelClient
+from .config import DomainError
 from .domain_packs import for_product
 from .product_operations import fingerprint
 from .research_contracts import SKILLS
 
 CONTRACT = "research-execution/v1"
 SEARCH_ORDER = ["saved_evidence", "reviewed_claims", "source_apis", "public_web", "evidence_synthesis"]
-ANSWER_WORKFLOW = "one-cited-draft-targeted-correction/v2"
+ANSWER_WORKFLOW = "selected-evidence-one-cited-draft/v3"
 
 
 def route(settings, work):
@@ -148,17 +149,51 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     content = json.dumps(provider_input, ensure_ascii=False)
     resume = None
     if wire and wire.answer and service.settings.apertus_provider != "docker":
+        from . import research_evidence_pack as evidence_pack
         from .research_synthesis_resume import DraftCheckpoint
 
-        resume = DraftCheckpoint(work, service.settings, system, ANSWER_WORKFLOW, response_schema, content, options)
-    saved = resume.value if resume else None
+        resume = DraftCheckpoint(work, service.settings, system, ANSWER_WORKFLOW, response_schema, content, options,
+            preparation_policy=evidence_pack.POLICY)
+        if resume.value:
+            work["model_route"]["resumed_stage"] = resume.value["stage"]
+        work["model_route"]["answer_review"] = deepcopy((resume.value or {}).get("review") or {})
+        work["model_route"]["answer_review"].update(contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
+
+        def retain_selection():
+            state = resume.value or {}
+            resume.save(state.get("stage", "preparing"), state.get("raw", ""),
+                state.get("hints", []), work["model_route"]["answer_review"])
+
+        retain_selection()
+        selected = await evidence_pack.select_evidence(service, wire, wire.input["original_question"],
+            seconds - (monotonic() - started), checkpoints=resume.parts, on_progress=retain_selection)
+        # Native reading, access checks and later corrections retain the entire
+        # authorized wire. Only this provider request uses the selected originals.
+        provider_input = evidence_pack.provider_input(wire, selected)
+        response_schema = evidence_pack.bounded_schema(wire.schema, selected)
+        content = json.dumps(provider_input, ensure_ascii=False)
+        resume.bind_request(response_schema, content)
+        if resume.value is None:
+            work["model_route"].pop("resumed_stage", None)
+            work["model_route"]["answer_review"] = {"contract": "cited-answer-review/v2", "workflow": ANSWER_WORKFLOW}
+        retain_selection()
+        work["model_route"].update(response_schema_fingerprint=fingerprint(response_schema),
+            provider_input_fingerprint=fingerprint(provider_input))
+        work["model_route"]["evidence_transport"].update(selected_references=len(selected),
+            provider_input_characters=len(content))
+    saved = resume.value if resume and resume.value and resume.value["stage"] != "preparing" else None
     if saved:
         raw = saved["raw"]
         work["model_route"]["resumed_stage"] = saved["stage"]
         work["model_route"]["answer_review"] = deepcopy(saved.get("review") or {})
     else:
+        remaining = seconds - (monotonic() - started)
+        if resume and remaining < 8:
+            raise DomainError("The selected evidence is retained; the next work step will draft the answer.",
+                503, "research_evidence_pack_incomplete")
         raw = await service.model_client.complete(system, content,
-            response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
+            response_schema=response_schema,
+            budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
     if wire and wire.answer:
         work["model_route"].setdefault("answer_review", {}).update(
             contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
@@ -175,7 +210,8 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         errors = []
         parsed = None
         try:
-            raw = wire.decode(raw) if wire else raw
+            raw = decode_provider_response(wire, raw, response_schema
+                if not saved or saved["stage"] == "draft" else wire.schema) if wire else raw
             if work["phase"] == "extract":
                 from .product_question_renewal import parse_recoverable
                 parsed = parse_recoverable(schema, raw, {key: "_" + key + "_unavailable" for key in
@@ -220,14 +256,24 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 raise ValueError("Provider response failed validation and no repair time remains")
             if remaining > 5:
                 work["model_route"]["format_repair"] = True
-                raw = await service.model_client.complete(system + "\nThe previous response failed validation. Correct these validation errors using the original evidence. Omit unsupported optional fields. Do not invent a quote or locator.\n" + json.dumps(errors[:16]),
-                    json.dumps({"original_evidence": provider_input, "previous_invalid_response": wire_raw[:30000],
-                        **({"review_hints": review_hints} if review_hints else {})}, ensure_ascii=False),
+                repair_system = system + "\nThe previous response failed validation. Correct these validation errors using the original evidence. Omit unsupported optional fields. Do not invent a quote or locator.\n" + json.dumps(errors[:16])
+                repair_input = {"original_evidence": provider_input, "previous_invalid_response": wire_raw[:30000],
+                    **({"review_hints": review_hints} if review_hints else {})}
+                work["model_route"]["format_repair_mode"] = "validation_feedback"
+                if resume and evidence_pack.request_characters(repair_system, repair_input, response_schema) > service.settings.apertus_context_chars:
+                    # The malformed proposal is disposable; the chosen originals
+                    # and the dispatched citation contract must remain complete.
+                    repair_system, repair_input = system, provider_input
+                    work["model_route"]["format_repair_mode"] = "fresh_bounded_draft"
+                    if evidence_pack.request_characters(repair_system, repair_input, response_schema) > service.settings.apertus_context_chars:
+                        raise DomainError("The selected evidence exceeds the configured synthesis allowance; the originals remain retained.",
+                            422, "research_evidence_group_too_large")
+                raw = await service.model_client.complete(repair_system, json.dumps(repair_input, ensure_ascii=False),
                     response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
                 raw = response_object(raw, schema)
                 if resume:
-                    resume.save("reviewed", raw, review_hints, work["model_route"]["answer_review"])
-                raw = wire.decode(raw) if wire else raw
+                    resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
+                raw = decode_provider_response(wire, raw, response_schema) if wire else raw
                 if work["phase"] == "brief":
                     parsed = schema.model_validate_json(raw)
                     if wire and getattr(parsed, "mission_checkpoint", None) and answer_quantity_errors(parsed.mission_checkpoint.answer):
@@ -283,8 +329,6 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 resume.save("finalizing", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
             pending = final_coverage.get("factual_review", {}).get("pending_checks", [])
             if resume and pending:
-                from .config import DomainError
-
                 code = "research_review_yield" if all(item["reason"] == "step_deadline" for item in pending) else "research_review_incomplete"
                 raise DomainError("Some final evidence checks are incomplete. Saved sources and completed checks are retained.",
                     503, code)
@@ -303,6 +347,16 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             synchronize_projections(delivered)
             raw = delivered.model_dump_json()
     return response_object(raw, schema)
+
+
+def decode_provider_response(wire, raw, response_schema):
+    """Apply the dispatched citation contract before restoring full host evidence."""
+    original = wire.schema
+    try:
+        wire.schema = response_schema
+        return wire.decode(raw)
+    finally:
+        wire.schema = original
 
 
 def retain_answer_points(parsed, wire, errors, *, allow_empty=False):

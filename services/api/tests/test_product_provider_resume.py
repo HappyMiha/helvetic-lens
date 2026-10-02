@@ -355,6 +355,71 @@ def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypa
     assert len(calls) == (5 if progress else 4)
 
 
+@pytest.mark.parametrize('outcome', ['continue', 'stall', 'withdraw'])
+def test_evidence_preparation_retains_batches_privately_and_only_new_work_continues(signed, monkeypatch, outcome):
+    import json
+
+    from test_product_early_orientation import exclude
+    from test_product_exploration import adapters
+    from test_product_exploration import start as explore
+    from test_product_iterative_research import complete
+
+    from helvetic_lens import research_gateway
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    client, service, identity, model = signed
+    adapters(monkeypatch, service, model)
+    root, run, _ = explore(client)
+    execute, calls, sources = research_gateway.execute, [], []
+    marker = 'PRIVATE COMPLETED SOURCE SELECTION'
+    batch = {'status': 'complete', 'input_fingerprint': 'original-batch',
+        'policy_fingerprint': 'selection-policy', 'selected': []}
+
+    async def preparing(service, work, seconds):
+        if work['phase'] != 'brief':
+            return await execute(service, work, seconds)
+        calls.append(work['branch_id'])
+        if len(calls) == 1:
+            sources.extend(source['id'] for source in work['input']['sources'])
+            work[KEY] = {'stage': 'preparing', 'raw': '', 'parts': {'evidence_selection': {marker: batch}}}
+            if outcome == 'withdraw':
+                exclude(service, identity, sources[0])
+            raise DomainError('Selection deadline after one completed batch', 503, 'research_evidence_pack_incomplete')
+        assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
+        assert work[KEY]['parts']['evidence_selection'] == {marker: batch}
+        assert [source['id'] for source in work['input']['sources']] == sources
+        if outcome == 'stall' and len(calls) == 2:
+            work[KEY]['parts']['timing'] = {'seconds': 90}  # Accounting is not progress.
+            raise DomainError('No additional batch completed', 503, 'research_evidence_pack_incomplete')
+        return await execute(service, work, seconds)
+
+    monkeypatch.setattr(research_gateway, 'execute', preparing)
+    result = complete(client, service, root + '/investigations', run)
+    expected = {'continue': 'completed', 'stall': 'failed', 'withdraw': 'paused'}
+    assert result['status'] == expected[outcome]
+    assert len(calls) == (1 if outcome == 'withdraw' else 2)
+    assert marker not in json.dumps(result) and marker not in client.get(root + '/export').text
+    with service.db.session() as session:
+        state = session.get(InvestigationBranch, calls[0]).checkpoint
+        assert not state.get('provider_retries'), 'A selection deadline is not a provider outage'
+        if outcome == 'stall':
+            assert state[KEY]['parts']['evidence_selection'] == {marker: batch}
+            assert state['error'].startswith('Evidence selection is incomplete.')
+        else:
+            assert KEY not in state
+        if outcome != 'withdraw':
+            assert sum(bool(step.get('checkpointed')) for step in state['steps']) == 1
+    if outcome == 'stall':
+        assert result['retry']['available'] is True
+        tick(service, run['id'])
+        assert len(calls) == 2, 'Unchanged preparation cannot create an automatic resume loop'
+        reply = post(client, root + '/investigations/' + run['id'] + '/control',
+            {'action': 'retry', 'expected_revision': result['revision']})
+        assert reply.status_code == 200, reply.text
+        finished = complete(client, service, root + '/investigations', reply.json())
+        assert finished['status'] == 'completed' and len(calls) == 3
+
+
 @pytest.mark.parametrize('brief_status', [None, 'failed', 'completed'])
 def test_retry_eligibility_skips_only_obsolete_early_orientation(signed, monkeypatch, brief_status):
     from test_product_exploration import adapters

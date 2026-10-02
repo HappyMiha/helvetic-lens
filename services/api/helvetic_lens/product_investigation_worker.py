@@ -477,7 +477,7 @@ async def execute(service, job_id, worker):
         # integration-log messages or publicly observable reasoning.
         failed = True
         code = getattr(exc, "code", None) or ("model_timeout" if isinstance(exc, TimeoutError) else None)
-        if code in {"model_rate_limited", "model_temporarily_unavailable", "model_upstream_timeout", "model_timeout", "model_unreachable", "model_transport_error", "research_review_incomplete", "research_review_yield"}:
+        if code in {"model_rate_limited", "model_temporarily_unavailable", "model_upstream_timeout", "model_timeout", "model_unreachable", "model_transport_error", "research_review_incomplete", "research_review_yield", "research_evidence_pack_incomplete"}:
             transient = code
 
     with service.write_guard, service.db.session() as session:
@@ -564,20 +564,23 @@ async def execute(service, job_id, worker):
             # An outage after newly completed inference is a new interruption.
             # An unchanged input or accounting-only change cannot renew retries.
             retries.pop(retry_key, None)
-        if transient == "research_review_yield":
+        if transient in {"research_review_yield", "research_evidence_pack_incomplete"}:
             if run.status in ACTIVE and unmetered(run) and progressed:
-                # Completed evidence checks are progress, not a failed inference.
+                # Completed selection batches and evidence checks are progress,
+                # not a failed inference.
                 # Accounting, trace or raw wording changes cannot renew this step.
                 research_gateway.finish(state, work, result, failed=True, elapsed=perf_counter() - started)
                 state.pop("inflight", None)
                 state["steps"][-1].update(status="completed", checkpointed=True, finished_at=iso(utcnow()))
                 state["steps"][-1]["execution"]["outcome"] = "checkpointed"
-                checkpoint(session, run, branch, "review_progress", state)
+                preparing = transient == "research_evidence_pack_incomplete"
+                checkpoint(session, run, branch, "evidence_pack_progress" if preparing else "review_progress", state)
                 jobs.yield_batch(session, job)
                 session.commit()
-                return {"id": job_id, "state": "continuing_evidence_review"}
-            transient = "research_review_incomplete"
-        if transient and transient != "research_review_incomplete" and unmetered(run) and run.status in ACTIVE and retries.get(retry_key, 0) < 3:
+                return {"id": job_id, "state": "continuing_evidence_preparation" if preparing else "continuing_evidence_review"}
+            if transient == "research_review_yield":
+                transient = "research_review_incomplete"
+        if transient and transient not in {"research_review_incomplete", "research_evidence_pack_incomplete"} and unmetered(run) and run.status in ACTIVE and retries.get(retry_key, 0) < 3:
             retries[retry_key] = retries.get(retry_key, 0) + 1
             when = utcnow() + timedelta(seconds=30 * 2 ** (retries[retry_key] - 1))
             research_gateway.finish(state, work, result, failed=True, elapsed=perf_counter() - started)
@@ -722,6 +725,8 @@ async def execute(service, job_id, worker):
             advance(branch, state)
             if transient == "research_review_incomplete":
                 state["error"] = "Final evidence checks are incomplete. Retry resumes the missing checks; completed sources and checks are saved."
+            elif transient == "research_evidence_pack_incomplete":
+                state["error"] = "Evidence selection is incomplete. Retry resumes the missing batches; captured originals and finished selections are saved."
             if work.get("file") and isinstance(result, dict) and result.get("error"):
                 state["error"] = result["error"]
         research_gateway.finish(state, work, result, failed=failed, elapsed=perf_counter() - started)

@@ -12,6 +12,14 @@ from helvetic_lens.research_coverage import unresolved_questions
 from helvetic_lens.research_final_review import finalize
 
 
+@pytest.fixture(autouse=True)
+def isolated_advisory_review(monkeypatch):
+    """Narrowing tests exercise their explicit source review, not live fast engines."""
+    async def checked(settings, work, wire, answer, seconds, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'points_checked': len(answer.points)}
+    monkeypatch.setattr(research_answer_review, 'audit_points', checked)
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize('case', ['supported', 'condition', 'counterevidence', 'interrupted', 'too_many_witnesses', 'coverage', 'too_short', 'missing_numeric', 'rewrite_after_resume'])
 async def test_exact_candidate_is_rechecked_with_all_old_context(monkeypatch, case):

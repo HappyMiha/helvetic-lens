@@ -50,6 +50,257 @@ def test_completed_advisory_decision_renews_progress_but_failed_attempts_do_not(
     assert made_progress(finished, completed_work(restored))
 
 
+@pytest.mark.parametrize('selected', [[], [2, 7]])
+def test_only_completed_bound_evidence_selection_renews_progress(selected):
+    receipt = {'status': 'complete', 'input_fingerprint': 'all-originals-a',
+        'policy_fingerprint': 'selection-policy', 'selected': selected}
+    checkpoint = {'parts': {'evidence_selection': {'batch-a': receipt}}}
+    finished = completed_work(checkpoint)
+    assert made_progress({}, finished), 'A checked batch with no relevant evidence is still completed work'
+    restored = json.loads(json.dumps(checkpoint))
+    restored['parts']['evidence_selection'].update({
+        'pending': {**receipt, 'status': 'pending'},
+        'failed': {**receipt, 'status': 'unavailable'},
+        'unbound': {'status': 'complete', 'selected': [2]},
+        'duplicate': {**receipt, 'selected': [2, 2]},
+        'invalid': {**receipt, 'selected': [True]},
+        'noise': {'duration_ms': 300},
+    })
+    assert completed_work(restored) == finished
+    assert not made_progress(finished, completed_work(restored))
+    restored['parts']['evidence_selection']['batch-b'] = {**receipt, 'input_fingerprint': 'all-originals-b'}
+    assert made_progress(finished, completed_work(restored))
+
+
+def test_final_review_selection_progress_survives_resume_without_counting_noise():
+    receipt = {'status': 'complete', 'input_fingerprint': 'gap-originals',
+        'policy_fingerprint': 'selection-policy', 'selected': [3]}
+    checkpoint = {'parts': {'final_reviews': {'original_selection': {'evidence_selection': {'gap': receipt}}}}}
+    finished = completed_work(checkpoint)
+    assert made_progress({}, finished)
+    restored = json.loads(json.dumps(checkpoint))
+    assert not made_progress(finished, completed_work(restored))
+    nodes = restored['parts']['final_reviews']['original_selection']['evidence_selection']
+    nodes.update({'failed': {**receipt, 'status': 'unavailable'},
+        'unbound': {'status': 'complete', 'selected': [4]}, 'noise': {'attempts': 5}})
+    assert completed_work(restored) == finished
+    nodes['point'] = {**receipt, 'input_fingerprint': 'point-originals', 'selected': []}
+    assert made_progress(finished, completed_work(restored))
+
+
+def test_preparation_survives_without_draft_but_selected_request_cannot_reuse_another_draft():
+    settings = Settings(_env_file=None)
+    work = {}
+    args = ['prompt', 'review', {'type': 'object'}, 'all-originals', {}]
+    checkpoint = DraftCheckpoint(work, settings, *args, preparation_policy='selection-v1')
+    checkpoint.parts['evidence_selection'] = {'batch': {'status': 'complete', 'selected': [2],
+        'input_fingerprint': 'input', 'policy_fingerprint': 'selection-v1'}}
+    checkpoint.save('preparing', '', [], {})
+    changed_policy = DraftCheckpoint(deepcopy(work), settings, *args, preparation_policy='selection-v2')
+    assert changed_policy.value is None and not changed_policy.parts
+    restored = DraftCheckpoint(json.loads(json.dumps(work)), settings, *args, preparation_policy='selection-v1')
+    assert restored.value['stage'] == 'preparing' and not restored.value['raw']
+    assert restored.parts == checkpoint.parts
+    restored.bind_request({'citation_ref': {'enum': [2]}}, 'selected original two')
+    restored.parts['final_reviews'] = {'clauses:old-answer': {'overall': {'verdict': 'supported'}}}
+    restored.save('draft', 'PRIVATE DRAFT BASED ON TWO', [], {})
+    same = DraftCheckpoint(restored.work, settings, *args, preparation_policy='selection-v1')
+    same.bind_request({'citation_ref': {'enum': [2]}}, 'selected original two')
+    assert same.value['raw'] == 'PRIVATE DRAFT BASED ON TWO'
+    same.bind_request({'citation_ref': {'enum': [3]}}, 'different selected original')
+    assert same.value is None and KEY not in same.work
+    assert set(same.parts) == {'evidence_selection'}, 'Checks of the previous answer cannot validate a new input'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('seconds,selection_elapsed,finished_batch', [(0, 0, False), (10, 12, True)])
+async def test_exhausted_draft_time_yields_with_prepared_evidence(monkeypatch, seconds, selection_elapsed, finished_batch):
+    from helvetic_lens import research_evidence_pack
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    work = {'phase': 'brief', 'unmetered_research': True, 'input': {
+        'original_question': 'Who operates the registry?', 'research_mission': {},
+        'sources': [{'id': 'a' * 36, 'kind': 'public_source',
+            'excerpts': [{'passage': 'p1', 'text': 'North Reach operates the registry.'}]}]}}
+    elapsed = [0]
+
+    async def select(service, wire, question, seconds, *, checkpoints, on_progress):
+        if finished_batch:
+            checkpoints['evidence_selection'] = {'last': {'status': 'complete',
+                'input_fingerprint': 'last-original-batch', 'policy_fingerprint': research_evidence_pack.POLICY,
+                'selected': [1]}}
+            on_progress()
+        elapsed[0] = selection_elapsed
+        return deepcopy(wire.references)
+
+    async def no_draft(*args, **kwargs):
+        pytest.fail('The drafting provider must not be called after the work step is exhausted')
+
+    monkeypatch.setattr(gateway, 'monotonic', lambda: elapsed[0])
+    monkeypatch.setattr(research_evidence_pack, 'select_evidence', select)
+    monkeypatch.setattr(model, 'complete', no_draft)
+    with pytest.raises(DomainError) as error:
+        await gateway.complete(SimpleNamespace(settings=settings, model_client=model), work,
+            '', mission_schema(Briefing), seconds)
+    assert error.value.code == 'research_evidence_pack_incomplete'
+    assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
+    assert bool(completed_work(work[KEY])) is finished_batch
+
+
+@pytest.mark.asyncio
+async def test_selection_interruption_resumes_before_one_draft_and_preserves_full_originals(monkeypatch):
+    from helvetic_lens import research_evidence_pack, research_final_coverage, research_final_review
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    service = SimpleNamespace(settings=settings, model_client=model)
+    originals = ['The early register names the operator.',
+        'The later amendment limits that authority to the northern district.',
+        'The original archive remains available.']
+    work = {'phase': 'brief', 'unmetered_research': True, 'input': {
+        'original_question': 'Which limits apply to the registered authority?', 'research_mission': {},
+        'sources': [{'id': 'a' * 36, 'kind': 'public_source', 'url': 'https://example.org/register',
+            'discovery_links': [{'title': 'Related original', 'url': 'https://example.org/related',
+                'context': 'Discovery is retained for routing.', 'kind': 'document'}],
+            'excerpts': [{'passage': f'p{i + 1}', 'text': text} for i, text in enumerate(originals)]}]}}
+    initial = deepcopy(work)
+    calls, checked_batches, inspected_originals = [], [], []
+    interrupted, final_interrupted = [False], [False]
+
+    async def select(service, wire, question, seconds, *, checkpoints, on_progress):
+        assert question == initial['input']['original_question'] and len(wire.references) == 3
+        nodes = checkpoints.setdefault('evidence_selection', {})
+        for batch, refs in [('early', [1]), ('later', [2])]:
+            if batch not in nodes:
+                checked_batches.append(batch)
+                nodes[batch] = {'status': 'complete', 'input_fingerprint': batch,
+                    'policy_fingerprint': research_evidence_pack.POLICY, 'selected': refs}
+                on_progress()
+                if not interrupted[0]:
+                    interrupted[0] = True
+                    raise DomainError('Selection interrupted', 503, 'model_rate_limited')
+        return {2: wire.references[2]}
+
+    async def complete(system, text, **options):
+        data = json.loads(text)
+        calls.append(data)
+        assert 'discovery_links' not in data['sources'][0]
+        assert data['sources'][0]['excerpts'] == [{'citation_ref': 2, 'text': originals[1], 'passage': 'p2'}]
+        citation = options['response_schema']['$defs']['AssessmentEvidence']['properties']['citation_ref']
+        assert citation['enum'] == [2]
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [
+            {'statement': originals[1], 'evidence': [{'citation_ref': 2, 'role': 'support'}]}]},
+            'next_action': 'finish'})
+
+    async def final(service, work, wire, parsed, *args, **kwargs):
+        assert len(wire.references) == 3 and len(wire.input['sources'][0]['excerpts']) == 3
+        assert wire.input['sources'][0]['discovery_links']
+        if not final_interrupted[0]:
+            final_interrupted[0] = True
+            # A later targeted correction may legitimately read another original.
+            additional = parsed.mission_checkpoint.answer.points[0].model_copy(deep=True)
+            additional.statement = additional.evidence[0].quote = originals[2]
+            additional.evidence[0].locator = 'p3'
+            parsed.mission_checkpoint.answer.points.append(additional)
+            kwargs['on_progress']()
+            raise DomainError('Final review interrupted', 503, 'model_upstream_timeout')
+        return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
+
+    async def original(settings, work, wire, checkpoint, seconds):
+        inspected_originals.extend(ref['quote'] for ref in wire.references.values())
+
+    async def reconcile(*args, **kwargs):
+        return {'status': 'checked', 'removed_notices': 0}
+
+    monkeypatch.setattr(research_evidence_pack, 'select_evidence', select)
+    monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(research_final_review, 'finalize', final)
+    monkeypatch.setattr(review, 'original_check', original)
+    monkeypatch.setattr(research_final_coverage, 'reconcile', reconcile)
+    schema = mission_schema(Briefing)
+    with pytest.raises(DomainError, match='Selection interrupted'):
+        await gateway.complete(service, work, '', schema, 90)
+    saved = json.loads(json.dumps(work[KEY]))
+    assert saved['stage'] == 'preparing' and not saved['raw'] and not calls
+    assert set(saved['parts']['evidence_selection']) == {'early'}
+    assert made_progress({}, completed_work(saved))
+    resumed = {**deepcopy(initial), KEY: saved}
+    with pytest.raises(DomainError, match='Final review interrupted'):
+        await gateway.complete(service, resumed, '', schema, 90)
+    assert resumed[KEY]['stage'] == 'finalizing' and len(calls) == 1
+    resumed = {**deepcopy(initial), KEY: json.loads(json.dumps(resumed[KEY]))}
+    result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
+    assert checked_batches == ['early', 'later'] and len(calls) == 1
+    assert inspected_originals == originals
+    assert result.mission_checkpoint.answer.points[0].evidence[0].quote == originals[1]
+    assert result.mission_checkpoint.answer.points[0].evidence[0].locator == 'p2'
+    assert result.mission_checkpoint.answer.points[1].evidence[0].quote == originals[2]
+    assert resumed['input'] == initial['input']
+    assert resumed[KEY]['raw'] not in json.dumps(resumed['model_route'])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('oversized_feedback', [False, True])
+async def test_unsupplied_draft_reference_is_rejected_again_after_failed_format_repair_resume(monkeypatch, oversized_feedback):
+    from helvetic_lens import research_evidence_pack, research_final_coverage, research_final_review
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    work = {'phase': 'brief', 'unmetered_research': True, 'input': {
+        'original_question': 'Who operates the registry?', 'research_mission': {},
+        'sources': [{'id': 'a' * 36, 'kind': 'public_source', 'excerpts': [
+            {'passage': 'p1', 'text': 'North Reach owns the registry.'},
+            {'passage': 'p2', 'text': 'South Reach operates the registry.'}]}]}}
+    initial, calls = deepcopy(work), []
+
+    async def select(service, wire, *args, **kwargs):
+        return {2: wire.references[2]}
+
+    async def complete(system, text, **options):
+        data = json.loads(text)
+        calls.append(data)
+        citation = options['response_schema']['$defs']['AssessmentEvidence']['properties']['citation_ref']
+        assert citation['enum'] == [2]
+        assert research_evidence_pack.request_characters(system, data, options['response_schema']) <= settings.apertus_context_chars
+        if len(calls) > 1:
+            if oversized_feedback:
+                assert data == calls[0], 'The bounded retry preserves all selected originals and omits the malformed draft'
+            else:
+                assert 'previous_invalid_response' in data
+        ref = 1 if len(calls) <= 2 else 2
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [
+            {'statement': 'South Reach operates the registry.',
+                'evidence': [{'citation_ref': ref, 'role': 'support'}]}]}, 'next_action': 'finish',
+            **({'unexpected_field': 'Malformed generated content. ' * 800} if oversized_feedback and ref == 1 else {})})
+
+    async def final(service, work, wire, parsed, *args, **kwargs):
+        assert parsed.mission_checkpoint.answer.points[0].evidence[0].locator == 'p2'
+        assert len(wire.references) == 2
+        return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
+
+    async def original(*args, **kwargs):
+        return None
+
+    async def reconcile(*args, **kwargs):
+        return {'status': 'checked', 'removed_notices': 0}
+
+    monkeypatch.setattr(research_evidence_pack, 'select_evidence', select)
+    monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(research_final_review, 'finalize', final)
+    monkeypatch.setattr(review, 'original_check', original)
+    monkeypatch.setattr(research_final_coverage, 'reconcile', reconcile)
+    service, schema = SimpleNamespace(settings=settings, model_client=model), mission_schema(Briefing)
+    with pytest.raises(ValueError):
+        await gateway.complete(service, work, '', schema, 90)
+    assert len(calls) == 2 and work[KEY]['stage'] == 'draft'
+    resumed = {**initial, KEY: json.loads(json.dumps(work[KEY]))}
+    result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
+    assert len(calls) == 3, 'Resume must repair the saved invalid draft, never accept its unsupplied reference'
+    assert result.mission_checkpoint.answer.points[0].evidence[0].quote == 'South Reach operates the registry.'
+    assert resumed['model_route']['format_repair_mode'] == ('fresh_bounded_draft' if oversized_feedback else 'validation_feedback')
+
+
 @pytest.mark.parametrize('page', ['p103', 'p.103', 'pp103–105', 'page 103'])
 def test_bibliographic_page_numbers_ground_page_references_without_authorizing_other_numbers(page):
     answer = AssessmentOutcome(status='possible_answer', limitations=[], points=[{

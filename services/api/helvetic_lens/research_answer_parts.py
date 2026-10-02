@@ -85,7 +85,7 @@ Reviewer notes are fallible objections, not established facts or additional
 evidence. Check their explanation against the accompanying original passages;
 discard any suggested alternative that those originals do not establish.
 """
-POLICY = fingerprint({"contract": "requested-answer-pack/v16", "select": SELECT, "write": WRITE,
+POLICY = fingerprint({"contract": "requested-answer-pack/v17-bounded-originals", "select": SELECT, "write": WRITE,
     "numeric_repair": NUMERIC_REPAIR, "point_repair": POINT_REPAIR})
 
 
@@ -122,6 +122,27 @@ def contextual_references(wire, selected):
     return {key: wire.references[key] for key in keys if key in expanded}
 
 
+def requested_schema(references, max_points, correction=None):
+    point_schema = {'type': 'object', 'properties': {
+        'evidence': {'type': 'array', 'maxItems': 8, 'items': {'type': 'object', 'properties': {
+            'citation_ref': {'type': 'integer', 'enum': list(references)},
+            'role': {'type': 'string', 'enum': ['support', 'counterevidence', 'context']}},
+            'required': ['citation_ref', 'role'], 'additionalProperties': False}},
+        'statement': {'type': 'string', 'maxLength': 700},
+        'remaining_gap': {'type': 'string', 'maxLength': 400}},
+        'required': ['evidence', 'statement', 'remaining_gap'], 'additionalProperties': False}
+    item_schema = deepcopy(point_schema)
+    item_schema['properties'].pop('remaining_gap')
+    item_schema['required'].remove('remaining_gap')
+    schema = {'type': 'object', 'properties': {
+        'points': {'type': 'array', 'items': item_schema, 'maxItems': max_points},
+        'remaining_gap': {'type': 'string', 'maxLength': 400}},
+        'required': ['points', 'remaining_gap'], 'additionalProperties': False}
+    if correction:
+        schema['properties']['remaining_gap']['enum'] = ['']
+    return point_schema, schema
+
+
 async def answer_request(service, wire, request, seconds, *, checkpoints=None, on_progress=None,
         feedback=None, max_points=1, correction=None):
     """Select independently, then synthesize; validate a cached proposal again."""
@@ -148,6 +169,8 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
     if correction:
         focus = '\nSelect evidence to check and correct correction_target, including passages that disprove its wording. The draft is not the requested answer.'
         focus += '\nReviewer notes are fallible hints only; select original passages, never the notes as evidence.'
+    if feedback:
+        focus += '\nReconsider the previous proposal using the fallible review feedback. Only the original sources establish facts. Correct event relationships and unsupported limitations, not just citation numbers.'
     binding = fingerprint({'policy': POLICY, 'input': context, 'max_points': max_points,
         'original_question': getattr(wire, 'input', {}).get('original_question', request)})
     saved = checkpoints.setdefault(binding, {})
@@ -163,31 +186,56 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
     if 'selected' not in saved:
         if deadline - monotonic() < 8:
             return [], '', {**receipt, 'status': 'unavailable'}
-        # Every source gets a decision. Repetitive early summaries cannot use
-        # every selection slot before a later original is considered.
-        schema = {'type': 'object', 'properties': {'citation_refs': {'type': 'object',
+        from .research_evidence_pack import request_characters, select_evidence
+
+        allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
+
+        def fits(references):
+            local = {i+1: ref for i, ref in enumerate(references.values())}
+            candidate = {**context, 'sources': source_groups(wire, local)}
+            _, schema = requested_schema(local, max_points, correction)
+            return request_characters((POINT_REPAIR if correction else WRITE) + focus,
+                candidate, schema) <= allowance
+
+        selection_schema = {'type': 'object', 'properties': {'citation_refs': {'type': 'object',
             'properties': {key: {'type': 'array', 'items': {'type': 'integer', 'enum': refs},
                 'maxItems': min(12, len(refs))} for key, refs in source_refs.items()},
             'required': list(source_refs), 'additionalProperties': False}},
             'required': ['citation_refs'], 'additionalProperties': False}
-        raw = await service.model_client.complete(SELECT + focus, json.dumps(context, ensure_ascii=False),
-            response_schema=schema, budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()),
-            max_output_tokens=min(8192, max(600, sum(32 + min(12, len(refs)) * 8 for refs in source_refs.values()))))
-        try:
-            data = json.loads(raw)
-        except (TypeError, ValueError):
-            return [], '', {**receipt, 'status': 'invalid_selection'}
-        if shape_errors(data, schema, {}):
-            return [], '', {**receipt, 'status': 'invalid_selection'}
-        saved['selected'] = list(dict.fromkeys(ref for key in source_refs for ref in data['citation_refs'][key]))
-        retain()
+        if not fits(wire.references) or request_characters(SELECT + focus, context, selection_schema) > allowance:
+            task = json.dumps({key: value for key, value in context.items() if key != 'sources'}, ensure_ascii=False)
+            selected = await select_evidence(service, wire, task, deadline-monotonic(),
+                checkpoints=checkpoints, on_progress=retain, fits=fits)
+            saved.update(selected=list(selected), packed=True)
+            retain()
+        else:
+            # Every source gets a decision. Repetitive early summaries cannot use
+            # every selection slot before a later original is considered.
+            schema = {'type': 'object', 'properties': {'citation_refs': {'type': 'object',
+                'properties': {key: {'type': 'array', 'items': {'type': 'integer', 'enum': refs},
+                    'maxItems': min(12, len(refs))} for key, refs in source_refs.items()},
+                'required': list(source_refs), 'additionalProperties': False}},
+                'required': ['citation_refs'], 'additionalProperties': False}
+            raw = await service.model_client.complete(SELECT + focus, json.dumps(context, ensure_ascii=False),
+                response_schema=schema, budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()),
+                max_output_tokens=min(8192, max(600, sum(32 + min(12, len(refs)) * 8 for refs in source_refs.values()))))
+            try:
+                data = json.loads(raw)
+            except (TypeError, ValueError):
+                return [], '', {**receipt, 'status': 'invalid_selection'}
+            if shape_errors(data, schema, {}):
+                return [], '', {**receipt, 'status': 'invalid_selection'}
+            saved['selected'] = list(dict.fromkeys(ref for key in source_refs for ref in data['citation_refs'][key]))
+            retain()
     selected = saved['selected']
     if not isinstance(selected, list) or any(type(key) is not int or key not in wire.references for key in selected):
         return [], '', {**receipt, 'status': 'invalid_selection'}
     if not selected:
         return [], '', {**receipt, 'status': 'no_selection'}
     # Adjacent windows retain qualifications without changing their exact text.
-    local = {i+1: ref for i, ref in enumerate(contextual_references(wire, selected).values())}
+    originals = ({key: wire.references[key] for key in selected} if saved.get('packed')
+        else contextual_references(wire, selected))
+    local = {i+1: ref for i, ref in enumerate(originals.values())}
     payload = {'sources': source_groups(wire, local), 'requested_part': request,
         'original_question': context['original_question']}
     if correction:
@@ -199,24 +247,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
                 error['candidate_windows'] = [{'text': window['text']} for window in error['candidate_windows']]
     if feedback:
         payload['review_feedback'] = feedback
-        focus += '\nReconsider the previous proposal using the fallible review feedback. Only the original sources establish facts. Correct event relationships and unsupported limitations, not just citation numbers.'
-    point_schema = {'type': 'object', 'properties': {
-        'evidence': {'type': 'array', 'maxItems': 8, 'items': {'type': 'object', 'properties': {
-            'citation_ref': {'type': 'integer', 'enum': list(local)},
-            'role': {'type': 'string', 'enum': ['support', 'counterevidence', 'context']}},
-            'required': ['citation_ref', 'role'], 'additionalProperties': False}},
-        'statement': {'type': 'string', 'maxLength': 700},
-        'remaining_gap': {'type': 'string', 'maxLength': 400}},
-        'required': ['evidence', 'statement', 'remaining_gap'], 'additionalProperties': False}
-    item_schema = deepcopy(point_schema)
-    item_schema['properties'].pop('remaining_gap')
-    item_schema['required'].remove('remaining_gap')
-    schema = {'type': 'object', 'properties': {
-        'points': {'type': 'array', 'items': item_schema, 'maxItems': max_points},
-        'remaining_gap': {'type': 'string', 'maxLength': 400}},
-        'required': ['points', 'remaining_gap'], 'additionalProperties': False}
-    if correction:
-        schema['properties']['remaining_gap']['enum'] = ['']
+    point_schema, schema = requested_schema(local, max_points, correction)
     if 'draft' not in saved:
         if deadline - monotonic() < 8:
             return [], '', {**receipt, 'status': 'unavailable'}
@@ -305,9 +336,22 @@ async def _validate_point(service, payload, local, data, schema, focus, deadline
             return None, '', {**receipt, 'status': 'unavailable'}
         repair_schema = deepcopy(schema)
         repair_schema['properties']['remaining_gap']['enum'] = ['']
+        # Candidate text is already present under its exact reference in sources.
+        # Avoid duplicating every original again inside a repair diagnostic.
+        diagnostics = deepcopy(errors)
+        for error in diagnostics:
+            if 'candidate_windows' in error:
+                error['candidate_windows'] = [{'citation_ref': item['citation_ref']} for item in error['candidate_windows']]
+        repair_input = {'sources': payload['sources'], 'original_question': payload['original_question'],
+            'previous_proposal': data, 'validation_errors': diagnostics}
+        from .config import DomainError
+        from .research_evidence_pack import request_characters
+        allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
+        if request_characters(NUMERIC_REPAIR, repair_input, repair_schema) > allowance:
+            raise DomainError('The focused correction exceeds the configured request allowance; originals and progress remain retained.',
+                422, 'research_evidence_group_too_large')
         raw = await service.model_client.complete(NUMERIC_REPAIR,
-            json.dumps({'sources': payload['sources'], 'original_question': payload['original_question'],
-                'previous_proposal': data, 'validation_errors': errors}, ensure_ascii=False),
+            json.dumps(repair_input, ensure_ascii=False),
             response_schema=repair_schema, budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()),
             max_output_tokens=1600)
         try:
