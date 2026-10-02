@@ -190,12 +190,15 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
 
         allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
 
-        def fits(references):
+        def request_size(references):
             local = {i+1: ref for i, ref in enumerate(references.values())}
             candidate = {**context, 'sources': source_groups(wire, local)}
             _, schema = requested_schema(local, max_points, correction)
             return request_characters((POINT_REPAIR if correction else WRITE) + focus,
-                candidate, schema) <= allowance
+                candidate, schema)
+
+        def fits(references):
+            return request_size(references) <= allowance
 
         selection_schema = {'type': 'object', 'properties': {'citation_refs': {'type': 'object',
             'properties': {key: {'type': 'array', 'items': {'type': 'integer', 'enum': refs},
@@ -205,7 +208,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
         if not fits(wire.references) or request_characters(SELECT + focus, context, selection_schema) > allowance:
             task = json.dumps({key: value for key, value in context.items() if key != 'sources'}, ensure_ascii=False)
             selected = await select_evidence(service, wire, task, deadline-monotonic(),
-                checkpoints=checkpoints, on_progress=retain, fits=fits)
+                checkpoints=checkpoints, on_progress=retain, fits=fits, request_size=request_size)
             saved.update(selected=list(selected), packed=True)
             retain()
         else:

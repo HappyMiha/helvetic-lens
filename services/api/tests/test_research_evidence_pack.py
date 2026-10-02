@@ -44,6 +44,11 @@ class Selector:
         payload = json.loads(text)
         assert '"uniqueItems"' not in json.dumps(options['response_schema'])
         self.calls.append((system, payload, options))
+        if payload['phase'] == 'consolidate':
+            ranked = sorted(payload['groups'], key=lambda group: not any(
+                self.choose(payload, None, key) for key in group['primary_refs']))
+            return json.dumps({'assessment': 'Prioritize distinct original findings and their qualifications.',
+                'ranked_groups': [group['id'] for group in ranked]})
         return json.dumps({'citation_refs': {source['selection_key']: [key
             for key in source['selectable_refs'] if self.choose(payload, source, key)]
             for source in payload['sources']}})
@@ -167,6 +172,39 @@ async def test_completed_batches_resume_after_pause_without_repeating_provider_w
 
 
 @pytest.mark.asyncio
+async def test_duplicate_valid_routing_ids_are_normalized_without_replaying_prior_success():
+    wire, checkpoints = corpus(), {}
+    previous_model = Selector(lambda _payload, _source, key: key in {1, 10})
+    def pause():
+        raise RuntimeError('Pause after a valid unique selection was saved')
+    with pytest.raises(RuntimeError, match='Pause'):
+        await select_evidence(service(previous_model), wire, wire.input['original_question'], 60,
+            checkpoints=checkpoints, on_progress=pause)
+    retained = json.loads(json.dumps(checkpoints))
+    prior_key, prior_receipt = next(iter(retained['evidence_selection'].items()))
+    assert prior_receipt['selected'] == [1]
+
+    class Repeated(Selector):
+        async def complete(self, *args, **kwargs):
+            result = json.loads(await super().complete(*args, **kwargs))
+            # A repeated eligible ID carries no additional evidence and may
+            # exceed maxItems even though the unique selection is in bounds.
+            result['citation_refs'] = {key: values * 3 for key, values in result['citation_refs'].items()}
+            return json.dumps(result)
+
+    model = Repeated(lambda _payload, _source, key: key in {1, 10})
+    result = await select_evidence(service(model), wire, wire.input['original_question'], 60, checkpoints=retained)
+    assert result == {key: wire.references[key] for key in (1, 10)}
+    assert retained['evidence_selection'][prior_key] == prior_receipt
+    assert all(payload != previous_model.calls[0][1] for _, payload, _ in model.calls)
+    assert all(len(node['selected']) == len(set(node['selected'])) for node in retained['evidence_selection'].values())
+    count = len(model.calls)
+    restored = json.loads(json.dumps(retained))
+    assert await select_evidence(service(model), wire, wire.input['original_question'], 0, checkpoints=restored) == result
+    assert len(model.calls) == count
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('changed', ['question', 'quote', 'hash', 'model'])
 async def test_cache_is_bound_to_exact_source_question_and_provider(changed):
     wire, checkpoints, model = corpus(), {}, Selector(lambda *_: False)
@@ -190,7 +228,8 @@ async def test_cache_is_bound_to_exact_source_question_and_provider(changed):
 async def test_consolidation_uses_only_retained_exact_originals():
     wire = corpus()
     model = Selector(lambda payload, _source, key: payload['phase'] == 'select' or key in {1, 10})
-    result = await select_evidence(service(model), wire, wire.input['original_question'], 60)
+    result = await select_evidence(service(model), wire, wire.input['original_question'], 60,
+        request_size=lambda refs: 5500 + sum(len(ref['quote']) + 100 for ref in refs.values()))
     assert set(result) == {1, 10}
     assert {payload['phase'] for _, payload, _ in model.calls} == {'select', 'consolidate'}
     for _, payload, _ in model.calls:
@@ -200,13 +239,135 @@ async def test_consolidation_uses_only_retained_exact_originals():
 
 
 @pytest.mark.asyncio
+async def test_consolidation_costs_match_caller_and_survivors_compete_across_prior_batches():
+    wire = corpus(40, 'Original capacity context and applicable conditions. ' * 15)
+    wire.references[41] = {'source_id': 's40', 'locator': 'p2',
+        'quote': 'This late exception limits the interpretation of the earlier measurement.'}
+    question = 'Explain the capacity measurement and every condition on that interpretation.'
+    wire.input['original_question'] = question
+    # The downstream caller owns its actual envelope, including instructions
+    # and schema absent from this selector's transport.
+    def measured(references):
+        return 5000 + sum(len(ref['quote']) + 350 for ref in references.values())
+
+    class Consolidator(Selector):
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            self.calls.append((system, payload, options))
+            if payload['phase'] == 'select':
+                chosen = {key for source in payload['sources'] for key in source['selectable_refs']}
+                assert 'consolidation_budget' not in payload, 'Previously accepted first-pass requests stay identical'
+            else:
+                for group in payload['groups']:
+                    context = {key: wire.references[key] for key in group['retained_refs']}
+                    assert group['additional_request_characters'] == measured(context) - measured({})
+                    assert group['mandatory'] == bool({1, 40}.intersection(group['primary_refs']))
+                return json.dumps({'assessment': 'The distinct finding and late qualification are indispensable.',
+                    'ranked_groups': [group['id'] for group in payload['groups']]})
+            return json.dumps({'citation_refs': {source['selection_key']: [key
+                for key in source['selectable_refs'] if key in chosen] for source in payload['sources']}})
+
+    model, checkpoints = Consolidator(None), {}
+    result = await select_evidence(service(model), wire, question, 60, checkpoints=checkpoints,
+        request_size=measured, required_refs=(1, 40))
+    assert {1, 40, 41} <= set(result) and measured(result) <= 9000
+    assert all(ref == wire.references[key] for key, ref in result.items())
+    assert set(key for _, payload, _ in model.calls if payload['phase'] == 'select'
+        for source in payload['sources'] for key in source['selectable_refs']) == set(wire.references)
+    consolidation = [payload for _, payload, _ in model.calls if payload['phase'] == 'consolidate']
+    prior_sources = []
+    crossed = False
+    for payload in consolidation:
+        current = {source['id'] for source in payload['sources']}
+        if sum(bool(current & earlier) for earlier in prior_sources) >= 2:
+            crossed = True
+        prior_sources.append(current)
+    assert crossed, 'Another bounded level must compare survivors from different earlier partitions'
+    assert all(request_characters(system, payload, options['response_schema']) <= 9000
+        for system, payload, options in model.calls)
+    assert len({node['policy_fingerprint'] for node in checkpoints['evidence_selection'].values()}) == 2
+    count = len(model.calls)
+    assert await select_evidence(service(model), wire, question, 0, checkpoints=json.loads(json.dumps(checkpoints)),
+        request_size=measured, required_refs=(1, 40)) == result
+    assert len(model.calls) == count
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('invalid', ['empty', 'foreign', 'boolean', 'string'])
+async def test_invalid_ranking_retains_completed_selection_and_retries_only_unfinished_work(invalid):
+    wire, checkpoints = corpus(), {}
+    def measured(refs):
+        return 5500 + sum(len(ref['quote']) + 100 for ref in refs.values())
+
+    class Ranker(Selector):
+        fail = True
+
+        async def complete(self, *args, **kwargs):
+            data = json.loads(await super().complete(*args, **kwargs))
+            if 'ranked_groups' in data:
+                ranking = data['ranked_groups']
+                if self.fail:
+                    data['ranked_groups'] = {'empty': [], 'foreign': [9999, *ranking],
+                        'boolean': [True, *ranking], 'string': [str(ranking[0]), *ranking]}[invalid]
+                else:
+                    # Duplicate routing choices carry no additional priority.
+                    data['ranked_groups'] = [ranking[0], *ranking]
+            return json.dumps(data)
+
+    model = Ranker(lambda payload, _source, key: payload['phase'] == 'select' or key in {1, 10})
+    with pytest.raises(DomainError) as error:
+        await select_evidence(service(model), wire, wire.input['original_question'], 60,
+            checkpoints=checkpoints, request_size=measured)
+    assert (error.value.status, error.value.code) == (503, 'research_evidence_pack_incomplete')
+    assert checkpoints['evidence_selection']
+    assert all(node['policy_fingerprint'] == POLICY for node in checkpoints['evidence_selection'].values())
+    first_pass = [payload for _, payload, _ in model.calls if payload['phase'] == 'select']
+    model.fail = False
+    result = await select_evidence(service(model), wire, wire.input['original_question'], 60,
+        checkpoints=checkpoints, request_size=measured)
+    assert result == {key: wire.references[key] for key in (1, 10)}
+    assert measured(result) <= 9000
+    assert [payload for _, payload, _ in model.calls if payload['phase'] == 'select'] == first_pass
+    count = len(model.calls)
+    assert await select_evidence(service(model), wire, wire.input['original_question'], 0,
+        checkpoints=json.loads(json.dumps(checkpoints)), request_size=measured) == result
+    assert len(model.calls) == count
+
+
+@pytest.mark.asyncio
+async def test_partial_ranking_keeps_model_priority_and_appends_existing_groups_last():
+    wire, checkpoints = corpus(4), {}
+
+    class PartialRanker(Selector):
+        async def complete(self, *args, **kwargs):
+            data = json.loads(await super().complete(*args, **kwargs))
+            if 'ranked_groups' in data:
+                data['ranked_groups'] = [4, 4]
+            return json.dumps(data)
+
+    model = PartialRanker(lambda *_: True)
+    result = await select_evidence(service(model, 24000), wire, wire.input['original_question'], 60,
+        checkpoints=checkpoints, fits=lambda references: len(references) <= 2)
+    assert result == {key: wire.references[key] for key in (1, 4)}
+    repaired = [node for node in checkpoints['evidence_selection'].values() if node.get('unranked')]
+    assert len(repaired) == 1 and repaired[0]['unranked'] == [1, 2, 3]
+    assert repaired[0]['selected'] == [4, 1]
+    count = len(model.calls)
+    assert await select_evidence(service(model, 24000), wire, wire.input['original_question'], 0,
+        checkpoints=json.loads(json.dumps(checkpoints)), fits=lambda references: len(references) <= 2) == result
+    assert len(model.calls) == count
+
+
+@pytest.mark.asyncio
 async def test_nonshrinking_consolidation_has_explicit_failure_not_an_infinite_loop():
     wire, model, checkpoints = corpus(), Selector(lambda *_: True), {}
     with pytest.raises(DomainError) as error:
         await select_evidence(service(model), wire, wire.input['original_question'], 60, checkpoints=checkpoints)
     assert error.value.code == 'research_evidence_pack_no_progress'
-    phases = [payload['phase'] for _, payload, _ in model.calls]
-    assert phases.count('select') == phases.count('consolidate')
+    for phase in ('select', 'consolidate'):
+        examined = [key for _, payload, _ in model.calls if payload['phase'] == phase
+            for source in payload['sources'] for key in source['selectable_refs']]
+        assert sorted(examined) == sorted(wire.references), 'A nonshrinking pass must stop without replaying groups'
     count = len(model.calls)
     with pytest.raises(DomainError, match='no progress'):
         await select_evidence(service(model), wire, wire.input['original_question'], 60, checkpoints=checkpoints)
@@ -223,7 +384,7 @@ async def test_indivisible_oversized_original_fails_before_any_partial_selection
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('invalid', ['foreign', 'missing', 'duplicate', 'boolean'])
+@pytest.mark.parametrize('invalid', ['foreign', 'missing', 'wrong_source', 'boolean', 'float', 'string'])
 async def test_invalid_selection_is_not_cached_or_returned_as_partial(invalid):
     wire, checkpoints = corpus(), {}
     class Invalid:
@@ -235,7 +396,10 @@ async def test_invalid_selection_is_not_cached_or_returned_as_partial(invalid):
             if invalid == 'missing':
                 del chosen[key]
             else:
-                chosen[key] = {'foreign': [9999], 'duplicate': [ref, ref], 'boolean': [True]}[invalid]
+                other = next(name for name in groups if name != key)
+                foreign_source = groups[other]['items']['enum'][0]
+                chosen[key] = {'foreign': [9999], 'wrong_source': [foreign_source, foreign_source],
+                    'boolean': [True], 'float': [float(ref)], 'string': [str(ref)]}[invalid]
             return json.dumps({'citation_refs': chosen})
     with pytest.raises(DomainError) as error:
         await select_evidence(service(Invalid()), wire, wire.input['original_question'], 60, checkpoints=checkpoints)

@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: Core9abb551/Sites89 live. Coherent final synthesis and correction; live acceptance open. [Evidence](docs/PRODUCT_END_TO_END.md).
+Question-to-dossier IN PROGRESS: Core6f0f89e/Sites89 live. Evidence selection and clear retained answers; acceptance open. [Evidence](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -1711,7 +1711,7 @@ open; see [deadline evidence](docs/monitoring-v2/TRADEMARK_WATCH.md#reviewed-dea
 | [MV2-017](#mv2-017) | Create Monitor: nine understandable templates | F2 | P1 | L | IN PROGRESS | [MV2-002](#mv2-002), [MV2-005](#mv2-005), [MV2-010](#mv2-010), [MV2-015](#mv2-015) |
 | [MV2-018](#mv2-018) | Monitoring: manage saved subjects | F2 | P1 | M | IN PROGRESS — nine-category settings implemented | [MV2-005](#mv2-005), [MV2-011](#mv2-011), [MV2-017](#mv2-017) |
 | [MV2-019](#mv2-019) | Today: one card across all domains | F2 | P1 | L | IN PROGRESS — shared review counts implemented | [MV2-014](#mv2-014), [MV2-017](#mv2-017) |
-| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — provider grammar; [scope](docs/PRODUCT_END_TO_END.md) | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
+| [MV2-020](#mv2-020) | Investigate: states, diffs, evidence and history | F2 | P1 | L | IN PROGRESS — evidence selection; [scope](docs/PRODUCT_END_TO_END.md) | [MV2-007](#mv2-007), [MV2-009](#mv2-009), [MV2-014](#mv2-014) |
 | [MV2-021](#mv2-021) | Workspace: Impact Inbox, decisions and Impact Matrix | F2 | P1 | M | IN PROGRESS — scoped stages 4c/4d/4e/4f DONE | [MV2-013](#mv2-013), [MV2-014](#mv2-014), [MV2-019](#mv2-019), [MV2-020](#mv2-020) |
 | [MV2-022](#mv2-022) | Notifications and Digests from the same developments | F2 | P1 | L | IN PROGRESS — meaningful mission updates; [scope](docs/RESEARCH_MISSION.md) | [MV2-012](#mv2-012), [MV2-014](#mv2-014), [MV2-019](#mv2-019) |
 | [MV2-023](#mv2-023) | Ask and Marvin in the context of v2 evidence | F2 | P1 | M | IN PROGRESS — mission implemented, release verification; [scope](docs/RESEARCH_MISSION.md) | [MV2-010](#mv2-010), [MV2-020](#mv2-020) |
@@ -2778,7 +2778,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** IN PROGRESS, Coreb21d670/Sites89 live. Provider grammar compatibility; native acceptance open. [Scope/acceptance](docs/PRODUCT_END_TO_END.md).
+**Current direction:** IN PROGRESS, Core6f0f89e/Sites89 live. Useful synthesis and readable retained answers; acceptance open. [Scope/acceptance](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

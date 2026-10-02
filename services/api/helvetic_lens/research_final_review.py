@@ -149,10 +149,13 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         if request_characters(REVIEW + focus, payload, item_schema) > allowance:
             field = 'sources' if key.startswith('L') else 'source_context'
 
-            def fits(references):
+            def request_size(references):
                 candidate = {**payload, field: source_groups(wire, references)}
                 schema = review_schema(assertion, references, concern_ids, point=key.startswith('P'))
-                return request_characters(REVIEW + focus, candidate, schema) <= allowance
+                return request_characters(REVIEW + focus, candidate, schema)
+
+            def fits(references):
+                return request_size(references) <= allowance
 
             # Gap retrieval must visit the whole retained corpus: an answer can
             # be present in an original that the initial draft never selected.
@@ -165,7 +168,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             required = keys + list((concerns or {}).get(key, {}).get('context_refs', [])) if key.startswith('P') else []
             context = await select_evidence(service, candidate_wire, task, deadline-monotonic(),
                 checkpoints=checkpoints.setdefault('original_selection', {}), on_progress=on_progress,
-                fits=fits, required_refs=required)
+                fits=fits, required_refs=required, request_size=request_size)
             payload[field] = source_groups(wire, context)
             item_schema = review_schema(assertion, context, concern_ids, point=key.startswith('P'))
         # Position is presentation, not evidence identity. Inserting or removing

@@ -1122,3 +1122,74 @@ references in 3.86 seconds; the request measured 22,465/24,000 characters. Host
 duplicate checks passed. This verifies the observed grammar incompatibility is
 resolved, not the usefulness of the eventual answer. The 21 selector and two
 bounded follow-through tests passed again, as did exact Ruff and backlog checks.
+
+
+### Complete the retained research and make its result readable
+
+MV2-020/023: native retry40419 ended after814.1 seconds, including572.65
+worker seconds, with no new answer. Twelve successful selection batches retained
+all available independently checked original anchors. The next response repeated
+a valid routing reference, which the host rejected as a fatal research error.
+Scope: normalize repeated valid routing IDs, while preserving source membership,
+exact originals and all substantive citation checks. Inspect actual consolidation
+before claiming that the selected corpus fits or that an answer is useful.
+Dependencies remain the existing provider, resumable work and authorized public
+originals; no new provider, access or forced investigation state.
+
+In both existing clients, distinguish saved answers from the latest unsuccessful
+round, report failed document analysis as pending rather than active, and keep
+source-level findings inspectable without expanding one hundred claims before
+the source list. Give the actual answer and its gaps direct navigation targets.
+Acceptance: the retained real dossier keeps every answer/citation/source available,
+reports pending work accurately and leads with the answer. Provider selection must
+retain exact contextual originals; full native content acceptance remains open
+until a new answer is actually produced and independently checked.
+
+
+The reader change is deployed in both Sites version90, with Legal640bf5c and
+Pharma3774339 pushed to their public main repositories.469 client checks each,
+lint, typecheck and production builds pass. Rendering the retained real result
+preserves7 points,28 answer quotes and1 gap;100 source-level claims and111
+quotations remain in collapsed details, with29 source cards outside. Existing
+private focus requests and public hash links reveal those details before scrolling.
+Both public homes and sessions return200, anonymous private dossier reads401.
+These are reader/access checks, not substantive research acceptance.
+
+Core selection normalizes only source-valid integer routing IDs and keeps prior
+accepted selections reusable. The actual stage check disproved the next proposed
+shortcut: describing available space to the model still produced mostly inventory
+copies, and provider throttling ended both bounded attempts. No native completion
+is claimed and that experimental budget-only consolidation was not released.
+
+The follow-through instead asks for an ordered relevance ranking of exact original
+groups; the host packs whole groups using the actual downstream request size.
+Mandatory review witnesses precede optional ranked groups. A single real batch
+returned in5.75seconds and selected4of10 groups within23,979characters. Independent
+review found meaningful direct-source prioritisation, while noting a fragmented
+review group displaced distinct metric evidence. This is routing evidence only;
+the private ranking assessment is never published as a factual answer. Whole-pack
+coverage and native completion remain to be checked before acceptance.
+
+
+The corpus-level ranking check completed15 valid ranked batches before a response
+repeated one valid group and omitted another. Completed work now survives this
+provider-output interruption. More directly, relevance routing can preserve the
+valid ranked prefix and consider omitted supplied groups last; this does not alter
+evidence or invent a model judgment for an unranked group. Unknown or noninteger
+IDs remain rejected. Existing accepted complete rankings remain reusable.
+
+
+The real corpus selector completed on the unchanged658-reference input:19 exact
+original windows from three sources fit a23,771-character final request under
+the existing24,000-character transport setting. The final bounded continuation
+took82.93seconds/11 new calls; preceding successful batches were reused. This
+proves complete selection and transport, not a new native answer or exhaustive
+semantic coverage. No source text, application database, production dossier or
+email was changed by the diagnostic. The detailed evidence is retained in the
+parent checkpoint and /tmp/hl-selector-stage-evaluation.
+
+Final affected selector/correction/review checks passed88 cases; the subsequent
+small routing-recovery change passed30 selector cases. Exact API Ruff, backlog
+guard and diff checks pass. Independent implementation review found no material
+blocker; some low-overhead batch layouts still have an explicit finite no-progress
+exit. Complete native answer quality and unfinished document analysis remain open.
