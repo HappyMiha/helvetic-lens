@@ -1,5 +1,16 @@
 # Public research acceptance — 1 October 2026
 
+2 October follow-through: the fresh mission at `/tmp/hl-public-second-current-mission`
+finished in 351.9 seconds, 39 steps, with all six documents read and reviewed.
+Its final answer retained the correct atomic-adoption point but omitted the
+decision/publication comparison. A retained correction also confused ratification
+with replacement. Full content acceptance **failed**, despite `completed` status.
+The new final-review diagnostics preserve the original outputs. A literal-clause
+review catches that error and keeps the valid sibling; its unsuccessful correction
+remains an explicit gap. This is not a fresh full-mission pass. The subsequent
+native mission `/tmp/hl-public-second-final-reviewed` has separate execution hashes
+and acceptance evidence; do not infer success from these intermediate checks.
+
 **Overall live answer acceptance: INCOMPLETE. NASA rate reconciliation now passes the narrow question; other cases remain unaccepted.** Controlled worker tests and shipped features
 are separate from this judgment. Three neutral questions were selected before the
 trials, with independent primary-source expectations. Actual configured Apertus

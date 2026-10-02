@@ -14,6 +14,15 @@ from helvetic_lens.product_research_mission import schema as mission_schema
 from helvetic_lens.research_synthesis_resume import KEY, DraftCheckpoint
 
 
+@pytest.fixture(autouse=True)
+def isolated_final_semantics(monkeypatch):
+    """This module tests recovery/coverage; semantic review has its own suite."""
+    from helvetic_lens import research_final_review
+    async def checked(service, wire, answer, seconds, **kwargs):
+        return {'status': 'checked', 'hints': [], 'points_checked': len(answer.points)}
+    monkeypatch.setattr(research_final_review, 'reasoned_review', checked)
+
+
 @pytest.mark.parametrize('page', ['p103', 'p.103', 'pp103–105', 'page 103'])
 def test_bibliographic_page_numbers_ground_page_references_without_authorizing_other_numbers(page):
     answer = AssessmentOutcome(status='possible_answer', limitations=[], points=[{
@@ -105,8 +114,8 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
             key: {'disposition': 'answered', 'points': [point], 'remaining_gap': ''} for key in ('r1', 'r2')}},
             'next_action': 'finish', 'reason': 'The adoption year is provided.'})
     async def audit(*args, coverage_only=False):
-        return {'status': 'checked', 'hints': [{'user_request': 'Distinguish adoption from publication.'}]
-            if coverage_only else [], 'decisions': []}
+        return {'status': 'checked', 'question_coverage': 'missing', 'hints': [
+            {'user_request': 'Distinguish adoption from publication.', 'review_signal': 'requested_part_missing'}], 'decisions': []}
     async def original(*args):
         return None
     monkeypatch.setattr(model, 'complete', complete)
@@ -308,7 +317,7 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
     answer = result.mission_checkpoint.answer
     assert answer.points[1].statement == 'The station entered service in 2019.'
     assert answer.status == ('possible_answer' if available else 'partial')
-    assert not answer.limitations if available else 'When did it enter service?' in answer.limitations[0]
+    assert not answer.limitations if available else any('When did it enter service?' in gap for gap in answer.limitations)
     assert 'Start with' not in str(answer.limitations)
     assert len(calls) == 6
     assert work[KEY]['parts'] and 'parts' not in work['model_route']

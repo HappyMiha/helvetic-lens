@@ -300,10 +300,15 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                             parsed, wire, answer_quantity_errors(parsed.mission_checkpoint.answer))
                         raw = wire.decode(wire.encode_checkpoint(parsed))
         if wire and wire.answer:
-            from .research_answer_review import audit, original_check
+            from .research_answer_review import original_check
+            from .research_final_review import finalize
             parsed = schema.model_validate_json(raw)
-            final_coverage = await audit(service.settings, work, wire, parsed.mission_checkpoint.answer,
-                seconds - (monotonic() - started), coverage_only=True)
+            def retain_final():
+                if resume:
+                    resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+            final_coverage = await finalize(service, work, wire, parsed,
+                seconds - (monotonic() - started), checkpoints=resume.parts if resume else None,
+                on_progress=retain_final)
             missing = final_coverage.pop("hints")
             unresolved = [wire.request_keys[key] for key, slot in wire.response_slots.items() if slot["disposition"] == "unresolved"]
             missing.extend({"user_request": request} for request in unresolved
@@ -333,11 +338,11 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     return response_object(raw, schema)
 
 
-def retain_answer_points(parsed, wire, errors):
+def retain_answer_points(parsed, wire, errors, *, allow_empty=False):
     """Reject unsupported findings without rewriting independent valid siblings."""
     answer = parsed.mission_checkpoint.answer
     rejected = {error["path"][2] for error in errors}
-    if len(rejected) == len(answer.points):
+    if len(rejected) == len(answer.points) and not allow_empty:
         raise ValueError("Answer quantities are absent from their selected original evidence")
     bindings = list(wire.point_requests)
     new_gaps = []
@@ -355,7 +360,7 @@ def retain_answer_points(parsed, wire, errors):
         new_gaps.append(gap)
     answer.points = [point for index, point in enumerate(answer.points) if index not in rejected]
     wire.point_requests = [key for index, key in enumerate(bindings) if index not in rejected]
-    answer.status = "partial"
+    answer.status = "partial" if answer.points else "not_found"
     parsed.mission_checkpoint.reason = "The cited findings are retained; findings that could not be validated are named as unresolved parts."
     # Multipart slots own their gaps and reserve space before unrelated limitations.
     owned = [value["remaining_gap"] for value in wire.response_slots.values() if value["remaining_gap"]]

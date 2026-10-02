@@ -133,6 +133,31 @@ async def test_citation_correction_preserves_needed_prior_context_only_within_th
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('order', [[1, 2, 3], [3, 2, 1]])
+async def test_last_citation_slot_retains_context_covering_the_missing_comparison(order):
+    quotes = ['The record was adopted in 2001.', 'Adopted in 2001; published in 2003.',
+        'The earlier record was published in 1999.', 'The current record belongs to the registry.',
+        'The adopted record was subsequently published.', 'The proceedings retain the decision.',
+        'The document identifies the responsible authority.', 'This is the current record.',
+        'The document is available in the official collection.', 'This is an original publication.']
+    refs = {i+1: {'source_id': 'a', 'locator': f'p{i+1}', 'quote': quote} for i, quote in enumerate(quotes)}
+    wire = SimpleNamespace(references=refs, input={})
+    class Model:
+        writes = 0
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': list(refs)})
+            self.writes += 1
+            statement = 'The record was adopted in 2001 and published in 2003.'
+            return json.dumps({'statement': statement + (' Another copy was published in 2099.' if self.writes == 1 else ''),
+                'remaining_gap': '', 'evidence': [{'citation_ref': key, 'role': 'support'}
+                    for key in (order if self.writes == 1 else range(4, 11))]})
+    point, gap, _ = await answer_request(SimpleNamespace(model_client=Model()), wire, 'Compare adoption and publication.', 60)
+    assert point is not None and gap == '' and len(point.evidence) == 8
+    assert point.evidence[-1].quote == quotes[1] and point.evidence[-1].role == 'context'
+
+
+@pytest.mark.asyncio
 async def test_unavailable_part_retains_existing_evidence_but_cannot_claim_completed_synthesis():
     wire, parsed, schema = fixture()
     original = parsed.mission_checkpoint.answer.points[0].model_copy(deep=True)

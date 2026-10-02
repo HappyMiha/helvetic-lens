@@ -10,9 +10,10 @@ CONTRACT = "final-synthesis-resume/v1"
 class DraftCheckpoint:
     def __init__(self, work, settings, system, review_system, schema, content, options):
         from .research_answer_parts import POLICY
+        from .research_final_review import POLICY as FINAL_POLICY
         self.work = work
         self.binding = fingerprint({"contract": CONTRACT, "system": system,
-            "part_policy": POLICY,
+            "part_policy": POLICY, "final_policy": FINAL_POLICY,
             "review_system": review_system, "schema": schema, "content": content,
             "provider": settings.apertus_provider, "endpoint": settings.apertus_base_url,
             "model": settings.apertus_model, "options": options,

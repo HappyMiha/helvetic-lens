@@ -8,6 +8,19 @@ configured providers; no production fixture dossiers, real emails or new keys.
 
 ## Required outcome
 
+Current correction scope (MV2-020/023, 2 October): the six-document native pilot
+finished in 351.9 seconds with complete reading/review but omitted the requested
+publication comparison. Its retained proposed comparison also confused a replaced
+definition with its successor. Numeric citation repair alone cannot accept it.
+The full factual audit preceded per-request rewriting; the last audit checked
+coverage only. Review the final rewritten statements and limitations, then use
+explicit fallible feedback to repair affected parts and recheck them. Preserve
+valid siblings, private exact-input checkpoints, public-only decision routing and
+explicit gaps when review or correction is unavailable. Dependencies remain the
+existing authorized originals, synthesis/decision providers and native retry.
+Acceptance requires actual event relationships, not merely present dates, plus
+late counterexamples, failed correction/resumption and no private audit egress.
+
 A person supplies an unclear question. The system investigates plausible meaning,
 discovers and reads the needed originals completely, shows grounded progress,
 deepens consequential gaps, and returns a readable cited answer with genuine
@@ -331,3 +344,49 @@ Nineteen affected native integration/backlog cases and exact API lint passed,
 including comparison identity, publication revision, source exclusion, withdrawn
 origins, mixed private/public evidence and human-review invalidation. Independent
 code review found no material regression.
+
+## Keep the most useful already-selected context during citation correction
+
+MV2-020/023 scope: the fresh current-code mission finished with one unresolved
+part after a correction filled its last citation slot with an earlier heading
+covering only one missing value. A later already-selected same-source proceedings
+window covered both missing values, but could no longer fit. Rank retained context
+by the validator's actual missing-value coverage, rather than old response order.
+Keep the existing source-ownership, exact-window and eight-reference checks.
+Acceptance: a valid synthetic comparison survives a full citation set regardless
+of prior context order; unsupported values and cross-source borrowing still fail.
+This precision correction is not a semantic truth test. The real proposal must
+still be reviewed separately for event/date relationships.
+
+## Review the delivered findings, after every rewrite
+
+The final gate now checks the actual delivered statements and gaps, after the
+per-request synthesis/citation corrections. Fast Jev/Laya checks retain their
+coverage role; the configured reasoning model reviews each literal statement
+against its selected original passages. Compound relationships are reviewed as
+clauses. Other answer points cannot silently supply a corrected interpretation.
+Gap checks see the synthesis originals but must refer to the actual gap text.
+
+A failed clause receives one focused correction with explicit fallible feedback,
+then another review. A known rejected clause cannot become accepted merely through
+changed citation roles or an unavailable reviewer. Valid siblings remain intact;
+unrepaired points become named gaps, including when no valid point survives.
+Review unavailability is provisional status, not evidence of a missing fact.
+Notices respect all eight request slots. A corrected single-question gap can
+produce its missing cited point. Claims with unchanged exact inputs reuse private
+checks across provider failures; changed evidence, model, policy or feedback cannot
+reuse a different proposal. No new public/private provider boundary is introduced.
+
+Real retained failure diagnostics remain negative evidence. Both the initial fast
+review and an undivided whole-answer reasoning review accepted a wrong compound
+event relationship. Isolated literal-claim review rejected it, and the failed
+correction could not replace the valid sibling with a wrong conclusion. This is
+a safety improvement, not full content acceptance. The new writer also asks for
+the minimum sufficient requested comparison and excludes irrelevant historical
+details from invented gaps. No pilot-specific dates or conclusions enter policy.
+
+The focused suites passed 58 cases, including the final unrelated-gap regression;
+seven native provider/privacy/recovery cases also passed (the combined run of
+37 includes 30 overlapping focused cases). Exact API lint passed. The live fresh
+mission in `/tmp/hl-public-second-final-reviewed` is evaluated separately; code
+identity hashes are recorded before execution. Unchanged clients stay at Sites86.
