@@ -5,6 +5,8 @@ from types import SimpleNamespace
 
 import pytest
 
+from helvetic_lens import evidence_embeddings as embeddings
+from helvetic_lens import research_active_retrieval as retrieval
 from helvetic_lens.config import Settings
 from helvetic_lens.product_exploration import AssessmentOutcome, Briefing
 from helvetic_lens.product_research_mission import schema as mission_schema
@@ -16,7 +18,7 @@ from helvetic_lens.research_model_transport import EvidenceWire
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('mode', ['correction', 'gap'])
-async def test_late_original_is_considered_in_bounded_correction_and_gap_review(mode):
+async def test_late_original_is_considered_in_bounded_correction_and_gap_review(mode, monkeypatch):
     sources = [{'id': f'{index:036d}', 'kind': 'public_source', 'title': f'Earlier source {index}',
         'excerpts': [{'passage': 'p1', 'text': ('The registry provides background about applications and published notices. ' * 16)}]}
         for index in range(40)]
@@ -29,16 +31,27 @@ async def test_late_original_is_considered_in_bounded_correction_and_gap_review(
     settings = Settings(_env_file=None, apertus_provider='swisscom', apertus_context_chars=18000)
     seen, dispatched = set(), []
 
+    async def encode(self, texts):
+        # Keep this flow test offline while exercising the actual hybrid ranker.
+        return [{'vector': tuple(([1.0, 0.0] if text.startswith('query:') or original in text
+            else [0.0, 1.0]) + [0.0] * (embeddings.DIMENSIONS - 2)),
+            'input_tokens': 40, 'truncated': False} for text in texts]
+
+    rank_records = retrieval.rank_records
+
+    def rank(query, records, *args):
+        seen.update(record['source_id'] for record in records)
+        return rank_records(query, records, *args)
+
+    monkeypatch.setattr(embeddings.LocalEmbeddings, 'encode', encode)
+    monkeypatch.setattr(retrieval, 'rank_records', rank)
+
     class Model:
         async def complete(self, system, text, **options):
             payload = json.loads(text)
             assert request_characters(system, payload, options['response_schema']) <= settings.apertus_context_chars
             dispatched.append(payload)
-            if payload.get('phase') in {'select', 'consolidate'}:
-                seen.update(source['id'] for source in payload['sources'])
-                return json.dumps({'citation_refs': {source['selection_key']:
-                    source['selectable_refs'] if source['id'] == 'z' * 36 else []
-                    for source in payload['sources']}})
+            assert payload.get('phase') not in {'select', 'consolidate'}
             assert original in text
             if mode == 'correction':
                 assert payload['correction_target']['previous_statement'] == 'A permit takes effect automatically.'
@@ -64,4 +77,4 @@ async def test_late_original_is_considered_in_bounded_correction_and_gap_review(
         assert result['status'] == 'checked'
         assert result['hints'][0]['original_windows'] == [{'text': original}]
     assert seen == {source['id'] for source in sources}
-    assert len(dispatched) > 2 and wire.references == before
+    assert dispatched and wire.references == before

@@ -1243,3 +1243,61 @@ needs22 initial batches at24k,9 at48k,4 at96k. Swisscom documents262,144 context
 tokens separately from its trial50k input tokens/minute rate. A controlled future
 run at the already supported48k-character setting is the next candidate; this
 audit does not change production settings or prove rate-limit avoidance.
+
+
+### Connect existing retrieval to the current investigation
+
+MV2-020/023: active final synthesis bypasses the existing local E5/BM25 retrieval
+and sends every original group through Apertus selection and repeated ranking.
+The completed-dossier search ledger cannot be reused directly because it excludes
+active investigations. Scope: adapt current authorized canonical evidence into
+existing retrieval records and source/model-bound vector caching, rank the whole
+question and existing explicit requests, and pack exact complete context groups
+with mandatory witnesses and source/question diversity. Use the existing local
+embedding and hybrid-ranking implementations, not another search stack. Corpus
+reading, capture, provenance and source access remain unchanged. Retrieval gaps
+are not claims that evidence does not exist. Jev/Laya remain fallible shortlist
+routing signals; no cloud transfer of private evidence is added.
+
+Dependencies are current source rights and tenant context, canonical source/text
+identity, configured local embedding readiness, existing derived vector storage,
+and the existing final synthesis/review path. Acceptance: the actual retained
+658-reference corpus produces an exact bounded pack without any Apertus routing
+call, retained whole-source storage and required context remain intact, cache
+identity and access boundaries hold, explicit unavailable-embedding fallback is
+honest, and current question/distinction/source diversity is represented. The
+real delivered answer still requires independent original-based acceptance. The
+running pinned native80271 is not modified or interrupted.
+
+The active wire now uses the existing local E5/BM25 retrieval and cited graph
+ranking directly. Selection no longer invokes generative SELECT/consolidation.
+Every requested distinction shares a complete-context packing pass; mandatory
+witnesses come first, and source diversity is a priority rather than a coverage
+claim. Current run, tenant, membership, source exclusions and exact originals are
+checked before and after inference, including complete/cached-pack returns.
+Source/model-bound derived vectors reuse the existing table; no private evidence
+is sent to an additional cloud service. Offline embeddings produce an explicitly
+named lexical fallback. A retained pack remains stable for its current draft.
+
+One frozen real public658-reference corpus, using the configured local encoder
+and the production24,000-character envelope, produced20 exact references from
+three sources in33.935seconds, with zero Apertus selection calls, zero original
+or production database changes, and no embedding truncation. Independent review
+found enough original evidence for the ordinary recovery-versus-seasonal-size
+question, the conditional forecast and a real model limitation. Footer/Arctic
+context consumes some space, so this is no general relevance/accuracy guarantee.
+The complete original corpus is unchanged. This establishes retrieval and pack
+sufficiency only; acceptance of an actual delivered answer remains open.
+
+The evaluation includes the first Chapter4 portion (pages1–20 of55), followed
+by other retained portions of the same URL/SHA through page55. Mission coverage
+confirms complete reading, but analysis/review is incomplete. Exact selected
+passages remain valid; pack sufficiency does not establish completed document
+analysis. Existing mission coverage remains authoritative and unchanged.
+
+Validation:164 affected checks pass (27 selector,9 active retrieval,128 answer,
+resume, review and backlog cases). The two follow-through assertions were updated
+to verify that every original reaches the real local ranker and that no generative
+selection request occurs; their existing late-original answer/gap assertions still
+pass. Exact API Ruff and diff checks pass. No client change or new UI publication
+is necessary for this shared-core behavior.
