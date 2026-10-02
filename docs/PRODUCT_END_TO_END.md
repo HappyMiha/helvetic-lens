@@ -306,3 +306,28 @@ retained-output pass, not a fresh full mission; see PUBLIC_RESEARCH_ACCEPTANCE.m
 The affected focused suites passed 81 cases plus the backlog guard; exact lint
 passed. Global checkpoint release `b2081c4b288bdde38e6fd77e993ca810b3d57c51`
 activated automatically at 2026-10-02T01:32:13Z.
+
+## Responsive dossier progress with retained knowledge
+
+MV2-020/023 scope: the isolated long-research reader still spends seconds building
+repeated access-aware SQL predicates for each retained claim. Existing read-view
+scoping already removes duplicate result checks, but each distinct claim rebuilds
+the same dossier comparison query. Profile the same immutable isolated dossier
+before/after; share only the generative SQL query inside one synchronous read,
+and resolve retained claim identities in one equivalent access-filtered query.
+All current source, publication, human-review and evidence predicates still run
+against the database. No cache crosses a request, mutation or provider execution.
+Dependencies: existing native reader, retained knowledge, source-rights/review
+queries and synchronous read-view scope; no provider or schema change. Acceptance:
+byte-identical JSON on one fixed snapshot, lower measured reader time, unchanged
+revocation/exclusion handling and fresh state on subsequent reads.
+
+The same immutable isolated dossier GET fell from 6.487 s to 3.457 s (46.7%
+less elapsed time), returning byte-identical 460,792-byte JSON. This is one local
+measurement, not a production latency guarantee. Generative comparison queries
+are shared only inside the synchronous read scope; their execution and tenant/
+source filters remain fresh. Retained claims use one equivalent eligible-ID query.
+Nineteen affected native integration/backlog cases and exact API lint passed,
+including comparison identity, publication revision, source exclusion, withdrawn
+origins, mixed private/public evidence and human-review invalidation. Independent
+code review found no material regression.

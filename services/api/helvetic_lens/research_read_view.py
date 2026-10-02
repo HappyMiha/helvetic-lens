@@ -10,6 +10,21 @@ from functools import wraps
 _KEY = "research_read_view"
 
 
+def read_query(session, key, build):
+    """Reuse a generative SQL expression, never rows or authorization results.
+
+    Callers must use Select's generative methods to refine the returned query.
+    Each execution still applies current database state and tenant criteria.
+    """
+    cache = session.info.get(_KEY)
+    if cache is None:
+        return build()
+    key = ("query", key)
+    if key not in cache:
+        cache[key] = build()
+    return cache[key]
+
+
 def read_view(function):
     @wraps(function)
     def wrapped(session, *args, **kwargs):

@@ -191,3 +191,24 @@ This is a substantive retained-output replay PASS, not a newly completed live
 mission. The earlier partial result and all failures remain unchanged. Unknown
 labels and unsupported factual years still fail regression checks. No additional
 provider call, production dossier or email was needed for this replay.
+
+## Terminal native continuation — 2 October 2026
+
+The existing BIPM continuation finished naturally after 3,150.46 s and 121 worker
+steps. It traversed 22 source records (including reused captures and document
+portions, not 22 independent originals), retained work across an actual 429, and
+returned a cited mission answer covering both requested parts. Independent narrow
+content review passed the 1967 atomic-adoption conclusion and the 1956/1960/1967
+decisions versus 1961/1969 proceedings comparison. All twelve selected citation
+triples exactly match retained originals. An author/address byline and bare
+resolution label are redundant, incorrectly labelled supporting references; the
+other selected originals establish the substantive claims.
+
+The overall mission correctly remains **failed/incomplete**: two selected PDFs
+were traversed but still have unread scanned pages because local OCR was absent.
+The retained answer names these coverage gaps. Production already includes
+Tesseract; the isolated host did not. Do not mark those documents fully read.
+The run loaded the older branch scheduler, so it cannot establish current
+planning or latency acceptance. Its driver also performs an expensive GET after
+each worker step. Artifacts: `/tmp/hl-public-second-request-sections/result.json`,
+`model-calls.json` and `resume-receipt.json`. No production records/emails were made.

@@ -16,7 +16,7 @@ from .product_investigation_models import (
 )
 from .product_source_authority import options as source_options
 from .product_source_authority import recorded as source_recorded
-from .research_read_view import read_once
+from .research_read_view import read_once, read_query
 
 PAGE_SIZE = 10
 EVIDENCE_LIMIT = 100
@@ -77,7 +77,10 @@ def provenance(session, run_id):
 def context(session, claim, publication=None):
     own = list(session.scalars(select(ClaimEvidence).where(ClaimEvidence.claim_id == claim.id)
         .order_by(ClaimEvidence.id).limit(EVIDENCE_LIMIT + 1)))
-    links = list(session.scalars(comparisons(claim.dossier_id, publication).where(
+    query = read_query(session, (comparisons, claim.dossier_id,
+        publication.id if publication else None, publication.revision if publication else None),
+        lambda: comparisons(claim.dossier_id, publication))
+    links = list(session.scalars(query.where(
         or_(ClaimChange.previous_claim_id == claim.id, ClaimChange.claim_id == claim.id),
         ClaimChange.investigation_id.in_(select(Investigation.id).where(Investigation.status == "completed")),
         ClaimChange.previous_investigation_id.in_(select(Investigation.id).where(Investigation.status == "completed")))

@@ -168,8 +168,11 @@ def current(session, run):
         if (source is None or source.sha256 != pin["sha256"]
                 or fingerprint(source.snapshot) != pin["snapshot_fingerprint"]):
             return False
+    claim_ids = [claim["historical_claim_id"] for claim in memory["claims"]]
+    retained_claims = {claim.id: claim for claim in session.scalars(reviews.claims(run.dossier_id)
+        .where(DossierClaim.id.in_(claim_ids)))} if claim_ids else {}
     for claim in memory["claims"]:
-        retained = session.scalar(reviews.claims(run.dossier_id).where(DossierClaim.id == claim["historical_claim_id"]))
+        retained = retained_claims.get(claim["historical_claim_id"])
         if retained is None:
             return False
         value = reviews.projection(session, retained)
