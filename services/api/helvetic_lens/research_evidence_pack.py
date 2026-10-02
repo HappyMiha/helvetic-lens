@@ -6,11 +6,12 @@ from urllib.parse import urlsplit
 
 from .config import DomainError
 from .product_operations import fingerprint
-from .research_answer_parts import contextual_references
+from .research_original_context import POLICY as ORIGINAL_CONTEXT_POLICY
+from .research_original_context import provider_excerpts, reference_units
 from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
 POLICY = fingerprint({'contract': 'local-hybrid-evidence-pack/v1',
-    'units': 'paragraph-with-context/v1', 'packing': 'request-source-diversity/v1',
+    'units': ORIGINAL_CONTEXT_POLICY, 'packing': 'request-source-diversity/v1',
     'mission_metadata': 'completed-document-counts/v1', 'cost': 'actual-caller-envelope/v1',
     'source_use': SOURCE_USE_POLICY})
 
@@ -22,17 +23,13 @@ def _json(value):
 def provider_sources(wire, references):
     """A provider view, without altering host discovery links or source records."""
     metadata = {source['id']: source for source in wire.input.get('sources', [])}
-    from .research_model_transport import reference_uses
-    uses = reference_uses(wire, references)
-    groups = {}
-    for key, ref in references.items():
-        source = metadata.get(ref['source_id'], {})
-        group = groups.setdefault(ref['source_id'], {
+    groups = []
+    for source_id, excerpts in provider_excerpts(wire, references).items():
+        source = metadata.get(source_id, {})
+        groups.append({
             **{field: source[field] for field in ('sha256', 'title', 'url') if field in source},
-            'id': ref['source_id'], 'excerpts': []})
-        group['excerpts'].append({'citation_ref': key, 'text': ref['quote'], 'passage': ref['locator'],
-            **({'source_use': uses[key]} if key in uses else {})})
-    return list(groups.values())
+            'id': source_id, 'excerpts': excerpts})
+    return groups
 
 
 def provider_input(wire, references):
@@ -120,19 +117,7 @@ def _final_size(wire, references):
 
 def _units(wire, _question=None):
     """Canonical complete passages and context, independent of retrieval order."""
-    by_source = {}
-    for key, ref in wire.references.items():
-        by_source.setdefault(ref['source_id'], []).append(key)
-    units = []
-    for keys in by_source.values():
-        paragraphs = {}
-        for key in keys:
-            locator = None if len(keys) <= 16 else wire.references[key]['locator']
-            paragraphs.setdefault(locator, []).append(key)
-        for primary in paragraphs.values():
-            units.append({'primary': primary, 'references': contextual_references(wire, primary),
-                'source_id': wire.references[primary[0]]['source_id']})
-    return units
+    return reference_units(wire)
 
 
 def _references(wire, units):

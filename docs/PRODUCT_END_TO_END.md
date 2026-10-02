@@ -1613,3 +1613,87 @@ and verified fixes for both stale-checkpoint exhaustion authority and inherited
 retry counters. The isolated runner also honors an explicit native retry control
 on a saved qualified answer; six control/identity guard cases passed without
 providers or production writes. Live content acceptance remains outstanding.
+
+### Preserve coherent original context around a citation
+
+MV2-020/023: native3296's first delivered, provisional checkpoint on Core5bacd04
+contains a material geographic/baseline error despite exact citations. The
+original extraction contains the missing paragraph opening and comparison window,
+but compact_sources retained only16 scattered quotations from1,283 PDF blocks.
+contextual_references then treated this subset as a complete short original.
+The final model approved the assertion; this is not a rejected verdict being
+overridden by delivery. The continuation remains active and may supersede that
+provisional answer. This diagnosis is not a terminal acceptance verdict.
+
+Scope: retain coherent original context for cited passages before evidence packing.
+Use original structural paragraph boundaries where available, or the full physical
+PDF page for line-based extraction. Keep the complete-short-original shortcut only
+when the original is actually complete; never infer completeness from the length
+of a compacted list. Share the preserved grouping with synthesis and final-review
+context selection. Evidence keeps its exact source, locator, quote and source-use
+boundary. Request constraints remain honest; do not silently crop an oversized
+context, add domain-specific rules, or introduce another reviewer layer.
+
+Dependencies and source readiness: all original text is already captured and
+accessible under the existing investigation's access/version fences. The observed
+page contains83 blocks and4,787 text characters; no new external reading is needed.
+The current native run uses an immutable snapshot and must not be interrupted.
+
+Acceptance: a selected line keeps its original paragraph/page subject, temporal
+baseline and qualifications through compaction, packing and final review; sparse
+excerpts are never described as a complete document; unrelated pages need not be
+sent; exact citation binding and metadata/content distinctions remain intact.
+Use focused structural regression cases and the existing affected checks once.
+Restored context alone is not proof of semantic correctness: independent review
+of a new delivered answer remains required.
+
+Native3296 subsequently ended failed after1,743.8 seconds/32 worker steps. The
+single visible checkpoint remains exactly the first eight-point/11-citation
+answer and fails independent content acceptance for the documented geographic,
+baseline and historical-window errors. Round two reached synthesis but failed
+with research_evidence_group_too_large; the ordinary Retry control remains
+available. Both unchanged product readers render the retained answer and all
+citations. Frozen JSON and SQLite artifacts preserve the terminal state. Coherent
+source context is a distinct correction, not evidence that this final request
+overflow has been resolved.
+
+Independent offline replay confirms the first delivered page-5 claim now retains
+all83 original passages in an18,800-character request. A separate actual repaired
+continuation claim needs two physical PDF pages plus HTML originals:28,933
+characters, above the24,000-character allowance. Its sources must not be cropped.
+The exact terminal422 binding is unavailable after checkpoint removal; this is a
+measured related request, not a reconstruction of that missing binding.
+
+Complete this correction by removing repetitive final-review instruction prose
+while preserving the existing assertion, witness, concern, metadata and gap
+contracts. Do not raise provider limits based on a model's advertised context
+window, weaken host validation, or introduce another reviewer. Acceptance includes
+the unchanged complete-original request fitting the existing allowance and a
+semantic review of the shorter instructions, in addition to the affected tests.
+
+Implemented one structural-context helper shared by original compaction,
+retrieval units and final review. Physical PDF pages and split paragraph portions
+are restored with exact original identities, including short non-citable headings
+and matching authorized document portions. Sparse selection cannot activate the
+complete-short-original shortcut. Writer, pack and final-review bindings include
+the new policy. No source text, response schema or host witness validation was
+weakened. Final-review instructions now state the same criteria without repeated
+prose; semantic review corrected one ambiguity distinguishing original evidence
+from draft assertions and reviewer notes.
+
+Final offline replay: the page-5 claim retains all83 passages/4,787 original text
+characters within13,756/24,000 request characters. The actual repaired continuation
+claim retains all77 mandatory citation references within23,889/24,000. Canonical
+text, payload and response schema are unchanged; shorter instructions save5,044
+characters. This latter request has only111 characters of spare capacity before
+additional advisory concerns. The cleared terminal request is still not exactly
+reconstructed, and no live semantic success is inferred from transport fit.
+
+Validation:128 context-related cases passed, including five new structural cases.
+After the instruction change,73 final-review, metadata and transient-resilience
+cases passed; one fixture's irrelevant text was enlarged solely to continue
+exercising envelope packing with the shorter prompt. Exact API Ruff, backlog
+guard and diff checks passed. Independent implementation review found no identity,
+access, metadata, cache or cropping blocker. Offline replay made zero provider,
+network or database-write calls. Ordinary retry and new content acceptance remain
+outstanding; unchanged clients require no rebuild or republishing.

@@ -130,12 +130,12 @@ def test_dense_original_reconciles_all_sections_and_targets_and_resumes_failed_m
         from helvetic_lens.product_document_reading import model_projection, projection
         sources = [session.get(InvestigationSource, key) for key in source_ids]
         inputs = compact_sources(session, session.get(Investigation, run["id"]), sources)
-        assert len(json.dumps(inputs)) < 20000
         assert {s["id"] for s in inputs} == set(source_ids)  # Every dependency remains pinned.
-        # Compact originals retain neighbouring context even when only selected
-        # observations survive the whole-document synopsis.
-        assert {p["text"] for s in inputs for p in s["excerpts"]} == {
-            EARLY, LATE, "The fictional appendix provides administrative background."}
+        # A selected PDF line retains its physical page, even this deliberately
+        # oversized fixture. The later provider pack must enforce its envelope;
+        # compaction cannot silently turn 182 original blocks into two quotes.
+        assert {s["id"]: s["excerpts"] for s in inputs} == {
+            s.id: s.snapshot["excerpts"] for s in sources}
         assert any("whole_document_review" in s for s in inputs)
         public = projection(session.get(InvestigationBranch, branch_id).checkpoint)[0]
         assert "review_tree" not in public

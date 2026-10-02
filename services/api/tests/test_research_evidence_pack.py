@@ -14,6 +14,7 @@ from helvetic_lens.research_evidence_pack import (
     request_characters,
     select_evidence,
 )
+from helvetic_lens.research_original_context import POLICY as ORIGINAL_CONTEXT_POLICY
 
 
 def corpus(count=10, quote=None):
@@ -21,6 +22,7 @@ def corpus(count=10, quote=None):
         'quote': quote or f'Original {i}. ' + 'Station capacity context. ' * 60}
         for i in range(1, count + 1)}
     sources = [{'id': f's{i}', 'title': f'Original {i}', 'sha256': f'hash-{i}',
+        'original_context': {'policy': ORIGINAL_CONTEXT_POLICY, 'captured_complete': True},
         'url': f'https://example.test/{i}', 'discovery_links': [{'url': 'https://example.test/next'}]}
         for i in range(1, count + 1)]
     point = {'type': 'object', 'properties': {

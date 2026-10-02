@@ -270,6 +270,7 @@ def invalidate_reference_reviews(session, run, state):
 
 def compact_sources(session, run, sources):
     """All section notes survive final synthesis; original quotations stay addressable."""
+    from .research_original_context import expand_sources
     cited = {}
     for evidence in rows(session, ClaimEvidence, run):
         cited.setdefault(evidence.source_id, set()).add(evidence.locator)
@@ -319,7 +320,9 @@ def compact_sources(session, run, sources):
             existing = {link["url"] for link in value.get("discovery_links", [])}
             value.setdefault("discovery_links", []).extend(link for link in leads if link["url"] not in existing)
         values.append(value)
-    return values
+    # A review-selected PDF line is not a complete original. Restore its page
+    # (or structured paragraph) before retrieval can rank any of these excerpts.
+    return expand_sources(values, views.values())
 
 
 async def execute(service, work, seconds):

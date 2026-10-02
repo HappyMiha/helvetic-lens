@@ -11,6 +11,8 @@ from time import monotonic
 from .analysis import InferenceBudget
 from .product_exploration import AssessmentPoint
 from .product_operations import fingerprint
+from .research_original_context import POLICY as ORIGINAL_CONTEXT_POLICY
+from .research_original_context import contextual_references, provider_excerpts
 from .research_reference_metadata import INSTRUCTIONS as SOURCE_USE_INSTRUCTIONS
 from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
@@ -103,7 +105,7 @@ NUMERIC_REPAIR += SOURCE_USE_INSTRUCTIONS
 POINT_REPAIR += SOURCE_USE_INSTRUCTIONS
 POLICY = fingerprint({"contract": "requested-answer-pack/v17-bounded-originals", "select": SELECT, "write": WRITE,
     "numeric_repair": NUMERIC_REPAIR, "point_repair": POINT_REPAIR, "source_use": SOURCE_USE_POLICY,
-    "amendment": AMENDMENT})
+    "amendment": AMENDMENT, "original_context": ORIGINAL_CONTEXT_POLICY})
 
 
 def remove_citation_labels(data):
@@ -114,32 +116,11 @@ def remove_citation_labels(data):
 
 
 def source_groups(wire, references):
-    from .research_model_transport import reference_uses
-    uses = reference_uses(wire, references)
     metadata = {source['id']: source for source in getattr(wire, 'input', {}).get('sources', [])}
-    groups = {}
-    for key, ref in references.items():
-        source = metadata.get(ref['source_id'], {})
-        group = groups.setdefault(ref['source_id'], {
-            'title': source.get('title', 'Original source'), 'url': source.get('url'), 'passages': []})
-        group['passages'].append({'citation_ref': key, 'text': ref['quote'],
-            **({'source_use': uses[key]} if key in uses else {})})
-    return list(groups.values())
-
-
-def contextual_references(wire, selected):
-    """Exact adjacent windows, or the complete captured short original."""
-    keys = list(wire.references)
-    expanded = set(selected)
-    for key in selected:
-        index = keys.index(key)
-        for neighbor in keys[max(0, index-1):index+2]:
-            if wire.references[neighbor]['source_id'] == wire.references[key]['source_id']:
-                expanded.add(neighbor)
-        same_source = [other for other in keys if wire.references[other]['source_id'] == wire.references[key]['source_id']]
-        if len(same_source) <= 16:
-            expanded.update(same_source)
-    return {key: wire.references[key] for key in keys if key in expanded}
+    return [{'title': metadata.get(source_id, {}).get('title', 'Original source'),
+        'url': metadata.get(source_id, {}).get('url'),
+        'passages': [{key: value for key, value in passage.items() if key != 'passage'} for passage in passages]}
+        for source_id, passages in provider_excerpts(wire, references).items()]
 
 
 def requested_schema(references, max_points, correction=None, amendments=None):

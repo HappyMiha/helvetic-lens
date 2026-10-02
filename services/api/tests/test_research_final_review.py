@@ -780,8 +780,10 @@ async def test_semantic_point_corrections_preserve_shared_slot_siblings_and_gaps
             writes.append(index)
             if index == 1 and writes.count(index) == 1:
                 raise DomainError('Synthetic temporary outage', 503, 'model_rate_limited')
+            citation_ref = next(p['citation_ref'] for group in value['sources'] for p in group['passages']
+                if p['text'] == refs[index + 2]['quote'])
             return json.dumps({'points': [{'statement': fixed[index],
-                'evidence': [{'citation_ref': index + 2, 'role': 'support'}]}], 'remaining_gap': ''})
+                'evidence': [{'citation_ref': citation_ref, 'role': 'support'}]}], 'remaining_gap': ''})
 
     async def covered(*args, **kwargs):
         return {'status': 'checked', 'hints': [], 'decisions': [], 'question_coverage': 'covered'}
@@ -811,6 +813,7 @@ async def test_review_transports_large_originals_once_with_bound_concern_witness
     from helvetic_lens.research_answer_parts import source_groups
     from helvetic_lens.research_evidence_pack import request_characters
     from helvetic_lens.research_final_review import FOCUS, REVIEW, reasoned_review, scoped_review_schema
+    from helvetic_lens.research_original_context import POLICY as ORIGINAL_CONTEXT_POLICY
     from helvetic_lens.research_review_witnesses import assertion_clauses
 
     refs = {i: {'source_id': 'report', 'locator': f'p{i}',
@@ -820,7 +823,9 @@ async def test_review_transports_large_originals_once_with_bound_concern_witness
     statement = 'The registry retained its scope. An explicit exception still applies.'
     answer = AssessmentOutcome(status='possible_answer', points=[{'statement': statement, 'evidence': [
         {**refs[i], 'role': role} for i, role in selected]}], limitations=[])
-    wire = SimpleNamespace(input={'original_question': 'What changed in the registry?'}, references=refs)
+    wire = SimpleNamespace(input={'original_question': 'What changed in the registry?',
+        'sources': [{'id': 'report', 'original_context': {
+            'policy': ORIGINAL_CONTEXT_POLICY, 'captured_complete': True}}]}, references=refs)
     concern = {'previous_statements': [statement], 'issues': [{'target': 'points', 'signal': signal,
         'instruction': 'Compare the cited scope and exception with the corrected statement.',
         'original_text': [refs[i]['quote'] for i, _ in selected],
@@ -904,7 +909,7 @@ async def test_gap_review_binds_delivered_point_ids_to_supplied_originals(monkey
 
     refs = {i: {'source_id': f'source-{i}', 'locator': 'p1', 'quote': text}
         for i, text in enumerate(['North Survey operates the registry.', 'The transfer date is unspecified.',
-            'Other original context. ' * 90], 1)}
+            'Other original context. ' * 400], 1)}
     answer = AssessmentOutcome(status='partial', points=[{'statement': refs[1]['quote'],
         'evidence': [{**refs[1], 'role': 'support'}]}], limitations=['The transfer date remains unknown.'])
     wire = SimpleNamespace(input={}, references=refs)
