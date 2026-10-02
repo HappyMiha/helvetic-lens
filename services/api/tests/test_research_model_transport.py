@@ -414,17 +414,20 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
 
 
 @pytest.mark.asyncio
-async def test_reflection_uses_local_selected_originals_and_repairs_unshown_reference_within_envelope(monkeypatch):
+@pytest.mark.parametrize('phase', ['reflect', 'orient'])
+async def test_preliminary_research_uses_selected_originals_and_repairs_unshown_reference_within_envelope(monkeypatch, phase):
     from types import SimpleNamespace
 
     from helvetic_lens import research_active_retrieval
     from helvetic_lens.analysis import ModelClient
     from helvetic_lens.config import Settings
+    from helvetic_lens.product_exploration import ClarifyingOrientation
     from helvetic_lens.product_iterative_research import Reflection
     from helvetic_lens.research_evidence_pack import request_characters
     from helvetic_lens.research_synthesis_resume import KEY
 
-    settings = Settings(_env_file=None, apertus_provider='swisscom', apertus_context_chars=12000)
+    settings = Settings(_env_file=None, apertus_provider='swisscom',
+        apertus_context_chars=24000 if phase == 'orient' else 12000)
     client, calls, ranked = ModelClient(settings), [], []
     sources = []
     for index in range(1, 51):
@@ -434,9 +437,18 @@ async def test_reflection_uses_local_selected_originals_and_repairs_unshown_refe
             'section_review': {'summary': 'Repeated derived material. ' * 50},
             'discovery_links': [{'url': f'https://example.test/register/{index}', 'title': 'The original register',
                 'context': quote, 'kind': 'reference'}]})
-    work = {'phase': 'reflect', 'unmetered_research': True, 'input': {
-        'question': 'Explain station capacity and the remaining qualifications.', 'sources': sources,
+    work = {'phase': phase, 'unmetered_research': True, 'input': {
+        'question' if phase == 'reflect' else 'original_question': 'Explain station capacity and the remaining qualifications.', 'sources': sources,
         'previous_public_queries': ['Earlier register query'], 'search_continuation': {'pages_checked': 1}}}
+    if phase == 'orient':
+        work['input'].update(
+            selected_direction={'question': 'Distinguish planned and operational capacity.'},
+            selected_public_check={'question': 'Read the register', 'purpose': 'Resolve the operational qualification.'},
+            read_context={'reading_limits': [{'source_id': sources[0]['id'], 'text_truncated': True}]},
+            evidence_applicability={'scope': 'Authorization is not established.'},
+            saved_knowledge={'claims': ['Earlier generated conclusion. ' * 10000]},
+            research_memory={'episodes': ['Historical passages. ' * 10000]},
+            capture_progress={'items': ['Repeated capture bookkeeping. ' * 10000]}, claims=['Not new evidence.'])
     original = deepcopy(work['input'])
 
     async def rank(service, wire, question, seconds, **kwargs):
@@ -451,11 +463,25 @@ async def test_reflection_uses_local_selected_originals_and_repairs_unshown_refe
         refs = [p['citation_ref'] for source in data['sources'] for p in source['excerpts']]
         assert refs and len(refs) < 50 and 50 not in refs
         assert all('section_review' not in source and 'discovery_links' not in source for source in data['sources'])
-        assert data['discovery_leads'] and all(lead['citation_ref'] in refs for lead in data['discovery_leads'])
-        assert data['evidence_scope']['absence_established'] is False
+        if phase == 'reflect':
+            assert data['discovery_leads'] and all(lead['citation_ref'] in refs for lead in data['discovery_leads'])
+            assert data['evidence_scope']['absence_established'] is False
+        else:
+            for key in ('selected_direction', 'selected_public_check', 'read_context', 'evidence_applicability'):
+                assert data[key] == original[key]
+            assert not {'saved_knowledge', 'research_memory', 'capture_progress', 'claims'} & data.keys()
+            assert 'Unselected material and unassessed sources are not evidence of absence' in system
         calls.append(data)
         # A known canonical ref that was NOT supplied must not pass decoding.
         # The large malformed outcome also makes feedback exceed the envelope.
+        if phase == 'orient':
+            return json.dumps({'interpretations': [{'meaning': 'Invalid repeated draft. ' * 1000 if len(calls) == 1 else 'Capacity may mean planned or operational capacity.',
+                'why': 'The original describes capacity as provisional.', 'signal': 'possible',
+                'citation_ref': 50 if len(calls) == 1 else refs[0]}],
+                'uncertainties': ['The relevant capacity definition needs to be checked.'],
+                'clarification': 'Which capacity definition is useful?',
+                'directions': [{'question': question, 'why': 'The original motivates this distinction.',
+                    'citation_ref': refs[0]} for question in ('What capacity is planned?', 'What capacity is operational?')]})
         return json.dumps({'outcome': 'Invalid repeated draft. ' * 1000 if len(calls) == 1 else 'One selected original motivates reading its register.',
             'gaps': [{'question': 'What does the original register establish?', 'query': data['discovery_leads'][0]['url'],
                 'purpose': 'Read the register named by this exact source.', 'priority': 3,
@@ -464,14 +490,48 @@ async def test_reflection_uses_local_selected_originals_and_repairs_unshown_refe
 
     monkeypatch.setattr(research_active_retrieval, 'rank_evidence', rank)
     monkeypatch.setattr(client, 'complete', complete)
-    raw = await research_gateway._complete(SimpleNamespace(model_client=client, settings=settings), work, '', Reflection, 60)
-    result = Reflection.model_validate_json(raw)
-    assert result.gaps[0].source_id == sources[0]['id']
+    schema = Reflection if phase == 'reflect' else ClarifyingOrientation
+    service = SimpleNamespace(model_client=client, settings=settings)
+    raw = await research_gateway._complete(service, work, '', schema, 60)
+    result = schema.model_validate_json(raw)
+    witness = result.gaps[0] if phase == 'reflect' else result.interpretations[0]
+    assert witness.source_id == sources[0]['id']
+    if phase == 'orient':
+        assert result.clarification and len(result.directions) == 2
+        assert all(direction.source_id == sources[0]['id'] for direction in result.directions)
     assert len(ranked) == 1 and len(calls) == 2
     assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
     assert 'answer_review' not in work['model_route']
     assert work['model_route']['format_repair_mode'] == 'fresh_bounded_draft'
     assert work['input'] == original
+    # Only validated preparation is reusable; a prior orientation/reflection is
+    # never restored as a final-answer draft or an already accepted new decision.
+    await research_gateway._complete(service, work, '', schema, 60)
+    assert len(calls) == 3 and len(ranked) == 1
+    assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
+
+
+@pytest.mark.asyncio
+async def test_early_orientation_without_original_witness_stays_unfinished(monkeypatch):
+    from types import SimpleNamespace
+
+    from helvetic_lens.analysis import ModelClient
+    from helvetic_lens.config import DomainError, Settings
+    from helvetic_lens.product_exploration import EarlyOrientation
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    client = ModelClient(settings)
+    async def complete(*args, **kwargs):
+        pytest.fail('An interpretation cannot be generated without an original witness.')
+    monkeypatch.setattr(client, 'complete', complete)
+    work = {'phase': 'orient', 'unmetered_research': True, 'input': {
+        'original_question': 'Explain the requested comparison.', 'sources': []}}
+    with pytest.raises(DomainError) as exc:
+        await research_gateway._complete(SimpleNamespace(model_client=client, settings=settings),
+            work, '', EarlyOrientation, 60)
+    assert exc.value.code == 'research_evidence_pack_incomplete'
+    assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
 
 
 def test_multipart_answer_requires_every_request_and_retains_canonical_repair_bindings():

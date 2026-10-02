@@ -149,11 +149,13 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     content = json.dumps(provider_input, ensure_ascii=False)
     resume = None
     selected = None
-    if wire and (wire.answer or work["phase"] == "reflect") and service.settings.apertus_provider != "docker":
+    if wire and (wire.answer or work["phase"] in {"reflect", "orient"}) and service.settings.apertus_provider != "docker":
         from . import research_evidence_pack as evidence_pack
         from .research_synthesis_resume import DraftCheckpoint
 
         workflow = ANSWER_WORKFLOW if wire.answer else "research-reflection/v1-local-evidence"
+        if work["phase"] == "orient":
+            workflow = "research-orientation/v1-local-evidence"
         resume = DraftCheckpoint(work, service.settings, system, workflow, response_schema, content, options,
             preparation_policy=evidence_pack.POLICY)
         if resume.value:
@@ -170,6 +172,9 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         retain_selection()
         selected = await evidence_pack.select_evidence(service, wire, wire.input["original_question"],
             seconds - (monotonic() - started), checkpoints=resume.parts, on_progress=retain_selection)
+        if work["phase"] == "orient" and not selected:
+            raise DomainError("Early orientation needs a retained original passage; research remains unfinished.",
+                503, "research_evidence_pack_incomplete")
         # Native reading, access checks and later corrections retain the entire
         # authorized wire. Only this provider request uses the selected originals.
         provider_input = evidence_pack.provider_input(wire, selected)
@@ -185,7 +190,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             provider_input_fingerprint=fingerprint(provider_input))
         work["model_route"]["evidence_transport"].update(selected_references=len(selected),
             provider_input_characters=len(content))
-    # Reflection retains selection progress only; it never restores final-answer
+    # Early orientation and reflection retain selection progress only, never final-answer
     # draft/review stages or publishes a cached proposal as a research decision.
     saved = resume.value if resume and wire.answer and resume.value and resume.value["stage"] != "preparing" else None
     if saved:

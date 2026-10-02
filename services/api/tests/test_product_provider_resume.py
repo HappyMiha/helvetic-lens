@@ -355,8 +355,9 @@ def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypa
     assert len(calls) == (5 if progress else 4)
 
 
-@pytest.mark.parametrize('outcome', ['continue', 'stall', 'withdraw'])
-@pytest.mark.parametrize('phase', ['brief', 'reflect'])
+@pytest.mark.parametrize(('phase', 'outcome'),
+    [(phase, outcome) for phase in ('brief', 'reflect') for outcome in ('continue', 'stall', 'withdraw')]
+    + [('orient', 'continue')])
 def test_evidence_preparation_retains_batches_privately_and_only_new_work_continues(signed, monkeypatch, outcome, phase):
     import json
 

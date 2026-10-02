@@ -1472,3 +1472,36 @@ production change for either. Exact API Ruff and diff checks passed. Independent
 review confirmed amendment ownership, original evidence retention, shared coverage
 binding and narrow direct-URL deduplication. Completed-answer content acceptance
 is still pending the ordinary continuation, not implied by these checks.
+
+
+### Continue a large existing dossier without oversized orientation requests
+
+MV2-020/023: ordinary native47955 continuation of completed91051 was admitted
+through exploration/reply into the same dossier. ResearchPlan succeeded, but the
+first EarlyOrientation call602 sent376,825 input characters and immediately failed
+with model_rate_limited. The existing gateway applies its shared evidence pack to
+reflection and final answers, not orientation. Scope: route this public orientation
+through the same bounded original-evidence selection and durable preparation path;
+preserve orientation schema, source scope, exact citations, access, full originals,
+clarification and final-answer separation. Inspect the recorded request offline;
+no new provider probes or context-budget increase. Do not modify or interrupt the
+currently running snapshot. Acceptance requires that a normal continuation reaches
+its useful final answer; a fitted orientation envelope alone is not that result.
+
+
+Orientation now uses the same source selection and private preparation recovery
+as reflection. Its provider projection retains the exact original question,
+original sources, open questions, reading/applicability context and any selected
+user direction or public check. Full generated history stays on the host for the
+existing access, intent, memory and applicability fences. Orientation preserves
+its clarification schema, has a separate preparation binding and cannot restore
+cached final-answer drafts. Missing original witnesses leave research unfinished.
+
+Recorded offline replay: full request390,662→23,935characters; input376,825→13,138;
+30 exact references across six sources from868 available. Host originals/context
+and canonical IDs are unchanged. This1.218second lexical-fallback check made zero
+provider/network calls or database writes; it does not demonstrate semantic ranking
+or final content acceptance.110 affected tests and one native orientation
+preparation/privacy/reuse case passed; full API Ruff/diff and independent review
+passed. Native47955 remains active on its original6fd957b snapshot, continues
+source analysis after four oversized-orientation429responses, and is not interrupted.

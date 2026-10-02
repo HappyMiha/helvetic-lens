@@ -79,6 +79,7 @@ def prepare(session, run, branch, state, work):
         work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
         if branch.phase == "brief" and mission.enabled(run):
             work["input"]["research_mission"] = mission.context(session, run)
+        if branch.phase == "orient" or mission.enabled(run):
             from .research_synthesis_resume import KEY
 
             if work["unmetered_research"] and state.get(KEY):
