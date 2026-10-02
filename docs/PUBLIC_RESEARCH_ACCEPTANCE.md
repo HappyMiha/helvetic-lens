@@ -133,3 +133,38 @@ originals. The final dossier is retained at
 The full BIPM requested answer remains unaccepted until independently checked. See [delivery contract](PRODUCT_END_TO_END.md)
 and the parent end-to-end checkpoint.
 Production dossier writes and emails remain zero.
+
+## Independent requested-part synthesis — 2 October 2026
+
+The next retained BIPM replays showed that a coverage verdict of `covered` could
+still omit the publication comparison. These are preserved failures: v2 failed
+numeric grounding; v3 returned structurally valid adoption history twice, with
+no publication answer. Selection and answer writing now run independently for
+every literal requested part, preserve complete short captured originals, and
+exclude the broad original question from that focused prompt after it was
+observed to pull the answer back to the main topic. The original question still
+binds the private resumable input. No expected dates or source authorities were
+hardcoded. A focused v4 proposal included the actual publication years but lost
+needed citation context during correction; same-source context retention now
+addresses that separate error. A v5 complete final-stage replay hit a real
+provider rate limit; no success is inferred from its unfinished output.
+
+Real configured inference over explicitly fictional retained documents also ran:
+
+- Event dates: independent narrow content PASS for adoption, effective date and
+  later publication, with exact corresponding references. An unnecessary further
+  authentication check remained; this was not a clean end-to-end mission pass.
+- Available and unknown facts: independent narrow content PASS for the operator,
+  commissioning date in an annex, and explicitly unscheduled overhaul. The
+  neighbouring entity's different operator/date did not contaminate the answer.
+  The old prompt gave the negative-answer citation incorrect/duplicate roles;
+  the current contract explicitly defines roles relative to the answer statement.
+- Different measurements: correct mean-versus-maximum and period distinction,
+  with no claimed contradiction or invented unit conversion. A redundant
+  limitation repeated that reconciliation, so uncertainty presentation remains
+  imperfect.
+
+These are real provider calls over supplied synthetic evidence, not discovery or
+whole-document reading acceptance. The traces retain unknown billing cost and
+actual failures. No production dossier, email, new provider or key was created.
+The native public continuation and its terminal result are recorded separately.

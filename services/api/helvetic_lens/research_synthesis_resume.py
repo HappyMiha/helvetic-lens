@@ -9,8 +9,10 @@ CONTRACT = "final-synthesis-resume/v1"
 
 class DraftCheckpoint:
     def __init__(self, work, settings, system, review_system, schema, content, options):
+        from .research_answer_parts import POLICY
         self.work = work
         self.binding = fingerprint({"contract": CONTRACT, "system": system,
+            "part_policy": POLICY,
             "review_system": review_system, "schema": schema, "content": content,
             "provider": settings.apertus_provider, "endpoint": settings.apertus_base_url,
             "model": settings.apertus_model, "options": options,
@@ -23,9 +25,10 @@ class DraftCheckpoint:
             and saved.get("fingerprint") == fingerprint({k: v for k, v in saved.items() if k != "fingerprint"})) else None
         if self.value:
             work[KEY] = self.value
+        self.parts = deepcopy(self.value.get("parts", {})) if self.value else {}
 
     def save(self, stage, raw, hints, review):
         value = {"contract": CONTRACT, "binding": self.binding, "stage": stage,
-            "raw": raw, "hints": deepcopy(hints), "review": deepcopy(review)}
+            "raw": raw, "hints": deepcopy(hints), "review": deepcopy(review), "parts": deepcopy(self.parts)}
         self.value = {**value, "fingerprint": fingerprint(value)}
         self.work[KEY] = self.value

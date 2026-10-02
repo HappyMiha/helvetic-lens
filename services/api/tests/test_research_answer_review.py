@@ -108,10 +108,12 @@ async def test_single_point_repair_rebinds_local_refs_without_changing_other_fin
             import json
             state = json.loads(text)
             assert state['requested_part'] == 'When was the record published?'
-            assert state['original_windows'][0]['citation_ref'] == 1
-            assert state['original_windows'][0]['locator'] == 'p1'
+            if 'citation_refs' in kwargs['response_schema']['properties']:
+                return json.dumps({'citation_refs': [77]})
+            assert state['sources'][0]['passages'][0]['citation_ref'] == 1
+            assert state['sources'][0]['passages'][0]['text'] == refs[77]['quote']
             return json.dumps({'evidence': [{'citation_ref': 1, 'role': 'support'}],
-                'statement': 'The fictional record was published in 1900.'})
+                'statement': 'The fictional record was published in 1900.', 'remaining_gap': ''})
     result = await review.repair_points(SimpleNamespace(model_client=Model()), SimpleNamespace(references=refs, request_keys={'r2': 'When was the record published?'}, point_requests=['r2', 'r2']), answer, 60)
     assert result and answer.points[0].evidence[0].quote == refs[77]['quote']
     assert answer.points[1] == unchanged

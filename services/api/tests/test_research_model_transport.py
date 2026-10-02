@@ -155,7 +155,7 @@ def test_single_final_answer_materializes_consistent_dossier_fields():
         'direction_assessment_target': {'selection': None, 'question': 'Compare the measurement definitions.'}}}
     schema = mission_schema(RenewedSuggestedDirectionBriefing)
     wire = EvidenceWire(work, schema, '')
-    assert set(wire.schema['properties']) == {'answer', 'next_action', 'reason', 'next_checks', 'deepen_branches', 'clarification', 'directions'}
+    assert set(wire.schema['properties']) == {'answer', 'next_action', 'next_checks', 'deepen_branches', 'clarification', 'directions'}
     raw = {'mission_checkpoint': {'answer': {'status': 'possible_answer',
         'points': [{'statement': 'The measurement uses a local datum.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
         'limitations': ['The available record does not compare sea-level measurements.']},
@@ -254,8 +254,7 @@ def test_mission_legacy_cards_never_promote_context_or_counterevidence_to_direct
     if status == 'not_found':
         assert not result.findings
     else:
-        assert result.findings[0].basis == 'contradiction'
-        assert result.findings[0].locator == 'p00028'
+        assert not result.findings  # A one-quote legacy card cannot carry both sides.
         assert {(ref.role, ref.locator) for ref in result.mission_checkpoint.answer.points[0].evidence} == {
             ('support', 'p00028'), ('counterevidence', 'p29')}
 
@@ -441,3 +440,29 @@ def test_multipart_answer_requires_every_request_and_retains_canonical_repair_bi
     value = schema.model_validate_json(wire.decode(json.dumps(raw)))
     assert len(value.mission_checkpoint.answer.limitations) == 8
     assert schema.model_validate_json(wire.decode(wire.encode_checkpoint(value))) == value
+
+
+@pytest.mark.parametrize('instruction', [
+    'Start with https://example.org/a and https://example.org/b',
+    'Почни з https://example.org/a та https://example.org/b',
+    'Commencez par https://example.org/a et https://example.org/b',
+    'Beginne mit https://example.org/a und https://example.org/b',
+])
+def test_url_start_instruction_is_preserved_as_context_not_a_fabricated_fact_request(instruction):
+    from helvetic_lens.research_model_transport import explicit_requests, request_parts
+    question = 'When was the change adopted? Distinguish adoption and publication. ' + instruction
+    assert explicit_requests(question) == ['When was the change adopted?', 'Distinguish adoption and publication.']
+    assert request_parts(question)[1] == [instruction]
+    # If all we have is a source instruction, do not erase the entire question.
+    assert explicit_requests(instruction) == [instruction]
+
+
+@pytest.mark.parametrize('sentence', [
+    'Use https://example.org/a and explain whether its conclusion is supported.',
+    'Start with https://example.org/a but exclude the annex.',
+    'Does https://example.org/a contradict https://example.org/b?',
+    'Почни з https://example.org/a та поясни відмінності.',
+])
+def test_substantive_or_uncertain_url_sentences_remain_answer_obligations(sentence):
+    from helvetic_lens.research_model_transport import explicit_requests
+    assert explicit_requests('What changed? ' + sentence) == ['What changed?', sentence]

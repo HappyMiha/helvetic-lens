@@ -66,6 +66,25 @@ reported as a gap; never regenerate unrelated answer sections for this repair.
 
 ## Acceptance
 
+Request-focused synthesis, 2 October (MV2-020/023): final requested facts were
+sometimes written only in an uncited control reason. A correction sees many
+anonymous windows and repeats the failed statement. Replace that correction unit
+with independent request-based evidence selection, followed by an answer from a
+small source-labelled pack. Selection and writing focus on the literal request; the original question still
+binds the private checkpoint. Repeating the full question beside each small task
+was observed to pull the model back toward its main topic. Exact source windows, full-reading
+requirements and current authorization remain authoritative. Persist the selected
+pack privately under the existing exact-input synthesis binding. Recover a
+requested slot even when it has no surviving point. Keep facts in the cited
+answer; derive the control explanation from the resulting action/status.
+Recognize only unambiguous URL-start instructions as operational context; keep
+unknown or substantive sentences as answer obligations. Never infer source use
+merely from an instruction. Acceptance covers separated event/publication dates,
+measurement/period distinctions, and an available field alongside a genuinely
+unknown one, with reordered evidence and failed-provider recovery. Repeat the
+saved public BIPM work through native continuation only after controlled checks;
+no domain-specific conclusions or hardcoded source authorities.
+
 Replay recorded failures and test changed transport, source safety and recovery
 boundaries. Run repository gates once final behavior is ready. Then run complete
 real neutral research with independently selected expectations: distinguish
@@ -222,3 +241,25 @@ exact citations and two named gaps. Full semantic coverage remains unaccepted;
 see [independent live evidence](PUBLIC_RESEARCH_ACCEPTANCE.md). This verifies a
 usable partial delivery after retained-work recovery, not reliable completion
 of every complex question or a fresh end-to-end latency benchmark.
+
+The implementation now synthesizes every multipart request independently; it does
+not wait for a fallible coverage model to declare a missing part. Short originals
+retain their complete captured window set, including headings and bibliography.
+Exact citation IDs bind back to unchanged canonical source/locator/quote triples.
+A failed part preserves valid siblings and its own explicit gap. Selected packs
+survive transient failures; numerically invalid proposals are never cached as
+success. A focused citation correction retains earlier same-source context when
+it is still needed, without borrowing numbers from another source. Request-slot
+order, eight-slot gap capacity, context-only/conflicting status and private
+checkpoint isolation have targeted regression coverage.
+
+Current local checks: 80 focused transport, synthesis, request-pack and audit cases;
+seven native provider recovery/privacy cases; 13 native completion, continuation
+and personal-delivery cases; exact API lint and backlog guard.
+Counts from earlier runs overlap and are not a unique test total. Live evaluations
+remain separately recorded in PUBLIC_RESEARCH_ACCEPTANCE.md.
+
+Multi-passage conclusions stay in the typed answer with their full evidence set.
+The single-citation legacy card no longer labels one fragment as direct proof of
+a combined conclusion. The current dossier reader already renders the complete
+typed answer; single-citation legacy findings remain compatible.

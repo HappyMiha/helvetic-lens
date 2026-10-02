@@ -205,6 +205,18 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             resume.save("reviewed", raw, review_hints, work["model_route"]["answer_review"])
     raw = response_object(raw, schema)
     wire_raw = raw
+    parts_attempted = False
+    async def synthesize_parts(parsed):
+        from .research_answer_parts import recover_requests
+        def retain_parts(receipts):
+            work["model_route"]["answer_review"]["requested_parts"] = deepcopy(receipts)
+            if resume:
+                resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+        parts = await recover_requests(service, wire, parsed.mission_checkpoint.answer,
+            list(wire.request_keys.values()), seconds - (monotonic() - started),
+            checkpoints=resume.parts if resume else None, on_progress=retain_parts)
+        retain_parts(parts)
+        return wire.decode(wire.encode_checkpoint(parsed))
     # Hosted JSON mode does not enforce the schema. Repair the format once with
     # the same evidence, never by accepting unsupported or guessed fields.
     if isinstance(service.model_client, ModelClient) and work.get("unmetered_research"):
@@ -220,6 +232,12 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             else:
                 parsed = schema.model_validate_json(raw)
                 if work["phase"] == "brief" and getattr(parsed, "mission_checkpoint", None):
+                    if wire and wire.request_keys:
+                        # A fallible coverage verdict cannot decide whether a
+                        # requested distinction deserves its own synthesis.
+                        raw = await synthesize_parts(parsed)
+                        parsed = schema.model_validate_json(raw)
+                        parts_attempted = True
                     errors = answer_quantity_errors(parsed.mission_checkpoint.answer, wire.references if wire else None)
         except ValidationError as exc:
             errors = [{"path": list(e["loc"]), "reason": e["msg"]} for e in exc.errors(include_input=False, include_url=False)][:16]
@@ -236,7 +254,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                     resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
             retain_repairs([])
             repairs = await repair_points(service, wire, parsed.mission_checkpoint.answer, seconds - (monotonic() - started),
-                on_success=retain_repairs)
+                on_success=retain_repairs, checkpoints=resume.parts if resume else None) if not wire.request_keys else []
             work["model_route"]["answer_review"]["point_repairs"] = repairs
             wire_raw = wire.encode_checkpoint(parsed)
             if resume:
@@ -264,6 +282,10 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 raw = wire.decode(raw) if wire else raw
                 if work["phase"] == "brief":
                     parsed = schema.model_validate_json(raw)
+                    if wire and wire.request_keys and not parts_attempted:
+                        raw = await synthesize_parts(parsed)
+                        parsed = schema.model_validate_json(raw)
+                        parts_attempted = True
                     if wire and getattr(parsed, "mission_checkpoint", None) and answer_quantity_errors(parsed.mission_checkpoint.answer):
                         from .research_answer_review import complete_citation_context
                         context = await complete_citation_context(service.settings, work, wire,
@@ -283,28 +305,15 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             final_coverage = await audit(service.settings, work, wire, parsed.mission_checkpoint.answer,
                 seconds - (monotonic() - started), coverage_only=True)
             missing = final_coverage.pop("hints")
-            if missing:
-                from .research_answer_review import repair_points
-                issues = [{"path": ["answer", "points", index, "statement"],
-                    "reason": "The current statement does not answer this requested part: " + hint["user_request"]
-                    + ". Answer that part directly from the originals, rather than repeating the main conclusion."}
-                    for hint in missing for index, key in enumerate(wire.point_requests)
-                    if wire.request_keys.get(key) == hint["user_request"]]
-                def retain_coverage(receipts):
-                    work["model_route"]["answer_review"]["coverage_repairs"] = deepcopy(receipts)
-                    if resume:
-                        resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
-                corrections = await repair_points(service, wire, parsed.mission_checkpoint.answer,
-                    seconds - (monotonic() - started), issues=issues, on_success=retain_coverage)
-                work["model_route"]["answer_review"]["coverage_repairs"] = corrections
-                if resume:
-                    resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
-                if corrections:
-                    final_coverage = await audit(service.settings, work, wire, parsed.mission_checkpoint.answer,
-                        seconds - (monotonic() - started), coverage_only=True)
-                    revised_missing = final_coverage.pop("hints")
-                    if final_coverage.get("question_coverage") is not None:
-                        missing = revised_missing
+            unresolved = [wire.request_keys[key] for key, slot in wire.response_slots.items() if slot["disposition"] == "unresolved"]
+            missing.extend({"user_request": request} for request in unresolved
+                if request not in {hint["user_request"] for hint in missing})
+            if final_coverage.get("question_coverage") is None:
+                missing.extend(hint for hint in review_hints if hint.get("review_signal") == "requested_part_missing"
+                    and hint["user_request"] not in {value["user_request"] for value in missing})
+            else:
+                review_hints = [hint for hint in review_hints if hint.get("review_signal") != "requested_part_missing"] + [
+                    {**hint, "review_signal": "requested_part_missing"} for hint in missing]
             work["model_route"]["answer_review"]["final_coverage"] = final_coverage
             for hint in missing:
                 request = hint["user_request"]
@@ -312,12 +321,9 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 key = next((key for key, value in wire.request_keys.items() if value == request), None)
                 answer = parsed.mission_checkpoint.answer
                 if key is not None:
-                    old_gap = wire.response_slots[key]["remaining_gap"].strip()
-                    answer.limitations = [value for value in answer.limitations if value != old_gap]
-                    wire.response_slots[key].update(disposition="unresolved", remaining_gap=gap)
-                if gap not in answer.limitations and len(answer.limitations) < 8:
-                    answer.limitations.append(gap)
-                answer.status = "partial" if answer.points else "not_found"
+                    gap = wire.response_slots[key]["remaining_gap"].strip() or gap
+                from .research_answer_parts import update_gap
+                update_gap(wire, answer, key, gap)
                 parsed.mission_checkpoint.reason = "The cited findings answer part of the question; the remaining requested parts are named as gaps."
             if resume:
                 resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])

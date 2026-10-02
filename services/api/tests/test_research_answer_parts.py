@@ -1,0 +1,158 @@
+"""Request synthesis preserves unknowns, canonical states and resumable originals."""
+import json
+from types import SimpleNamespace
+
+import pytest
+
+from helvetic_lens.product_exploration import AssessmentOutcome, Briefing
+from helvetic_lens.product_research_mission import schema as mission_schema
+from helvetic_lens.research_answer_parts import answer_request, recover_requests
+from helvetic_lens.research_answer_review import repair_points
+from helvetic_lens.research_model_transport import EvidenceWire
+
+
+def fixture(count=2):
+    work = {'phase': 'brief', 'unmetered_research': True, 'input': {
+        'original_question': ' '.join(f'When was record {i} published?' for i in range(1, count+1)),
+        'research_mission': {}, 'sources': [{'id': 'a', 'kind': 'public_source', 'title': 'Original registry',
+            'excerpts': [{'passage': 'p1', 'text': 'The records were published in 2001.'},
+                {'passage': 'p2', 'text': 'An earlier edition was published in 1999.'}]}]}}
+    schema = mission_schema(Briefing)
+    wire = EvidenceWire(work, schema, '')
+    raw = json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
+        key: {'disposition': 'answered', 'remaining_gap': '', 'points': [{'statement': 'Published in 2001.',
+            'evidence': [{'citation_ref': 1, 'role': 'support'}]}]} for key in wire.request_keys}}, 'next_action': 'finish'})
+    parsed = schema.model_validate_json(wire.decode(raw))
+    return wire, parsed, schema
+
+
+@pytest.mark.asyncio
+async def test_partial_repair_with_eight_requests_owns_its_gap_and_round_trips():
+    wire, parsed, schema = fixture(8)
+    answer = parsed.mission_checkpoint.answer
+    answer.points[-1].statement = 'Published in 2009.'
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': [1]})
+            return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '  The edition date is unknown.  ',
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+    await repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60)
+    encoded = wire.encode_checkpoint(parsed)
+    assert json.loads(encoded)['answer']['remaining_gaps'] == []
+    decoded = schema.model_validate_json(wire.decode(encoded)).mission_checkpoint.answer
+    assert decoded.status == 'partial' and decoded.limitations == ['The edition date is unknown.']
+    assert wire.response_slots['r8']['disposition'] == 'unresolved'
+
+
+@pytest.mark.asyncio
+async def test_explicit_unknown_does_not_leave_previous_slot_answered():
+    wire, parsed, schema = fixture()
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': [1]})
+            return json.dumps({'statement': '', 'evidence': [], 'remaining_gap': 'The original does not identify this edition.'})
+    await recover_requests(SimpleNamespace(model_client=Model()), wire, parsed.mission_checkpoint.answer,
+        [wire.request_keys['r2']], 60)
+    assert wire.response_slots['r2']['disposition'] == 'unresolved'
+    answer = schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer
+    assert answer.status == 'partial' and answer.limitations == ['The original does not identify this edition.']
+    assert answer.points[0].statement == 'Published in 2001.'
+
+
+@pytest.mark.asyncio
+async def test_invalid_proposal_never_poisons_a_resumed_selected_pack():
+    wire, _, _ = fixture()
+    checkpoints, calls = {}, []
+    good = [False]
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                calls.append('select')
+                return json.dumps({'citation_refs': [1]})
+            calls.append('write')
+            return json.dumps({'statement': 'Published in 2001.' if good[0] else 'Published in 2099.',
+                'remaining_gap': '', 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+    service = SimpleNamespace(model_client=Model())
+    first, _, receipt = await answer_request(service, wire, wire.request_keys['r1'], 60, checkpoints=checkpoints)
+    assert first is None and receipt['status'] == 'unsupported_precision'
+    assert all('proposal' not in part for part in checkpoints.values())
+    good[0] = True
+    fixed, _, _ = await answer_request(service, wire, wire.request_keys['r1'], 60,
+        checkpoints=json.loads(json.dumps(checkpoints)))
+    assert fixed.statement == 'Published in 2001.' and calls == ['select', 'write', 'write', 'write']
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('initial, role, expected', [('conflicting', 'support', 'possible_answer'),
+    ('possible_answer', 'context', 'partial')])
+async def test_replacing_a_part_reconciles_the_answer_status(initial, role, expected):
+    wire, parsed, _ = fixture()
+    answer = parsed.mission_checkpoint.answer
+    answer.points = answer.points[:1]
+    wire.point_requests = ['r1']
+    answer.status = initial
+    wire.response_slots['r2'].update(disposition='unresolved', remaining_gap='The second record remains unknown.')
+    answer.limitations = ['The second record remains unknown.']
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': [1]})
+            return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '',
+                'evidence': [{'citation_ref': 1, 'role': role}]})
+    answer.points[0].evidence[0].role = role
+    await recover_requests(SimpleNamespace(model_client=Model()), wire, answer, list(wire.request_keys.values()), 60)
+    assert answer.status == expected and not answer.limitations
+    AssessmentOutcome.model_validate(answer.model_dump())
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('same_source', [True, False])
+async def test_citation_correction_preserves_needed_prior_context_only_within_the_same_source(same_source):
+    refs = {1: {'source_id': 'a', 'locator': 'p1', 'quote': 'The earlier record was published in 2012.'},
+        2: {'source_id': 'a', 'locator': 'p2', 'quote': 'The current record was published in 2013.'},
+        3: {'source_id': 'a' if same_source else 'b', 'locator': 'p3', 'quote': 'The current record took effect in 2015.'}}
+    wire = SimpleNamespace(references=refs, input={})
+    calls = []
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': [1, 2, 3]})
+            calls.append(json.loads(text))
+            return json.dumps({'statement': 'The current record was published in 2013 and took effect in 2015.',
+                'remaining_gap': '', 'evidence': [{'citation_ref': key, 'role': 'support'}
+                    for key in ([1, 3] if len(calls) == 1 else [2])]})
+    point, _, _ = await answer_request(SimpleNamespace(model_client=Model()), wire, 'Compare the dates.', 60)
+    assert len(calls) == 2
+    if same_source:
+        assert [ref.quote for ref in point.evidence] == [refs[2]['quote'], refs[3]['quote']]
+        assert point.evidence[-1].role == 'context'
+    else:
+        assert point is None
+
+
+@pytest.mark.asyncio
+async def test_unavailable_part_retains_existing_evidence_but_cannot_claim_completed_synthesis():
+    wire, parsed, schema = fixture()
+    original = parsed.mission_checkpoint.answer.points[0].model_copy(deep=True)
+    class Model:
+        async def complete(self, *args, **options):
+            return json.dumps({'citation_refs': []})
+    await recover_requests(SimpleNamespace(model_client=Model()), wire, parsed.mission_checkpoint.answer,
+        [wire.request_keys['r1']], 60)
+    answer = schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer
+    assert answer.points[0] == original and answer.status == 'partial'
+    assert answer.limitations == ['A cited answer could not be completed for: When was record 1 published?']
+
+
+def test_combined_answer_cannot_be_projected_as_one_direct_legacy_quote():
+    wire, parsed, schema = fixture()
+    point = parsed.mission_checkpoint.answer.points[0]
+    point.statement = 'The earlier edition was published in 1999 and the later records in 2001.'
+    point.evidence.append(point.evidence[0].model_copy(update={**wire.references[2], 'role': 'support'}))
+    result = schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed)))
+    assert result.mission_checkpoint.answer.points[0].statement == point.statement
+    assert {ref.quote for ref in result.mission_checkpoint.answer.points[0].evidence} == {
+        'The records were published in 2001.', 'An earlier edition was published in 1999.'}
+    assert len(result.findings) == 1  # Only the independent single-citation sibling.
