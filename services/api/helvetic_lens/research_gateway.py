@@ -357,6 +357,7 @@ def retain_answer_points(parsed, wire, errors, *, allow_empty=False):
             wire.response_slots[key].update(disposition="unresolved", remaining_gap=gap)
         if gap not in answer.limitations:
             answer.limitations.append(gap)
+        wire.workflow_gaps = {*getattr(wire, 'workflow_gaps', set()), gap}
         new_gaps.append(gap)
     answer.points = [point for index, point in enumerate(answer.points) if index not in rejected]
     wire.point_requests = [key for index, key in enumerate(bindings) if index not in rejected]

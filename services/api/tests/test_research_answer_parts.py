@@ -158,6 +158,26 @@ async def test_last_citation_slot_retains_context_covering_the_missing_compariso
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('same_source,long_context', [(True, False), (False, False), (True, True)])
+async def test_uncited_short_context_can_complete_only_an_already_selected_original(same_source, long_context):
+    refs = {1: {'source_id': 'a', 'locator': 'p1', 'quote': 'The record was adopted and then published.'},
+        2: {'source_id': 'a' if same_source else 'b', 'locator': 'p2',
+            'quote': 'Meeting: 2001; proceedings: 2003.' + (' Extra context.' * 30 if long_context else '')}}
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': [1]})
+            return json.dumps({'statement': 'The record was adopted in 2001 and published in 2003.',
+                'remaining_gap': '', 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+    point, _, _ = await answer_request(SimpleNamespace(model_client=Model()),
+        SimpleNamespace(references=refs, input={}), 'Compare adoption and publication.', 60)
+    if same_source and not long_context:
+        assert point.evidence[-1].quote == refs[2]['quote'] and point.evidence[-1].role == 'context'
+    else:
+        assert point is None
+
+
+@pytest.mark.asyncio
 async def test_unavailable_part_retains_existing_evidence_but_cannot_claim_completed_synthesis():
     wire, parsed, schema = fixture()
     original = parsed.mission_checkpoint.answer.points[0].model_copy(deep=True)

@@ -390,3 +390,53 @@ seven native provider/privacy/recovery cases also passed (the combined run of
 37 includes 30 overlapping focused cases). Exact API lint passed. The live fresh
 mission in `/tmp/hl-public-second-final-reviewed` is evaluated separately; code
 identity hashes are recorded before execution. Unchanged clients stay at Sites86.
+
+The fresh 9f4f072-code mission finished in 422.65 seconds/39 native steps. All six
+documents were fully read/reviewed, but the comparison was still rejected: its
+draft and correction omitted short proceedings lines already present in the same
+selected originals. Existing repair restored only previously cited lines, so it
+could not use those available witnesses. Follow-through scope MV2-020/023: fill
+available citation slots from short exact missing-value context in an already
+selected original, with deterministic ranking and the existing final factual
+review. Never borrow values from another source or treat numeric presence as
+entailment. Check the real retained correction, same-source and cross-source
+controls, bounded slots and unchanged siblings. No new search/provider/access
+scope; explicit gaps remain when no complete supported answer can be formed.
+
+The retained live correction exposed another gap: an initial review identified a
+wrong relationship, but after a paraphrase the second review checked isolated
+dates and forgot the relationship. Keep that specific objection attached to the
+exact corrected point through retry. Require an explicit current-evidence verdict
+for every prior objection; it remains fallible feedback, never source evidence.
+Unchanged valid siblings retain their own cached reviews. Host-generated numeric
+validation notices are tracked by exact provenance instead of asking a model to
+prove a workflow outcome from source text. Acceptance includes a cosmetic rewrite
+that preserves a rejected relationship, missing concern judgments, resume, and no
+text-prefix exemption for model-authored gaps.
+
+The native continuation completed in 721.62 seconds/46 steps with a correct
+publication comparison (six exact citation triples), but the atomic-adoption part
+was rejected. The reviewer invented a contrary history from clipped citations,
+then repeated it despite correction. Follow-through supplies exact surrounding
+windows from the same source snapshot, separately from selected support. All
+supplied windows of a short source may fit; that is not a whole-document reading
+claim. Review must explicitly identify additional substantive citation refs; a
+context-only justification triggers citation repair instead of silently validating
+an incomplete citation set. Missing support is distinguished from contradiction.
+Acceptance: same-original context and foreign-source exclusion, explicit repair
+for missing direct support, actual retained native proposals and independent
+content review. No new provider, source access, fixture or production email.
+
+Validation for this follow-through: 68 affected tests (including the backlog
+guard) and exact API lint passed. Independent static review found no material
+regression. Workflow notices now survive JSON checkpoint restoration under the
+existing exact-input binding; obsolete and mixed factual/workflow strings are not
+exempted by prefix. A supported verdict with no positive original witness is an
+incomplete check, and any witness absent from the delivered point triggers repair.
+
+Live retained diagnostics remain explicit: merely supplying context made the
+reviewer accept a correct statement whose selected quotes did not establish it;
+asking for missing refs still returned an empty omission list. Positive witness
+selection is now explicit and type-constrained. Its live replay encountered one
+malformed response, so the result stayed provisional. This is not a full content
+PASS, nor a new full native mission. See PUBLIC_RESEARCH_ACCEPTANCE.md.

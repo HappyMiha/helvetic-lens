@@ -223,3 +223,52 @@ The run loaded the older branch scheduler, so it cannot establish current
 planning or latency acceptance. Its driver also performs an expensive GET after
 each worker step. Artifacts: `/tmp/hl-public-second-request-sections/result.json`,
 `model-calls.json` and `resume-receipt.json`. No production records/emails were made.
+
+## Final delivered-answer review — 2 October 2026
+
+The fresh mission at `/tmp/hl-public-second-final-reviewed` completed in 422.65 s
+and 39 native steps. Six originals were completely read/reviewed; source timeout
+and provider 429 recovered through the native queue. The atomic answer was
+correct, but the requested publication comparison was lost during citation repair.
+This remains a preserved partial result in `previous-completed-result.json`.
+
+Its one native continuation finished in 721.62 s and 46 steps. Six current
+document records and six retained snapshots show complete reading/analysis.
+Thirteen source entries include two portions of one NIST document, not thirteen
+independent originals. The reused-source manifest says analysis `not_started`
+because it measures this episode's extraction; retained provenance still records
+prior completion. This projection inconsistency remains open.
+
+Independent review of the final publication point passed its narrow meaning:
+1960 ratification corresponds to 1961 proceedings; 1967 abrogation corresponds to
+1969 proceedings. All six selected citation triples match the original BIPM
+snapshots. Proceedings quotes are still labelled context despite supporting the
+dates. The atomic-adoption point was rejected: an isolated reviewer invented a
+contrary history from clipped selected passages, then repeated it after a
+correction added the atomic definition. Its displayed validation-failure gap is
+honest, but the originals contain the answer. Overall content acceptance is
+therefore **PARTIAL**, despite native operational completion.
+
+The continuation started from 9f4f072 plus uncommitted context-completion changes;
+final review was imported lazily after mapping and used the then-current literal
+focus/retained-concern prompt, visible in calls 56/60. The initial per-file hash
+manifest alone does not identify that later import. It is not an exact-release
+benchmark. Production records and emails remained zero; billing cost is unknown.
+
+Subsequent retained-output experiments preserve each result separately:
+
+- `/tmp/hl-final-answer-context-completed`: factual antecedent misassociation
+  survived a paraphrase. Retained objections now require an explicit judgment
+  against the changed assertion; a missing judgment cannot clear that objection.
+- `/tmp/hl-final-answer-original-context`: correct facts, but surrounding source
+  context silently supplied uncited atomic-adoption support. Not accepted.
+- `/tmp/hl-final-answer-required-context-citations`: the reviewer still returned
+  an empty missing-ref list despite the missing substantive quote. Not accepted.
+- `/tmp/hl-final-answer-positive-witnesses`: explicit supporting refs are drawn
+  from exact permitted original windows. One malformed review output kept the
+  answer provisional. This is not a clean content PASS or a fresh full mission.
+
+No specific historical answer, date or authority is hardcoded in the product.
+The changed behavior has 68 affected regression checks, exact lint and independent
+static review. These prove the implementation's fences and recovery, not universal
+model accuracy or professional/human acceptance.
