@@ -94,6 +94,9 @@ def test_provider_metadata_keeps_every_unfinished_warning_and_discovery_obligati
     assert mission['discovery_frontiers'] == original['research_mission']['discovery_frontiers']
     assert not {'question', 'completion_policy', 'unvalidated_proposals'} & mission.keys()
     assert wire.input == original
+    assert list(result) == list(wire.input), 'The compact view preserves provider field order'
+    mission['documents'][0]['warnings'].append('Provider-view-only change')
+    assert wire.input == original, 'Compacting metadata must not share mutable host state'
     wire.input['research_mission'].update(question='A distinct earlier obligation.', unvalidated_proposals=['Unverified proposal'])
     different = provider_input(wire, {})['research_mission']
     assert different['question'] == 'A distinct earlier obligation.'

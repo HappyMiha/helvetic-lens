@@ -1193,3 +1193,23 @@ small routing-recovery change passed30 selector cases. Exact API Ruff, backlog
 guard and diff checks pass. Independent implementation review found no material
 blocker; some low-overhead batch layouts still have an explicit finite no-progress
 exit. Complete native answer quality and unfinished document analysis remain open.
+
+
+MV2-020/023 follow-through: the retained exact selector replay identifies repeated
+full-corpus copies during request sizing as the dominant host cost. Scope is to
+exclude replaced sources before copying and reuse identical size calculations
+within one selection invocation. Existing source permissions, exact originals,
+ranking requests, checkpoint bindings and continuation behavior remain the
+dependencies. Acceptance is the same selected references and provider requests,
+unchanged saved checkpoints on an entirely cached replay, no provider calls, and
+a measured reduction in ordinary host elapsed time. Native answer acceptance is
+still separate and open; the running pinned retry is not interrupted.
+
+The cached 658-reference replay now finishes in1.045 seconds with zero provider
+calls and no database writes. It returns the same19 exact references; checkpoints
+and host input are unchanged, and ordered JSON provider payload and response
+schema equal the retained successful selector output. This is a cached host
+measurement, not a claim about full research elapsed time or provider speed.
+The30 affected selector cases and exact API Ruff pass.
+The61 affected answer/final-review and backlog checks also pass; no client change
+or repeated UI publication is needed for this host-only optimization.

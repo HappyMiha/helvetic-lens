@@ -64,7 +64,9 @@ def provider_sources(wire, references):
 
 def provider_input(wire, references):
     """Compact completed workflow metadata, retaining every live obligation."""
-    result = deepcopy(wire.input)
+    # Preserve input key order while avoiding a copy of originals immediately
+    # replaced by the selected provider view. The full host corpus stays intact.
+    result = deepcopy({**wire.input, 'sources': []})
     result['sources'] = provider_sources(wire, references)
     mission = result.get('research_mission')
     if isinstance(mission, dict):
@@ -199,7 +201,18 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
     """Consider every original group, then consolidate only exact reference groups."""
     settings = getattr(service, 'settings', None)
     allowance = getattr(settings, 'apertus_context_chars', 24000)
-    request_size = request_size if request_size is not None else lambda references: _final_size(wire, references)
+    measure = request_size if request_size is not None else lambda references: _final_size(wire, references)
+    sizes = {}
+
+    def request_size(references):
+        # Only this immutable-input invocation shares measurements. Preserve
+        # reference order and exact contents, including the caller's cost model.
+        identity = tuple((key, ref['source_id'], ref['locator'], ref['quote'])
+            for key, ref in references.items())
+        if identity not in sizes:
+            sizes[identity] = measure(references)
+        return sizes[identity]
+
     fits = fits if fits is not None else lambda references: request_size(references) <= allowance
     if any(type(key) is not int or key not in wire.references for key in required_refs):
         raise DomainError('A mandatory evidence reference is not in the retained originals.',
