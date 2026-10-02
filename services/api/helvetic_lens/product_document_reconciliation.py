@@ -5,6 +5,7 @@ from copy import deepcopy
 
 from pydantic import Field, field_validator
 
+from . import research_reference_metadata as reference_metadata
 from .legal_profiles import Input
 from .product_api import fail
 from .product_document_analysis import DocumentObservation, ReferenceCheck
@@ -103,7 +104,7 @@ def prepare(doc, pack, work):
             work["review_tree_complete"] = True
             return
         nodes = [{"id": key, **{k: v for k, v in tree["nodes"][key].items()
-            if k in {"synopsis", "findings", "limitations"}}} for key in keys]
+            if k in {"synopsis", "findings", "limitations", "source_use"}}} for key in keys]
         tasks = [{"kind": "merge", "nodes": group, "cross_references": []} for group in groups(nodes)]
         level += 1
 
@@ -120,10 +121,13 @@ def supplied_quotes(value):
 
 
 def apply(session, run, doc, pack, work, result):
+    from .product_document_analysis import sanitize_findings
+
     value, receipt = work["input"], work["review_tree_node"]
     tree = doc.get("review_tree", {})
     if tree.get("basis") != receipt["basis"] or result.coverage_fingerprint != value["coverage_fingerprint"]:
         fail("The document review changed; the previous result cannot be applied.", 422)
+    sanitize_findings(result, work)
     supplied = list(supplied_quotes(value))
     for point in result.findings:
         if not any(p["source_id"] == point.source_id and p["locator"] == point.locator and point.quote in p["quote"] for p in supplied):
@@ -142,10 +146,17 @@ def apply(session, run, doc, pack, work, result):
                 fail("Reference evidence must use a supplied target quotation.", 422, "invalid_evidence")
             citation(session.get(InvestigationSource, p.source_id), p)
     payload = result.model_dump()
+    metadata_only = bool(value.get("sections") or value.get("nodes")) and not value.get("cross_references") and all(
+        item.get("source_use") == "reference_metadata" for item in [*value.get("sections", []), *value.get("nodes", [])])
+    if metadata_only:
+        payload.update(source_use="reference_metadata", synopsis=reference_metadata.metadata_summary(), findings=[], limitations=[])
     # Target evidence must survive merge inputs even when the model puts it only
     # in the reference check, not in its separate findings list.
     for check in checks:
-        if check.evidence and check.evidence.model_dump() not in payload["findings"]:
+        metadata = check.evidence and any(check.evidence.source_id == ref["source_id"]
+            and check.evidence.locator == ref["locator"] and check.evidence.quote in ref["quote"]
+            for ref in work.get("reference_metadata", []))
+        if check.evidence and not metadata and check.evidence.model_dump() not in payload["findings"]:
             payload["findings"].append(check.evidence.model_dump())
     payload["references"] = {key: {"original_id": r["original_id"], "part": r["part"], "parts": r["parts"]} for key, r in expected.items()}
     payload["level"] = receipt["level"]
@@ -177,6 +188,7 @@ def finish(doc, pack, tree, root):
             limitations.extend(p["explanation"] for p in parts)
     final = nodes[root]
     doc.update(analysis_complete=True, complete=bool(doc["read_complete"] and not doc.get("error")),
+        source_use_policy=reference_metadata.POLICY,
         sections_analysed=len(pack["sections"]), unread_reason=None,
         reconciliation={"contract": CONTRACT, "coverage_fingerprint": tree["basis"],
             "synopsis": final["synopsis"], "findings": deepcopy(final["findings"]),
@@ -196,6 +208,14 @@ def compact_reviews(session, run, sources):
             tree, review = doc.get("review_tree", {}), doc.get("reconciliation", {})
             dependencies = tree.get("source_dependencies", [])
             if not doc.get("complete") or review.get("contract") != CONTRACT or not dependencies:
+                continue
+            # Older title-backed reconciliations are not current proof. The
+            # worker re-reconciles affected originals without reading them again.
+            from .product_document_analysis import source_views
+            originals = [available[d["source_id"]] for d in dependencies if d["source_id"] in available]
+            views = source_views(originals)
+            if (doc.get("source_use_policy") != reference_metadata.POLICY
+                    and any(reference_metadata.metadata_passages(view) for view in views.values())):
                 continue
             if any(d["source_id"] not in available or fingerprint(available[d["source_id"]].snapshot) != d["fingerprint"] for d in dependencies):
                 continue

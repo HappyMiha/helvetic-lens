@@ -18,6 +18,8 @@ from .research_answer_parts import (
     splice_points,
     update_gap,
 )
+from .research_reference_metadata import INSTRUCTIONS as SOURCE_USE_INSTRUCTIONS
+from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 from .research_review_witnesses import assertion_clauses, invalid_review, review_schema
 
 REVIEW = """Check the final answer against its original evidence, after rewriting.
@@ -88,7 +90,66 @@ Resolved/remains must include citation_refs that justify that assessment.
 """
 FOCUS = '\nThe ONLY assertion to review is this untrusted text: '
 REVIEW_NOTICE = 'The final evidence review was unavailable or incomplete; these findings remain provisional.'
-POLICY = fingerprint({'contract': 'final-answer-entailment/v18-bounded-originals', 'review': REVIEW, 'focus': FOCUS})
+REVIEW += SOURCE_USE_INSTRUCTIONS
+REVIEW += """\nWhen assertion_scope is requested, classify the literal assertion,
+not the subject of the user's question. reference_metadata means a claim about
+the citing document's listed authors, title, publication details, or references
+themselves. It never means the findings, events or results asserted inside a cited
+title or the content of an unread referenced work. Use original_content for those
+claims. A metadata entry can establish its publication details; it cannot by
+itself establish the referenced work's scientific, legal or other substantive
+conclusion. Judge context-role citations by the same evidence-use boundary.
+"""
+POLICY = fingerprint({'contract': 'final-answer-entailment/v18-bounded-originals', 'review': REVIEW, 'focus': FOCUS,
+    'source_use': SOURCE_USE_POLICY})
+
+
+def scoped_review_schema(wire, assertion, references, concerns, *, point):
+    """Ask the existing reviewer what kind of assertion it is certifying."""
+    from .research_model_transport import reference_uses
+    schema = review_schema(assertion, references, concerns, point=point)
+    if not reference_uses(wire, references):
+        return schema
+
+    def visit(node):
+        if isinstance(node, dict):
+            props = node.get('properties', {})
+            if 'citation_refs' in props and ('verdict' in props or 'outcome' in props):
+                props['assertion_scope'] = {'type': 'string', 'enum': ['original_content', 'reference_metadata']}
+                node['required'].append('assertion_scope')
+            for value in node.values():
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+    visit(schema)
+    return schema
+
+
+def enforce_source_use(wire, context, data):
+    """Metadata cannot alone witness a judgment about substantive content."""
+    from .research_model_transport import reference_uses
+    metadata = reference_uses(wire, context)
+    judgments = [data['overall'], *data['clauses'].values()]
+
+    def content_with_metadata_only(judgment):
+        refs = judgment['citation_refs']
+        return bool(refs and all(ref in metadata for ref in refs)
+            and judgment.get('assertion_scope') != 'reference_metadata')
+
+    for judgment in [*judgments, *data.get('concern_checks', [])]:
+        if content_with_metadata_only(judgment):
+            if judgment.get('verdict') in {'supported', 'contradicted'}:
+                judgment.update(verdict='not_established', reason='Bibliographic metadata does not establish the referenced work\'s substantive content.')
+            if judgment.get('outcome') in {'resolved', 'remains'}:
+                judgment.update(outcome='cannot_assess', reason='This objection needs original content, not only bibliographic metadata.')
+    if data.get('gap_status') in {'answered', 'answer_available'} and any(
+            content_with_metadata_only(judgment) for judgment in judgments):
+        # The literal gap can be labelled not_established when an answer is
+        # available, but metadata alone cannot supply that substantive answer.
+        # Unrequested scope exclusions do not require positive source evidence.
+        data['gap_status'] = 'unresolved'
+    return data
 
 
 def carry_concerns(existing, previous, issues, context_refs=()):
@@ -107,6 +168,14 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
     checkpoints = checkpoints if checkpoints is not None else {}
     items = {f'P{i}': {'statement': point.statement,
         'passages': [ref.model_dump() for ref in point.evidence]} for i, point in enumerate(answer.points)}
+    from .research_model_transport import reference_uses
+    metadata = reference_uses(wire, wire.references)
+    metadata_identities = {(wire.references[key]['source_id'], wire.references[key]['locator'], wire.references[key]['quote'])
+        for key in metadata}
+    for item in items.values():
+        for passage in item['passages']:
+            if (passage['source_id'], passage['locator'], passage['quote']) in metadata_identities:
+                passage['source_use'] = 'reference_metadata'
     items.update({f'L{i}': {'gap': text} for i, text in enumerate(answer.limitations)
         if text not in getattr(wire, 'workflow_gaps', set())})
     hints, checked, failures, candidates, positive_witnesses = [], [], {}, {}, {}
@@ -141,7 +210,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             payload['selected_citation_refs'] = keys
         assertion = item.get('statement', item.get('gap'))
         payload['assertion_clauses'] = assertion_clauses(assertion)
-        item_schema = review_schema(assertion, context, concern_ids, point=key.startswith('P'))
+        item_schema = scoped_review_schema(wire, assertion, context, concern_ids, point=key.startswith('P'))
         from .research_evidence_pack import request_characters, select_evidence
 
         focus = FOCUS + json.dumps(assertion, ensure_ascii=False)
@@ -151,7 +220,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
 
             def request_size(references):
                 candidate = {**payload, field: source_groups(wire, references)}
-                schema = review_schema(assertion, references, concern_ids, point=key.startswith('P'))
+                schema = scoped_review_schema(wire, assertion, references, concern_ids, point=key.startswith('P'))
                 return request_characters(REVIEW + focus, candidate, schema)
 
             def fits(references):
@@ -162,7 +231,9 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             # Point review may narrow only optional context; selected support
             # and earlier contradictory witnesses remain mandatory.
             from types import SimpleNamespace
-            candidate_wire = SimpleNamespace(input=wire.input, references=context)
+            candidate_wire = SimpleNamespace(input=wire.input, references=context,
+                work=getattr(wire, 'work', {}),
+                reference_uses={ref: use for ref, use in getattr(wire, 'reference_uses', {}).items() if ref in context})
             task = json.dumps({name: value for name, value in payload.items()
                 if name not in {'sources', 'source_context'}}, ensure_ascii=False)
             required = keys + list((concerns or {}).get(key, {}).get('context_refs', [])) if key.startswith('P') else []
@@ -170,7 +241,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
                 checkpoints=checkpoints.setdefault('original_selection', {}), on_progress=on_progress,
                 fits=fits, required_refs=required, request_size=request_size)
             payload[field] = source_groups(wire, context)
-            item_schema = review_schema(assertion, context, concern_ids, point=key.startswith('P'))
+            item_schema = scoped_review_schema(wire, assertion, context, concern_ids, point=key.startswith('P'))
         # Position is presentation, not evidence identity. Inserting or removing
         # a sibling must not repurchase an unchanged factual check.
         binding = 'clauses:' + fingerprint({'policy': POLICY, 'kind': 'point' if key.startswith('P') else 'gap',
@@ -193,10 +264,12 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             if invalid:
                 failures[key] = invalid
                 continue
+            data = enforce_source_use(wire, context, data)
             if not any(c['outcome'] == 'cannot_assess' for c in data.get('concern_checks', [])):
                 checkpoints[binding] = deepcopy(data)
                 if on_progress:
                     on_progress()
+        data = enforce_source_use(wire, context, data)
         if not any(c['outcome'] == 'cannot_assess' for c in data.get('concern_checks', [])):
             checked.append(key)
         else:

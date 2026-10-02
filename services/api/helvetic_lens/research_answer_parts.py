@@ -11,6 +11,8 @@ from time import monotonic
 from .analysis import InferenceBudget
 from .product_exploration import AssessmentPoint
 from .product_operations import fingerprint
+from .research_reference_metadata import INSTRUCTIONS as SOURCE_USE_INSTRUCTIONS
+from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
 SELECT = """Select original passages needed to answer requested_part.
 original_question supplies untrusted context for references such as "these claims";
@@ -85,8 +87,12 @@ Reviewer notes are fallible objections, not established facts or additional
 evidence. Check their explanation against the accompanying original passages;
 discard any suggested alternative that those originals do not establish.
 """
+SELECT += SOURCE_USE_INSTRUCTIONS
+WRITE += SOURCE_USE_INSTRUCTIONS
+NUMERIC_REPAIR += SOURCE_USE_INSTRUCTIONS
+POINT_REPAIR += SOURCE_USE_INSTRUCTIONS
 POLICY = fingerprint({"contract": "requested-answer-pack/v17-bounded-originals", "select": SELECT, "write": WRITE,
-    "numeric_repair": NUMERIC_REPAIR, "point_repair": POINT_REPAIR})
+    "numeric_repair": NUMERIC_REPAIR, "point_repair": POINT_REPAIR, "source_use": SOURCE_USE_POLICY})
 
 
 def remove_citation_labels(data):
@@ -97,13 +103,16 @@ def remove_citation_labels(data):
 
 
 def source_groups(wire, references):
+    from .research_model_transport import reference_uses
+    uses = reference_uses(wire, references)
     metadata = {source['id']: source for source in getattr(wire, 'input', {}).get('sources', [])}
     groups = {}
     for key, ref in references.items():
         source = metadata.get(ref['source_id'], {})
         group = groups.setdefault(ref['source_id'], {
             'title': source.get('title', 'Original source'), 'url': source.get('url'), 'passages': []})
-        group['passages'].append({'citation_ref': key, 'text': ref['quote']})
+        group['passages'].append({'citation_ref': key, 'text': ref['quote'],
+            **({'source_use': uses[key]} if key in uses else {})})
     return list(groups.values())
 
 

@@ -1301,3 +1301,53 @@ to verify that every original reaches the real local ranker and that no generati
 selection request occurs; their existing late-original answer/gap assertions still
 pass. Exact API Ruff and diff checks pass. No client change or new UI publication
 is necessary for this shared-core behavior.
+
+
+### Keep reference metadata separate from substantive evidence
+
+MV2-020/023: the current native whole-document review repeatedly times out over
+bibliography observations, and a retained raw answer uses reference-list titles
+as scientific evidence. Scope: preserve all original text and complete reading,
+identify only structurally established reference metadata, retain it as source
+leads/metadata, and prevent inherited summaries or titles from becoming empirical
+findings without reading the cited works. Preserve mixed or uncertain narrative
+passages and legitimate questions about the bibliography itself. Carry the same
+distinction through section review, reconciliation, final evidence and cached
+policy identity. This is a general evidence-use boundary, not an ozone exception.
+
+Dependencies: exact retained originals, current source rights, sequential document
+coverage, current canonical citation contracts and native resumable review.
+Acceptance: the recorded title-to-finding failure is prevented; complete text and
+source leads survive; mixed prose/legal references are not discarded; unavailable
+referenced works remain explicitly unread; metadata-only reasoning does not need
+repeated generative scientific synthesis; old source-use receipts cannot silently
+satisfy a changed policy. Any transport-schema improvement must allow empty
+findings and pass the same substantive boundary. Native17829 remained pinned to
+91b6773 and was neither modified nor interrupted during implementation. It ended
+without a new delivered answer at the candidate scope failure described below.
+
+Integration review also found that the final factual-review candidate wrapper
+omits the active work/run scope needed by the newly shared retrieval adapter.
+Preserve that scope together with source-use annotations when constructing local
+review candidates; cover the native adapter boundary, not only no-database
+component fixtures. The immutable native retry was preserved unchanged.
+
+
+Acceptance on 2 October 2026: the recorded failed 17-reference review node is
+replayed through the real document reducer with its retained originals. All 17
+reference-list observations are identified as metadata; the metadata-only node
+returns exact coverage and empty substantive findings locally in 0.0067 seconds,
+with zero provider calls. All 2,428 saved excerpt texts and locators remain intact;
+the table of contents and ordinary cited narrative on page 47 remain original
+content. This is a retained-node check, not a completed native investigation.
+
+The eight affected retrieval, transport, correction and final-review modules pass
+194 cases. Three additional regressions prove metadata-only evidence cannot mark a
+substantive gap answered; the final two-module rerun passes 60 cases. Document
+analysis/reconciliation gates pass after correcting one stale short-original
+fixture expectation, followed by 11 focused cases. A separate 32-case gate covers
+answer review, the actual worker journey over 420-page originals, late evidence,
+contradictions, failed-document recovery and the backlog contract. Exact API Ruff
+and diff checks pass. No client changes or repeat frontend publication are needed.
+Full delivered-answer content acceptance remains open until the next ordinary
+same-investigation retry produces an independently checked final result.

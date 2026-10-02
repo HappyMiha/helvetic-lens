@@ -2,6 +2,7 @@
 from copy import deepcopy
 
 from .product_operations import fingerprint
+from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
 KEY = "synthesis_checkpoint"
 CONTRACT = "final-synthesis-resume/v2"
@@ -46,6 +47,7 @@ class DraftCheckpoint:
             "part_policy": POLICY, "final_policy": FINAL_POLICY,
             "review_system": review_system, "schema": schema, "content": content,
             "preparation_policy": preparation_policy,
+            "source_use_policy": SOURCE_USE_POLICY,
             "provider": settings.apertus_provider, "endpoint": settings.apertus_base_url,
             "model": settings.apertus_model, "options": options,
             "generation": {key: getattr(settings, key) for key in (

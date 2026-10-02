@@ -316,7 +316,15 @@ async def execute(service, job_id, worker):
             finish_or_yield(session, run, job)
             session.commit()
             return {"id": job_id, "state": run.status}
-        candidates = [b for b in rows(session, InvestigationBranch, run) if b.status in ACTIVE]
+        from .product_document_analysis import invalidate_reference_reviews
+        branches = rows(session, InvestigationBranch, run)
+        for candidate in branches:
+            candidate_state = deepcopy(candidate.checkpoint)
+            if invalidate_reference_reviews(session, run, candidate_state):
+                candidate.checkpoint = candidate_state
+                if candidate.status == "completed":
+                    candidate.status, candidate.phase = "queued", "document_review"
+        candidates = [b for b in branches if b.status in ACTIVE]
         if research.enabled(run):
             # A retried final answer must wait for retried source analysis too.
             candidates.sort(key=lambda b: (b.phase == "brief", b.phase != "recall", pacing.order(b) if pacing.enabled(run) else
@@ -402,7 +410,9 @@ async def execute(service, job_id, worker):
                                                     for c in rows(session, DossierClaim, run)][:60]})
                     if work and branch.phase == "extract":
                         from . import product_document_analysis as document_analysis
-                        document_analysis.prepare_section(work, source)
+                        siblings = [session.get(InvestigationSource, key) for key in state.get("source_ids", [])]
+                        siblings = [s for s in siblings if s and s.investigation_id == run.id and s.sha256 == source.sha256]
+                        document_analysis.prepare_section(work, source, siblings)
                     if work and research.enabled(run):
                         if branch.phase == "extract":
                             work["input"]["branch"] = branch.query

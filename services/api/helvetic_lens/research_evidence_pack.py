@@ -6,10 +6,12 @@ from time import monotonic
 from .config import DomainError
 from .product_operations import fingerprint
 from .research_answer_parts import contextual_references
+from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
 POLICY = fingerprint({'contract': 'local-hybrid-evidence-pack/v1',
     'units': 'paragraph-with-context/v1', 'packing': 'request-source-diversity/v1',
-    'mission_metadata': 'completed-document-counts/v1', 'cost': 'actual-caller-envelope/v1'})
+    'mission_metadata': 'completed-document-counts/v1', 'cost': 'actual-caller-envelope/v1',
+    'source_use': SOURCE_USE_POLICY})
 
 
 def _json(value):
@@ -19,13 +21,16 @@ def _json(value):
 def provider_sources(wire, references):
     """A provider view, without altering host discovery links or source records."""
     metadata = {source['id']: source for source in wire.input.get('sources', [])}
+    from .research_model_transport import reference_uses
+    uses = reference_uses(wire, references)
     groups = {}
     for key, ref in references.items():
         source = metadata.get(ref['source_id'], {})
         group = groups.setdefault(ref['source_id'], {
             **{field: source[field] for field in ('sha256', 'title', 'url') if field in source},
             'id': ref['source_id'], 'excerpts': []})
-        group['excerpts'].append({'citation_ref': key, 'text': ref['quote'], 'passage': ref['locator']})
+        group['excerpts'].append({'citation_ref': key, 'text': ref['quote'], 'passage': ref['locator'],
+            **({'source_use': uses[key]} if key in uses else {})})
     return list(groups.values())
 
 
@@ -174,7 +179,8 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
             422, 'research_evidence_group_too_large')
     costs = [request_size(unit['references']) for unit in units]
     input_fingerprint = fingerprint({'question': question, 'originals': wire.references,
-        'sources': wire.input.get('sources', []), 'required': sorted(required_refs)})
+        'sources': wire.input.get('sources', []), 'required': sorted(required_refs),
+        'source_uses': getattr(wire, 'reference_uses', {})})
     binding = fingerprint({'input': input_fingerprint, 'policy': POLICY, 'retrieval': retrieval.POLICY,
         'allowance': allowance, 'fixed_cost': request_size({}), 'unit_costs': costs,
         'mandatory_cost': request_size(mandatory)})
