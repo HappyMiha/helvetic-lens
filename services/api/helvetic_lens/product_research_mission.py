@@ -95,6 +95,131 @@ def evidence_signature(session, run):
         for s in exploration.sources(session, run).values()))
 
 
+def continuation_context(session, run):
+    """Private scheduling state, never part of the provider's evidence payload."""
+    from .product_document_reading import incomplete
+    from .product_iterative_steps import discovery_available
+
+    state = run.research_state["mission"]
+    branches = rows(session, InvestigationBranch, run)
+    previous = state.get("last_continuation") or (state["checkpoints"][-1] if state["checkpoints"] else {})
+    published = run.research_state.get("exploration", {})
+    receipt = (published.get("direction_assessment_context") or {}).get("next_check_receipt") or {}
+    return {"round": state["round"], "signature": evidence_signature(session, run),
+        "previous_signature": previous.get("evidence_signature"), "unfinished": bool(incomplete(branches)),
+        "questions": deepcopy(run.research_state["questions"]),
+        "queries": [query for branch in branches for query in
+            (branch.query, branch.checkpoint.get("query_recovery", {}).get("query") or branch.query)],
+        "frontiers": [branch.id for branch in branches if branch.status == "completed" and discovery_available(branch.checkpoint)],
+        "published_question_ids": list(receipt.get("question_fingerprints", {})) if published.get("briefing") else [],
+        "next_slots": (state["round"] + 1) * 4 - sum(bool(branch.checkpoint.get("question_id")) for branch in branches)}
+
+
+def route_continuation(work, checkpoint):
+    """Read actionable originals before polishing a private provisional answer."""
+    state = work.get("mission_continuation")
+    if not state or checkpoint.action != "continue":
+        return False
+    supplied = work["input"]
+    for draft in checkpoint.next_checks:
+        if draft.reconsideration or draft.claim_id or not any(source["id"] == draft.source_id and any(
+                passage["passage"] == draft.locator and draft.quote in passage["text"]
+                for passage in source["excerpts"]) for source in supplied["sources"]):
+            fail("The next check requires current supplied evidence.", 422, "invalid_evidence")
+    deeper = set(checkpoint.deepen_branches)
+    supplied_frontiers = {frontier["branch_id"] for frontier in supplied.get("research_mission", {}).get("discovery_frontiers", [])}
+    if not deeper <= set(state["frontiers"]) & supplied_frontiers:
+        fail("Deeper discovery requires a current supplied search frontier.", 422, "invalid_evidence")
+    new_question = any(not research.question_duplicate(draft, state["questions"], state["queries"],
+        trigger={"source_id": draft.source_id}) for draft in checkpoint.next_checks)
+    open_question = any(q["status"] == "open" and not q["branch_id"] for q in state["questions"])
+    actionable = (not state["unfinished"] and (deeper or state["signature"] != state["previous_signature"])
+        and (deeper or state["next_slots"] > 0 and (new_question or open_question)))
+    if not actionable:
+        checkpoint.action = "finish"
+        return False  # No unchecked completion: the caller now runs final synthesis checks.
+    protected = set(state.get("published_question_ids", []))
+    if any(q["id"] in protected and (q["branch_id"] in deeper
+            or state["next_slots"] > 0 and q["status"] == "open" and not q["branch_id"])
+            for q in state["questions"]):
+        # This existing recommendation depends on the question record itself.
+        # Use the ordinary reviewed continuation instead of migrating its proof.
+        return False
+    work["private_continuation"] = fingerprint({"state": state,
+        "checks": [draft.model_dump() for draft in checkpoint.next_checks], "deeper": checkpoint.deepen_branches})
+    return True
+
+
+def next_work(session, run, supplied, checkpoint):
+    """Validate the live source/branch boundary before scheduling any next read."""
+    from .product_iterative_steps import discovery_available
+
+    available = exploration.sources(session, run)
+    gaps = []
+    for draft in checkpoint.next_checks:
+        source = available.get(draft.source_id)
+        if (not source or draft.reconsideration or draft.claim_id or not any(
+                s["id"] == source.id and any(p["passage"] == draft.locator and draft.quote in p["text"]
+                    for p in s["excerpts"]) for s in supplied["sources"])):
+            fail("The next check requires current supplied evidence.", 422, "invalid_evidence")
+        gaps.append((draft, citation(source, draft)))
+    deeper = []
+    for identifier in dict.fromkeys(checkpoint.deepen_branches):
+        branch = session.get(InvestigationBranch, identifier)
+        if not branch or branch.investigation_id != run.id or branch.status != "completed" or not discovery_available(branch.checkpoint):
+            fail("Deeper discovery requires a current supplied search frontier.", 422)
+        if not any(f["branch_id"] == identifier for f in supplied.get("research_mission", {}).get("discovery_frontiers", [])):
+            fail("The search frontier was not supplied for this assessment.", 422)
+        deeper.append(branch)
+    return gaps, deeper
+
+
+def schedule_next(session, run, supplied, gaps, deeper):
+    from . import product_exploration_followups as followups
+    from . import product_informed_research as informed
+    from .product_iterative_steps import continue_discovery
+
+    informed.remember(session, run, supplied)
+    for branch in deeper:
+        branch_state = deepcopy(branch.checkpoint)
+        continue_discovery(branch, branch_state)
+        branch_state.pop("question_finished", None)
+        branch.checkpoint = branch_state
+    if deeper:
+        data = deepcopy(run.research_state)
+        for question in data["questions"]:
+            if question.get("branch_id") in {branch.id for branch in deeper}:
+                question.update(status="investigating", waiting_reason=None)
+        run.research_state = data
+    for draft, pin in gaps:
+        identifier = research.add_question(session, run, draft, trigger=pin)
+        followups.remember_open_context(run, {**supplied, "claims": supplied.get("claims", [])}, identifier)
+    update(run, round=run.research_state["mission"]["round"] + 1)
+    research.schedule_questions(session, run)
+    return any(b.status in ACTIVE and b.checkpoint.get("question_id") for b in rows(session, InvestigationBranch, run))
+
+
+def apply_continuation(session, run, supplied, result, work):
+    """Commit reading progress without publishing any provisional answer fields."""
+    if not enabled(run) or not exploration.adaptive_current(session, run):
+        fail("Supporting evidence changed before continuation.", 409, "invalid_evidence")
+    current = {"input": supplied, "mission_continuation": continuation_context(session, run)}
+    checkpoint = result.mission_checkpoint.model_copy(deep=True)
+    if (not route_continuation(current, checkpoint)
+            or current.get("private_continuation") != work.get("private_continuation")):
+        fail("Research continuation changed before it could be scheduled.", 409, "invalid_evidence")
+    gaps, deeper = next_work(session, run, supplied, checkpoint)
+    state = current["mission_continuation"]
+    if not schedule_next(session, run, supplied, gaps, deeper):
+        fail("No validated continuation could be scheduled.", 409, "invalid_evidence")
+    update(run, last_continuation={"round": state["round"], "evidence_signature": state["signature"]},
+        stage="deepening", stop=None)
+    # New search observations can advance independently; the still-published
+    # briefing keeps its own checked direction/renewal provenance unchanged.
+    exploration.update(run, status="exploring", observed_query_context=None)
+    event(session, run, "research_continued", round=state["round"], next_checks=len(gaps), frontiers=len(deeper))
+
+
 def apply(session, run, supplied, result, *, verification=None):
     if not enabled(run):
         return
@@ -120,15 +245,7 @@ def apply(session, run, supplied, result, *, verification=None):
             f"{d.get('title', 'Document')}: reading or whole-document analysis is incomplete. {d.get('error') or d.get('unread_reason') or ''}" for d in unfinished)]))
     if checkpoint.action == "clarify" and (not result.clarification.strip() or len(result.directions) < 2):
         fail("A consequential choice needs cited alternatives.", 422, "invalid_evidence")
-    available = exploration.sources(session, run)
-    gaps = []
-    for draft in checkpoint.next_checks:
-        source = available.get(draft.source_id)
-        if (not source or draft.reconsideration or draft.claim_id or not any(
-                s["id"] == source.id and any(p["passage"] == draft.locator and draft.quote in p["text"]
-                    for p in s["excerpts"]) for s in supplied["sources"])):
-            fail("The next check requires current supplied evidence.", 422, "invalid_evidence")
-        gaps.append((draft, citation(source, draft)))
+    gaps, deeper = next_work(session, run, supplied, checkpoint)
     state = deepcopy(run.research_state["mission"])
     signature = evidence_signature(session, run)
     record = {"round": state["round"], "answer": answer, "reason": checkpoint.reason,
@@ -138,15 +255,6 @@ def apply(session, run, supplied, result, *, verification=None):
     if verification:
         record["verification"] = deepcopy(verification)
     previous = state["checkpoints"][-1] if state["checkpoints"] else None
-    deeper = []
-    from .product_iterative_steps import discovery_available
-    for identifier in dict.fromkeys(checkpoint.deepen_branches):
-        branch = session.get(InvestigationBranch, identifier)
-        if not branch or branch.investigation_id != run.id or branch.status != "completed" or not discovery_available(branch.checkpoint):
-            fail("Deeper discovery requires a current supplied search frontier.", 422)
-        if not any(f["branch_id"] == identifier for f in supplied.get("research_mission", {}).get("discovery_frontiers", [])):
-            fail("The search frontier was not supplied for this assessment.", 422)
-        deeper.append(branch)
     stop = None
     if unfinished:
         stop = "documents_incomplete"
@@ -159,28 +267,7 @@ def apply(session, run, supplied, result, *, verification=None):
     elif previous and previous["evidence_signature"] == signature and not deeper:
         stop = "no_new_evidence"
     if not stop:
-        from . import product_exploration_followups as followups
-        from . import product_informed_research as informed
-
-        informed.remember(session, run, supplied)
-        from .product_iterative_steps import continue_discovery
-        for branch in deeper:
-            branch_state = deepcopy(branch.checkpoint)
-            continue_discovery(branch, branch_state)
-            branch_state.pop("question_finished", None)
-            branch.checkpoint = branch_state
-        if deeper:
-            data = deepcopy(run.research_state)
-            for question in data["questions"]:
-                if question.get("branch_id") in {branch.id for branch in deeper}:
-                    question.update(status="investigating", waiting_reason=None)
-            run.research_state = data
-        for draft, pin in gaps:
-            identifier = research.add_question(session, run, draft, trigger=pin)
-            followups.remember_open_context(run, {**supplied, "claims": supplied.get("claims", [])}, identifier)
-        update(run, round=state["round"] + 1)
-        research.schedule_questions(session, run)
-        if not any(b.status in ACTIVE and b.checkpoint.get("question_id") for b in rows(session, InvestigationBranch, run)):
+        if not schedule_next(session, run, supplied, gaps, deeper):
             stop = "no_useful_next_check"
     record["input_fingerprint"] = fingerprint(supplied)
     record["source_dependencies"] = [{"source_id": s["id"], "sha256": s["sha256"]} for s in supplied["sources"]]
@@ -189,7 +276,7 @@ def apply(session, run, supplied, result, *, verification=None):
         # Per-query receipts and the union of source dependencies remain current.
         exploration.update(run, status="exploring", briefing=None, observed_query_context=None,
             renewal_context=None, direction_assessment_context=None)
-    update(run, checkpoints=[*state["checkpoints"], record],
+    update(run, checkpoints=[*state["checkpoints"], record], last_continuation=None,
         stage="incomplete" if stop in {"documents_incomplete", "review_unavailable"} else "waiting_for_direction" if stop == "needs_direction" else "finished" if stop else "deepening",
         stop=stop, verification=deepcopy(verification))
     event(session, run, "research_checkpoint", round=state["round"], outcome=answer["status"],
@@ -224,6 +311,7 @@ def project(session, run):
     if not exploration.adaptive_current(session, run):
         return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None}
     state = deepcopy(run.research_state["mission"])
+    state.pop("last_continuation", None)
     available = exploration.sources(session, run)
     for record in state["checkpoints"]:
         if any(d["source_id"] not in available or available[d["source_id"]].sha256 != d["sha256"] for d in record.get("source_dependencies", [])):

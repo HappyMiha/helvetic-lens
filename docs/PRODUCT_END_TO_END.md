@@ -1721,3 +1721,55 @@ review confirmed that only canonical references enter the routing schema while
 headings survive selection and writing; cached retries retain the exact binding.
 No provider call was needed for these checks. Publication and the ordinary
 same-investigation retry follow; no new answer has passed content acceptance.
+
+### Read before polishing intermediate answers
+
+MV2-020/023: native3296's two whole-answer drafts both explicitly chose to
+continue with cited next readings. Nevertheless the intervening pipeline made
+56 point/gap review calls (29 failed), eight focused redrafts and five numeric
+repairs before allowing that reading. This is avoidable intermediate work.
+
+Scope: separate research continuation from answer publication. Canonically bound,
+authorized next readings and discovery frontiers may proceed without certifying
+an intermediate answer. That proposal remains private; the latest authorized
+published answer stays visible. Finishing, consequential clarification and checked
+partial delivery retain the existing answer verification. Check linked-original
+reading before final verification, and preserve ordinary retry, deduplication,
+no-new-evidence termination and whole-document completion.
+
+Acceptance: a real continuation reaches its next reading with zero answer-review
+or numeric-repair calls; no unchecked draft leaks through mission, briefing,
+knowledge or events. A continuation with no actionable new work still reaches
+final synthesis rather than silently finishing or looping. Final delivery retains
+exact citation validation and review; source withdrawal invalidates stale output.
+Use existing isolated originals and the same dossier, with focused behavioral
+checks followed by the actual native journey. No new models, review layer, total
+research budget, client redesign or production fixtures are required.
+
+Implemented the continuation/publication boundary in the existing gateway and
+mission scheduler. Actionable, current source-backed readings skip numeric and
+final-answer review. The scheduler retains public checkpoints and the prior
+briefing, emits only neutral progress, and revalidates source and frontier
+identity before committing the next work. Empty, duplicate or unchanged-evidence
+proposals go through ordinary final verification. Existing finalizing and
+deferred-review checkpoints cannot take the private shortcut. No client or
+provider configuration changes are needed.
+
+The existing whole Legal/Pharma journeys passed: the Legal case reads all 420 PDF
+pages and reconciles a late cross-reference before its cited final conflict;
+the Pharma case exercises the same path with 25 pages. The backlog guard passed
+in that same run (three cases, 232.93 seconds). Ten focused gateway/publication
+cases passed, including prior-answer preservation, native finalization resume,
+duplicate and same-evidence decisions, and source withdrawal. A preservation
+failure exposed by the new cases was corrected by retaining the prior briefing's
+direction/renewal provenance. Actual public-source content acceptance remains open.
+
+One existing dependency stays on the reviewed path: when continuing would mutate
+a question bound to a currently published recommendation, retain action=continue
+and refresh that recommendation through normal publication. Do not silently rebind
+its approval. New independent readings still use the private continuation path.
+
+Both exact recommendation-dependency cases passed without re-running the earlier
+journeys. Four existing final-stage resume cases also passed. Exact API Ruff and
+diff checks passed on the combined change. Publication and native public-source
+acceptance follow; these checks do not certify the scientific answer.

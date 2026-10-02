@@ -1,6 +1,7 @@
 """A whole fictional mission; no paid/live providers or production records."""
 import hashlib
 import json
+from copy import deepcopy
 from datetime import timedelta
 
 import pytest
@@ -327,3 +328,92 @@ def test_empty_final_answer_keeps_unresolved_work_in_native_status_and_coverage(
     changed = client.get(route).json()
     assert changed['exploration']['mission']['answer'] is None
     assert gap not in json.dumps(changed['coverage_manifest']['open_questions'])
+
+
+@pytest.mark.parametrize('withdraw_before_apply', [False, True])
+def test_private_reading_continuation_preserves_checked_answer_and_current_source_fences(signed, withdraw_before_apply):
+    from helvetic_lens import product_exploration as exploration
+    from helvetic_lens import product_iterative_steps as steps
+    from helvetic_lens import product_research_mission as mission
+    from helvetic_lens.config import DomainError
+    from helvetic_lens.product_investigation_models import (
+        InvestigationBranch,
+        InvestigationEvent,
+        InvestigationSource,
+    )
+    from helvetic_lens.product_investigations import rows, scope
+
+    client, service, _, _ = signed
+    _, started, _ = start(client)
+    private = 'Unreviewed intermediate claim cannot become a public finding.'
+    with service.db.session() as session:
+        run = session.get(Investigation, started['id'])
+        run.status = 'running'
+        for branch in rows(session, InvestigationBranch, run):
+            branch.status = 'completed'
+        old = InvestigationSource(**scope(run), source_key='a' * 64, kind='public_source',
+            title='Earlier checked original', url='https://example.org/earlier', sha256='a' * 64,
+            snapshot={'excerpts': [{'passage': 'p1', 'text': GRANT}]})
+        session.add(old)
+        session.flush()
+
+        def supplied():
+            return {**exploration.prepare(session, run), 'research_mission': mission.context(session, run)}
+
+        evidence = {'source_id': old.id, 'locator': 'p1', 'quote': GRANT}
+        checked = mission.schema(exploration.Briefing).model_validate({
+            'understanding': 'An earlier checked answer remains available while research continues.',
+            'findings': [{**evidence, 'statement': GRANT, 'basis': 'direct'}],
+            'uncertainties': [], 'clarification': '', 'directions': [], 'mission_checkpoint': {
+                'answer': {'status': 'possible_answer', 'points': [{'statement': GRANT,
+                    'evidence': [{**evidence, 'role': 'support'}]}], 'limitations': []},
+                'action': 'finish', 'reason': 'The earlier source provides the checked observation.'}})
+        exploration.apply(session, run, supplied(), checked)
+        mission.apply(session, run, supplied(), checked)
+        previous = deepcopy(mission.project(session, run)['answer'])
+        briefing = deepcopy(exploration.projection(session, run)['briefing'])
+        assert previous is not None and briefing is not None
+        mission.update(run, stop=None, stage='synthesizing')
+        newer = InvestigationSource(**scope(run), source_key='b' * 64, kind='public_source',
+            title='New source with an original lead', url='https://example.org/newer', sha256='b' * 64,
+            snapshot={'excerpts': [{'passage': 'p1', 'text': LATE}]})
+        session.add(newer)
+        branch = InvestigationBranch(**scope(run), query='Evaluate newly read evidence', phase='brief',
+            status='running', reason='Decide the useful next reading.', checkpoint={'research_control': True})
+        session.add(branch)
+        session.flush()
+        evidence = {'source_id': newer.id, 'locator': 'p1', 'quote': LATE}
+        proposed = checked.model_copy(deep=True)
+        proposed.findings[0].statement = private
+        proposed.mission_checkpoint.answer.points[0].statement = private
+        proposed.mission_checkpoint.reason = private
+        proposed.mission_checkpoint.action = 'continue'
+        from helvetic_lens.product_iterative_research import Gap
+        proposed.mission_checkpoint.next_checks = [Gap(**evidence, question='Does the linked original resolve the revised amount?',
+            query='https://example.org/unread-original', purpose='Read the source-linked original.',
+            priority=5, kind='independent_verification', catalogues=[])]
+        work = {'phase': 'brief', 'token': 'private-reading-step', 'input': supplied(),
+            'mission_continuation': mission.continuation_context(session, run)}
+        assert mission.route_continuation(work, proposed.mission_checkpoint)
+        before_questions = deepcopy(run.research_state['questions'])
+        if withdraw_before_apply:
+            newer.sha256 = 'c' * 64
+            session.flush()
+            with pytest.raises(DomainError):
+                steps.apply(session, run, branch, {}, work, proposed)
+            assert run.research_state['questions'] == before_questions
+        else:
+            steps.apply(session, run, branch, {}, work, proposed)
+            session.flush()
+            public = exploration.projection(session, run)
+            assert public['mission']['answer'] == previous and public['briefing'] == briefing
+            assert len(public['mission']['checkpoints']) == 1
+            assert any(q['query'] == 'https://example.org/unread-original' and q['branch_id']
+                for q in run.research_state['questions'])
+            assert public['mission']['stage'] == 'deepening'
+            assert private not in json.dumps(public)
+            assert private not in json.dumps([event.detail for event in rows(session, InvestigationEvent, run)])
+            assert private not in json.dumps(public['mission']['knowledge'])
+            old.sha256 = 'd' * 64
+            session.flush()
+            assert exploration.projection(session, run)['mission']['answer'] is None

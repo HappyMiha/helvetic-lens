@@ -293,10 +293,10 @@ def elapsed(run, seconds):
     run.research_state = data
 
 
-def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None):
+def question_duplicate(draft, questions, queries, *, trigger=None):
+    """The same scheduling identity for planning and committed follow-up work."""
     from .decision_search import public_url
 
-    data = deepcopy(run.research_state)
     key = query_key(draft.query)
     # Two witnessed originals may answer the same question. Their reading
     # identity is the URL; ordinary search paraphrases still share a question.
@@ -307,11 +307,17 @@ def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, 
             query_key(previous["question"]) == query_key(draft.question)
             and not (direct and previous_url and direct != previous_url))
 
-    if any(query_key(q["branch_assessment"]["assessment"]["further_check"]["query"]) == key
-            for q in data["questions"] if q.get("branch_assessment", {}).get("assessment", {}).get("further_check")):
-        event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
-        return None
-    if any(key in {query_key(b.query), query_key(b.checkpoint.get("query_recovery", {}).get("query") or b.query)} for b in rows(session, InvestigationBranch, run)) or any(duplicate_question(q) for q in data["questions"]):
+    return (any(query_key(q["branch_assessment"]["assessment"]["further_check"]["query"]) == key
+            for q in questions if q.get("branch_assessment", {}).get("assessment", {}).get("further_check"))
+        or any(key == query_key(query) for query in queries) or any(duplicate_question(q) for q in questions))
+
+
+def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None):
+    data = deepcopy(run.research_state)
+    key = query_key(draft.query)
+    queries = [query for branch in rows(session, InvestigationBranch, run)
+        for query in (branch.query, branch.checkpoint.get("query_recovery", {}).get("query") or branch.query)]
+    if question_duplicate(draft, data["questions"], queries, trigger=trigger):
         event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
         return None
     # No hidden truncation of the saved question/criteria; all response fields

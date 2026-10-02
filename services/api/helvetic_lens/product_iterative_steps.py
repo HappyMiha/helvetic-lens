@@ -79,6 +79,7 @@ def prepare(session, run, branch, state, work):
         work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
         if branch.phase == "brief" and mission.enabled(run):
             work["input"]["research_mission"] = mission.context(session, run)
+            work["mission_continuation"] = mission.continuation_context(session, run)
         if branch.phase == "orient" or mission.enabled(run):
             from .research_synthesis_resume import EXHAUSTED_REVIEW, KEY, deferred_verification
 
@@ -192,6 +193,7 @@ async def execute(service, work, seconds):
     if not isinstance(raw, str) or len(raw) > response_limit:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
+    result = None
     if phase == "extract" and (work.get("applicability") or work.get("unmetered_research")):
         optional = {"applicability_checks": "_applicability_unavailable"} if work.get("applicability") else {}
         if work.get("unmetered_research"):
@@ -213,8 +215,12 @@ async def execute(service, work, seconds):
         if work["input"].get("question_renewal_targets") and work["input"].get("question_renewal_recovery") == renewal.RECOVERY_CONTRACT:
             optional["question_renewals"] = "_renewal_unavailable"
         if optional:
-            return renewal.parse_recoverable(schema, raw, optional)
-    return schema.model_validate_json(raw)
+            result = renewal.parse_recoverable(schema, raw, optional)
+    result = result if result is not None else schema.model_validate_json(raw)
+    if phase == "brief" and not work.get("publication_review_started") and getattr(result, "mission_checkpoint", None):
+        # Non-hosted/legacy adapters use the same private scheduling boundary.
+        mission.route_continuation(work, result.mission_checkpoint)
+    return result
 
 
 def settle(branch, state):
@@ -284,13 +290,17 @@ def apply(session, run, branch, state, work, result):
     elif phase == "reformulate":
         query_recovery.apply(session, run, branch, state, result)
     elif phase == "brief":
-        exploration.apply(session, run, work["input"], result)
-        branch.status = "completed"
-        verification = work.get("deferred_review_verification")
-        mission.apply(session, run, work["input"], result, verification=verification)
-        if verification:
-            branch.status = "failed"
-            state["error"] = verification["basis"]
+        if work.get("private_continuation"):
+            mission.apply_continuation(session, run, work["input"], result, work)
+            branch.status = "completed"
+        else:
+            exploration.apply(session, run, work["input"], result)
+            branch.status = "completed"
+            verification = work.get("deferred_review_verification")
+            mission.apply(session, run, work["input"], result, verification=verification)
+            if verification:
+                branch.status = "failed"
+                state["error"] = verification["basis"]
     elif phase == "orient":
         exploration.apply_orientation(session, run, work["input"], result)
         branch.status = "completed"

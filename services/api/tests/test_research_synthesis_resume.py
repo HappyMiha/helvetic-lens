@@ -655,3 +655,104 @@ def test_completed_request_coverage_is_progress_but_unavailable_retry_is_not(cho
         'failed': {**receipt, 'choice': 'unavailable'}, 'unbound': {'choice': 'covered'}})
     assert completed_work(checkpoint) == progress
     assert not made_progress(progress, completed_work(checkpoint))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('route', ['check', 'frontier', 'original_link', 'no_action', 'duplicate', 'same_evidence',
+    'finish', 'finalizing_resume', 'published_frontier', 'published_open_question'])
+async def test_actionable_native_reading_precedes_answer_polishing_but_finalization_cannot_bypass_review(monkeypatch, route):
+    from helvetic_lens import research_final_review
+    from helvetic_lens.product_iterative_research import Gap
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    service = SimpleNamespace(settings=settings, model_client=model)
+    quote = 'The registry reports ten measured units and links to the original observation.'
+    gap = {'question': 'Does the linked observation establish the measured total?',
+        'query': 'https://example.org/unread-original', 'purpose': 'Read the linked original observation.',
+        'priority': 1, 'kind': 'independent_verification', 'catalogues': []}
+    work = {'phase': 'brief', 'unmetered_research': True,
+        'mission_continuation': {'round': 1, 'signature': 'current', 'previous_signature': None,
+            'unfinished': False, 'questions': [], 'queries': [], 'frontiers': ['frontier'], 'next_slots': 8},
+        'input': {'original_question': 'What does the original observation establish?',
+            'research_mission': {'discovery_frontiers': [{'branch_id': 'frontier', 'query': 'Original observations'}]},
+            'sources': [{'id': 'a' * 36, 'kind': 'public_source', 'url': 'https://example.org/registry',
+                'excerpts': [{'passage': 'p1', 'text': quote}]}]}}
+    if route == 'duplicate':
+        work['mission_continuation']['queries'] = [gap['query']]
+    if route == 'same_evidence':
+        work['mission_continuation']['previous_signature'] = 'current'
+    if route in {'published_frontier', 'published_open_question'}:
+        work['mission_continuation'].update(published_question_ids=['published-question'], questions=[{
+            'id': 'published-question', 'status': 'completed' if route == 'published_frontier' else 'open',
+            'branch_id': 'frontier' if route == 'published_frontier' else None}])
+    initial = deepcopy(work)
+    calls = []
+    actionable = route in {'check', 'frontier', 'original_link'}
+
+    async def complete(system, text, **options):
+        calls.append('draft')
+        assert 'mission_continuation' not in json.loads(text)
+        return json.dumps({'answer': {'status': 'partial', 'remaining_gaps': [], 'points': [{
+            'statement': 'The unreviewed draft claims 999 units.' if actionable else quote,
+            'evidence': [{'citation_ref': 1, 'role': 'support'}]}]},
+            'next_action': 'continue' if route in {'check', 'frontier', 'no_action', 'duplicate', 'same_evidence',
+                'published_frontier', 'published_open_question'} else 'finish',
+            'next_checks': [{**gap, 'citation_ref': 1}] if route in {'check', 'duplicate', 'same_evidence'} else [],
+            'deepen_branches': ['frontier'] if route in {'frontier', 'published_frontier'} else []})
+
+    async def original(settings, routed_work, wire, checkpoint, seconds):
+        calls.append('reading_route')
+        if route == 'original_link':
+            checkpoint.action = 'continue'
+            checkpoint.next_checks = [Gap(**gap, **wire.references[1])]
+        return {'choice': 'read' if route == 'original_link' else 'none'}
+
+    def quantity(*args, **kwargs):
+        assert not actionable, 'A private reading decision must precede numeric polishing'
+        calls.append('quantity')
+        return []
+
+    class FinalReviewReached(Exception):
+        pass
+
+    async def finalize(service, routed_work, wire, parsed, seconds, **kwargs):
+        assert not actionable, 'Private intermediate drafts must not buy final factual review'
+        calls.append('final_review')
+        if route == 'finalizing_resume' and calls.count('final_review') == 1:
+            parsed.mission_checkpoint.action = 'continue'
+            parsed.mission_checkpoint.next_checks = [Gap(**gap, **wire.references[1])]
+            kwargs['on_progress']()
+            raise DomainError('Pause after final verification began.', 503, 'model_upstream_timeout')
+        assert not routed_work.get('private_continuation')
+        if route in {'no_action', 'duplicate', 'same_evidence'}:
+            assert parsed.mission_checkpoint.action == 'finish'
+        if route in {'published_frontier', 'published_open_question'}:
+            assert parsed.mission_checkpoint.action == 'continue'
+            assert routed_work['mission_continuation'] == initial['mission_continuation'], 'Do not migrate a published recommendation receipt'
+        raise FinalReviewReached
+
+    monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(review, 'original_check', original)
+    monkeypatch.setattr(gateway, 'answer_quantity_errors', quantity)
+    monkeypatch.setattr(research_final_review, 'finalize', finalize)
+    schema = mission_schema(Briefing)
+    if actionable:
+        parsed = schema.model_validate_json(await gateway.complete(service, work, '', schema, 60))
+        assert work['private_continuation'] and parsed.mission_checkpoint.action == 'continue'
+        assert parsed.mission_checkpoint.answer.points[0].statement == 'The unreviewed draft claims 999 units.'
+        assert 'quantity' not in calls and 'final_review' not in calls
+    elif route == 'finalizing_resume':
+        with pytest.raises(DomainError, match='Pause after final verification'):
+            await gateway.complete(service, work, '', schema, 60)
+        assert work[KEY]['stage'] == 'finalizing'
+        resumed = {**initial, KEY: deepcopy(work[KEY])}
+        with pytest.raises(FinalReviewReached):
+            await gateway.complete(service, resumed, '', schema, 60)
+        assert calls.count('draft') == 1 and calls.count('final_review') == 2
+        assert calls.count('reading_route') == 1
+        assert not resumed.get('private_continuation')
+    else:
+        with pytest.raises(FinalReviewReached):
+            await gateway.complete(service, work, '', schema, 60)
+        assert calls.index('reading_route') < calls.index('quantity') < calls.index('final_review')

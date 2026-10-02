@@ -231,6 +231,28 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
     raw = response_object(raw, schema)
     wire_raw = raw
+
+    async def reading_before_publication(parsed):
+        if not wire or not wire.answer or saved and saved["stage"] == "finalizing":
+            work["publication_review_started"] = True
+            return False
+        from .product_research_mission import route_continuation
+        from .research_answer_review import original_check
+
+        review = work["model_route"]["answer_review"]
+        if "original_reading" not in review:
+            review["original_reading"] = await original_check(service.settings, work, wire,
+                parsed.mission_checkpoint, seconds - (monotonic() - started))
+        routed = route_continuation(work, parsed.mission_checkpoint)
+        if resume:
+            # The host can bind a next reading to an original outside the
+            # initial shortlist. Resume its canonical full-source contract;
+            # numeric/factual checks are still required before publication.
+            resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, review)
+        if not routed:
+            work["publication_review_started"] = True
+        return routed
+
     # Final corrections must not be replaced by cached earlier request drafts.
     # Canonical validation and final evidence/coverage checks still run below.
     # Validate structured responses locally as well. Repair format with the same
@@ -249,6 +271,11 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             else:
                 parsed = schema.model_validate_json(raw)
                 if work["phase"] == "brief" and getattr(parsed, "mission_checkpoint", None):
+                    if await reading_before_publication(parsed):
+                        return parsed.model_dump_json()
+                    if wire and wire.answer:
+                        wire_raw = wire.encode_checkpoint(parsed)
+                        raw = wire.decode(wire_raw)
                     errors = answer_quantity_errors(parsed.mission_checkpoint.answer, wire.references if wire else None)
         except ValidationError as exc:
             errors = [{"path": list(e["loc"]), "reason": e["msg"]} for e in exc.errors(include_input=False, include_url=False)][:16]
@@ -306,6 +333,10 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 raw = decode_provider_response(wire, raw, response_schema) if wire else raw
                 if work["phase"] == "brief":
                     parsed = schema.model_validate_json(raw)
+                    if getattr(parsed, "mission_checkpoint", None) and await reading_before_publication(parsed):
+                        return parsed.model_dump_json()
+                    if wire and wire.answer:
+                        raw = wire.decode(wire.encode_checkpoint(parsed))
                     if wire and getattr(parsed, "mission_checkpoint", None) and answer_quantity_errors(parsed.mission_checkpoint.answer):
                         from .research_answer_review import complete_citation_context
                         context = await complete_citation_context(service.settings, work, wire,
@@ -320,7 +351,6 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                             parsed, wire, answer_quantity_errors(parsed.mission_checkpoint.answer))
                         raw = wire.decode(wire.encode_checkpoint(parsed))
         if wire and wire.answer:
-            from .research_answer_review import original_check
             from .research_final_review import finalize
             parsed = schema.model_validate_json(raw)
             def retain_final():
@@ -368,8 +398,6 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 code = "research_review_yield" if all(item["reason"] == "step_deadline" for item in pending) else "research_review_incomplete"
                 raise DomainError("Some final evidence checks are incomplete. Saved sources and completed checks are retained.",
                     503, code)
-            route = await original_check(service.settings, work, wire, parsed.mission_checkpoint, seconds - (monotonic() - started))
-            work["model_route"]["answer_review"]["original_reading"] = route
             raw = wire.decode(wire.encode_checkpoint(parsed))
             from .research_final_coverage import reconcile, synchronize_projections
             delivered = schema.model_validate_json(raw)
