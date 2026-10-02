@@ -1213,3 +1213,33 @@ measurement, not a claim about full research elapsed time or provider speed.
 The30 affected selector cases and exact API Ruff pass.
 The61 affected answer/final-review and backlog checks also pass; no client change
 or repeated UI publication is needed for this host-only optimization.
+
+
+MV2-020/023 native follow-through: retry74372 reached a new cited draft but then
+started a complete658-reference selection to repair one missing year witness.
+The exact dated heading was already in the draft's selected originals. Scope is
+to reuse the draft's canonical evidence plus host-validated precision witnesses
+and their complete contextual groups for this local correction when the actual
+writer request fits. It remains a model correction followed by unchanged factual
+and citation checks, not automatic approval. Broader semantic/missing-information
+repairs and oversized or unavailable local context retain existing retrieval.
+Dependencies: captured originals, exact source/locator identities, existing draft
+selection receipts and provider. Acceptance: one coherent correction request for
+the retained case, no corpus re-selection, exact context preserved, invalid or
+foreign hints rejected, honest fallback, and reusable cache isolation. Current
+native execution stays pinned; no application database or public dossier edits.
+
+The precision path is implemented with a separate exact-input checkpoint binding.
+The retained native draft replay preserves its21 selected references plus current
+canonical validation/context windows:55 windows fit20,549/24,000 characters. One
+scripted writer runs with zero selection calls; no external model, database write
+or content-acceptance claim is involved.150 affected tests, exact API Ruff and
+the backlog guard pass. Independent reviews found no release blocker. Wider
+semantic repairs retain their existing evidence selection and final validation.
+
+A separate offline envelope audit establishes that24,000 characters is an inherited
+application default, not a hosted-model context limit. The same frozen corpus
+needs22 initial batches at24k,9 at48k,4 at96k. Swisscom documents262,144 context
+tokens separately from its trial50k input tokens/minute rate. A controlled future
+run at the already supported48k-character setting is the next candidate; this
+audit does not change production settings or prove rate-limit avoidance.

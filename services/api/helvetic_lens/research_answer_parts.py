@@ -144,7 +144,7 @@ def requested_schema(references, max_points, correction=None):
 
 
 async def answer_request(service, wire, request, seconds, *, checkpoints=None, on_progress=None,
-        feedback=None, max_points=1, correction=None):
+        feedback=None, max_points=1, correction=None, preselected_references=None):
     """Select independently, then synthesize; validate a cached proposal again."""
     from .research_model_transport import shape_errors
 
@@ -171,11 +171,52 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
         focus += '\nReviewer notes are fallible hints only; select original passages, never the notes as evidence.'
     if feedback:
         focus += '\nReconsider the previous proposal using the fallible review feedback. Only the original sources establish facts. Correct event relationships and unsupported limitations, not just citation numbers.'
-    binding = fingerprint({'policy': POLICY, 'input': context, 'max_points': max_points,
-        'original_question': getattr(wire, 'input', {}).get('original_question', request)})
+    from .research_evidence_pack import request_characters, select_evidence
+
+    allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
+
+    def writer_input(references):
+        local = {i+1: ref for i, ref in enumerate(references.values())}
+        payload = {'sources': source_groups(wire, local), 'requested_part': request,
+            'original_question': context['original_question']}
+        if correction:
+            payload['correction_target'] = deepcopy(correction)
+            # Canonical routing IDs are not the local writer's citation IDs.
+            for error in payload['correction_target']['validation_errors']:
+                if 'candidate_windows' in error:
+                    error['candidate_windows'] = [{'text': window['text']} for window in error['candidate_windows']]
+        if feedback:
+            payload['review_feedback'] = feedback
+        return local, payload
+
+    def request_size(references):
+        local, payload = writer_input(references)
+        _, schema = requested_schema(local, max_points, correction)
+        return request_characters((POINT_REPAIR if correction else WRITE) + focus, payload, schema)
+
+    def fits(references):
+        return request_size(references) <= allowance
+
+    prepared = None
+    if correction and isinstance(preselected_references, dict) and preselected_references and all(
+            type(key) is int and key in wire.references and value == wire.references[key]
+            for key, value in preselected_references.items()):
+        candidate = {key: value for key, value in wire.references.items() if key in preselected_references}
+        if fits(candidate):
+            prepared = candidate
+    binding_input = {'policy': POLICY, 'input': context, 'max_points': max_points,
+        'original_question': getattr(wire, 'input', {}).get('original_question', request)}
+    if prepared is not None:
+        # Add a local binding without invalidating the retained whole-answer draft
+        # or the independently completed corpus-selection checkpoints.
+        binding_input['evidence_scope'] = {'contract': 'known-precision-context/v1', 'references': prepared}
+    binding = fingerprint(binding_input)
     saved = checkpoints.setdefault(binding, {})
     receipt = {'contract': 'requested-answer-pack/v1', 'input_fingerprint': binding,
         'basis': 'Model-selected original evidence, not independent verification.'}
+    if prepared is not None:
+        receipt.update(evidence_scope='known-precision-context/v1',
+            basis='Retained originals with exact validation context; not independent verification.')
 
     def retain():
         if on_progress:
@@ -183,22 +224,12 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
 
     if not wire.references:
         return [], '', {**receipt, 'status': 'no_evidence'}
+    if 'selected' not in saved and prepared is not None:
+        saved.update(selected=list(prepared), packed=True)
+        retain()
     if 'selected' not in saved:
         if deadline - monotonic() < 8:
             return [], '', {**receipt, 'status': 'unavailable'}
-        from .research_evidence_pack import request_characters, select_evidence
-
-        allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
-
-        def request_size(references):
-            local = {i+1: ref for i, ref in enumerate(references.values())}
-            candidate = {**context, 'sources': source_groups(wire, local)}
-            _, schema = requested_schema(local, max_points, correction)
-            return request_characters((POINT_REPAIR if correction else WRITE) + focus,
-                candidate, schema)
-
-        def fits(references):
-            return request_size(references) <= allowance
 
         selection_schema = {'type': 'object', 'properties': {'citation_refs': {'type': 'object',
             'properties': {key: {'type': 'array', 'items': {'type': 'integer', 'enum': refs},
@@ -238,18 +269,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
     # Adjacent windows retain qualifications without changing their exact text.
     originals = ({key: wire.references[key] for key in selected} if saved.get('packed')
         else contextual_references(wire, selected))
-    local = {i+1: ref for i, ref in enumerate(originals.values())}
-    payload = {'sources': source_groups(wire, local), 'requested_part': request,
-        'original_question': context['original_question']}
-    if correction:
-        payload['correction_target'] = deepcopy(correction)
-        # Selection and the local writer use different reference namespaces.
-        # Error context stays literal evidence text, never an obsolete ref ID.
-        for error in payload['correction_target']['validation_errors']:
-            if 'candidate_windows' in error:
-                error['candidate_windows'] = [{'text': window['text']} for window in error['candidate_windows']]
-    if feedback:
-        payload['review_feedback'] = feedback
+    local, payload = writer_input(originals)
     point_schema, schema = requested_schema(local, max_points, correction)
     if 'draft' not in saved:
         if deadline - monotonic() < 8:

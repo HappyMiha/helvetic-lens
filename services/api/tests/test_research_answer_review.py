@@ -201,3 +201,107 @@ async def test_two_rejected_assertions_in_one_question_cannot_share_a_cached_cor
     result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60, checkpoints={})
     assert len(result) == 2 and seen == [wrong[0], wrong[0], wrong[1], wrong[1]]
     assert [point.statement for point in answer.points] == [ref['quote'] for ref in refs.values()]
+
+
+def precision_fixture():
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    refs = {77: {'source_id': 'a', 'locator': 'heading', 'quote': 'Registry update, 2024.'},
+        90: {'source_id': 'a', 'locator': 'body', 'quote': 'The eastern station reopened.'},
+        95: {'source_id': 'a', 'locator': 'qualification', 'quote': 'Its western branch remains closed.'},
+        100: {'source_id': 'b', 'locator': 'other', 'quote': 'Another register was published in 2024.'}}
+    wire = SimpleNamespace(references=refs, input={'original_question': 'What reopened, and when?',
+        'sources': [{'id': 'a', 'title': 'Original registry'}, {'id': 'b', 'title': 'Other register'}]})
+    answer = AssessmentOutcome(status='partial', limitations=['The next inspection is unknown.'], points=[
+        {'statement': 'The eastern station reopened in 2024.', 'evidence': [{**refs[90], 'role': 'support'}]}])
+    return wire, answer
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('supported', [True, False])
+async def test_known_precision_reuses_exact_originals_without_selector_or_heading_approval(supported):
+    import json
+    from copy import deepcopy
+
+    wire, answer = precision_fixture()
+    for key in range(200, 260):
+        wire.references[key] = {'source_id': str(key), 'locator': 'body', 'quote': 'Unrelated original. ' * 80}
+    before, calls = deepcopy(answer), []
+    selected = {90: wire.references[90]}
+
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            calls.append(payload)
+            assert 'citation_refs' not in options['response_schema']['properties']
+            passages = [item for source in payload['sources'] for item in source['passages']]
+            assert {item['text'] for item in passages} == {wire.references[key]['quote'] for key in (77, 90, 95, 100)}
+            assert 'Its western branch remains closed.' in [item['text'] for item in passages]
+            by_text = {item['text']: item['citation_ref'] for item in passages}
+            evidence = [{'citation_ref': by_text[wire.references[key]['quote']], 'role': role}
+                for key, role in ((90, 'support'), (77, 'context'))]
+            return json.dumps({'points': [{'statement': before.points[0].statement, 'evidence': evidence}] if supported else [],
+                'remaining_gap': ''})
+
+    result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60,
+        selected_references=selected, checkpoints={})
+    assert len(calls) == 1 and answer.limitations == before.limitations
+    if supported:
+        assert result[0]['evidence_scope'] == 'known-precision-context/v1'
+        assert [(ref.source_id, ref.locator, ref.quote) for ref in answer.points[0].evidence] == [
+            tuple(wire.references[key][field] for field in ('source_id', 'locator', 'quote')) for key in (90, 77)]
+    else:
+        assert not result and answer == before  # A heading never certifies the rejected claim.
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('case', ['no_selection', 'stale_selection', 'stale_citation', 'other_source_only', 'semantic_issue', 'oversized'])
+async def test_precision_scope_falls_back_to_full_current_corpus(monkeypatch, case):
+    import json
+    from copy import deepcopy
+
+    from helvetic_lens import research_evidence_pack
+    from helvetic_lens.research_gateway import answer_quantity_errors
+
+    wire, answer = precision_fixture()
+    selected = {90: deepcopy(wire.references[90])}
+    issues, seen = None, []
+    if case == 'no_selection':
+        selected = None
+    elif case == 'stale_selection':
+        selected[90]['quote'] = 'An obsolete capture.'
+    elif case == 'stale_citation':
+        answer.points[0].evidence[0].quote = 'An obsolete body quotation.'
+    elif case == 'other_source_only':
+        wire.references[77]['quote'] = 'Registry update with no date.'
+    elif case == 'semantic_issue':
+        issues = answer_quantity_errors(answer, wire.references)
+        issues[0]['reason'] = 'A fallible semantic objection, not a host precision defect.'
+    else:
+        wire.references[200] = {'source_id': 'c', 'locator': 'body', 'quote': 'Retained complete background. ' * 2000}
+        selected[200] = deepcopy(wire.references[200])
+
+    async def select(service, candidate, *args, **kwargs):
+        seen.append('full_corpus')
+        assert candidate is wire and set(candidate.references) == set(wire.references)
+        return {90: wire.references[90]}
+    monkeypatch.setattr(research_evidence_pack, 'select_evidence', select)
+
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            if 'citation_refs' in options['response_schema']['properties']:
+                seen.append('full_corpus')
+                supplied = {p['citation_ref'] for s in payload['sources'] for p in s['passages']}
+                assert supplied == set(wire.references)
+                return json.dumps({'citation_refs': {s['selection_key']: [90] if 90 in [p['citation_ref'] for p in s['passages']] else []
+                    for s in payload['sources']}})
+            seen.append('write')
+            # Remove the unestablished precision; don't borrow another source's date.
+            passage = next(p for s in payload['sources'] for p in s['passages'] if p['text'] == wire.references[90]['quote'])
+            return json.dumps({'points': [{'statement': 'The eastern station reopened.',
+                'evidence': [{'citation_ref': passage['citation_ref'], 'role': 'support'}]}], 'remaining_gap': ''})
+
+    result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60,
+        selected_references=selected, issues=issues)
+    assert seen == ['full_corpus', 'write'] and result
+    assert 'evidence_scope' not in result[0]

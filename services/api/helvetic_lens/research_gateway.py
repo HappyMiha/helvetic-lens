@@ -148,6 +148,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         work["model_route"]["evidence_transport"] = wire.receipt
     content = json.dumps(provider_input, ensure_ascii=False)
     resume = None
+    selected = None
     if wire and wire.answer and service.settings.apertus_provider != "docker":
         from . import research_evidence_pack as evidence_pack
         from .research_synthesis_resume import DraftCheckpoint
@@ -238,7 +239,8 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                     resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
             retain_repairs([])
             repairs = await repair_points(service, wire, parsed.mission_checkpoint.answer, seconds - (monotonic() - started),
-                on_success=retain_repairs, checkpoints=resume.parts if resume else None) if not wire.request_keys else []
+                on_success=retain_repairs, checkpoints=resume.parts if resume else None,
+                selected_references=selected) if not wire.request_keys else []
             work["model_route"]["answer_review"]["point_repairs"] = repairs
             wire_raw = wire.encode_checkpoint(parsed)
             if resume:

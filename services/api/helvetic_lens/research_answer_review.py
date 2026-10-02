@@ -13,7 +13,36 @@ from .product_operations import fingerprint
 from .research_model_transport import explicit_requests
 
 
-async def repair_points(service, wire, answer, seconds, *, on_success=None, issues=None, checkpoints=None):
+def precision_context(wire, answer, point, selected_references):
+    """Route a known numeric defect to retained originals, never approve its claim."""
+    from .research_answer_parts import contextual_references
+    from .research_gateway import answer_quantity_errors
+
+    if not isinstance(selected_references, dict) or not selected_references or any(
+            type(key) is not int or key not in wire.references or value != wire.references[key]
+            for key, value in selected_references.items()):
+        return None
+    def identity(value):
+        return value['source_id'], value['locator'], value['quote']
+    cited = {identity(ref.model_dump()) for ref in point.evidence}
+    current = {key for key, value in wire.references.items() if identity(value) in cited}
+    if not cited or {identity(wire.references[key]) for key in current} != cited:
+        return None
+    owners = {ref.source_id for ref in point.evidence}
+    trial = answer.model_copy(update={'points': [point]})
+    local = {key: value for key, value in wire.references.items() if value['source_id'] in owners}
+    local_errors = answer_quantity_errors(trial, local)
+    local_witnesses = {item['citation_ref'] for error in local_errors for item in error.get('candidate_windows', [])}
+    if not local_witnesses:
+        return None
+    # Recompute from current immutable references, not caller-supplied diagnostics.
+    errors = answer_quantity_errors(trial, wire.references)
+    witnesses = {item['citation_ref'] for error in errors for item in error.get('candidate_windows', [])}
+    return contextual_references(wire, set(selected_references) | current | witnesses | local_witnesses)
+
+
+async def repair_points(service, wire, answer, seconds, *, on_success=None, issues=None, checkpoints=None,
+        selected_references=None):
     """Correct only a failed point using independently selected original evidence."""
     from .research_answer_parts import answer_request
     from .research_gateway import answer_quantity_errors
@@ -30,7 +59,8 @@ async def repair_points(service, wire, answer, seconds, *, on_success=None, issu
         # user request to prove. The target and defect also bind its checkpoint.
         fixed, _gap, receipt = await answer_request(service, wire, request, deadline-monotonic(), checkpoints=checkpoints,
             on_progress=(lambda: on_success(receipts)) if on_success else None,
-            correction={'previous_statement': point.statement, 'validation_errors': [error]})
+            correction={'previous_statement': point.statement, 'validation_errors': [error]},
+            preselected_references=precision_context(wire, answer, point, selected_references) if issues is None else None)
         if not fixed:
             continue
         fixed = fixed[0]  # Numeric repair requests exactly one point.

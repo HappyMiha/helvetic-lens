@@ -55,6 +55,44 @@ async def test_point_correction_cannot_expand_into_more_answers_or_a_gap(extra):
 
 
 @pytest.mark.asyncio
+async def test_precision_scope_has_separate_exact_binding_and_resumes_without_reselection():
+    from copy import deepcopy
+
+    wire, _, _ = fixture()
+    checkpoints, calls = {}, []
+    correction = {'previous_statement': 'Published in 2009.', 'validation_errors': []}
+
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                calls.append('select')
+                return selection_json([1], options)
+            calls.append('write')
+            return json.dumps({'points': [{'statement': 'Published in 2001.',
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}], 'remaining_gap': ''})
+
+    service = SimpleNamespace(model_client=Model())
+    _, _, broad = await answer_request(service, wire, 'When was this published?', 60,
+        correction=correction, checkpoints=checkpoints)
+    selected = deepcopy(wire.references)
+    _, _, local = await answer_request(service, wire, 'When was this published?', 60,
+        correction=correction, checkpoints=checkpoints, preselected_references=selected)
+    assert calls == ['select', 'write', 'write']
+    assert broad['input_fingerprint'] != local['input_fingerprint']
+    points, _, cached = await answer_request(service, wire, 'When was this published?', 0,
+        correction=correction, checkpoints=json.loads(json.dumps(checkpoints)), preselected_references=selected)
+    assert points and cached['input_fingerprint'] == local['input_fingerprint']
+    assert calls == ['select', 'write', 'write']
+    # A changed exact qualification invalidates the local pack, even with the
+    # same target and selected integer IDs. No stale proposal can be reused.
+    wire.references[2]['quote'] += ' The dates concern separate editions.'
+    _, _, changed = await answer_request(service, wire, 'When was this published?', 60,
+        correction=correction, checkpoints=checkpoints, preselected_references=deepcopy(wire.references))
+    assert changed['input_fingerprint'] != local['input_fingerprint']
+    assert calls == ['select', 'write', 'write', 'write']
+
+
+@pytest.mark.asyncio
 async def test_point_repair_with_eight_requests_preserves_an_existing_gap_and_round_trips():
     wire, parsed, schema = fixture(8)
     answer = parsed.mission_checkpoint.answer
