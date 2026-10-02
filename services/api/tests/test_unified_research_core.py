@@ -60,7 +60,8 @@ def test_source_discovery_survives_both_decision_engines_down(monkeypatch):
 
 
 @pytest.mark.parametrize("product", ["legal", "pharma"])
-def test_complete_research_reuses_a_capture_and_retains_routes_and_coverage(signed, monkeypatch, product):
+@pytest.mark.parametrize("prior_analysis", [False, True])
+def test_complete_research_reuses_a_capture_and_retains_routes_and_coverage(signed, monkeypatch, product, prior_analysis):
     client, service, identity, model = signed
     trace = adapters(monkeypatch, service, model)
     base = model.complete
@@ -85,6 +86,7 @@ def test_complete_research_reuses_a_capture_and_retains_routes_and_coverage(sign
         source = InvestigationSource(**scope(previous), source_key="original-grant", kind="public_source",
             title="Original grant disclosure", url="https://example.org/grant", sha256=hashlib.sha256(GRANT.encode()).hexdigest(),
             snapshot={"status": "complete", "sha256": hashlib.sha256(GRANT.encode()).hexdigest(),
+                "analysis_completed": prior_analysis, "analysis_completed_at": "2026-09-01T10:00:00Z" if prior_analysis else None,
                 "excerpts": [{"text": GRANT, "passage": "p1"}]})
         session.add(source)
         session.commit()
@@ -98,6 +100,11 @@ def test_complete_research_reuses_a_capture_and_retains_routes_and_coverage(sign
     assert any(f["source_id"] == copied["id"] for f in result["exploration"]["briefing"]["findings"])
     manifest = result["coverage_manifest"]
     assert manifest["summary"]["reused_sources"] == 1 and manifest["exhaustive"] is False
+    retained = next(s for s in manifest["sources"] if s["id"] == copied["id"])
+    assert retained["analysis_status"] == ("retained_analysis" if prior_analysis else "not_started")
+    assert retained["analysed_at"] == ("2026-09-01T10:00:00Z" if prior_analysis else None)
+    assert retained["captured_at"] == copied["snapshot"]["retained_origin"]["captured_at"]
+    assert retained["fresh_source_check"] is False
     assert manifest["pack_id"] == ("LegalPack" if product == "legal" else "PharmaPack")
     assert manifest["executions"] and all(s["receipt"]["skill_version"] for s in manifest["executions"])
     gate = next(s["receipt"] for s in manifest["executions"] if s["phase"] == "gate")

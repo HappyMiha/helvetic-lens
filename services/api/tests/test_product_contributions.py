@@ -178,18 +178,62 @@ def test_model_retry_keeps_capture_and_original_and_does_not_repeat_completed_st
     root = route + "/investigations"
     failed = complete(client, service, root, entry["analysis"])
     assert failed["status"] == "failed" and not failed["claims"] and len(failed["sources"]) == 1
+    assert failed["retry"]["available"] is True
     source = failed["sources"][0]
     calls = model_output(monkeypatch, model)
     retried = post(client, root + "/" + failed["id"] + "/control", {"action": "retry", "expected_revision": failed["revision"]})
     assert retried.status_code == 200, retried.text
     result = complete(client, service, root, retried.json())
     assert result["status"] == "completed" and len(calls) == 2
+    assert result["retry"]["available"] is False
     assert result["sources"][0]["id"] == source["id"]
     assert result["sources"][0]["sha256"] == source["sha256"]
     assert result["sources"][0]["snapshot"]["excerpts"] == source["snapshot"]["excerpts"]
     assert result["original"] == failed["original"]
     assert [step["phase"] for step in result["branches"][0]["steps"]] == ["read", "extract", "extract", "document_review"]
     assert post(client, root + "/" + result["id"] + "/control", {"action": "retry", "expected_revision": result["revision"]}).status_code == 409
+
+
+def test_warning_only_document_does_not_restart_completed_analysis(signed, monkeypatch):
+    client, service, _, model = signed
+    doc, _ = create(client)
+    route = ROOT + "/" + doc["id"]
+    calls = model_output(monkeypatch, model)
+    entry = upload(client, route).json()
+    result = complete(client, service, route + "/investigations", entry["analysis"])
+    with service.db.session() as session:
+        run = session.get(Investigation, result["id"])
+        branch = session.scalar(select(InvestigationBranch).where(InvestigationBranch.investigation_id == run.id))
+        state = json.loads(json.dumps(branch.checkpoint))
+        state["document_reads"]["0"].update(read_complete=False, complete=False,
+            warnings=["One scanned page has no readable text."], unread_reason="One scanned page has no readable text.")
+        run.status, branch.status, branch.checkpoint = "failed", "failed", state
+        session.commit()
+    path = route + "/investigations/" + result["id"]
+    before = len(calls)
+    saved = client.get(path).json()
+    assert saved["retry"]["available"] is False
+    assert saved["claims"] == result["claims"] and saved["sources"] == result["sources"]
+    assert post(client, path + "/control", {"action": "retry", "expected_revision": saved["revision"]}).status_code == 409
+    assert len(calls) == before
+
+
+@pytest.mark.parametrize("body,name,media", [
+    (b"   \n", "empty.txt", "text/plain"),
+    (make_pdf([""]), "scan.pdf", "application/pdf"),
+])
+def test_successful_parser_without_text_is_not_an_actionable_retry(signed, monkeypatch, body, name, media):
+    client, service, _, model = signed
+    doc, _ = create(client)
+    route = ROOT + "/" + doc["id"]
+    calls = model_output(monkeypatch, model)
+    entry = upload(client, route, body, name, media).json()
+    result = complete(client, service, route + "/investigations", entry["analysis"])
+    assert result["status"] == "failed" and not result["sources"] and calls == []
+    assert result["retry"]["available"] is False
+    assert post(client, route + "/investigations/" + result["id"] + "/control",
+        {"action": "retry", "expected_revision": result["revision"]}).status_code == 409
+    assert client.get(route + "/files/" + entry["id"]).content == body
 
 
 def test_queued_contributions_serialize_without_losing_original_or_consuming_attempts(signed, monkeypatch):

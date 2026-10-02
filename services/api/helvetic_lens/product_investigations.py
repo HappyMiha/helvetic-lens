@@ -313,7 +313,7 @@ def payload(session, run, *, include_retained=False):
 
 def _readable_payload(session, run, trigger, *, include_retained):
     from .product_claim_evolution import projection
-    from .product_contributions import original
+    from .product_contributions import original, retryable_branches
     from .product_monitoring_outcomes import project as outcome
     from .product_monitoring_research import trigger_payload
     from .product_observed_queries import public_steps
@@ -340,6 +340,7 @@ def _readable_payload(session, run, trigger, *, include_retained):
         "original": original(session, run.trigger_entry_id),
         "research": research_projection(run) if adaptive_valid else None,
         "exploration": exploration,
+        "retry": {"available": bool(retryable_branches(session, run)) if adaptive_valid else False},
         "coverage_manifest": coverage_manifest(session, run) if adaptive_valid else None,
         "outcome": outcome(session, run) if adaptive_valid and not run.publication_id and not exploration else None,
         "plans": [{"id": p.id, "version": p.version, "reason": p.reason, "document": p.document,

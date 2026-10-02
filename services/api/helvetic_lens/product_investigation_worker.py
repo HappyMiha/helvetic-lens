@@ -245,7 +245,7 @@ def finish_or_yield(session, run, job):
             if unfinished_documents:
                 run.status = "failed"
                 unread = sum(not doc.get("read_complete") for doc in unfinished_documents)
-                run.stop_reason = f"Research is incomplete: {unread} document(s) still need reading; {len(unfinished_documents) - unread} were read but still need validated analysis. Saved progress is retained; retry the unavailable steps to continue."
+                run.stop_reason = f"Research is incomplete: {unread} document(s) still need reading; {len(unfinished_documents) - unread} were read but still need validated analysis. Sources and completed work are retained; the remaining limitations are shown with each document."
             from .product_monitoring_outcomes import project as monitoring_outcome
             from .product_research_materiality import project as materiality
 

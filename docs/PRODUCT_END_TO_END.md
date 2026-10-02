@@ -440,3 +440,39 @@ asking for missing refs still returned an empty omission list. Positive witness
 selection is now explicit and type-constrained. Its live replay encountered one
 malformed response, so the result stayed provisional. This is not a full content
 PASS, nor a new full native mission. See PUBLIC_RESEARCH_ACCEPTANCE.md.
+
+## Understand partial results and available continuation
+
+Scope MV2-020/023: keep the canonical cited answer prominent even when execution
+is incomplete; distinguish processing PDF pages from complete reading; show
+retained source analysis and original capture dates without claiming a fresh check.
+The UI may offer retry only when the native control route has eligible failed
+work. Warning-only documents with no failed operation must not restart successful
+analysis or promise that retry will finish unread pages. Existing source-backed
+follow-up and paused-run resume remain separate actions. Dependencies are existing
+mission/reading receipts, pinned retained sources and control authorization. No new
+providers, source fetches, schema migration or dossier allowance changes.
+Acceptance: both clients render a cited partial answer, OCR gaps and retained
+provenance correctly; API projection and POST agree on eligible retry; an actual
+failed read/analysis remains retryable and successful sibling work stays untouched.
+Current evidence/source revocation, permission and stale-revision guards stay active.
+
+Both client implementations passed 467 tests each, lint, typecheck and production
+build. Legal a7f51badbcb8b34bb22d29ad7e14c41094b76e8b and Pharma
+551a70cd836f17716ac426d1e31d2b4a4986aea8 were pushed and published as Sites87.
+The existing custom-domain homepages and public dossier lists returned 200;
+anonymous private-dossier gateway requests returned 401. Independent static review
+caught and resolved a `not_found` context-only label and retrying a fully processed
+textless original. Actual read/review failures remain separate from parser warnings.
+No new live model evaluation was run for this presentation/retry change; the wider
+content acceptance described above remains open. No production fixture or email
+was created. Background publication did not open an interactive browser tab.
+
+Core validation: 64 affected native/integration and backlog checks passed, plus
+exact API lint. All four final retry/backlog checks passed after the shared selector
+refactor. The retained real native `/tmp/hl-public-second-final-reviewed/result.json`
+was rendered offline by the actual mission reader: one partial point, all six
+answer citations and its named gap remain visible. This confirms presentation of
+the retained result, not a fresh live research run or semantic acceptance. Client
+publication succeeded; Core activation is tracked separately in the parent
+checkpoint and production evidence.

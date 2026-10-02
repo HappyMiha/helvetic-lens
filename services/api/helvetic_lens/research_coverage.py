@@ -54,13 +54,15 @@ def project(session, run):
         reused = bool(source.snapshot.get("retained_origin"))
         unchanged = bool(source.snapshot.get("unchanged_from") or source.snapshot.get("duplicate_of") or source.snapshot.get("capture_state") == "unchanged")
         state = ("reused" if reused else "unchanged" if unchanged else "captured")
+        retained_analysis = reused and source.snapshot.get("analysis_completed") is True
         analysis = ({"completed": "analysed", "unavailable": "failed", "interrupted": "interrupted", "running": "analysing"}
-            .get(latest["status"], "unknown") if latest else "not_needed" if unchanged else "not_started")
+            .get(latest["status"], "unknown") if latest else "retained_analysis" if retained_analysis else "not_needed" if unchanged else "not_started")
         captured.append({**source_ref(source), "read_status": state, "analysis_status": analysis,
             "extraction_methods": source.snapshot.get("extraction_methods", []),
             "extraction_warnings": source.snapshot.get("warnings", []),
             "text_truncated": bool(source.snapshot.get("text_truncated")),
-            "fresh_source_check": not reused and source.kind == "public_source", "analysed_at": latest.get("finished_at") if latest else None})
+            "fresh_source_check": not reused and source.kind == "public_source",
+            "analysed_at": latest.get("finished_at") if latest else source.snapshot.get("analysis_completed_at") if retained_analysis else None})
         if source.url in candidates:
             candidates[source.url].update(source_id=source.id, read_status=state, analysis_status=analysis)
     unresolved = [{"question": q["question"], "status": q["status"], "reason": q.get("waiting_reason")}

@@ -107,10 +107,36 @@ async def read_file(folder, data):
     return {**result, "sha256": data["sha256"]}
 
 
+def _document_retry_candidates(state):
+    # A completed parser cannot manufacture missing text on a second attempt.
+    return {key: doc for key, doc in state.get("document_reads", {}).items()
+        if doc.get("error") != "No readable text was found in this document."}
+
+
+def retryable_branches(session, run):
+    """Saved warnings alone do not identify a failed operation to repeat."""
+    if run.status not in {"failed", "completed"} or run.research_state.get("exploration", {}).get("continued_by"):
+        return []
+    result = []
+    for branch in rows(session, InvestigationBranch, run):
+        if branch.status != "failed":
+            continue
+        state = branch.checkpoint
+        documents = state.get("document_reads", {})
+        latest = state.get("steps", [{}])[-1] if state.get("steps") else {}
+        failed_work = (state.get("failed_extract_indices") or any(
+            doc.get("error") or doc.get("review_failed") or (doc.get("read_complete") and not doc.get("analysis_complete"))
+            for doc in _document_retry_candidates(state).values()) or
+            (latest.get("status") in {"unavailable", "interrupted"} and not latest.get("recovered_by")))
+        if not documents or failed_work:
+            result.append(branch)
+    return result
+
+
 def retry(session, run):
     if run.status not in {"failed", "completed"}:
         fail("Retry is available for finished investigations with unavailable steps.", 409)
-    failed = [branch for branch in rows(session, InvestigationBranch, run) if branch.status == "failed"]
+    failed = retryable_branches(session, run)
     if not failed:
         fail("There are no unavailable investigation steps to retry.", 409)
     for branch in failed:
@@ -122,7 +148,7 @@ def retry(session, run):
         if iterative:
             state.pop("question_finished", None)
             state.pop("reflection_done", None)
-        documents = state.get("document_reads", {})
+        documents = _document_retry_candidates(state)
         unread = next(((key, doc) for key, doc in documents.items() if doc.get("error") and not doc.get("read_complete")), None)
         for doc in documents.values():
             doc.pop("review_failed", None)
