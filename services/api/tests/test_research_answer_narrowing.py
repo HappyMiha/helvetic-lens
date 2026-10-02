@@ -88,7 +88,7 @@ async def test_exact_candidate_is_rechecked_with_all_old_context(monkeypatch, ca
         assert persisted[-1]['answer']['points'][0]['statement'] == good
         cache = json.loads(json.dumps(cache))
     result = await finalize(*args, checkpoints=cache, on_progress=retain, defer_pending=True)
-    if case in {'condition', 'counterevidence', 'too_many_witnesses', 'too_short', 'missing_numeric'}:
+    if case in {'condition', 'counterevidence', 'too_many_witnesses', 'too_short', 'missing_numeric', 'rewrite_after_resume'}:
         assert answer.points == [] and answer.status == 'not_found'
     else:
         assert answer.points[0].statement == (revised if case == 'rewrite_after_resume' else good)
@@ -96,7 +96,7 @@ async def test_exact_candidate_is_rechecked_with_all_old_context(monkeypatch, ca
     if case == 'interrupted':
         assert calls == [bad, bad, good, good], 'Resume the same private candidate, never recursively narrow it'
     if case == 'rewrite_after_resume':
-        assert calls == [bad, bad, good, good, revised]
+        assert calls == [bad, bad, good, good], 'Completed correction rounds must not restart after an interrupted final check'
     if case == 'coverage':
         assert result['hints'] == [{'user_request': 'When was it transferred?'}]
     assert 'candidates' not in result and 'candidates' not in result['factual_review']

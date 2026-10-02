@@ -297,43 +297,79 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             return result
         return deepcopy(cache[key])
 
-    checked = await check()
-    original = answer.model_copy(deep=True)
-    factual = [hint for hint in checked['hints'] if hint.get('review_signal') not in {'review_unavailable', 'not_a_gap'} and hint.get('path', [])[:2] in (
-        ['answer', 'points'], ['answer', 'limitations'])]
-    repairs = []
-    # Capture original indices before any replacements. Deduplicate per request
-    # so a bad statement and its invented gap receive the same correction.
-    tasks = {}
-    for hint in factual:
-        kind, index = hint['path'][1:3]
-        if kind == 'points':
-            key = wire.point_requests[index] if index < len(wire.point_requests) else None
-            focus = wire.request_keys.get(key) or answer.points[index].statement
-        else:
-            gap = answer.limitations[index]
-            key = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'].strip() == gap), None)
-            focus = wire.request_keys.get(key) or work['input']['original_question']
-        task = tasks.setdefault(key or (kind, index), {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
-        task[kind if kind == 'points' else 'gaps'].append(index)
-        # Global citation numbers must not be mistaken for the correction pack's
-        # local numbers. Feedback is a hint; original evidence stays in sources.
-        task['issues'].append({'target': kind, 'signal': hint['review_signal'], 'instruction': hint['instruction'],
-            'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))]})
-    for task in tasks.values():
+    def point_identity(index):
+        owner = wire.point_requests[index] if index < len(wire.point_requests) else None
+        return fingerprint({'request_key': owner, 'point': answer.points[index].model_dump()})
+
+    def defect_identity(index):
+        point = answer.points[index]
+        owner = wire.point_requests[index] if index < len(wire.point_requests) else None
+        # Re-labelling the same quotation cannot erase a known factual defect.
+        return fingerprint({'request_key': owner, 'statement': point.statement,
+            'originals': sorted({(ref.source_id, ref.locator, ref.quote) for ref in point.evidence})})
+
+    def incomplete(pending):
+        from .config import DomainError
+        code = 'research_review_yield' if all(item['reason'] == 'step_deadline' for item in pending) else 'research_review_incomplete'
+        raise DomainError('Some final evidence checks are incomplete. Saved sources and completed checks are retained.', 503, code)
+
+    plan = checkpoints.get('final_correction_round')
+    if plan is None:
+        checked = await check()
+        pending = checked.get('factual_review', {}).get('pending_checks', [])
+        if defer_pending and pending:
+            # Never freeze a partial plan that omits as-yet unchecked assertions.
+            retain()
+            incomplete(pending)
+        factual = [hint for hint in checked['hints'] if hint.get('review_signal') not in {'review_unavailable', 'not_a_gap'} and hint.get('path', [])[:2] in (
+            ['answer', 'points'], ['answer', 'limitations'])]
+        tasks = {}
+        observations = []
+        for hint in factual:
+            kind, index = hint['path'][1:3]
+            if kind == 'points':
+                key = wire.point_requests[index] if index < len(wire.point_requests) else None
+                focus = wire.request_keys.get(key) or answer.points[index].statement
+                identity = point_identity(index)
+            else:
+                identity = answer.limitations[index]
+                key = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'].strip() == identity), None)
+                focus = wire.request_keys.get(key) or work['input']['original_question']
+            observations.append({'hint': deepcopy(hint), 'identity': defect_identity(index) if kind == 'points' else identity})
+            task = tasks.setdefault(key or (kind, index), {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
+            task[kind if kind == 'points' else 'gaps'].append(identity)
+            # Citation numbers belong to this review, not the correction pack.
+            task['issues'].append({'target': kind, 'signal': hint['review_signal'], 'instruction': hint['instruction'],
+                'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))]})
+        for task in tasks.values():
+            task['points'] = list(dict.fromkeys(task['points'])) or [point_identity(i)
+                for i, owner in enumerate(wire.point_requests) if task['key'] is not None and owner == task['key']]
+        # Ordered JSON data survives canonical slot regrouping; indices do not.
+        plan = {'tasks': list(tasks.values()), 'observations': observations, 'completed': 0, 'receipts': []}
+        checkpoints['final_correction_round'] = plan
+        retain()
+    while plan['completed'] < len(plan['tasks']):
+        task = plan['tasks'][plan['completed']]
         key = task['key']
-        indices = task['points'] or [i for i, owner in enumerate(wire.point_requests) if key is not None and owner == key]
-        old_gaps = [original.limitations[i] for i in task['gaps']]
+        identities = [point_identity(i) for i in range(len(answer.points))]
+        if any(identity not in identities for identity in task['points']):
+            raise ValueError('The saved correction target no longer matches the current answer')
+        indices = [identities.index(identity) for identity in task['points']]
+        old_gaps = task['gaps']
         feedback = {'previous_statements': [answer.points[i].statement for i in indices],
             'previous_gaps': old_gaps, 'issues': task['issues']}
         fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
             checkpoints=checkpoints, on_progress=retain, feedback=feedback)
+        if receipt.get('status') == 'unavailable' and defer_pending:
+            retain()
+            incomplete([{'reason': 'step_deadline'}])
         if fixed is not None:
             inherited = {}
             for index in indices:
-                prior = repaired_concerns.get(fingerprint({'request_key': key, 'point': answer.points[index].model_dump()}), {})
+                prior = repaired_concerns.get(point_identity(index), {})
                 inherited = carry_concerns(inherited, prior.get('previous_statements', []),
                     prior.get('issues', []), prior.get('context_refs', []))
+            represented = True
             if indices:
                 answer.points[indices[0]] = fixed
             elif (key is not None or not wire.request_keys) and len(answer.points) < 8:
@@ -341,32 +377,32 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                 if key is not None:
                     wire.point_requests.append(key)
             else:
-                continue  # Never clear a gap on a correction we cannot represent.
-            point_issues = [issue for issue in task['issues'] if issue['target'] == 'points']
-            if point_issues or inherited.get('issues') or inherited.get('context_refs'):
-                binding = fingerprint({'request_key': key, 'point': fixed.model_dump()})
-                repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
-            # A reasoning proposal, not a decision label, corrects the limitation.
-            answer.limitations = [text for text in answer.limitations if text not in old_gaps]
-            update_gap(wire, answer, key, gap)
-        repairs.append({**receipt, 'request_key': key})
+                represented = False  # Never clear a gap for an unrepresented correction.
+                receipt = {**receipt, 'status': 'unrepresented'}
+            if represented:
+                point_issues = [issue for issue in task['issues'] if issue['target'] == 'points']
+                if point_issues or inherited.get('issues') or inherited.get('context_refs'):
+                    binding = fingerprint({'request_key': key, 'point': fixed.model_dump()})
+                    repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
+                answer.limitations = [text for text in answer.limitations if text not in old_gaps]
+                update_gap(wire, answer, key, gap)
+        # The answer, inherited concerns and terminal outcome are one checkpoint.
+        # Exceptions/deadline deferrals above leave this exact task pending.
+        plan['receipts'].append({**receipt, 'request_key': key})
+        plan['completed'] += 1
         retain()
-    if tasks:
-        checked = await check()  # Every changed statement and gap is checked again.
-        # A failed correction must not erase an already observed problem merely
-        # because a later reviewer is unavailable or changes its mind.
-        for hint in factual:
-            kind, index = hint['path'][1:3]
-            unchanged = ((answer.points[index].statement == original.points[index].statement
-                and {ref.quote for ref in answer.points[index].evidence} == {ref.quote for ref in original.points[index].evidence}) if kind == 'points'
-                else original.limitations[index] in answer.limitations)
-            if unchanged:
-                retained = deepcopy(hint)
-                if kind == 'limitations':
-                    retained['path'][2] = answer.limitations.index(original.limitations[index])
-                if not any(value.get('path') == retained['path'] and value.get('review_signal') != 'review_unavailable'
-                        for value in checked['hints']):
-                    checked['hints'].append(retained)
+    checked = await check()  # Every changed assertion and gap is checked again.
+    # Preserve known defects by identity after replacement/reordering/removal.
+    identities = [defect_identity(i) for i in range(len(answer.points))]
+    for observation in plan['observations']:
+        hint, identity = observation['hint'], observation['identity']
+        values = identities if hint['path'][1] == 'points' else answer.limitations
+        if identity in values:
+            retained = deepcopy(hint)
+            retained['path'][2] = values.index(identity)
+            if not any(value.get('path') == retained['path'] and value.get('review_signal') != 'review_unavailable'
+                    for value in checked['hints']):
+                checked['hints'].append(retained)
 
     # One private reduction per request in this exact-input checkpoint. Its
     # sentences are proposals until the complete new assertion passes review.
@@ -444,6 +480,6 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     # corrected or removed and must never be interpreted as request keys.
     checked.pop('candidates', None)
     result = {**checked, 'hints': [hint for hint in checked['hints'] if 'user_request' in hint],
-        'repairs': repairs, 'rejected_points': [hint['path'][2] for hint in rejected],
+        'repairs': deepcopy(plan['receipts']), 'rejected_points': [hint['path'][2] for hint in rejected],
         'unresolved_limitations': len(set(bad_gaps) - non_gaps), 'removed_nongaps': len(non_gaps)}
     return result

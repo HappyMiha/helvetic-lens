@@ -717,3 +717,35 @@ no remaining stage bypass. The existing public pilot retains its preloaded b7
 runtime and is not evidence for this new fix.
 Sixty-nine affected final-review/resume/backlog checks and exact API lint passed;
 the earlier transport and narrowing regression groups also remain green.
+
+
+### Persist the final correction round across worker retries
+
+Scope MV2-020: Core 528361e activated at 07:06:15 UTC; ordinary continuation
+retains the corrected final draft, but a later provider interruption can rebuild
+the correction list and repeatedly revisit earlier requests. Persist one ordered
+round after initial factual reviews complete, with stable request/point identities,
+literal gaps and a completed-task cursor. Terminal unsuccessful corrections also
+advance; provider exceptions and deadline deferrals do not. Save the changed
+answer, concerns and cursor together, then require fresh final evidence review.
+Dependencies/source readiness are unchanged: exact-input private checkpoints and
+the same retained public originals. Acceptance covers interruption on a later
+task, point reordering through canonical serialization, unsuccessful attempts
+occurring once, and incomplete initial review preventing a partial plan. No new
+research quota, source truncation or production fixture is introduced.
+
+Implemented the durable round with stable task identities and separate known-defect
+identities: changing citation roles alone cannot clear an unchanged factual
+objection. All 103 affected review, request-pack, resume and backlog checks passed;
+exact API lint passed. The actual gateway regression interrupts the second writer
+after selection, resumes only that writer, and preserves its corrected or terminal
+unsuccessful predecessor plus the untouched sibling. Deadline/reordering and
+incomplete-initial-review regressions passed. Completed rounds cannot restart
+after a narrowed candidate fails its final review.
+
+The preceding 528361e native attempt ended after 1,532.3 seconds, 15 worker steps,
+12 retained sources and 56 new model calls. It did not deliver an accepted answer.
+Its trace repeated correction writers 6/10/6 times for the three requests; native
+artifacts and the isolated database were preserved as ninth-failed-*. No further
+provider attempt was started while that run was active. Content acceptance stays
+open until the corrected runtime completes and its output is independently read.
