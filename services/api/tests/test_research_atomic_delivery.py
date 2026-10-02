@@ -206,3 +206,37 @@ async def test_positive_witness_roles_remove_false_conflict_without_changing_cla
     assert answer.status == 'possible_answer' and answer.points[0].statement == original
     assert answer.points[0].evidence[0].role == 'support'
     assert schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer == answer
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('reason', ['unresolved_concern', 'nongap', 'step_deadline', 'invalid_response'])
+async def test_inconclusive_completed_correction_does_not_block_valid_siblings(monkeypatch, reason):
+    wire, parsed, schema = fixture(2)
+    answer = parsed.mission_checkpoint.answer
+    sibling = answer.points[0].model_copy(deep=True)
+    if reason == 'nongap':
+        parts.update_gap(wire, answer, 'r2', 'The registry exists.')
+    pending_reason = 'unresolved_concern' if reason == 'nongap' else reason
+    async def audit(*args, **kwargs):
+        return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
+    async def reasoned(*args, **kwargs):
+        return {'status': 'partial', 'points_checked': 1,
+            'pending_checks': [{'item': 'P1', 'reason': pending_reason}],
+            'hints': [{'path': ['answer', 'points', 1], 'review_signal': 'review_unavailable',
+                'instruction': 'The previous objection has not been resolved.'}] +
+                ([{'path': ['answer', 'limitations', 0], 'review_signal': 'not_a_gap', 'instruction': 'This is known.'}]
+                    if reason == 'nongap' else [])}
+    monkeypatch.setattr(review, 'audit', audit)
+    monkeypatch.setattr(final, 'reasoned_review', reasoned)
+    state = {'final_correction_round': {'tasks': [], 'completed': 0, 'receipts': [], 'observations': []}}
+    result = await final.finalize(SimpleNamespace(settings=Settings(_env_file=None)), {'input': wire.input},
+        wire, parsed, 60, checkpoints=state, on_progress=lambda: None, defer_pending=True)
+    if pending_reason == 'unresolved_concern':
+        assert answer.points == [sibling] and wire.point_requests == ['r1']
+        assert answer.status == 'partial' and len(answer.limitations) == 1
+        assert result['factual_review']['pending_checks'] == []
+        assert result['factual_review']['withheld_checks'] == [{'item': 'P1', 'reason': pending_reason}]
+        assert wire.request_keys['r2'] in answer.limitations[0]
+        assert schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer == answer
+    else:
+        assert len(answer.points) == 2 and result['factual_review']['pending_checks']

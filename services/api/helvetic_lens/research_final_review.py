@@ -460,12 +460,19 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         checked = await check()
 
     from .research_gateway import retain_answer_points
+    # A completed correction whose known objection still cannot be assessed is
+    # an unverified finding, not a provider outage. Withhold that finding once;
+    # independent reviewed siblings can still form a qualified final answer.
+    factual = checked.get('factual_review', {})
+    withheld_checks = [item for item in factual.get('pending_checks', [])
+        if item.get('reason') == 'unresolved_concern' and item.get('item', '').startswith('P')]
+    withheld_indices = {int(item['item'][1:]) for item in withheld_checks}
     # The resumable caller will raise before publication. Keep an unreviewed
     # correction privately so a single-question retry can check the same draft.
     # Non-resumable callers still withhold unresolved known objections.
     rejected = [hint for hint in checked['hints'] if hint.get('path', [])[:2] == ['answer', 'points']
         and not (defer_pending and checked.get('factual_review', {}).get('pending_checks')
-            and hint.get('review_signal') == 'review_unavailable')]
+            and hint.get('review_signal') == 'review_unavailable' and hint['path'][2] not in withheld_indices)]
     bad_gaps = [answer.limitations[hint['path'][2]] for hint in checked['hints']
         if hint.get('path', [])[:2] == ['answer', 'limitations']]
     non_gaps = {answer.limitations[hint['path'][2]] for hint in checked['hints']
@@ -474,13 +481,24 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         for gap in bad_gaps}
     if rejected:
         retain_answer_points(parsed, wire, rejected, allow_empty=True)
+        rejected_indices = {hint['path'][2] for hint in rejected}
+        withheld = [item for item in withheld_checks if int(item['item'][1:]) in rejected_indices]
+        factual['pending_checks'] = [item for item in factual.get('pending_checks', []) if item not in withheld]
+        if withheld:
+            factual['withheld_checks'] = withheld
+            if not factual['pending_checks']:
+                factual['status'] = 'checked'
+                checked['status'] = 'checked' if checked.get('question_coverage') is not None else 'partial'
     for gap in bad_gaps:
         key = gap_keys[gap]
         if gap not in answer.limitations:
             continue  # Rejecting the owning point already replaced this gap.
         answer.limitations = [text for text in answer.limitations if text != gap]
         if gap in non_gaps:
-            update_gap(wire, answer, key, '')
+            if key is not None and key not in wire.point_requests:
+                notice('A cited answer could not be validated for: ' + wire.request_keys[key], key)
+            else:
+                update_gap(wire, answer, key, '')
             continue
         notice('The remaining scope needs further review: ' +
             wire.request_keys.get(key, work['input']['original_question'])[:300], key)

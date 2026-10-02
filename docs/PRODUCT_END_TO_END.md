@@ -820,3 +820,14 @@ regrouped canonical point order. The 152 affected regressions, 12 new atomic and
 interrupted-delivery cases, exact API lint and actual-backlog guard passed. A
 bounded read-only review closed four concrete integration defects. No new live
 content acceptance is implied; fresh native evaluation follows this release.
+
+### Deliver validated siblings after an inconclusive correction
+
+Fresh native run9ff49c7 retained six originals but failed after1135.5s because
+one corrected point's prior objection received an explicit cannot_assess verdict.
+The finalizer treated that completed negative outcome as a provider outage and
+blocked all useful siblings. MV2-020 scope: after the one completed correction
+round, withhold that unverified point, keep its requested gap and publish only
+independently checked siblings. Real timeouts, malformed reviews and uncompleted
+checks still resume privately. Acceptance covers the actual cannot_assess result
+versus deadline interruption; no scientific facts or source gates change.
