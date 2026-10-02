@@ -38,7 +38,7 @@ class DraftCheckpoint:
                 "apertus_reasoning_effort", "apertus_json_mode", "apertus_product_id")}})
         saved = work.pop(KEY, None)
         self.value = deepcopy(saved) if (isinstance(saved, dict) and saved.get("binding") == self.binding
-            and saved.get("stage") in {"draft", "reviewed"} and isinstance(saved.get("raw"), str)
+            and saved.get("stage") in {"draft", "reviewed", "finalizing"} and isinstance(saved.get("raw"), str)
             and saved.get("fingerprint") == fingerprint({k: v for k, v in saved.items() if k != "fingerprint"})) else None
         if self.value:
             work[KEY] = self.value

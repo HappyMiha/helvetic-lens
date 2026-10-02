@@ -177,7 +177,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     review_hints = deepcopy(saved.get("hints", [])) if saved else []
     if resume and not saved:
         resume.save("draft", raw, review_hints, {})
-    if wire and wire.answer and (not saved or saved["stage"] != "reviewed"):
+    if wire and wire.answer and (not saved or saved["stage"] == "draft"):
         remaining = seconds - (monotonic() - started)
         if remaining <= 5:
             raise ValueError("Final answer review has no repair time remaining")
@@ -205,7 +205,9 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             resume.save("reviewed", raw, review_hints, work["model_route"]["answer_review"])
     raw = response_object(raw, schema)
     wire_raw = raw
-    parts_attempted = False
+    # Final corrections must not be replaced by cached earlier request drafts.
+    # Canonical validation and final evidence/coverage checks still run below.
+    parts_attempted = bool(saved and saved["stage"] == "finalizing")
     async def synthesize_parts(parsed):
         from .research_answer_parts import recover_requests
         def retain_parts(receipts):
@@ -232,7 +234,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             else:
                 parsed = schema.model_validate_json(raw)
                 if work["phase"] == "brief" and getattr(parsed, "mission_checkpoint", None):
-                    if wire and wire.request_keys:
+                    if wire and wire.request_keys and not parts_attempted:
                         # A fallible coverage verdict cannot decide whether a
                         # requested distinction deserves its own synthesis.
                         raw = await synthesize_parts(parsed)
@@ -243,6 +245,8 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             errors = [{"path": list(e["loc"]), "reason": e["msg"]} for e in exc.errors(include_input=False, include_url=False)][:16]
         except (ValueError, KeyError, TypeError) as exc:
             errors = getattr(exc, "validation_errors", [{"reason": "Return valid JSON matching the schema, with supplied integer citation_ref values and no copied citation fields."}])
+        if errors and saved and saved["stage"] == "finalizing":
+            raise ValueError("Saved final draft failed canonical evidence validation")
         if errors and wire and work["phase"] == "brief" and getattr(parsed, "mission_checkpoint", None):
             from .research_answer_review import complete_citation_context, repair_points
             context = await complete_citation_context(service.settings, work, wire,
@@ -305,7 +309,8 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             parsed = schema.model_validate_json(raw)
             def retain_final():
                 if resume:
-                    resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+                    resume.save("finalizing", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+            retain_final()
             final_coverage = await finalize(service, work, wire, parsed,
                 seconds - (monotonic() - started), checkpoints=resume.parts if resume else None,
                 on_progress=retain_final, defer_pending=resume is not None)
@@ -331,7 +336,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 update_gap(wire, answer, key, gap)
                 parsed.mission_checkpoint.reason = "The cited findings answer part of the question; the remaining requested parts are named as gaps."
             if resume:
-                resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+                resume.save("finalizing", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
             pending = final_coverage.get("factual_review", {}).get("pending_checks", [])
             if resume and pending:
                 from .config import DomainError

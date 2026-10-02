@@ -131,11 +131,12 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
 
 
 @pytest.mark.parametrize('change', ['source', 'prompt', 'schema', 'model', 'endpoint', 'temperature', 'tamper'])
-def test_changed_generation_or_evidence_cannot_reuse_a_saved_proposal(change):
+@pytest.mark.parametrize('stage', ['reviewed', 'finalizing'])
+def test_changed_generation_or_evidence_cannot_reuse_a_saved_proposal(change, stage):
     settings = Settings(_env_file=None)
     work = {}
     args = ['original prompt', 'review prompt', {'type': 'object'}, 'original evidence', {'max_output_tokens': 4096}]
-    DraftCheckpoint(work, settings, *args).save('reviewed', 'PRIVATE CANDIDATE', [], {})
+    DraftCheckpoint(work, settings, *args).save(stage, 'PRIVATE CANDIDATE', [], {})
     if change == 'source':
         args[3] = 'changed evidence'
     elif change == 'prompt':

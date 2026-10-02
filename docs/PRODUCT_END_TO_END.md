@@ -692,3 +692,28 @@ character of the full raw excerpt. A short qualifier omitted by the pre-existing
 citation window threshold keeps the entire saved excerpt verbatim. Three
 prefix/middle/tail regression cases cover this edge; independent read-only review
 confirmed unchanged canonical windows and complete alias coverage.
+
+
+### Resume the corrected final draft instead of earlier synthesis
+
+Scope MV2-020: retain the final-review stage explicitly. The gateway currently
+saves per-request drafts and corrected final drafts under the same reviewed
+stage; a worker retry can reapply an earlier cached proposal before continuing
+final review. The live continuation repeats an invalid request writer while
+other final checks are retained. Add a finalizing checkpoint stage bound to the
+same exact source/model/generation contract; skip prior synthesis on that stage,
+but always validate the canonical payload and complete pending final checks.
+Acceptance: a multipart corrected point survives a provider interruption, its
+unchanged sibling and original citations stay intact, and resuming calls only
+the pending review. No provider execution is needed for this regression.
+
+Implemented the finalizing stage. The regression exercises the actual gateway,
+private checkpoint JSON round-trip and finalizer: a multipart statement is
+narrowed, its recheck is interrupted, and the next worker checks only that
+corrected assertion. It neither writes the original proposal again nor repeats
+the already checked sibling. Exact source/model/generation and tamper fences
+apply to both reviewed and finalizing states. Independent read-only review found
+no remaining stage bypass. The existing public pilot retains its preloaded b7
+runtime and is not evidence for this new fix.
+Sixty-nine affected final-review/resume/backlog checks and exact API lint passed;
+the earlier transport and narrowing regression groups also remain green.
