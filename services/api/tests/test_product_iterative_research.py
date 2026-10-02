@@ -198,7 +198,7 @@ def test_unresolved_candidate_remains_distinct_from_rejection_without_source_fet
     assert result["research"]["used"]["model_calls"] <= result["research"]["limits"]["model_calls"]
 
 
-def test_paid_episode_allowance_does_not_stop_free_source_research(signed, monkeypatch):
+def test_admitted_research_does_not_stop_at_legacy_episode_allowance(signed, monkeypatch):
     client, service, _, model = signed
     trace = pipeline(monkeypatch, service, model)
     retrieval = decision_search.federated_retrieve
@@ -211,8 +211,8 @@ def test_paid_episode_allowance_does_not_stop_free_source_research(signed, monke
     result = complete(client, service, root, run)
     assert result["status"] == "completed"
     assert len(trace["queries"]) == 3 and result["claims"][0]["revision"] == 2
-    assert providers == ["search1api", "none", "none"]
-    assert result["research"]["used"]["search_requests"] == 2
+    assert providers == ["search1api"] * 3
+    assert result["research"]["used"]["search_requests"] > 2
     assert "search_requests" not in result["research"]["stops"]
     assert len([m for m in trace["models"] if m["phase"] == "ResearchPlan"]) == 1
 
@@ -329,7 +329,7 @@ def test_cantonal_health_rejects_motorway_candidate_before_source_fetch(signed, 
                 "branches": [{"question": "Which cantonal health laws apply?", "query": "Swiss cantonal health legislation", "purpose": "Find the applicable health law.", "priority": 5},
                     {"question": "Which official health guidance applies?", "query": "Swiss cantonal health authority guidance", "purpose": "Compare official regulatory guidance.", "priority": 4}]})
         return await original_model(system, user, **kwargs)
-    async def only_road(*args):
+    async def only_road(*args, **kwargs):
         return {"items": [{"id": "road", "title": "Vaud motorway deforestation in the canton",
             "summary": "Approval to clear woodland for a motorway.", "url": "https://example.org/road"}], "search_requests": 3}
     monkeypatch.setattr(model, "complete", plan_health)
@@ -431,3 +431,41 @@ def test_incomplete_identity_namespace_does_not_merge_same_name_mentions(signed)
         entities = rows(session, DossierEntity, record)
         assert len(entities) == 2
         assert all(e.evidence["identity"] == "unresolved_source_mention" for e in entities)
+
+
+def test_distinct_witnessed_originals_for_one_question_get_separate_read_branches(signed):
+    import asyncio
+
+    from helvetic_lens import product_iterative_research as research
+    from helvetic_lens.product_investigations import rows
+
+    client, service, _, _ = signed
+    _, run, _ = start(client)
+    witness = {"source_id": str(uuid4()), "locator": "p1", "quote": "Compare the original annual series and the methods appendix."}
+    question = "Verify the linked original for: what does the reported trend mean?"
+    first_url, second_url = "https://example.org/annual-series", "https://example.org/methods-appendix"
+    def draft(query, kind="independent_verification"):
+        return research.Gap(question=question, query=query, purpose="Read the cited original before completing the answer.",
+            priority=1, kind=kind, catalogues=[], **witness)
+
+    with service.db.session() as session:
+        record = session.get(Investigation, run["id"])
+        first = research.add_question(session, record, draft(first_url), trigger=witness)
+        research.schedule_questions(session, record)
+        second = research.add_question(session, record, draft(second_url), trigger=witness)
+        research.schedule_questions(session, record)
+        assert first and second and first != second
+        # Keep loop protection for an already scheduled original, a repeated
+        # search question, and unwitnessed/non-verification requests.
+        assert research.add_question(session, record, draft(first_url), trigger=witness) is None
+        assert research.add_question(session, record, draft("annual trend original report"), trigger=witness) is None
+        assert research.add_question(session, record, draft("https://example.org/third")) is None
+        assert research.add_question(session, record, draft("https://example.org/third", "missing_evidence"), trigger=witness) is None
+        branches = rows(session, InvestigationBranch, record)
+        assert {branch.query for branch in branches} == {first_url, second_url}
+        assert all(branch.checkpoint["trigger"] == witness for branch in branches)
+        # The existing direct-reading route works without a broad search key.
+        for branch in branches:
+            result = asyncio.run(decision_search.federated_retrieve(service.settings, branch.query, "web", "quick", "pharma", selected_catalogues=[]))
+            assert [item["url"] for item in result["items"]] == [branch.query]
+            assert result["search_requests"] == 0

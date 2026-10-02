@@ -19,6 +19,9 @@ def completed_work(checkpoint):
     progress.update({"point_decision:" + key: value for key, value in parts.get("point_decisions", {}).items()
         if isinstance(value, dict) and value.get("choice") in {"supported", "contradicted", "not_established"}
         and value.get("input_fingerprint") and value.get("policy_fingerprint")})
+    progress.update({"request_coverage:" + key: value for key, value in parts.get("delivered_coverage", {}).items()
+        if isinstance(value, dict) and value.get("choice") in {"covered", "missing"}
+        and value.get("input_fingerprint") and value.get("policy_fingerprint")})
     selections = {
         "evidence_selection:": parts.get("evidence_selection", {}),
         "review_evidence_selection:": parts.get("final_reviews", {}).get("original_selection", {}).get("evidence_selection", {}),

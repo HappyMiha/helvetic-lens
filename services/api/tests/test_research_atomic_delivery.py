@@ -144,7 +144,7 @@ def coverage_fixture():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('choice', ['fully_answered', 'unresolved', 'unavailable'])
+@pytest.mark.parametrize('choice', ['covered', 'missing', 'unavailable'])
 async def test_cross_slot_coverage_clears_only_verified_host_notice_and_preserves_projections(monkeypatch, choice):
     wire, parsed, notice = coverage_fixture()
     answer = parsed.mission_checkpoint.answer
@@ -161,14 +161,14 @@ async def test_cross_slot_coverage_clears_only_verified_host_notice_and_preserve
     monkeypatch.setattr(coverage.decision, 'engines', lambda settings: {'jev': Engine(), 'laya': Engine()})
     work = {'input': wire.input}
     result = await coverage.reconcile(settings, work, wire, answer, 60, checkpoints=cache)
-    assert (notice not in answer.limitations) == (choice == 'fully_answered')
+    assert (notice not in answer.limitations) == (choice == 'covered')
     assert 'The exact publication day remains unknown.' in answer.limitations
     assert wire.response_slots['r2']['remaining_gap'] == notice, 'Private drafting slots retain valid provenance'
     if choice != 'unavailable':
         answer = AssessmentOutcome.model_validate(original)
         await coverage.reconcile(settings, work, wire, answer, 60, checkpoints=json.loads(json.dumps(cache)))
         assert len(calls) == 1, 'Exact retained coverage does not buy another decision'
-    assert result['removed_notices'] == (1 if choice == 'fully_answered' else 0)
+    assert result['removed_notices'] == (1 if choice == 'covered' else 0)
     delivered = SimpleNamespace(mission_checkpoint=SimpleNamespace(answer=answer, reason='Old gaps'),
         uncertainties=list(original['limitations']),
         assessment=QuestionAssessment(**original, question_id='q1'),
@@ -249,3 +249,129 @@ async def test_inconclusive_completed_correction_does_not_block_valid_siblings(m
         assert schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer == answer
     else:
         assert len(answer.points) == 2 and result['factual_review']['pending_checks']
+
+
+@pytest.mark.asyncio
+async def test_flat_host_notice_uses_complete_answer_context_and_reuses_initial_coverage(monkeypatch):
+    wire, parsed, _ = fixture(2)
+    wire.request_keys, wire.response_slots, wire.point_requests = {}, {}, []
+    question = 'Two accounts use different observation periods. Do these accounts conflict?'
+    request = 'Do these accounts conflict?'
+    wire.input['original_question'] = question
+    answer = parsed.mission_checkpoint.answer
+    answer.points[0].statement = 'The accounts describe different periods and can both be correct.'
+    notice = 'This answer has not resolved the requested part: ' + request
+    genuine_gap = 'The earlier observation period is not fully documented.'
+    answer.limitations = [notice, genuine_gap]
+    wire.workflow_gaps = {notice}
+    calls, cache = [], {}
+
+    class Engine:
+        async def choose(self, payload, system, criteria):
+            calls.append(deepcopy(payload))
+            assert payload['original_question'] == question
+            assert 'limitations' not in payload
+            assert payload['answer_points']['P0'] == answer.points[0].statement
+            assert set(criteria) == {'covered', 'missing'}
+            return Decision('jev', 'fixture', 'covered', {'covered': 1}, 1, 1, 1, None, None)
+
+    monkeypatch.setattr(coverage.decision, 'engines', lambda settings: {'jev': Engine(), 'laya': Engine()})
+    work = {'input': wire.input}
+    first = await review.audit(Settings(_env_file=None), work, wire, answer, 60,
+        coverage_only=True, checkpoints=cache)
+    assert first['question_coverage'] == 'covered'
+    count = len(calls)
+    result = await coverage.reconcile(Settings(_env_file=None), work, wire, answer, 60, checkpoints=cache)
+    assert result['removed_notices'] == 1 and result['decisions'][0]['reused']
+    assert answer.limitations == [genuine_gap] and len(calls) == count
+    # The same prose from a model has no authority to remove a genuine gap.
+    answer.limitations.append(notice)
+    wire.workflow_gaps = set()
+    assert (await coverage.reconcile(Settings(_env_file=None), work, wire, answer, 60,
+        checkpoints=cache))['status'] == 'not_applicable'
+    assert notice in answer.limitations and len(calls) == count
+    # An actual answer change invalidates the cached coverage decision.
+    wire.workflow_gaps = {notice}
+    answer.points[0].statement = 'The two observation periods are different.'
+    await coverage.reconcile(Settings(_env_file=None), work, wire, answer, 60, checkpoints=cache)
+    assert len(calls) == count + 1
+
+
+@pytest.mark.asyncio
+async def test_missing_distinction_amends_one_point_and_resumes_without_duplicate_answer(monkeypatch):
+    def point(text, locator):
+        return AssessmentPoint(statement=text, evidence=[{'source_id': 'a',
+            'locator': locator, 'quote': text, 'role': 'support'}])
+    original = point('The public register records adopted proposals.', 'p1')
+    sibling = point('The archive preserves the source documents.', 'p2')
+    amended = point('The register records adopted proposals, while publication is a separate later event.', 'p3')
+    answer = AssessmentOutcome(status='possible_answer', points=[original, sibling], limitations=[])
+    refs = {i+1: {k:v for k,v in p.evidence[0].model_dump().items() if k != 'role'}
+        for i,p in enumerate([original,sibling,amended])}
+    wire = SimpleNamespace(input={'original_question': 'Explain adoption versus publication.',
+        'sources': [{'id': 'a', 'kind': 'public_source'}]}, references=refs,
+        request_keys={}, response_slots={}, point_requests=[])
+    calls, checked, interrupted = [], [], [False]
+    async def audit(settings, work, wire, answer, seconds, **kwargs):
+        missing = answer.points[0] == original
+        return {'status': 'checked', 'question_coverage': 'missing' if missing else 'covered',
+            'hints': [{'review_signal': 'requested_part_missing',
+                'user_request': wire.input['original_question']}] if missing else []}
+    async def reasoned(service, wire, answer, seconds, **kwargs):
+        checked.append([p.statement for p in answer.points])
+        if answer.points[0] == amended:
+            concern = kwargs['concerns']['P0']
+            assert original.statement in concern['previous_statements']
+            assert 1 in concern['context_refs']
+            if not interrupted[0]:
+                interrupted[0] = True
+                raise DomainError('Interrupted after the one-point amendment.', 503, 'model_upstream_timeout')
+        return {'status': 'checked', 'hints': [], 'pending_checks': [], 'points_checked': len(answer.points)}
+    async def amend(service, wire, request, seconds, **kwargs):
+        calls.append(kwargs)
+        assert kwargs['max_points'] == 1
+        assert kwargs['amendments'] == {'P0': original.model_dump(), 'P1': sibling.model_dump()}
+        return [amended], '', {'status': 'proposed', 'replace_point': 'P0'}
+    monkeypatch.setattr(review, 'audit', audit)
+    monkeypatch.setattr(final, 'reasoned_review', reasoned)
+    monkeypatch.setattr(final, 'answer_request', amend)
+    checkpoints = {}
+    parsed = SimpleNamespace(mission_checkpoint=SimpleNamespace(answer=answer))
+    args = (SimpleNamespace(settings=Settings(_env_file=None)), {'input': wire.input}, wire, parsed, 60)
+    with pytest.raises(DomainError):
+        await final.finalize(*args, checkpoints=checkpoints, defer_pending=True)
+    assert answer.points == [amended, sibling]
+    await final.finalize(*args, checkpoints=json.loads(json.dumps(checkpoints)), defer_pending=True)
+    assert answer.points == [amended, sibling] and len(calls) == 1
+    assert len(answer.points) == 2 and checked[-1] == [amended.statement, sibling.statement]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('host_gap', [False, True])
+async def test_coverage_amendment_preserves_a_genuine_owned_gap(monkeypatch, host_gap):
+    wire, parsed, _ = fixture(2)
+    answer = parsed.mission_checkpoint.answer
+    original = answer.points[0]
+    amended = original.model_copy(update={'statement': original.statement + ' This is the publication event.'})
+    request = wire.request_keys['r1']
+    gap = ('This answer has not resolved the requested part: ' + request if host_gap
+        else 'The exact publication day remains unknown.')
+    wire.response_slots['r1'].update(disposition='unresolved', remaining_gap=gap)
+    answer.limitations = [gap]
+    wire.workflow_gaps = {gap} if host_gap else set()
+    async def audit(*args, **kwargs):
+        missing = answer.points[0] == original
+        return {'status': 'checked', 'question_coverage': 'missing' if missing else 'covered',
+            'hints': [{'review_signal': 'requested_part_missing', 'user_request': request}] if missing else []}
+    async def reasoned(*args, **kwargs):
+        return {'status': 'checked', 'hints': [], 'pending_checks': [], 'points_checked': len(answer.points)}
+    async def amend(*args, **kwargs):
+        assert kwargs['amendments'] == {'P0': original.model_dump()}
+        return [amended], '', {'status': 'proposed', 'replace_point': 'P0'}
+    monkeypatch.setattr(review, 'audit', audit)
+    monkeypatch.setattr(final, 'reasoned_review', reasoned)
+    monkeypatch.setattr(final, 'answer_request', amend)
+    await final.finalize(SimpleNamespace(settings=Settings(_env_file=None)), {'input': wire.input}, wire, parsed, 60)
+    assert answer.points[0] == amended and len(answer.points) == 2
+    assert (gap in answer.limitations) is not host_gap
+    assert wire.response_slots['r1']['remaining_gap'] == ('' if host_gap else gap)

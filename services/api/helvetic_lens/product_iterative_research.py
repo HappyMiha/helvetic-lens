@@ -294,13 +294,24 @@ def elapsed(run, seconds):
 
 
 def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None):
+    from .decision_search import public_url
+
     data = deepcopy(run.research_state)
     key = query_key(draft.query)
+    # Two witnessed originals may answer the same question. Their reading
+    # identity is the URL; ordinary search paraphrases still share a question.
+    direct = public_url(draft.query) if isinstance(draft, Gap) and draft.kind == "independent_verification" and trigger else None
+    def duplicate_question(previous):
+        previous_url = public_url(previous["query"]) if previous.get("kind") == "independent_verification" and previous.get("trigger") else None
+        return previous["query_key"] == key or (
+            query_key(previous["question"]) == query_key(draft.question)
+            and not (direct and previous_url and direct != previous_url))
+
     if any(query_key(q["branch_assessment"]["assessment"]["further_check"]["query"]) == key
             for q in data["questions"] if q.get("branch_assessment", {}).get("assessment", {}).get("further_check")):
         event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
         return None
-    if any(key in {query_key(b.query), query_key(b.checkpoint.get("query_recovery", {}).get("query") or b.query)} for b in rows(session, InvestigationBranch, run)) or any(q["query_key"] == key or query_key(q["question"]) == query_key(draft.question) for q in data["questions"]):
+    if any(key in {query_key(b.query), query_key(b.checkpoint.get("query_recovery", {}).get("query") or b.query)} for b in rows(session, InvestigationBranch, run)) or any(duplicate_question(q) for q in data["questions"]):
         event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
         return None
     # No hidden truncation of the saved question/criteria; all response fields

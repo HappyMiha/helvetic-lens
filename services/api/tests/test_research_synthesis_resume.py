@@ -393,11 +393,11 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
             calls.append('select' if selection else 'correction')
             if selection:
                 return selection_json([1], kwargs)
-            return json.dumps({**point, 'remaining_gap': ''})
+            return json.dumps({**point, 'remaining_gap': '', 'replace_point': 'P0'})
         calls.append('draft_or_review')
         return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [point]},
             'next_action': 'finish'})
-    async def audit(*args, coverage_only=False):
+    async def audit(*args, coverage_only=False, **kwargs):
         return {'status': 'checked', 'question_coverage': 'missing', 'hints': [
             {'user_request': 'Distinguish adoption from publication.', 'review_signal': 'requested_part_missing'}], 'decisions': []}
     async def original(*args):
@@ -520,18 +520,21 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
         if 'requested_part' in value:
             assert coverage != 'complete', 'A complete shared draft must not invoke any request-pack writer'
             assert value['requested_part'] == 'Distinguish adoption from publication.'
-            assert value['review_feedback']['already_answered'][0]['statement'] == point['statement']
+            if 'retained_answer' in value and isinstance(value['retained_answer']['P0'], str):
+                assert value['retained_answer']['P0'] == point['statement']
+            else:
+                assert value['review_feedback']['already_answered'][0]['statement'] == point['statement']
             refs = [ref for source in value['sources'] for ref in source['passages']]
             selection = 'citation_refs' in kwargs['response_schema']['properties']
             calls.append('select' if selection else 'correction')
             if selection:
                 return selection_json([ref['citation_ref'] for ref in refs], kwargs)
-            return json.dumps({**distinction, 'remaining_gap': '',
+            return json.dumps({**distinction, 'remaining_gap': '', 'replace_point': 'P0',
                 'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'} for ref in refs]})
         calls.append('draft_or_review')
         return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
             'points': [point, distinction] if coverage == 'complete' else [point]}, 'next_action': 'finish'})
-    async def audit(settings, work, wire, answer, seconds, *, coverage_only=False):
+    async def audit(settings, work, wire, answer, seconds, *, coverage_only=False, **kwargs):
         missing = not any('2003' in point.statement for point in answer.points)
         known = missing or coverage != 'unavailable_after_repair'
         return {'status': 'checked' if known else 'partial',
@@ -547,7 +550,8 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
     result = schema.model_validate_json(await gateway.complete(
         SimpleNamespace(settings=settings, model_client=model), work, '', schema, 90))
     answer = result.mission_checkpoint.answer
-    assert [point.statement for point in answer.points] == [point['statement'], distinction['statement']]
+    assert [point.statement for point in answer.points] == ([point['statement'], distinction['statement']]
+        if coverage == 'complete' else [distinction['statement']])
     assert answer.points[0].evidence[0].quote == 'Adopted in 2001.'
     assert not gateway.answer_quantity_errors(answer)
     assert answer.status == ('partial' if coverage == 'unavailable_after_repair' else 'possible_answer')
@@ -593,7 +597,7 @@ async def test_source_pack_recovers_a_named_omission_without_claiming_unknown_re
             refs = [p for source in value['sources'] for p in source['passages'] if '2019' in p['text']]
             if 'citation_refs' in kwargs['response_schema']['properties']:
                 return selection_json([refs[0]['citation_ref']], kwargs)
-            return json.dumps({'statement': 'The station entered service in 2019.', 'remaining_gap': '',
+            return json.dumps({'statement': 'The station entered service in 2019.', 'remaining_gap': '', 'replace_point': 'new',
                 'evidence': [{'citation_ref': refs[0]['citation_ref'], 'role': 'support'}]})
         assert 'reason' not in kwargs['response_schema']['properties']
         return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [
@@ -639,3 +643,15 @@ def test_removing_obsolete_progress_never_renews_provider_retries():
     assert not made_progress(previous, same)
     saved = completed_work({'parts': {'final_reviews': {'clauses:new': {'overall': {'verdict': 'supported'}}}}})
     assert made_progress(previous, saved)
+
+
+@pytest.mark.parametrize('choice', ['covered', 'missing'])
+def test_completed_request_coverage_is_progress_but_unavailable_retry_is_not(choice):
+    receipt = {'choice': choice, 'input_fingerprint': 'answer-and-originals', 'policy_fingerprint': 'coverage-policy'}
+    checkpoint = {'parts': {'delivered_coverage': {'request': receipt}}}
+    progress = completed_work(checkpoint)
+    assert made_progress({}, progress)
+    checkpoint['parts']['delivered_coverage'].update({
+        'failed': {**receipt, 'choice': 'unavailable'}, 'unbound': {'choice': 'covered'}})
+    assert completed_work(checkpoint) == progress
+    assert not made_progress(progress, completed_work(checkpoint))

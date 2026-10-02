@@ -18,6 +18,8 @@ from .research_answer_parts import (
     splice_points,
     update_gap,
 )
+from .research_final_coverage import CRITERIA as COVERAGE_CRITERIA
+from .research_final_coverage import SYSTEM as COVERAGE_SYSTEM
 from .research_reference_metadata import INSTRUCTIONS as SOURCE_USE_INSTRUCTIONS
 from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 from .research_review_witnesses import assertion_clauses, invalid_review, review_schema
@@ -100,8 +102,8 @@ claims. A metadata entry can establish its publication details; it cannot by
 itself establish the referenced work's scientific, legal or other substantive
 conclusion. Judge context-role citations by the same evidence-use boundary.
 """
-POLICY = fingerprint({'contract': 'final-answer-entailment/v18-bounded-originals', 'review': REVIEW, 'focus': FOCUS,
-    'source_use': SOURCE_USE_POLICY})
+POLICY = fingerprint({'contract': 'final-answer-entailment/v19-coherent-coverage', 'review': REVIEW, 'focus': FOCUS,
+    'source_use': SOURCE_USE_POLICY, 'coverage': [COVERAGE_SYSTEM, COVERAGE_CRITERIA]})
 
 
 def scoped_review_schema(wire, assertion, references, concerns, *, point):
@@ -407,7 +409,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             'bindings': wire.point_requests, 'slots': wire.response_slots, 'concerns': concerns,
             'workflow_gaps': sorted(getattr(wire, 'workflow_gaps', set()))})
         if key not in cache:
-            result = await review.audit(service.settings, work, wire, answer, deadline-monotonic(), coverage_only=True)
+            result = await review.audit(service.settings, work, wire, answer, deadline-monotonic(), coverage_only=True,
+                checkpoints=checkpoints, on_progress=retain)
             result['fast_point_review'] = {k: v for k, v in fast.items() if k != 'hints'}
             reasoning = deepcopy(cache.get('reasoned:' + key))
             if reasoning is None:
@@ -485,7 +488,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             if hint.get('review_signal') != 'requested_part_missing' or not hint.get('user_request'):
                 continue
             request = hint['user_request']
-            tasks.setdefault(('request', request), {'key': None, 'focus': request,
+            owner = next((key for key, value in wire.request_keys.items() if value == request), None)
+            tasks.setdefault(('request', request), {'key': owner, 'focus': request,
                 'points': [], 'gaps': [], 'issues': [{'target': 'coverage',
                     'signal': 'requested_part_missing', 'instruction': hint.get('instruction', 'Answer only this omitted request from the original evidence.'), 'original_text': []}]})
         for task in tasks.values():
@@ -511,33 +515,65 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             'validation_errors': deepcopy(task['issues'])} if indices else None)
         if len(indices) > 1:
             raise ValueError('A point correction must have exactly one retained target')
-        capacity = 1 if correction else min(8 - len(answer.points), request_capacity(wire, key) - len(owner_siblings))
+        missing_request = any(issue['target'] == 'coverage' for issue in task['issues'])
+        amendments = ({f'P{i}': answer.points[i].model_dump() for i in owner_siblings}
+            if missing_request else None)
+        capacity = 1 if correction or amendments else min(8 - len(answer.points), request_capacity(wire, key) - len(owner_siblings))
         if capacity > 0:
             fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
-                checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity, correction=correction)
+                checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity, correction=correction,
+                **({'amendments': amendments} if amendments is not None else {}))
         else:
             fixed, gap, receipt = [], '', {'status': 'unrepresented'}
         if receipt.get('status') == 'unavailable' and defer_pending:
             retain()
             incomplete([{'reason': 'step_deadline'}])
         if fixed:
+            replacement = receipt.get('replace_point', 'new')
+            if amendments is not None and replacement != 'new':
+                if replacement not in amendments or len(fixed) != 1:
+                    raise ValueError('The coverage amendment does not match a retained answer point')
+                index = int(replacement[1:])
+                if answer.points[index].model_dump() != amendments[replacement]:
+                    raise ValueError('The retained coverage amendment target changed')
+                indices = [index]
+                feedback['previous_statements'] = [answer.points[index].statement]
             inherited = {}
             for index in indices:
                 prior = repaired_concerns.get(point_identity(index), {})
                 inherited = carry_concerns(inherited, prior.get('previous_statements', []),
                     prior.get('issues', []), prior.get('context_refs', []))
+            if amendments is not None and indices:
+                originals = {(ref['source_id'], ref['locator'], ref['quote'])
+                    for ref in amendments[replacement]['evidence']}
+                retained_refs = [ref for ref, value in wire.references.items()
+                    if (value['source_id'], value['locator'], value['quote']) in originals]
+                inherited = carry_concerns(inherited, [], [], retained_refs)
             represented = splice_points(wire, answer, indices, fixed, key)
             if not represented:
                 receipt = {**receipt, 'status': 'unrepresented'}
             if represented:
                 point_issues = [issue for issue in task['issues'] if issue['target'] == 'points']
+                if amendments is not None and indices:
+                    point_issues.append({'target': 'points', 'signal': 'coverage_amendment',
+                        'instruction': 'This replaces a retained answer point to resolve a missing requested distinction. '
+                            'Check that the replacement preserves its material supported meaning and qualifications, '
+                            'and establishes the added distinction from original evidence. The earlier statement is fallible context.',
+                        'original_text': [ref['quote'] for ref in amendments[replacement]['evidence']]})
                 if point_issues or inherited.get('issues') or inherited.get('context_refs'):
                     for point in fixed:
                         binding = fingerprint({'request_key': key, 'point': point.model_dump()})
                         repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
                 if not correction:
                     answer.limitations = [text for text in answer.limitations if text not in old_gaps]
-                    update_gap(wire, answer, key, gap)
+                    prior_gap = wire.response_slots.get(key, {}).get('remaining_gap', '').strip()
+                    if missing_request and prior_gap and prior_gap not in old_gaps and prior_gap not in wire.workflow_gaps:
+                        # Recovering omitted coverage does not resolve a separate
+                        # factual gap already owned by this legacy request slot.
+                        if gap:
+                            update_gap(wire, answer, None, gap)
+                    else:
+                        update_gap(wire, answer, key, gap)
                     if receipt.get('workflow_gap'):
                         wire.workflow_gaps.add(gap)
         # The answer, inherited concerns and terminal outcome are one checkpoint.
@@ -663,7 +699,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         # Removing an unsupported answer can reopen a previously covered request.
         # Coverage must describe the actual delivered siblings, not the old draft.
         coverage = await review.audit(service.settings, work, wire, answer,
-            deadline-monotonic(), coverage_only=True)
+            deadline-monotonic(), coverage_only=True, checkpoints=checkpoints, on_progress=retain)
         checked['question_coverage'] = coverage.get('question_coverage')
         checked['hints'] = [hint for hint in checked['hints'] if 'user_request' not in hint] + [
             hint for hint in coverage.get('hints', []) if 'user_request' in hint]

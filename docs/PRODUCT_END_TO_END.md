@@ -1416,3 +1416,59 @@ semantics. The isolated pilot now records only failure code-location metadata
 (no locals or source text) to make any subsequent failure actionable. This coherent
 change is ready for normal publication and another ordinary retained-investigation
 retry; no final answer has yet passed native content acceptance.
+
+
+### Deliver a coherent answer after native completion
+
+MV2-020/023: native91051 now completes the whole retained mission in 659.7 seconds,
+with one draft, resumed provider-rate waits, all 16 documents read and analysed,
+and a new answer rendered by both unchanged readers. Content acceptance fails:
+the delivered answer repeats sibling statements, transfers a mid-latitude
+lower-stratospheric uncertainty to Antarctic recovery, adds off-question Arctic
+uncertainty, and says the contradiction question is unanswered despite explicitly
+answering it. The final review reports checked, making this an observed quality
+failure rather than a missing transport check.
+
+Scope: reconcile question coverage against the actual whole final answer and
+avoid duplicating already answered parts during targeted repairs. Diagnose the
+source-scope judgment on this exact final result through the existing decision
+abstraction before choosing an implementation; do not add untested generic review
+layers. Reconcile a newly required source read with actual continuation instead of
+stopping with a contradictory unfinished obligation. Preserve exact citations,
+source permissions, full original reading, real unknowns and explicit unavailable
+sources. Dependencies: the recorded completed91051 baseline and current shared
+retrieval/review contracts. Acceptance requires a useful coherent final response
+to the actual question with material source scope preserved and no invented
+required gaps; native completed status alone is insufficient. No production
+fixture, manual replacement answer, new key or extra user dossier is authorized.
+
+
+Implementation: final coverage and repair now share one whole-answer decision
+bound to the literal question and exact cited points. A missing requested part
+produces one amendment with an explicit retained-point target, preserving its
+original evidence for subsequent review. Only host-owned unresolved notices can
+be reconciled automatically; real source limitations remain. Distinct witnessed
+original URLs can now schedule separate reads for the same verification question,
+while repeated URLs, ordinary duplicate searches and unwitnessed requests retain
+existing cycle protection. The observed annual-series reading was previously
+blocked by a same-question/different-URL collision.
+
+The bounded two-assertion Jev comparison did not resolve the geographic-scope
+failure: it supported both the valid control and the problematic final assertion,
+with lower confidence on the latter. No provider replacement, new threshold or
+new review layer was justified by that result. This release still requires actual
+final-answer acceptance; exact citations and checked review status do not prove
+semantic correctness. The next evaluation must use the ordinary completed-dossier
+continuation API, not force the completed investigation into retryable state.
+
+
+Validation: 164 affected answer/coverage/correction/resume cases passed. The
+coordinator/mission/backlog run passed 25 cases, including full 420-page reading,
+and exposed two stale fixture expectations: new admitted research was still
+expected to stop paid search at a legacy episode limit, and a fake retrieval
+adapter rejected the existing keyword arguments before relevance selection.
+Updating those test contracts yielded two passing focused reruns, without any
+production change for either. Exact API Ruff and diff checks passed. Independent
+review confirmed amendment ownership, original evidence retention, shared coverage
+binding and narrow direct-URL deduplication. Completed-answer content acceptance
+is still pending the ordinary continuation, not implied by these checks.

@@ -87,12 +87,23 @@ Reviewer notes are fallible objections, not established facts or additional
 evidence. Check their explanation against the accompanying original passages;
 discard any suggested alternative that those originals do not establish.
 """
+AMENDMENT = """\nAmend the retained_answer only for the missing part of requested_part.
+Return at most ONE point. If an existing point already covers the same subject,
+choose its ID in replace_point and improve that point with the missing distinction,
+preserving its supported material qualifications. Do not append a paraphrase of
+an existing conclusion. Choose 'new' only for a distinct requested issue that none
+of the retained points addresses. If no missing answer is established, return no
+points and name the specific remaining requested gap. Unrelated research questions
+or background uncertainties are not remaining gaps. retained_answer is fallible
+draft context, never additional evidence. All replacement facts need original citations.
+"""
 SELECT += SOURCE_USE_INSTRUCTIONS
 WRITE += SOURCE_USE_INSTRUCTIONS
 NUMERIC_REPAIR += SOURCE_USE_INSTRUCTIONS
 POINT_REPAIR += SOURCE_USE_INSTRUCTIONS
 POLICY = fingerprint({"contract": "requested-answer-pack/v17-bounded-originals", "select": SELECT, "write": WRITE,
-    "numeric_repair": NUMERIC_REPAIR, "point_repair": POINT_REPAIR, "source_use": SOURCE_USE_POLICY})
+    "numeric_repair": NUMERIC_REPAIR, "point_repair": POINT_REPAIR, "source_use": SOURCE_USE_POLICY,
+    "amendment": AMENDMENT})
 
 
 def remove_citation_labels(data):
@@ -131,7 +142,7 @@ def contextual_references(wire, selected):
     return {key: wire.references[key] for key in keys if key in expanded}
 
 
-def requested_schema(references, max_points, correction=None):
+def requested_schema(references, max_points, correction=None, amendments=None):
     point_schema = {'type': 'object', 'properties': {
         'evidence': {'type': 'array', 'maxItems': 8, 'items': {'type': 'object', 'properties': {
             'citation_ref': {'type': 'integer', 'enum': list(references)},
@@ -149,17 +160,20 @@ def requested_schema(references, max_points, correction=None):
         'required': ['points', 'remaining_gap'], 'additionalProperties': False}
     if correction:
         schema['properties']['remaining_gap']['enum'] = ['']
+    if amendments is not None:
+        schema['properties']['replace_point'] = {'type': 'string', 'enum': ['new', *amendments]}
+        schema['required'].append('replace_point')
     return point_schema, schema
 
 
 async def answer_request(service, wire, request, seconds, *, checkpoints=None, on_progress=None,
-        feedback=None, max_points=1, correction=None, preselected_references=None):
+        feedback=None, max_points=1, correction=None, preselected_references=None, amendments=None):
     """Select independently, then synthesize; validate a cached proposal again."""
     from .research_model_transport import shape_errors
 
     if not 1 <= max_points <= 8:
         raise ValueError('Invalid requested answer capacity')
-    if correction:
+    if correction or amendments is not None:
         max_points = 1  # A rejected point never becomes a new multipart question.
     deadline = monotonic() + max(0, seconds)
     checkpoints = checkpoints if checkpoints is not None else {}
@@ -173,6 +187,8 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
         context['review_feedback'] = feedback
     if correction:
         context['correction_target'] = correction
+    if amendments is not None:
+        context['retained_answer'] = amendments
     focus = '\nThe ONLY question to answer in this call is: ' + json.dumps(request, ensure_ascii=False) + \
         '\nAnswer this exact task; do not replace a requested distinction with the general subject history.'
     if correction:
@@ -180,6 +196,8 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
         focus += '\nReviewer notes are fallible hints only; select original passages, never the notes as evidence.'
     if feedback:
         focus += '\nReconsider the previous proposal using the fallible review feedback. Only the original sources establish facts. Correct event relationships and unsupported limitations, not just citation numbers.'
+    if amendments is not None:
+        focus += AMENDMENT
     from .research_evidence_pack import request_characters, select_evidence
 
     allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
@@ -195,12 +213,15 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
                 if 'candidate_windows' in error:
                     error['candidate_windows'] = [{'text': window['text']} for window in error['candidate_windows']]
         if feedback:
-            payload['review_feedback'] = feedback
+            payload['review_feedback'] = {key: value for key, value in feedback.items()
+                if amendments is None or key != 'already_answered'}
+        if amendments is not None:
+            payload['retained_answer'] = {key: point['statement'] for key, point in amendments.items()}
         return local, payload
 
     def request_size(references):
         local, payload = writer_input(references)
-        _, schema = requested_schema(local, max_points, correction)
+        _, schema = requested_schema(local, max_points, correction, amendments)
         return request_characters((POINT_REPAIR if correction else WRITE) + focus, payload, schema)
 
     def fits(references):
@@ -279,7 +300,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
     originals = ({key: wire.references[key] for key in selected} if saved.get('packed')
         else contextual_references(wire, selected))
     local, payload = writer_input(originals)
-    point_schema, schema = requested_schema(local, max_points, correction)
+    point_schema, schema = requested_schema(local, max_points, correction, amendments)
     if 'draft' not in saved:
         if deadline - monotonic() < 8:
             return [], '', {**receipt, 'status': 'unavailable'}
@@ -337,6 +358,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
         saved.pop('proposal', None)
     retain()
     return points, gap, {**receipt, 'status': 'proposed' if points else outcomes[0]['status'] if outcomes else 'unresolved',
+        **({'replace_point': data['replace_point']} if amendments is not None else {}),
         'workflow_gap': bool(gap == host_notice),
         'selected_references': len(selected), 'context_windows': len(local),
         'point_count': len(points), 'output_fingerprint': fingerprint(completed)}

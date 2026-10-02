@@ -355,3 +355,35 @@ async def test_many_sources_keep_their_complete_schema_with_a_supported_transpor
         settings=SimpleNamespace(apertus_context_chars=100000)),
         SimpleNamespace(references=refs, input={}), 'Which originals establish the requested appointment?', 60)
     assert not point and receipt['status'] == 'no_selection'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('target', ['P0', 'new', 'P99'])
+async def test_amendment_target_is_bound_to_retained_answer_and_resumes_without_redrafting(target):
+    wire, parsed, _ = fixture(2)
+    original = parsed.mission_checkpoint.answer.points[0]
+    state, calls = {}, []
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            if 'citation_refs' in options['response_schema']['properties']:
+                calls.append('select')
+                return selection_json([1], options)
+            calls.append('amend')
+            assert payload['retained_answer'] == {'P0': original.statement}
+            assert options['response_schema']['properties']['points']['maxItems'] == 1
+            assert options['response_schema']['properties']['replace_point']['enum'] == ['new', 'P0']
+            return json.dumps({'points': [{'statement': wire.references[1]['quote'],
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
+                'remaining_gap': '', 'replace_point': target})
+    service = SimpleNamespace(model_client=Model())
+    result, gap, receipt = await answer_request(service, wire, 'Clarify the publication event.', 60,
+        checkpoints=state, amendments={'P0': original.model_dump()})
+    if target == 'P99':
+        assert not result and receipt['status'] == 'invalid_answer'
+    else:
+        assert len(result) == 1 and receipt['replace_point'] == target and not gap
+        resumed, _, repeat = await answer_request(service, wire, 'Clarify the publication event.', 60,
+            checkpoints=json.loads(json.dumps(state)), amendments={'P0': original.model_dump()})
+        assert resumed == result and repeat['replace_point'] == target
+    assert calls == ['select', 'amend']
