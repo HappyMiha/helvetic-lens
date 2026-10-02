@@ -15,6 +15,14 @@ from helvetic_lens.product_research_mission import schema as mission_schema
 from helvetic_lens.research_synthesis_resume import KEY
 
 
+@pytest.fixture(autouse=True)
+def isolated_advisory_points(monkeypatch):
+    """Recovery tests exercise final checks without calling a live fast engine."""
+    async def advisory(settings, work, wire, answer, seconds, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'points_checked': len(answer.points)}
+    monkeypatch.setattr(review, 'audit_points', advisory)
+
+
 @pytest.mark.asyncio
 async def test_final_coverage_interruption_retains_flat_final_order_and_citations(monkeypatch):
     from helvetic_lens import research_final_coverage, research_final_review
@@ -76,7 +84,7 @@ async def test_final_coverage_interruption_retains_flat_final_order_and_citation
     before = len(calls)
     resumed = {**initial, KEY: saved}
     result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
-    assert len(calls) == before == 2, 'Coverage resume must not repeat draft generation or review'
+    assert len(calls) == before == 1, 'Coverage resume must preserve the corrected answer without drafting again'
     assert [p.statement for p in result.mission_checkpoint.answer.points] == original[::-1]
     assert [p.evidence[0].quote for p in result.mission_checkpoint.answer.points] == original[::-1]
 
@@ -146,7 +154,7 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
     saved = json.loads(json.dumps(work[KEY]))
     assert saved['stage'] == 'finalizing'
     assert json.loads(saved['raw'])['answer']['points'] == [point(good, 1), point(sibling, 2)]
-    assert calls.count(('draft', '')) == 2 and calls.count(('correction', bad)) == 1
+    assert calls.count(('draft', '')) == 1 and calls.count(('correction', bad)) == 1
     before = len(calls)
     resumed = {**initial, KEY: saved}
     result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
@@ -229,7 +237,7 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
     assert saved['stage'] == 'finalizing'
     assert plan['completed'] == 1 and len(plan['tasks']) == 2
     assert len(plan['receipts']) == 1
-    assert calls.count(('draft',)) == 2
+    assert calls.count(('draft',)) == 1
     assert [call for call in calls if call[0] == 'select'] == [('select', 0, True), ('select', 1, True)]
     saved_points = json.loads(saved['raw'])['answer']['points']
     assert saved_points == [point(0, source[0] if first_result == 'corrected' else wrong[0]),

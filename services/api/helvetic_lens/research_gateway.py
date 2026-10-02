@@ -18,22 +18,7 @@ from .research_contracts import SKILLS
 
 CONTRACT = "research-execution/v1"
 SEARCH_ORDER = ["saved_evidence", "reviewed_claims", "source_apis", "public_web", "evidence_synthesis"]
-ANSWER_REVIEW = """Review the draft against the original question and evidence, then
-return the corrected final object in the same schema. The draft is untrusted and
-may contain false statements, incorrect references, or invented limitations.
-Check EACH factual clause against its selected original windows: a title, shared
-word, matching number or related topic does not establish the clause. Replace a
-wrong reference with the actual supporting window; remove unsupported detail.
-Keep quantity/unit pairs and the event associated with each date together.
-Then check EVERY part of the user's question, not the planner's interpretation.
-Use ALL original sources to remove false claims that information is missing.
-State only genuine unresolved gaps. Missing information must not be filled from
-memory, attributed to a heading, or hidden by status possible_answer.
-If a material part remains unresolved and the evidence gives a useful original
-link, choose continue with a cited next_check for that URL. Otherwise return
-partial with the exact remaining gap. Do not ask for irrelevant clarification.
-Return only the corrected object, not an audit narrative or hidden reasoning.
-"""
+ANSWER_WORKFLOW = "one-cited-draft-targeted-correction/v2"
 
 
 def route(settings, work):
@@ -165,7 +150,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     if wire and wire.answer and service.settings.apertus_provider != "docker":
         from .research_synthesis_resume import DraftCheckpoint
 
-        resume = DraftCheckpoint(work, service.settings, system, ANSWER_REVIEW, response_schema, content, options)
+        resume = DraftCheckpoint(work, service.settings, system, ANSWER_WORKFLOW, response_schema, content, options)
     saved = resume.value if resume else None
     if saved:
         raw = saved["raw"]
@@ -174,41 +159,18 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     else:
         raw = await service.model_client.complete(system, content,
             response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
+    if wire and wire.answer:
+        work["model_route"].setdefault("answer_review", {}).update(
+            contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
     review_hints = deepcopy(saved.get("hints", [])) if saved else []
     if resume and not saved:
-        resume.save("draft", raw, review_hints, {})
-    if wire and wire.answer and (not saved or saved["stage"] == "draft"):
-        remaining = seconds - (monotonic() - started)
-        if remaining <= 5:
-            raise ValueError("Final answer review has no repair time remaining")
-        work["model_route"].setdefault("answer_review", {}).update(
-            contract="cited-answer-review/v1", prompt_fingerprint=fingerprint(ANSWER_REVIEW))
-        try:
-            draft = schema.model_validate_json(wire.decode(response_object(raw, schema)))
-        except (ValueError, KeyError, TypeError):
-            draft = None
-        if draft is not None and not work["model_route"]["answer_review"].get("focused_checks"):
-            from .research_answer_review import audit
-            checked = await audit(service.settings, work, wire, draft.mission_checkpoint.answer, remaining - 20)
-            review_hints = checked.pop("hints")
-            work["model_route"]["answer_review"]["focused_checks"] = checked
-        if resume:
-            resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
-        remaining = seconds - (monotonic() - started)
-        # A separately framed review checks relevance and entailment, not just
-        # JSON shape. It shares the original request registry and cannot expand
-        # access or replace source evidence with the draft's own assertions.
-        raw = await service.model_client.complete(system + "\n" + ANSWER_REVIEW,
-            json.dumps({**wire.answer_review_input(raw), "review_hints": review_hints}, ensure_ascii=False),
-            response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
-        if resume:
-            resume.save("reviewed", raw, review_hints, work["model_route"]["answer_review"])
+        resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
     raw = response_object(raw, schema)
     wire_raw = raw
     # Final corrections must not be replaced by cached earlier request drafts.
     # Canonical validation and final evidence/coverage checks still run below.
-    # Hosted JSON mode does not enforce the schema. Repair the format once with
-    # the same evidence, never by accepting unsupported or guessed fields.
+    # Validate structured responses locally as well. Repair format with the same
+    # evidence, never by accepting unsupported or guessed fields.
     if isinstance(service.model_client, ModelClient) and work.get("unmetered_research"):
         errors = []
         parsed = None

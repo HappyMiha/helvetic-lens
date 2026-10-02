@@ -334,7 +334,7 @@ async def test_known_invalid_answer_is_rejected_when_repair_time_is_exhausted(mo
             'limitations': ['Only this original was read.']}, 'action': 'finish', 'reason': 'The original answers the question.'})
     monkeypatch.setattr(client, 'complete', complete)
     from itertools import chain, repeat
-    times = chain([0, 0, 0], repeat(9))
+    times = chain([0], repeat(9))
     monkeypatch.setattr(research_gateway, 'monotonic', lambda: next(times))
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {'original_question': 'How high is it?',
         'sources': [section()['input']['source']], 'research_mission': {}, 'assessment_question': {'question_id': 'q'}}}
@@ -380,7 +380,7 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
     @atomic_pack_model
     async def complete(*args, **kwargs):
         calls.append(1)
-        assert len(calls) <= 3, 'Initial draft, semantic draft check and final literal review only.'
+        assert len(calls) <= 2, 'The cited draft is retained through context recovery and final review.'
         value = json.loads(args[1])
         if 'final_claims_and_gaps' in value:
             assert value['selected_citation_refs'] == [1, 2]
@@ -408,7 +408,7 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
     schema = mission_schema(AssessedBriefing)
     raw = await research_gateway._complete(SimpleNamespace(model_client=client, settings=settings), work, '', schema, 90)
     result = schema.model_validate_json(raw)
-    assert len(calls) == 3
+    assert len(calls) == 2
     assert len(result.mission_checkpoint.answer.points[0].evidence) == 2
     assert not research_gateway.answer_quantity_errors(result.mission_checkpoint.answer)
 

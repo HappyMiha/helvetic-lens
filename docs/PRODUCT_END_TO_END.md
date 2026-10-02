@@ -951,3 +951,76 @@ its control explanation also mixed cases. Unstructured synthesis improved narrat
 coherence but omitted citations and mixed measurement years. Neither experiment
 was incorporated or reclassified as a content pass. No new full native run is
 started while session10028 is active; the current run remains pinned to 9abb551.
+
+
+### One answer through evidence review
+
+MV2-020/023, 2 October: the unchanged native run stopped after 9782.74 seconds,
+192 worker steps and 146 additional model calls (239 cumulative). All 16 captured
+document reading records were complete, but
+one still lacked validated analysis after repeated provider timeouts. Final
+synthesis then received repeated rate limits. Earlier checkpoints contained
+known factual errors; terminal failure is not acceptance. This elapsed time
+also includes the old synchronous read-heavy harness. No production data or
+emails were created. Preserve the completed run and its exact execution hashes.
+
+Scope: compose one canonical answer, remove the unconditional whole-answer
+rewrite, and apply the existing fast point-entailment check to the actual final
+wording. Carry its negative signals into the existing original-bound reasoning
+review as explicitly fallible objections; do not turn a fast label into a hard
+truth verdict. The reasoning reviewer must resolve or retain each objection
+against originals. Reuse successful exact-input decisions privately, including
+across interrupted corrections. Changed statements, evidence, policy or engine
+configuration require new checks. Do not repeat corpus-wide limitation scans
+or reinterpret operational notices as scientific gaps. The existing targeted
+correction, full-source reading, canonical quotation validation, coverage,
+private resumption and public-only fast-review boundary remain in force.
+
+Dependencies/source readiness: existing captured authorized originals and the
+configured Jev/Laya and Apertus providers; no new source, credential, quota or
+public interface. Acceptance: a supported answer needs one draft, a negative
+fast signal receives an explicit original-bound resolution and cannot alone
+remove a valid finding, a confirmed defect is corrected without rewriting good
+siblings, and interruption resumes only unfinished work. Actual provider
+content quality and whole native completion remain separate open gates.
+
+Implementation: the gateway now retains one cited draft and performs only
+identified canonical, factual and coverage corrections. Final point decisions
+are privately keyed to the exact statement, ordered quotations, policy and
+configured engine identity. Negative fast labels are advisory concerns requiring
+explicit original-bound resolution; they do not directly remove a finding.
+Successful decisions count as saved work, while unavailable/noise-only receipts
+do not. After one failed fast-provider fallback pair, fresh advisory calls stop
+for that invocation; completed cached checks remain reusable and the main
+evidence review can proceed.
+
+Affected gateway/resumption tests passed (69 before the three new saved-progress
+cases); final-review tests passed (43), and focused fast-review tests passed (36).
+Independent review reproduced the slow-provider failure with eight points: before
+the guard, 84 simulated seconds yielded zero deep checks and zero progress; after
+the guard, 80 seconds completed all eight deep checks, preserving all findings.
+Fast coverage remained unavailable and the result stayed honestly partial. These
+are controlled recovery checks, not evidence of real provider accuracy.
+
+The same isolated failed investigation is undergoing ordinary native retry using
+its retained sources and the recorded working implementation. Earlier terminal
+artifacts are preserved with single-draft-before prefixes. One reconciliation node for its 55-page chapter
+initially timed out twice, then returned in 5.78 seconds; the next node remained
+pending. A successful node response does not establish full-document analysis. No duplicate
+mission or forced database state was introduced. Full native content acceptance
+remains open until its actual terminal answer is independently assessed.
+
+The native lifecycle/mission gate also passed 30 integration cases plus the
+backlog guard, including source withdrawal and a fictional 420-page original
+whose final-page exception must be read and retained. The native simulation
+uses deterministic models and is not real-provider content acceptance.
+Both unchanged product readers rendered the prior actual failed run's seven
+retained points, 28 quotations and one gap; all were present. This is rendering
+evidence only and does not change its failed substantive assessment.
+
+The same outage handling also applies to compound-request coverage: after one
+unavailable decision, later requests remain explicitly unknown without another
+provider pair. The controlled eight-request path used 48 of 90 seconds for both
+fast phases, leaving 42 seconds for evidence reasoning; it preserved earlier
+known missing parts and never converted unknown coverage to completion. The
+43 final-review integration checks passed again after this shared audit change.

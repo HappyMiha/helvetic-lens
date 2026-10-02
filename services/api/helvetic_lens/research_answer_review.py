@@ -4,6 +4,7 @@ Only the already authorized public exploration pack may reach this service.
 Decisions are correction hints, never new evidence or a truth certificate.
 """
 import json
+from copy import deepcopy
 from time import monotonic
 
 from . import decision_engines as decision
@@ -172,32 +173,101 @@ a review signal, not proof of truth.
 """
 
 
+async def _choose_review(settings, engines, receipts, deadline, state, instructions, criteria):
+    failures = []
+    for name in ("jev", "laya"):
+        if deadline - monotonic() < 13:
+            receipts.append({"choice": "unavailable", "fallback_errors": [*failures,
+                {"engine": name, "code": "step_deadline"}]})
+            return None
+        if name == "laya" and len(json.dumps(state, ensure_ascii=False)) > 4000:
+            failures.append({"engine": name, "code": "input_does_not_fit"})
+            continue  # Never silently cut the evidence to fit a model.
+        engine = engines.get(name)
+        if engine is None:
+            failures.append({"engine": name, "code": "not_configured"})
+            continue
+        try:
+            value = await engine.choose(state, instructions, criteria)
+            receipts.append({"input_fingerprint": fingerprint(state), "policy_fingerprint": fingerprint({"instructions": instructions, "criteria": criteria}),
+                "engine": name, "model": value.model, "choice": value.choice,
+                "latency_ms": value.latency_ms, "fallback_errors": failures,
+                "usage": decision.measurement(name, [value], settings)})
+            return value.choice
+        except (decision.DecisionUnavailable, TimeoutError) as exc:
+            failures.append({"engine": name, "code": getattr(exc, "code", "timeout")})
+    receipts.append({"choice": "unavailable", "fallback_errors": failures})
+    return None
+
+
+async def audit_points(settings, work, wire, answer, seconds, *, checkpoints=None, on_progress=None):
+    """Return advisory entailment signals for exact points, without rewriting them."""
+    if not work["input"].get("sources") or any(s.get("kind") != "public_source" for s in work["input"]["sources"]):
+        return {"status": "not_applicable", "hints": [], "decisions": [], "points_checked": 0}
+    engines = decision.engines(settings)
+    engine_identity = [{"name": name, "model": getattr(engines.get(name), "model", None),
+        "url": getattr(engines.get(name), "url", None),
+        "configured": bool(getattr(engines.get(name), "key", engines.get(name) is not None))}
+        for name in ("jev", "laya")]
+    policy = {"instructions": POINT_SYSTEM, "criteria": POINT_CRITERIA}
+    cache = checkpoints.setdefault("point_decisions", {}) if checkpoints is not None else {}
+    deadline = monotonic() + max(0, seconds)
+    hints, receipts, checked = [], [], 0
+    unavailable = False
+    for index, point in enumerate(answer.points):
+        state = {"statement": point.statement, "passages": [ref.quote for ref in point.evidence]}
+        binding = fingerprint({"input": state, "policy": policy, "engines": engine_identity})
+        receipt = deepcopy(cache.get(binding))
+        if receipt is not None:
+            verdict = receipt["choice"]
+            receipt["reused"] = True
+        elif unavailable:
+            # This check is advisory. One failed fallback pair must not consume
+            # the remaining time needed by the substantive final review.
+            verdict = None
+            receipt = {"choice": "unavailable", "fallback_errors": [{"code": "earlier_point_unavailable"}]}
+        else:
+            attempted = []
+            verdict = await _choose_review(settings, engines, attempted, deadline, state, POINT_SYSTEM, POINT_CRITERIA)
+            receipt = attempted[-1] if attempted else {"choice": "unavailable", "fallback_errors": [{"code": "step_deadline"}]}
+            if verdict is not None:
+                receipt["configured_engine_fingerprint"] = fingerprint(engine_identity)
+                cache[binding] = deepcopy(receipt)
+                if on_progress:
+                    on_progress()
+            else:
+                unavailable = True
+        receipts.append(receipt)
+        checked += verdict is not None
+        if verdict in {"contradicted", "not_established"}:
+            candidates = [{"id": str(ref), "title": "", "summary": value["quote"]}
+                for ref, value in wire.references.items()]
+            ordered = lexical_order(point.statement, candidates)
+            hints.append({"path": ["answer", "points", index], "review_signal": verdict,
+                "original_windows": [{"text": quote} for quote in state["passages"]],
+                "candidate_windows": [{"citation_ref": int(ref), "text": wire.references[int(ref)]["quote"]} for ref in ordered[:5]],
+                "instruction": "Recheck each clause against actual original windows. Correct citation selection or remove unsupported detail; a related heading is insufficient."})
+    return {"status": "checked" if checked == len(answer.points) else "partial", "hints": hints,
+        "decisions": receipts, "points_checked": checked,
+        "basis": "Fallible review signals, not factual findings; unavailable checks establish neither support nor contradiction."}
+
+
 async def audit(settings, work, wire, answer, seconds, *, coverage_only=False):
     if not work["input"].get("sources") or any(s.get("kind") != "public_source" for s in work["input"]["sources"]):
         return {"status": "not_applicable", "hints": [], "decisions": []}
     engines = decision.engines(settings)
     hints, receipts = [], []
     deadline = monotonic() + max(0, seconds)
+    unavailable = False
 
     async def choose(state, instructions, criteria):
-        failures = []
-        for name in ("jev", "laya"):
-            if deadline - monotonic() < 13:
-                return None
-            if name == "laya" and len(json.dumps(state, ensure_ascii=False)) > 4000:
-                failures.append({"engine": name, "code": "input_does_not_fit"})
-                continue  # Never silently cut the evidence to fit a model.
-            try:
-                value = await engines[name].choose(state, instructions, criteria)
-                receipts.append({"input_fingerprint": fingerprint(state), "policy_fingerprint": fingerprint({"instructions": instructions, "criteria": criteria}),
-                    "engine": name, "model": value.model, "choice": value.choice,
-                    "latency_ms": value.latency_ms, "fallback_errors": failures,
-                    "usage": decision.measurement(name, [value], settings)})
-                return value.choice
-            except (decision.DecisionUnavailable, TimeoutError) as exc:
-                failures.append({"engine": name, "code": getattr(exc, "code", "timeout")})
-        receipts.append({"choice": "unavailable", "fallback_errors": failures})
-        return None
+        nonlocal unavailable
+        if unavailable:
+            receipts.append({"choice": "unavailable", "fallback_errors": [{"code": "earlier_review_unavailable"}]})
+            return None
+        verdict = await _choose_review(settings, engines, receipts, deadline, state, instructions, criteria)
+        unavailable = verdict is None
+        return verdict
 
     coverage = "not_applicable"
     if work["input"].get("original_question"):
@@ -219,18 +289,11 @@ async def audit(settings, work, wire, answer, seconds, *, coverage_only=False):
         return {"contract": "final-request-coverage/v1", "status": "checked" if coverage is not None else "partial",
             "question_coverage": coverage, "hints": hints, "decisions": receipts,
             "basis": "Fallible coverage check of the final statements; not verification of factual truth."}
-    checked = 0
-    for index, point in enumerate(answer.points):
-        state = {"statement": point.statement, "passages": [ref.quote for ref in point.evidence]}
-        verdict = await choose(state, POINT_SYSTEM, POINT_CRITERIA)
-        checked += verdict is not None
-        if verdict in {"contradicted", "not_established"}:
-            candidates = [{"id": str(ref), "title": "", "summary": value["quote"]}
-                for ref, value in wire.references.items()]
-            ordered = lexical_order(point.statement, candidates)
-            hints.append({"path": ["answer", "points", index], "review_signal": verdict,
-                "candidate_windows": [{"citation_ref": int(ref), "text": wire.references[int(ref)]["quote"]} for ref in ordered[:5]],
-                "instruction": "Recheck each clause against actual original windows. Correct citation selection or remove unsupported detail; a related heading is insufficient."})
+    points = await audit_points(settings, work, wire, answer, 0 if unavailable else deadline-monotonic())
+    unavailable = unavailable or points["status"] == "partial"
+    checked = points["points_checked"]
+    hints.extend(points["hints"])
+    receipts.extend(points["decisions"])
 
     # Check the entire synthesis pack, not only the draft's chosen citations.
     # Long sections were reconciled earlier; this is not a new exhaustive scan

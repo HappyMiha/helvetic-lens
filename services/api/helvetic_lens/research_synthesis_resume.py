@@ -15,6 +15,9 @@ def completed_work(checkpoint):
         for field in ("selected", "proposal") if field in value}
     progress.update({"review:" + key: value for key, value in parts.get("final_reviews", {}).items()
         if key.startswith("clauses:")})
+    progress.update({"point_decision:" + key: value for key, value in parts.get("point_decisions", {}).items()
+        if isinstance(value, dict) and value.get("choice") in {"supported", "contradicted", "not_established"}
+        and value.get("input_fingerprint") and value.get("policy_fingerprint")})
     return deepcopy(progress)
 
 

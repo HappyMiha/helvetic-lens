@@ -13,7 +13,7 @@ from helvetic_lens.analysis import ModelClient
 from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.product_exploration import AssessmentOutcome, Briefing
 from helvetic_lens.product_research_mission import schema as mission_schema
-from helvetic_lens.research_synthesis_resume import KEY, DraftCheckpoint
+from helvetic_lens.research_synthesis_resume import KEY, DraftCheckpoint, completed_work, made_progress
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +22,32 @@ def isolated_final_semantics(monkeypatch):
     from helvetic_lens import research_final_review
     async def checked(service, wire, answer, seconds, **kwargs):
         return {'status': 'checked', 'hints': [], 'points_checked': len(answer.points)}
+    async def advisory(settings, work, wire, answer, seconds, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'points_checked': len(answer.points)}
     monkeypatch.setattr(research_final_review, 'reasoned_review', checked)
+    monkeypatch.setattr(review, 'audit_points', advisory)
+
+
+@pytest.mark.parametrize('verdict', ['supported', 'contradicted', 'not_established'])
+def test_completed_advisory_decision_renews_progress_but_failed_attempts_do_not(verdict):
+    receipt = {'choice': verdict, 'input_fingerprint': 'input-a',
+        'policy_fingerprint': 'policy-a', 'configured_engine_fingerprint': 'engine-a'}
+    checkpoint = {'parts': {'point_decisions': {'point-a': receipt}}}
+    finished = completed_work(checkpoint)
+    assert made_progress({}, finished), 'A completed exact check must survive worker-step continuation'
+    restored = json.loads(json.dumps(checkpoint))
+    assert not made_progress(finished, completed_work(restored)), 'Restoring the same check is not new work'
+    restored['parts']['point_decisions'].update({
+        'failed': {'choice': 'unavailable', 'input_fingerprint': 'input-b', 'policy_fingerprint': 'policy-a'},
+        'unbound': {'choice': 'supported'},
+        'noise': {'latency_ms': 200, 'fallback_errors': [{'code': 'timeout'}]},
+    })
+    assert completed_work(restored) == finished
+    assert not made_progress(finished, completed_work(restored))
+    restored['parts']['point_decisions']['failed']['fallback_errors'] = [{'code': 'another-timeout'}]
+    assert not made_progress(finished, completed_work(restored)), 'Changing failure bookkeeping must not renew retries'
+    restored['parts']['point_decisions']['point-b'] = {**receipt, 'input_fingerprint': 'input-b'}
+    assert made_progress(finished, completed_work(restored))
 
 
 @pytest.mark.parametrize('page', ['p103', 'p.103', 'pp103–105', 'page 103'])
@@ -92,7 +117,7 @@ async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draf
     assert retained['raw'] not in json.dumps(work['model_route'])
     resumed = {**initial, KEY: retained}
     answer = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90)).mission_checkpoint.answer
-    assert calls == ['draft_or_review', 'draft_or_review', 'select1', 1, 'select2', 2, 'select3', 3, 3]
+    assert calls == ['draft_or_review', 'select1', 1, 'select2', 2, 'select3', 3, 3]
     assert not gateway.answer_quantity_errors(answer)
     assert [p.statement for p in answer.points] == [f'Record {n} was published in {2000+n}.' for n in (1, 2, 3)]
     assert resumed['model_route']['resumed_stage'] == 'reviewed'
@@ -136,7 +161,7 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
     assert answer.limitations == ['This answer has not resolved the requested part: Distinguish adoption from publication.']
     assert answer.points[0].statement == point['statement'] and not gateway.answer_quantity_errors(answer)
     assert all('2003' not in value.statement for value in answer.points)
-    assert calls == ['draft_or_review', 'draft_or_review', 'select', 'correction']
+    assert calls == ['draft_or_review', 'select', 'correction']
 
 
 @pytest.mark.parametrize('change', ['source', 'prompt', 'schema', 'model', 'endpoint', 'temperature', 'tamper'])
@@ -221,8 +246,8 @@ async def test_one_invalid_point_cannot_rewrite_or_shift_valid_siblings(monkeypa
     assert 'A finding could not be validated against its cited originals: It expired in 2015.' in answer.limitations
     retained = json.loads(work[KEY]['raw'])['answer']
     assert retained['points'] == valid and 'responses' not in retained
-    assert len([call for call in calls if not {'requested_part', 'previous_proposal'} & call.keys()]) == 2
-    assert len(calls) == 5  # Draft/review, one selection, and one bounded invalid-precision retry.
+    assert len([call for call in calls if not {'requested_part', 'previous_proposal'} & call.keys()]) == 1
+    assert len(calls) == 4  # One draft, selected correction, and one bounded invalid-precision retry.
 
 
 @pytest.mark.asyncio
@@ -279,7 +304,7 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
         assert answer.limitations and work['model_route']['answer_review']['final_coverage']['question_coverage'] is None
     else:
         assert not answer.limitations
-    assert calls == ['draft_or_review', 'draft_or_review'] + ([] if coverage == 'complete' else ['select', 'correction'])
+    assert calls == ['draft_or_review'] + ([] if coverage == 'complete' else ['select', 'correction'])
 
 
 def test_rejected_finding_gap_survives_a_full_single_request_limitations_list():
@@ -341,9 +366,15 @@ async def test_source_pack_recovers_a_named_omission_without_claiming_unknown_re
     assert [point.statement for point in answer.points] == [
         'North Reach Survey operates the station.', 'The station entered service in 2019.']
     assert answer.status == ('possible_answer' if available else 'partial')
-    assert not answer.limitations if available else any('When did it enter service?' in gap for gap in answer.limitations)
+    if available:
+        assert not answer.limitations
+    else:
+        from helvetic_lens.research_final_review import REVIEW_NOTICE
+        assert answer.limitations == [REVIEW_NOTICE]
+        assert work['model_route']['answer_review']['final_coverage']['question_coverage'] is None
+        assert not any('When did it enter service?' in gap for gap in answer.limitations), 'A stale draft omission cannot erase the cited correction'
     assert 'Start with' not in str(answer.limitations)
-    assert len(calls) == 4
+    assert len(calls) == 3
     assert work[KEY]['parts'] and 'parts' not in work['model_route']
 
 

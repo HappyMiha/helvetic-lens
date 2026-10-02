@@ -73,7 +73,8 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
                 'reason': 'The original says replaced, not ratified again.' if rejected(item) else '',
                 'citation_refs': value.get('selected_citation_refs', [])}
                 for key, item in value['final_claims_and_gaps'].items()]}
-            if value.get('prior_review_concerns') and correction != 'missing_concern_check':
+            if value.get('prior_review_concerns') and (correction != 'missing_concern_check' or any(
+                    item.get('statement') == bad for item in value['final_claims_and_gaps'].values())):
                 data['concern_checks'] = [{'id': key, 'outcome': 'remains' if any(
                     rejected(item) for item in value['final_claims_and_gaps'].values()) else 'resolved',
                     'reason': 'The original says replaced, not ratified again.', 'citation_refs': value['selected_citation_refs']} for key in value['prior_review_concerns']['concerns']]
@@ -81,10 +82,9 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
                 data['clauses'][0]['citation_refs'] = []
             return review_json(data, gap=next(iter(value['final_claims_and_gaps'])).startswith('L'))
         if 'requested_part' not in value:
-            # The reviewed unified draft introduces the same semantic regression.
-            revised = len([call for call in calls if 'requested_part' not in call and 'final_claims_and_gaps' not in call]) > 1
+            # A single draft contains the defect; correction preserves its sibling.
             return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
-                'points': [point(0), point(1, bad if revised else good[1])]}, 'next_action': 'finish'})
+                'points': [point(0), point(1, bad)]}, 'next_action': 'finish'})
         index = 1 if value.get('correction_target') else 0 if value['requested_part'].startswith('Who') else 1
         if 'citation_refs' in options['response_schema']['properties']:
             return selection_json([index+1], options)
@@ -115,7 +115,6 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
             if 'specific_request' in state:
                 choice = 'missing' if state['specific_request'].startswith('Distinguish') and len(state['answer_points']) < 2 else 'covered'
             elif 'statement' in state:
-                checks.append(state['statement'])
                 choice = 'contradicted' if state['statement'] == bad else 'supported'
             else:
                 choice = 'none'
@@ -142,7 +141,7 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
         result = await gateway.complete(service, work, '', schema, 90)
     answer = schema.model_validate_json(result).mission_checkpoint.answer
     assert answer.points[0].statement == good[0]
-    assert bad in checks, 'The bad final rewrite was absent from the earlier draft'
+    assert bad in checks, 'The actual draft must receive an original-bound factual review'
     assert all(p.statement not in {bad, paraphrase} for p in answer.points)
     assert not gateway.answer_quantity_errors(answer)
     if correction in {'correct', 'rate_limit', 'malformed_review', 'uncited_objection'}:
@@ -154,7 +153,7 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
     else:
         assert len(answer.points) == 1 and answer.status == 'partial'
         assert any((bad if correction == 'role_only' else 'Distinguish the old rule') in gap for gap in answer.limitations)
-    assert len([value for value in calls if 'requested_part' not in value and 'final_claims_and_gaps' not in value]) == 2
+    assert len([value for value in calls if 'requested_part' not in value and 'final_claims_and_gaps' not in value]) == 1
     assert 'previous_statements' not in json.dumps(work['model_route'])
 
 
@@ -208,6 +207,7 @@ async def test_single_question_resumes_corrected_private_point_after_incomplete_
 
     monkeypatch.setattr(model, 'complete', complete)
     monkeypatch.setattr(review, 'audit', audit)
+    monkeypatch.setattr(review, 'audit_points', audit)
     monkeypatch.setattr(review, 'original_check', original)
     with pytest.raises(DomainError) as failure:
         await gateway.complete(service, work, '', schema, 90)
@@ -283,6 +283,7 @@ async def test_unavailable_review_fits_eight_request_slots_without_losing_findin
     async def unavailable(*args, **kwargs):
         return {'status': 'partial', 'hints': [], 'decisions': [], 'question_coverage': None}
     monkeypatch.setattr(review, 'audit', unavailable)
+    monkeypatch.setattr(review, 'audit_points', unavailable)
     monkeypatch.setattr('helvetic_lens.research_final_review.reasoned_review', unavailable)
     await finalize(SimpleNamespace(settings=None), {}, wire, parsed, 60)
     answer = schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer
@@ -377,6 +378,7 @@ async def test_private_resume_preserves_exact_host_notice_provenance(monkeypatch
             return review_json({'clauses': [{'claim_as_written': assertion, 'verdict': 'supported', 'reason': '', 'citation_refs': [1]}]}, gap='gap' in item)
 
     monkeypatch.setattr(review, 'audit', covered)
+    monkeypatch.setattr(review, 'audit_points', covered)
     service = SimpleNamespace(settings=settings, model_client=Model())
     def retain():
         checkpoint.save('reviewed', parsed.mission_checkpoint.answer.model_dump_json(), [], {})
@@ -557,6 +559,7 @@ async def test_only_real_requested_gaps_remain_without_rewriting_completed_answe
     async def covered(*args, **kwargs):
         return {'status': 'checked', 'hints': [], 'decisions': [], 'question_coverage': 'covered'}
     monkeypatch.setattr(review, 'audit', covered)
+    monkeypatch.setattr(review, 'audit_points', covered)
     result = await finalize(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
         {'input': {'original_question': question}}, wire, SimpleNamespace(mission_checkpoint=SimpleNamespace(answer=answer)), 60)
     assert calls == (['L0', 'P0'] if kind == 'answer_available' else ['P0', 'L0'])
@@ -710,6 +713,7 @@ async def test_semantic_point_corrections_preserve_shared_slot_siblings_and_gaps
         return {'status': 'checked', 'hints': [], 'decisions': [], 'question_coverage': 'covered'}
 
     monkeypatch.setattr(review, 'audit', covered)
+    monkeypatch.setattr(review, 'audit_points', covered)
     service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
     work = {'input': {'original_question': question}}
     with pytest.raises(DomainError, match='Synthetic temporary outage'):

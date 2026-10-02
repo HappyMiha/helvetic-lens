@@ -1,4 +1,4 @@
-"""Review the delivered answer after all request-focused rewrites.
+"""Keep one answer through evidence review and targeted correction.
 
 Only exact-input private checkpoints retain proposals or fallible review signals.
 One correction round preserves independent siblings; no review is a truth proof.
@@ -88,7 +88,7 @@ Resolved/remains must include citation_refs that justify that assessment.
 """
 FOCUS = '\nThe ONLY assertion to review is this untrusted text: '
 REVIEW_NOTICE = 'The final evidence review was unavailable or incomplete; these findings remain provisional.'
-POLICY = fingerprint({'contract': 'final-answer-entailment/v16-point-correction', 'review': REVIEW, 'focus': FOCUS})
+POLICY = fingerprint({'contract': 'final-answer-entailment/v17-single-draft', 'review': REVIEW, 'focus': FOCUS})
 
 
 def carry_concerns(existing, previous, issues, context_refs=()):
@@ -279,12 +279,27 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             wire.workflow_gaps.add(text[:400])
 
     async def check():
+        fast = await review.audit_points(service.settings, work, wire, answer, deadline-monotonic(),
+            checkpoints=checkpoints, on_progress=retain)
+        if fast.get('status') == 'not_applicable':
+            return fast  # Preserve the public-only external-review boundary.
         concerns = {}
         for index, point in enumerate(answer.points):
             owner = wire.point_requests[index] if index < len(wire.point_requests) else None
             binding = fingerprint({'request_key': owner, 'point': point.model_dump()})
             if binding in repaired_concerns:
-                concerns[f'P{index}'] = repaired_concerns[binding]
+                concerns[f'P{index}'] = deepcopy(repaired_concerns[binding])
+        for hint in fast['hints']:
+            index = hint['path'][2]
+            point = answer.points[index]
+            issue = {'target': 'points', 'signal': 'fast_' + hint['review_signal'],
+                'instruction': 'A fallible fast check questioned support for this exact statement. '
+                    'This is an advisory signal, not evidence of an error or contradiction. '
+                    'Resolve or retain it by comparing every factual clause with the supplied originals. '
+                    'A supported paraphrase can resolve the objection; shared topic or matching numbers cannot.',
+                'original_text': [ref.quote for ref in point.evidence]}
+            key = f'P{index}'
+            concerns[key] = carry_concerns(concerns.get(key, {}), [point.statement], [issue])
         key = fingerprint({'policy': POLICY, 'answer': answer.model_dump(),
             'point_policy': [review.POINT_SYSTEM, review.POINT_CRITERIA],
             'input': wire.input, 'references': wire.references,
@@ -292,8 +307,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             'workflow_gaps': sorted(getattr(wire, 'workflow_gaps', set()))})
         if key not in cache:
             result = await review.audit(service.settings, work, wire, answer, deadline-monotonic(), coverage_only=True)
-            if result.get('status') == 'not_applicable':
-                return result  # Preserve the public-only external-review boundary.
+            result['fast_point_review'] = {k: v for k, v in fast.items() if k != 'hints'}
             reasoning = deepcopy(cache.get('reasoned:' + key))
             if reasoning is None:
                 reasoning = await reasoned_review(service, wire, answer, deadline-monotonic(),
@@ -312,7 +326,9 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                 cache[key] = deepcopy(result)
                 retain()
             return result
-        return deepcopy(cache[key])
+        result = deepcopy(cache[key])
+        result['fast_point_review'] = {k: v for k, v in fast.items() if k != 'hints'}
+        return result
 
     def point_identity(index):
         owner = wire.point_requests[index] if index < len(wire.point_requests) else None
