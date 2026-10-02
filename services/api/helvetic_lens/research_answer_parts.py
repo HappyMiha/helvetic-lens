@@ -133,7 +133,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
             'required': ['citation_refs'], 'additionalProperties': False}
         raw = await service.model_client.complete(SELECT + focus, json.dumps(context, ensure_ascii=False),
             response_schema=schema, budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()),
-            max_output_tokens=max(600, sum(32 + min(12, len(refs)) * 8 for refs in source_refs.values())))
+            max_output_tokens=min(8192, max(600, sum(32 + min(12, len(refs)) * 8 for refs in source_refs.values()))))
         try:
             data = json.loads(raw)
         except (TypeError, ValueError):

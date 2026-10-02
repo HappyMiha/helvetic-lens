@@ -262,3 +262,21 @@ async def test_later_original_reaches_writer_despite_repetitive_early_summary(se
     refs[14] = {'source_id': 'addendum', 'locator': 'p1', 'quote': 'The replacement appointment remains current.'}
     await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
     assert calls == ['select', 'write', 'select', 'write'], 'A newly authorized original invalidates the previous selection'
+
+
+@pytest.mark.asyncio
+async def test_many_sources_keep_their_complete_schema_with_a_supported_transport_allowance():
+    refs = {i+1: {'source_id': str(i // 12), 'locator': str(i % 12), 'quote': 'An available original passage.'}
+        for i in range(65 * 12)}
+    class Model:
+        async def complete(self, system, text, **options):
+            if not 128 <= options['max_output_tokens'] <= 8192:
+                raise ValueError('Invalid per-request output allowance')
+            payload = json.loads(text)
+            assert len(payload['sources']) == 65
+            assert sum(len(source['passages']) for source in payload['sources']) == len(refs)
+            assert len(options['response_schema']['properties']['citation_refs']['required']) == 65
+            return selection_json([], options)
+    point, _, receipt = await answer_request(SimpleNamespace(model_client=Model()),
+        SimpleNamespace(references=refs, input={}), 'Which originals establish the requested appointment?', 60)
+    assert point is None and receipt['status'] == 'no_selection'

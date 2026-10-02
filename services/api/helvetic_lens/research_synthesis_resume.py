@@ -10,11 +10,17 @@ CONTRACT = "final-synthesis-resume/v1"
 def completed_work(checkpoint):
     """Only retained validated proposals/checks count toward another work step."""
     parts = (checkpoint or {}).get("parts", {})
-    progress = {key: {field: value[field] for field in ("selected", "proposal") if field in value}
-        for key, value in parts.items() if isinstance(value, dict) and ("selected" in value or "proposal" in value)}
-    progress["final_reviews"] = {key: value for key, value in parts.get("final_reviews", {}).items()
-        if key.startswith("clauses:")}
+    progress = {field + ":" + key: value[field]
+        for key, value in parts.items() if isinstance(value, dict)
+        for field in ("selected", "proposal") if field in value}
+    progress.update({"review:" + key: value for key, value in parts.get("final_reviews", {}).items()
+        if key.startswith("clauses:")})
     return deepcopy(progress)
+
+
+def made_progress(previous, current):
+    """Removing stale work or changing accounting cannot renew retries."""
+    return any(key not in previous or value != previous[key] for key, value in current.items())
 
 
 class DraftCheckpoint:

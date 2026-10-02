@@ -322,3 +322,15 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
     assert 'Start with' not in str(answer.limitations)
     assert len(calls) == 6
     assert work[KEY]['parts'] and 'parts' not in work['model_route']
+
+
+def test_removing_obsolete_progress_never_renews_provider_retries():
+    from helvetic_lens.research_synthesis_resume import completed_work, made_progress
+    previous = completed_work({'parts': {'final_reviews': {'clauses:old': {'overall': {'verdict': 'supported'}}}}})
+    empty = completed_work(None)
+    assert not empty and not made_progress(previous, empty)
+    same = completed_work({'parts': {'final_reviews': {'clauses:old': {'overall': {'verdict': 'supported'}}},
+        'workflow_gaps': ['new notice'], 'empty': {}}, 'raw': 'new wording'})
+    assert not made_progress(previous, same)
+    saved = completed_work({'parts': {'final_reviews': {'clauses:new': {'overall': {'verdict': 'supported'}}}}})
+    assert made_progress(previous, saved)

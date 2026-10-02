@@ -595,3 +595,24 @@ The preceding attempt was not accepted: 541.5 seconds, automatic deadline yield
 worked, but repeated provider429 prevented delivery and retained drafts still had
 semantic defects. Content acceptance is separate from release of these validated
 workflow and evidence-selection fixes; no general professional accuracy is claimed.
+
+
+Next recovery refinement stays within this scope: separate consecutive provider
+outage from a new interruption after accepted saved work. Renew a phase's backoff
+only for newly retained validated selections/proposals/checks, including a normal
+progress yield. Removal of an obsolete checkpoint, notices and accounting must
+never renew it. The same unchanged input retains the existing finite consecutive
+outage protection. Per-source selection keeps every schema field and input but
+caps output allowance at the transport's supported 8192 tokens. Acceptance covers
+four intermittent errors with real saved progress versus four unchanged errors;
+only the former reaches native completion automatically.
+
+
+The refinement is implemented: progress signatures contain only actual retained
+entries, and removal alone is not progress. New accepted work renews only its
+matching consecutive-outage counter; successful progress yields do so as well.
+Unchanged provider input still exhausts the same bounded automatic retries. The
+large-source selection transport retains all 65 tested source groups within the
+supported output allowance. Focused validation is now 94 passing cases. All four affected
+native intermittent-outage/noise/counter checks passed in 72.92 seconds; publication/activation and
+the ongoing real-provider mission remain explicit in the parent checkpoint.

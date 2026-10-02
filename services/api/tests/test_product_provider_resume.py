@@ -300,3 +300,47 @@ def test_completed_review_work_continues_automatically_with_source_and_privacy_f
         if not withdraw:
             assert not state.get('provider_retries')
             assert any(step.get('checkpointed') and step['status'] == 'completed' for step in state['steps'])
+
+
+@pytest.mark.parametrize('progress', [True, False])
+def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypatch, progress):
+    from test_product_exploration import adapters
+    from test_product_exploration import start as explore
+
+    from helvetic_lens import research_gateway
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    client, service, _, model = signed
+    adapters(monkeypatch, service, model)
+    root, run, _ = explore(client)
+    execute, calls = research_gateway.execute, []
+    async def intermittent(service, work, seconds):
+        if work['phase'] != 'brief':
+            return await execute(service, work, seconds)
+        calls.append(work['branch_id'])
+        if len(calls) > 4:
+            return await execute(service, work, seconds)
+        parts = {'workflow_gaps': [f'Unfinished check {len(calls)}'], 'empty': {}}
+        if progress:
+            parts['final_reviews'] = {f'clauses:accepted-{i}': {'overall': {'verdict': 'supported'}}
+                for i in range(len(calls))}
+        work[KEY] = {'stage': 'reviewed', 'raw': f'Private draft {len(calls)}', 'parts': parts}
+        raise DomainError('Temporary outage after work or unchanged input', 503, 'model_rate_limited')
+    monkeypatch.setattr(research_gateway, 'execute', intermittent)
+    for _ in range(60):
+        tick(service, run['id'])
+        with service.db.session() as session:
+            current = session.get(Investigation, run['id'])
+            if current.status not in {'queued', 'running'}:
+                final_status = current.status
+                break
+            job = session.get(Job, current.job_id)
+            if job.error_code == 'research_provider_backoff':
+                branch = session.get(InvestigationBranch, calls[0])
+                assert list(branch.checkpoint['provider_retries'].values()) == [1 if progress else len(calls)]
+                job.available_at = utcnow() - timedelta(seconds=1)
+                session.commit()
+    else:
+        pytest.fail('Provider recovery never reached a final state')
+    assert final_status == ('completed' if progress else 'failed')
+    assert len(calls) == (5 if progress else 4)

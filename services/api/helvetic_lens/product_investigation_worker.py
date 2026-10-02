@@ -546,7 +546,7 @@ async def execute(service, job_id, worker):
             or work["execution_route"]["input_fingerprint"])
         retries = state.setdefault("provider_retries", {})
         from .research_synthesis_resume import KEY as synthesis_checkpoint
-        from .research_synthesis_resume import completed_work
+        from .research_synthesis_resume import completed_work, made_progress
 
         prior_parts = completed_work(state.get(synthesis_checkpoint))
         if work["phase"] == "brief":
@@ -555,9 +555,14 @@ async def execute(service, job_id, worker):
                 # This remains a private proposal. All post-provider fences above
                 # must pass before retaining it, and every later answer is validated.
                 state[synthesis_checkpoint] = deepcopy(work[synthesis_checkpoint])
+        retained_parts = completed_work(state.get(synthesis_checkpoint))
+        progressed = made_progress(prior_parts, retained_parts)
+        if transient and progressed and unmetered(run) and run.status in ACTIVE:
+            # An outage after newly completed inference is a new interruption.
+            # An unchanged input or accounting-only change cannot renew retries.
+            retries.pop(retry_key, None)
         if transient == "research_review_yield":
-            retained_parts = completed_work(state.get(synthesis_checkpoint))
-            if run.status in ACTIVE and unmetered(run) and retained_parts and retained_parts != prior_parts:
+            if run.status in ACTIVE and unmetered(run) and progressed:
                 # Completed evidence checks are progress, not a failed inference.
                 # Accounting, trace or raw wording changes cannot renew this step.
                 research_gateway.finish(state, work, result, failed=True, elapsed=perf_counter() - started)
