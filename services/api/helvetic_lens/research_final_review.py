@@ -88,7 +88,7 @@ Resolved/remains must include citation_refs that justify that assessment.
 """
 FOCUS = '\nThe ONLY assertion to review is this untrusted text: '
 REVIEW_NOTICE = 'The final evidence review was unavailable or incomplete; these findings remain provisional.'
-POLICY = fingerprint({'contract': 'final-answer-entailment/v15', 'review': REVIEW, 'focus': FOCUS})
+POLICY = fingerprint({'contract': 'final-answer-entailment/v16-point-correction', 'review': REVIEW, 'focus': FOCUS})
 
 
 def carry_concerns(existing, previous, issues, context_refs=()):
@@ -192,13 +192,18 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
                     'instruction': 'This entry is established information or outside the requested scope, not an unresolved requested issue.'})
         elif rejected:
             refs = list(dict.fromkeys(ref for clause in rejected for ref in clause['citation_refs']))
-            # A reviewer's free-form rationale is not evidence and cannot
-            # introduce an alternative event/date into correction instructions.
+            # Preserve actionable criticism separately from facts. Each note is
+            # fallible and tied to exact originals; it never becomes evidence.
+            notes = [{'assertion': clause['claim_as_written'], 'comment': clause['reason'],
+                'basis': 'Fallible reviewer objection; verify against these originals, not reviewer authority.',
+                'originals': [deepcopy(context[ref]) for ref in clause['citation_refs']]}
+                for clause in rejected if clause.get('reason', '').strip() and clause['citation_refs']]
             hints.append({'path': ['answer', 'points' if key.startswith('P') else 'limitations', int(key[1:])],
                 'review_signal': 'contradicted' if any(c['verdict'] == 'contradicted' for c in rejected) else 'not_established',
                 'instruction': '\n'.join(('The originals contradict this exact clause: ' if c['verdict'] == 'contradicted'
                     else 'Direct support is still needed for this exact clause: ') + c['claim_as_written'] for c in rejected),
-                'original_windows': [{'text': context[ref]['quote']} for ref in refs]})
+                'original_windows': [{'text': context[ref]['quote']} for ref in refs],
+                **({'reviewer_notes': notes} if notes else {})})
         supported = list(dict.fromkeys(ref for clause in judgments if clause['verdict'] == 'supported'
             for ref in clause['citation_refs']))
         if key.startswith('P') and key in checked and not rejected:
@@ -341,18 +346,22 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             kind, index = hint['path'][1:3]
             if kind == 'points':
                 key = wire.point_requests[index] if index < len(wire.point_requests) else None
-                focus = wire.request_keys.get(key) or answer.points[index].statement
+                focus = wire.request_keys.get(key) or work['input']['original_question']
                 identity = point_identity(index)
             else:
                 identity = answer.limitations[index]
                 key = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'].strip() == identity), None)
                 focus = wire.request_keys.get(key) or ('Resolve this stated limitation using the originals: ' + identity)
             observations.append({'hint': deepcopy(hint), 'identity': defect_identity(index) if kind == 'points' else identity})
-            task = tasks.setdefault(key or (kind, index), {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
+            # A legacy request slot may own several points. Each rejected point
+            # needs its own correction; shared ownership is not a rewrite scope.
+            task_key = (kind, identity) if kind == 'points' else key or (kind, index)
+            task = tasks.setdefault(task_key, {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
             task[kind if kind == 'points' else 'gaps'].append(identity)
             # Citation numbers belong to this review, not the correction pack.
             task['issues'].append({'target': kind, 'signal': hint['review_signal'], 'instruction': hint['instruction'],
-                'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))]})
+                'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))],
+                **({'reviewer_notes': deepcopy(hint['reviewer_notes'])} if hint.get('reviewer_notes') else {})})
         # One shared answer keeps coverage as a checklist, not separate writers.
         # Recover only a genuinely omitted request identified by that checklist.
         for hint in checked['hints']:
@@ -381,10 +390,14 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         owner_siblings = ([i for i, owner in enumerate(wire.point_requests) if owner == key and i not in indices]
             if wire.request_keys else [i for i in range(len(answer.points)) if i not in indices])
         feedback['already_answered'] = [answer.points[i].model_dump() for i in owner_siblings]
-        capacity = min(8 - len(answer.points) + len(indices), request_capacity(wire, key) - len(owner_siblings))
+        correction = ({'previous_statement': answer.points[indices[0]].statement,
+            'validation_errors': deepcopy(task['issues'])} if indices else None)
+        if len(indices) > 1:
+            raise ValueError('A point correction must have exactly one retained target')
+        capacity = 1 if correction else min(8 - len(answer.points), request_capacity(wire, key) - len(owner_siblings))
         if capacity > 0:
             fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
-                checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity)
+                checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity, correction=correction)
         else:
             fixed, gap, receipt = [], '', {'status': 'unrepresented'}
         if receipt.get('status') == 'unavailable' and defer_pending:
@@ -405,10 +418,11 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                     for point in fixed:
                         binding = fingerprint({'request_key': key, 'point': point.model_dump()})
                         repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
-                answer.limitations = [text for text in answer.limitations if text not in old_gaps]
-                update_gap(wire, answer, key, gap)
-                if receipt.get('workflow_gap'):
-                    wire.workflow_gaps.add(gap)
+                if not correction:
+                    answer.limitations = [text for text in answer.limitations if text not in old_gaps]
+                    update_gap(wire, answer, key, gap)
+                    if receipt.get('workflow_gap'):
+                        wire.workflow_gaps.add(gap)
         # The answer, inherited concerns and terminal outcome are one checkpoint.
         # Exceptions/deadline deferrals above leave this exact task pending.
         plan['receipts'].append({**receipt, 'request_key': key})

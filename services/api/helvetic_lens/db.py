@@ -106,25 +106,33 @@ class Database:
             organization_id = execute_state.session.info.setdefault(
                 "organization_id", organization_context.get()
             )
-            statement = execute_state.statement
-            for model in ORGANIZATION_SCOPED_MODELS:
-                statement = statement.options(
+            # Reuse only immutable SQL filter expressions in this Session.
+            # Query rows and the request policy above always remain current.
+            # Include the tenant and registries in the key: changing scope must
+            # never reuse another tenant's bound parameters.
+            key = (organization_id, ORGANIZATION_SCOPED_MODELS, SHARED_CORPUS_MODELS)
+            cached = execute_state.session.info.get("organization_loader_options")
+            if cached is None or cached[0] != key:
+                scoped = tuple(
                     with_loader_criteria(
                         model,
                         lambda cls: cls.organization_id == organization_id,
                         include_aliases=True,
                     )
+                    for model in ORGANIZATION_SCOPED_MODELS
                 )
-            for model in SHARED_CORPUS_MODELS:
-                statement = statement.options(
+                shared = tuple(
                     with_loader_criteria(
                         model,
                         lambda cls: (cls.owner_organization_id.is_(None))
                         | (cls.owner_organization_id == organization_id),
                         include_aliases=True,
                     )
+                    for model in SHARED_CORPUS_MODELS
                 )
-            execute_state.statement = statement
+                cached = (key, (*scoped, *shared))
+                execute_state.session.info["organization_loader_options"] = cached
+            execute_state.statement = execute_state.statement.options(*cached[1])
 
     @property
     def current_organization_id(self) -> str:

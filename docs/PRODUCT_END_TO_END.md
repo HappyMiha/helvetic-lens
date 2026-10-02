@@ -860,3 +860,94 @@ read-only review passed. Coverage is checked on the actual surviving findings;
 known coverage replaces obsolete host notices, while source gaps and unavailable
 review remain explicit. The next ordinary public continuation uses captured work
 and the exact recorded implementation; substantive acceptance remains pending.
+
+
+### Preserve the source meaning through final correction
+
+MV2-020/023, 2 October: the current native checkpoint retained exact citations
+but changed geographic scope/baseline and compared different physical quantities.
+A bare supported verdict approved those errors. Numerical repair also used the
+rejected assertion as a new requested task without its defect. Scope: separate
+the original question from the untrusted correction target, and require explicit
+source-to-assertion correspondence in the existing final-review call. Check
+metric/unit, comparison direction, subject/scope, baseline/period and conditions.
+Host-owned sentence IDs and original references bind exact text to the comparison; a
+reported mismatch overrides a bare supported verdict. Missing or malformed checks
+remain unavailable rather than invented counterevidence. Reuse the one correction
+round and private exact-input checkpoints; no new reviewer or search loop.
+Dependencies/source readiness: current authorized captured originals, configured
+reasoning provider, unchanged rights/consent and native worker. Acceptance:
+incorrect dimensions, reversed comparison, broadened population and substituted
+baselines are rejected while supported paraphrases survive; resume does not reuse
+a correction for another statement. Actual provider evaluation and native content
+acceptance remain separate from controlled contract checks.
+
+Controlled public-provider result, 2 October: NOT ACCEPTED. The host-ID version
+accepted the supported attribution control but failed both intended semantic
+negative controls. It approved the broadened geographic scope and substituted
+baseline. Its other negative hint concerned neighbouring sentences, while its
+narrowed candidate retained the invalid cross-unit/direction comparison. An
+independent content review confirmed both failures. Literal references and typed
+alignment verdicts therefore do not demonstrate the intended semantic improvement.
+The uncommitted proposal is not a release or native acceptance. No additional
+provider loop follows from green contract checks. Preserve the current native
+run (pinned to 9abb551), collect its outcome and account for end-to-end latency
+and meaning preservation before choosing the next coherent product change.
+
+### Coherent research delivery, after full-path review
+
+MV2-020/023, 2 October: source evidence already answers the ordinary question.
+Later corrections lose useful distinctions, turn rejected text into new user
+requirements, and append overlapping mini-answers. Final review discards its own
+actionable criticism. Two research rounds spend 30 brief steps finalizing answers
+before further collection; the test harness also serializes full dossier reads
+before every worker step. Neither is a fresh production timing benchmark.
+
+Scope: keep the real user question and retained correct findings through ordinary
+semantic corrections; pass the rejected statement and source-bound, explicitly
+fallible criticism separately. A point-only correction cannot clear unrelated
+gaps or expand into other requested parts. Retain exact original references,
+rights/consent, private recovery and the existing final-review gates. Remove the
+unaccepted alignment-dimension prototype; archive its evidence without claiming
+semantic success. Correct the isolated harness measurement separately so read
+projections do not gate each worker step. Dependencies are existing providers,
+authorized public originals and native jobs. Acceptance requires no wrong-question
+substitution, duplicate answer growth or loss of valid siblings on retry; actual
+content quality and final mission completion remain independent open gates.
+
+The isolated 23-source dossier GET took 20.572s with profiling (4.59MB response).
+Its 938 ORM executions rebuilt 159,460 tenant loader criteria; this consumed
+7.93s. Scope also includes reusing immutable SQL filter options inside the same
+Session for the same tenant/model registry, while always applying the current
+request policy and executing every query against current data. No rows, rights
+decisions or cross-request projection results are cached. Acceptance requires
+unchanged tenant/shared-corpus/alias isolation, new writes visible after warm-up,
+all-organizations exception unchanged, and an identical isolated GET projection.
+
+Implementation evidence: semantic and numerical correction now preserve the real
+question, one explicit rejected target, unaffected siblings and existing gaps.
+Actionable review comments remain separately labelled fallible and bound to the
+supplied original records. A paused second repair retains the first completed
+repair; ordinary resumption does not reselect or rewrite it. The earlier alignment
+dimension prototype was withdrawn and archived outside the repository.
+
+The affected gate passed 127 cases initially; its three old fixtures still expected
+the rejected assertion as the user task. Updating those expectations while retaining
+the recovery/citation assertions made all three pass. Another 14 database lifecycle,
+organization access/isolation and fresh-read tests passed. The warm-filter fixture
+passed after supplying its required organization slug. Exact API lint and backlog
+guard passed. Independent review found no tenant-filter blocker.
+
+On the identical isolated snapshot with cProfile active, the dossier GET fell from
+20.572s to 12.751s; all 4,588,645 response bytes represented the identical parsed
+projection. SQL requests still execute against current data. This is a local
+profiled comparison, not a production latency guarantee. The corrected future
+pilot harness separates worker/projection/wait time and avoids blocking every
+worker step on a full read. The already-running native process is unchanged.
+
+Whole-path content acceptance remains OPEN. A concise batched editorial probe
+still approved the wrong scope and failed to identify the intended unit error;
+its control explanation also mixed cases. Unstructured synthesis improved narrative
+coherence but omitted citations and mixed measurement years. Neither experiment
+was incorporated or reclassified as a content pass. No new full native run is
+started while session10028 is active; the current run remains pinned to 9abb551.

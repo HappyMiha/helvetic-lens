@@ -110,13 +110,20 @@ async def test_single_point_repair_rebinds_local_refs_without_changing_other_fin
             import json
             state = json.loads(text)
             assert state['requested_part'] == 'When was the record published?'
+            assert state['correction_target']['previous_statement'] == 'The fictional record was published in 1999.'
+            assert state['correction_target']['validation_errors']
+            assert 'ONLY question to answer' not in system
             if 'citation_refs' in kwargs['response_schema']['properties']:
+                assert state['correction_target']['validation_errors'][0]['candidate_windows'][0]['citation_ref'] == 77
                 return json.dumps({'citation_refs': {'S0': [77]}})
+            assert state['correction_target']['validation_errors'][0]['candidate_windows'] == [{'text': refs[77]['quote']}]
             assert state['sources'][0]['passages'][0]['citation_ref'] == 1
             assert state['sources'][0]['passages'][0]['text'] == refs[77]['quote']
             return json.dumps({'evidence': [{'citation_ref': 1, 'role': 'support'}],
                 'statement': 'The fictional record was published in 1900.', 'remaining_gap': ''})
-    result = await review.repair_points(SimpleNamespace(model_client=Model()), SimpleNamespace(references=refs, request_keys={'r2': 'When was the record published?'}, point_requests=['r2', 'r2']), answer, 60)
+    result = await review.repair_points(SimpleNamespace(model_client=Model()), SimpleNamespace(references=refs, request_keys={'r2': 'When was the record published?'}, point_requests=['r2', 'r2']), answer, 60,
+        issues=[{'path': ['answer', 'points', 0, 'statement'], 'reason': 'Correct the unsupported year.',
+            'candidate_windows': [{'citation_ref': 77, 'text': refs[77]['quote']}]}])
     assert result and answer.points[0].evidence[0].quote == refs[77]['quote']
     assert answer.points[1] == unchanged
     assert '1900' in answer.points[0].statement
@@ -162,3 +169,35 @@ async def test_original_reading_requires_link_witness_and_retains_current_answer
         assert checkpoint.next_checks[0].quote == quote
     else:
         assert not calls and checkpoint.action == 'finish'
+
+
+@pytest.mark.asyncio
+async def test_two_rejected_assertions_in_one_question_cannot_share_a_cached_correction():
+    import json
+
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    refs = {1: {'source_id': 'a', 'locator': 'p1', 'quote': 'North was founded in 1920.'},
+        2: {'source_id': 'a', 'locator': 'p2', 'quote': 'South was founded in 1921.'}}
+    wrong = ['North was founded in 1990.', 'South was founded in 1991.']
+    answer = AssessmentOutcome(status='partial', limitations=[], points=[
+        {'statement': statement, 'evidence': [{**refs[i+1], 'role': 'support'}]}
+        for i, statement in enumerate(wrong)])
+    seen = []
+    class Model:
+        @atomic_pack_model
+        async def complete(self, system, text, **options):
+            state = json.loads(text)
+            target = state['correction_target']['previous_statement']
+            seen.append(target)
+            assert state['requested_part'] == 'Compare the two organizations.'
+            assert target not in system
+            index = wrong.index(target) + 1
+            if 'citation_refs' in options['response_schema']['properties']:
+                return json.dumps({'citation_refs': {'S0': [index]}})
+            assert options['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            return json.dumps({'statement': refs[index]['quote'], 'remaining_gap': '',
+                'evidence': [{'citation_ref': index, 'role': 'support'}]})
+    wire = SimpleNamespace(references=refs, input={'original_question': 'Compare the two organizations.'})
+    result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60, checkpoints={})
+    assert len(result) == 2 and seen == [wrong[0], wrong[0], wrong[1], wrong[1]]
+    assert [point.statement for point in answer.points] == [ref['quote'] for ref in refs.values()]

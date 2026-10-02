@@ -124,7 +124,9 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
         return raw
 
     async def unchanged(*args, **kwargs):
-        assert args[2] == bad
+        assert args[2] == work['input']['original_question']
+        assert kwargs['correction']['previous_statement'] == bad
+        assert kwargs['max_points'] == 1
         assert [p['statement'] for p in kwargs['feedback']['already_answered']] == [sibling]
         calls.append(('correction', bad))
         return [AssessmentPoint(statement=bad, evidence=[{'source_id': 'a' * 36, 'locator': 'p1',
@@ -190,7 +192,8 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
         if 'requested_part' in value:
             repair = bool(value.get('review_feedback'))
             assert repair, 'A complete shared draft needs no unconditional request packs'
-            index = wrong.index(value['requested_part'])
+            assert value['requested_part'] == value['original_question'] == work['input']['original_question']
+            index = wrong.index(value['correction_target']['previous_statement'])
             assert index < 2, 'The valid sibling must never be rewritten'
             selection = 'citation_refs' in kwargs['response_schema']['properties']
             calls.append(('select' if selection else 'write', index, repair))

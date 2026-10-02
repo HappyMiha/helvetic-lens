@@ -61,7 +61,7 @@ async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draf
         if 'requested_part' not in value:
             calls.append('draft_or_review')
             return raw
-        number = int(value['requested_part'].split()[1])
+        number = int(value['correction_target']['previous_statement'].split()[1])
         passages = [p for source in value['sources'] for p in source['passages']]
         ref = next(v for v in passages if v['text'].startswith(f'Record {number} '))
         if 'citation_refs' in kwargs['response_schema']['properties']:
@@ -189,7 +189,9 @@ async def test_one_invalid_point_cannot_rewrite_or_shift_valid_siblings(monkeypa
             assert kwargs['response_schema']['properties']['remaining_gap']['enum'] == ['']
             return json.dumps(value['previous_proposal'])
         if 'requested_part' in value:
-            assert value['requested_part'] == invalid['statement'], 'Numeric repair must target only the invalid assertion'
+            assert value['requested_part'] == work['input']['original_question']
+            assert value['correction_target']['previous_statement'] == invalid['statement']
+            assert value['correction_target']['validation_errors']
             refs = [ref for source in value['sources'] for ref in source['passages']]
             ref = next(ref for ref in refs if ref['text'] == 'Expiry is not specified.')
             if 'citation_refs' in kwargs['response_schema']['properties']:

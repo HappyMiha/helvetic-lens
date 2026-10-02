@@ -34,21 +34,46 @@ def fixture(count=2):
 
 
 @pytest.mark.asyncio
-async def test_partial_repair_with_eight_requests_owns_its_gap_and_round_trips():
+@pytest.mark.parametrize('extra', ['point', 'gap'])
+async def test_point_correction_cannot_expand_into_more_answers_or_a_gap(extra):
+    wire, _, _ = fixture()
+    class Model:
+        async def complete(self, system, text, **options):
+            value = json.loads(text)
+            assert value['requested_part'] == wire.input['original_question']
+            assert value['correction_target']['previous_statement'] == 'Published in 2009.'
+            if 'citation_refs' in options['response_schema']['properties']:
+                return selection_json([1], options)
+            assert options['response_schema']['properties']['points']['maxItems'] == 1
+            point = {'statement': 'Published in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}
+            return json.dumps({'points': [point] * (2 if extra == 'point' else 1),
+                'remaining_gap': 'An unrelated issue remains.' if extra == 'gap' else ''})
+    points, gap, receipt = await answer_request(SimpleNamespace(model_client=Model()), wire,
+        wire.input['original_question'], 60, max_points=8,
+        correction={'previous_statement': 'Published in 2009.', 'validation_errors': []})
+    assert points == [] and gap == '' and receipt['status'] == 'invalid_answer'
+
+
+@pytest.mark.asyncio
+async def test_point_repair_with_eight_requests_preserves_an_existing_gap_and_round_trips():
     wire, parsed, schema = fixture(8)
     answer = parsed.mission_checkpoint.answer
     answer.points[-1].statement = 'Published in 2009.'
+    from helvetic_lens.research_answer_parts import update_gap
+    update_gap(wire, answer, 'r8', 'The edition date is unknown.')
     class Model:
         @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1], options)
-            return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '  The edition date is unknown.  ',
+            assert options['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '',
                 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
     await repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60)
     encoded = wire.encode_checkpoint(parsed)
     assert json.loads(encoded)['answer']['remaining_gaps'] == []
     decoded = schema.model_validate_json(wire.decode(encoded)).mission_checkpoint.answer
+    assert decoded.points[-1].statement == 'Published in 2001.'
     assert decoded.status == 'partial' and decoded.limitations == ['The edition date is unknown.']
     assert wire.response_slots['r8']['disposition'] == 'unresolved'
 

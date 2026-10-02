@@ -14,7 +14,7 @@ from .research_model_transport import explicit_requests
 
 async def repair_points(service, wire, answer, seconds, *, on_success=None, issues=None, checkpoints=None):
     """Correct only a failed point using independently selected original evidence."""
-    from .research_answer_parts import answer_request, update_gap
+    from .research_answer_parts import answer_request
     from .research_gateway import answer_quantity_errors
 
     deadline, receipts = monotonic() + max(0, seconds), []
@@ -24,16 +24,17 @@ async def repair_points(service, wire, answer, seconds, *, on_success=None, issu
         request_keys = getattr(wire, 'request_keys', {})
         bindings = getattr(wire, 'point_requests', [])
         request = request_keys.get(bindings[index], '') if index < len(bindings) else ''
-        # Without a per-request slot, different failed points must not share one
-        # cached proposal. Each point supplies its own focus in that case.
-        request = request or point.statement
-        fixed, gap, receipt = await answer_request(service, wire, request, deadline-monotonic(), checkpoints=checkpoints,
-            on_progress=(lambda: on_success(receipts)) if on_success else None)
+        request = request or getattr(wire, 'input', {}).get('original_question', '')
+        # A rejected assertion is untrusted material to correct, never a new
+        # user request to prove. The target and defect also bind its checkpoint.
+        fixed, _gap, receipt = await answer_request(service, wire, request, deadline-monotonic(), checkpoints=checkpoints,
+            on_progress=(lambda: on_success(receipts)) if on_success else None,
+            correction={'previous_statement': point.statement, 'validation_errors': [error]})
         if not fixed:
             continue
         fixed = fixed[0]  # Numeric repair requests exactly one point.
         answer.points[index] = fixed
-        update_gap(wire, answer, bindings[index] if index < len(bindings) else None, gap)
+        # Correcting a number does not resolve the request's other open issues.
         receipts.append({**receipt, 'point': index, 'before_fingerprint': fingerprint(point.model_dump()),
             'after_fingerprint': fingerprint(fixed.model_dump())})
         if on_success:

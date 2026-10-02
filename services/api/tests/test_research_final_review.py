@@ -85,12 +85,14 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
             revised = len([call for call in calls if 'requested_part' not in call and 'final_claims_and_gaps' not in call]) > 1
             return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
                 'points': [point(0), point(1, bad if revised else good[1])]}, 'next_action': 'finish'})
-        index = 0 if value['requested_part'].startswith('Who') else 1
+        index = 1 if value.get('correction_target') else 0 if value['requested_part'].startswith('Who') else 1
         if 'citation_refs' in options['response_schema']['properties']:
             return selection_json([index+1], options)
         statement = good[0] if index == 0 else bad
         if value.get('review_feedback'):
             assert index == 1, 'An independent valid answer must not be regenerated'
+            assert value['requested_part'] == work['input']['original_question']
+            assert value['correction_target']['previous_statement'] == bad
             assert value['review_feedback']['previous_statements'] == [bad]
             if correction == 'rate_limit' and not failed[0]:
                 failed[0] = True
@@ -565,7 +567,7 @@ async def test_only_real_requested_gaps_remain_without_rewriting_completed_answe
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('verdict', ['contradicted', 'not_established'])
-async def test_review_feedback_contains_only_literal_claims_and_original_witnesses(verdict):
+async def test_review_feedback_separates_fallible_comments_from_original_evidence(verdict):
     from helvetic_lens.product_exploration import AssessmentOutcome
     from helvetic_lens.research_final_review import reasoned_review
     ref = {'source_id': 'a', 'locator': 'p1', 'quote': 'The old rule was repealed in 2042.'}
@@ -580,7 +582,15 @@ async def test_review_feedback_contains_only_literal_claims_and_original_witness
         SimpleNamespace(input={}, references={1: ref}), answer, 60)
     assert result['status'] == 'checked' and result['pending_checks'] == []
     assert result['hints'][0]['review_signal'] == verdict
-    assert '2050' not in json.dumps(result['hints'])
+    hint = result['hints'][0]
+    assert '2050' not in hint['instruction']
+    assert '2050' not in json.dumps(hint['original_windows'])
+    if verdict == 'contradicted':
+        assert hint['reviewer_notes'][0]['comment'] == 'Invented alternative authority acted in 2050.'
+        assert hint['reviewer_notes'][0]['originals'] == [ref]
+        assert 'Fallible reviewer objection' in hint['reviewer_notes'][0]['basis']
+    else:
+        assert 'reviewer_notes' not in hint, 'Unanchored commentary must not become a correction instruction'
     assert result['hints'][0]['original_windows'] == ([{'text': ref['quote']}] if verdict == 'contradicted' else [])
 
 
@@ -638,3 +648,79 @@ async def test_inserting_or_reordering_siblings_reuses_exact_checks_but_changed_
     wire.input['original_question'] = 'Who operated those registries before the transfer?'
     await reasoned_review(service, wire, answer, 60, checkpoints=cache)
     assert len(calls) == 6
+
+
+@pytest.mark.asyncio
+async def test_semantic_point_corrections_preserve_shared_slot_siblings_and_gaps_across_retry(monkeypatch):
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import finalize
+
+    question = 'Which changes were observed, who keeps the records, and what is still unknown?'
+    good = 'North Survey operates the registry.'
+    bad = ['Northbank closures increased.', 'Southbank closures increased.']
+    fixed = ['Northbank closures decreased.', 'Southbank closures decreased.']
+    gap = 'The future registry operator remains unspecified.'
+    refs = {i: {'source_id': 'registry', 'locator': f'p{i}', 'quote': text}
+        for i, text in enumerate([good, *fixed], 1)}
+    answer = AssessmentOutcome(status='partial', points=[{'statement': text,
+        'evidence': [{**refs[i], 'role': 'support'}]} for i, text in enumerate([good, *bad], 1)], limitations=[gap])
+    wire = SimpleNamespace(input={'original_question': question}, references=refs,
+        request_keys={'legacy': question}, point_requests=['legacy'] * 3,
+        response_slots={'legacy': {'disposition': 'unresolved', 'remaining_gap': gap}})
+    parsed = SimpleNamespace(mission_checkpoint=SimpleNamespace(answer=answer))
+    writes, selections, cache = [], [], {}
+
+    class Model:
+        async def complete(self, system, text, **options):
+            value = json.loads(text)
+            if 'final_claims_and_gaps' in value:
+                item_key, item = next(iter(value['final_claims_and_gaps'].items()))
+                assertion = item.get('statement', item.get('gap'))
+                negative = assertion in bad
+                data = {'clauses': [{'claim_as_written': assertion,
+                    'verdict': 'contradicted' if negative else 'supported',
+                    'reason': 'The original says closures decreased; the draft reverses that direction.' if negative else '',
+                    'citation_refs': value.get('selected_citation_refs', [])}]}
+                if value.get('prior_review_concerns'):
+                    data['concern_checks'] = [{'id': concern, 'outcome': 'resolved', 'reason': '',
+                        'citation_refs': value['selected_citation_refs']}
+                        for concern in value['prior_review_concerns']['concerns']]
+                return review_json(data, gap=item_key.startswith('L'))
+            assert value['requested_part'] == value['original_question'] == question
+            target = value['correction_target']
+            index = bad.index(target['previous_statement'])
+            assert value['review_feedback']['previous_statements'] == [bad[index]]
+            notes = target['validation_errors'][0]['reviewer_notes']
+            assert notes[0]['comment'] == 'The original says closures decreased; the draft reverses that direction.'
+            assert notes[0]['originals'] == [refs[index + 2]]
+            assert 'Fallible reviewer objection' in notes[0]['basis']
+            assert 'draft is not the requested answer' in system
+            if 'citation_refs' in options['response_schema']['properties']:
+                selections.append(index)
+                return selection_json([index + 2], options)
+            assert options['response_schema']['properties']['points']['maxItems'] == 1
+            assert options['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            writes.append(index)
+            if index == 1 and writes.count(index) == 1:
+                raise DomainError('Synthetic temporary outage', 503, 'model_rate_limited')
+            return json.dumps({'points': [{'statement': fixed[index],
+                'evidence': [{'citation_ref': index + 2, 'role': 'support'}]}], 'remaining_gap': ''})
+
+    async def covered(*args, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'question_coverage': 'covered'}
+
+    monkeypatch.setattr(review, 'audit', covered)
+    service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
+    work = {'input': {'original_question': question}}
+    with pytest.raises(DomainError, match='Synthetic temporary outage'):
+        await finalize(service, work, wire, parsed, 60, checkpoints=cache, defer_pending=True)
+    assert [point.statement for point in answer.points] == [good, fixed[0], bad[1]]
+    assert answer.limitations == [gap] and wire.response_slots['legacy']['remaining_gap'] == gap
+    assert cache['final_correction_round']['completed'] == 1
+    result = await finalize(service, work, wire, parsed, 60,
+        checkpoints=json.loads(json.dumps(cache)), defer_pending=True)
+    assert [point.statement for point in answer.points] == [good, *fixed]
+    assert len(answer.points) == 3 and wire.point_requests == ['legacy'] * 3
+    assert answer.limitations == [gap] and wire.response_slots['legacy']['remaining_gap'] == gap
+    assert result['rejected_points'] == []
+    assert selections == [0, 1] and writes == [0, 1, 1]
