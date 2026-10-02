@@ -184,6 +184,7 @@ class Settings(BaseSettings):
     search1api_api_key: SecretStr = SecretStr("")
     web_search_provider: Literal["searxng", "search1api", "none"] = "search1api"
     searxng_base_url: str = ""
+    legal_feed_search_token: SecretStr = SecretStr("")
     searxng_engines: str = Field(default="google,bing,yahoo", pattern=r"^[a-z][a-z0-9 _-]*(,[a-z][a-z0-9 _-]*){0,3}$", max_length=100)
     laya_api_key: SecretStr = SecretStr("")
     laya_base_url: str = ""

@@ -483,6 +483,10 @@ def create_app(
                 content={"detail": "The request exceeds the upload limit.", "code": "request_too_large"},
             )
         path = request.url.path
+        from .feed_search import PATH as feed_search_path
+        from .feed_search import handle as feed_search
+        if path == feed_search_path:
+            return await feed_search(request, settings, limiter)
         session_token = request.cookies.get(SESSION_COOKIE, "")
         identity = await asyncio.to_thread(auth.resolve, session_token) if session_token else None
         request.state.identity = identity

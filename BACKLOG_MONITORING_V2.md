@@ -22,6 +22,16 @@ Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
 Prior unified-core outcomes are activated as b3dde23ef289; [release history](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
+## Legal Feed shared search recovery
+
+Locally validated; activation pending. Scoped MV2-002/020/024 integration. Reuse the operating local SearXNG
+for the owner’s Legal Feed product after Search1API credit exhaustion. A dedicated
+server token permits only bounded public search, never private dossiers or paid
+fallback. Dependencies: existing search adapter, production configuration and
+Legal Feed worker. Acceptance: unauthorized access denied, real source results,
+cached repeat queries and failed/empty distinction.
+[Scope and evidence](docs/PRODUCT_SOURCE_ACCESS.md#legal-feed-service-integration).
+
 ## Independent source access and local SearXNG
 
 Activated as e97043209b7a, MV2-002/020/024. Direct public catalogues and source URLs

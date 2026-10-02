@@ -70,3 +70,21 @@ using the existing client coverage display. No client rebuild is required.
 References: [official SearXNG container setup](https://docs.searxng.org/admin/installation-docker.html),
 [search API](https://docs.searxng.org/dev/search_api.html),
 [Crossref REST metadata](https://www.crossref.org/documentation/retrieve-metadata/rest-api/).
+
+## Legal Feed service integration
+
+2 October 2026: the owner requested reuse of Legal’s free engine for Legal Feed
+after its separate Search1API account reached zero credits. The dedicated POST
+`/api/integrations/legal-feed/search` accepts only a bounded public query and
+returns normalized public discovery records plus partial-engine status. A separate
+`LEGAL_FEED_SEARCH_TOKEN` must match the server Authorization header; no token
+means access is disabled. It grants no user session or private-data access.
+SearXNG stays local-only. Engines and upstream URL are operator-controlled; no
+paid fallback, AI call or dossier creation occurs. A shared 30-request/minute
+burst guard protects the existing engine without introducing a daily allowance.
+
+Acceptance: exact service authentication, private-route isolation, bounded input,
+burst throttling and sanitized engine failure; verify real production results
+and subsequent Legal Feed monitoring after deployment. Local acceptance passes:
+3 machine-integration tests, 11 existing search-adapter scenarios and the backlog
+guard; API lint passes. Production activation remains pending. This does not close broader source coverage gates.
