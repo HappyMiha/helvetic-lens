@@ -494,6 +494,78 @@ def test_sentence_registry_preserves_all_literal_text_and_shared_relationships()
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('target,verdict', [
+    ('overall', 'supported'), ('clause', 'supported'), ('overall', 'contradicted'),
+    ('clause', 'contradicted'), ('concern', 'resolved'), ('concern', 'remains')])
+async def test_compact_review_grammar_cannot_accept_or_cache_a_missing_witness(target, verdict):
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import reasoned_review
+
+    ref = {'source_id': 'a', 'locator': 'p1', 'quote': 'The registry opened in 2040.'}
+    answer = AssessmentOutcome(status='possible_answer', points=[{'statement': ref['quote'],
+        'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
+    wire = SimpleNamespace(input={}, references={1: ref})
+    calls = []
+
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            calls.append(payload)
+            good = {'verdict': 'supported', 'reason': '', 'citation_refs': [1]}
+            data = {'overall': deepcopy(good), 'clauses': {'S0': deepcopy(good)},
+                'concern_checks': [{'id': 'C0', 'outcome': 'resolved', 'reason': '', 'citation_refs': [1]}]}
+            item = data['overall'] if target == 'overall' else data['clauses']['S0'] if target == 'clause' else data['concern_checks'][0]
+            item['verdict' if target != 'concern' else 'outcome'] = verdict
+            item['citation_refs'] = []
+            # The compact transport grammar permits the shape, while the
+            # existing host fence must still reject the unsupported verdict.
+            from helvetic_lens.research_model_transport import shape_errors
+            assert shape_errors(data, options['response_schema'], {}) == []
+            return json.dumps(data)
+
+    checkpoints = {}
+    result = await reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
+        wire, answer, 60, checkpoints=checkpoints,
+        concerns={'P0': {'previous_statements': [], 'issues': [{'instruction': 'Verify the date.'}]}})
+    assert len(calls) == 1
+    assert result['status'] == 'partial' and not result['positive_witnesses']
+    assert [hint['review_signal'] for hint in result['hints']] == ['review_unavailable']
+    assert result['pending_checks'] == [{'item': 'P0',
+        'reason': 'missing_concern_witness' if target == 'concern' else 'missing_original_witness'}]
+    assert not checkpoints
+
+
+@pytest.mark.parametrize('point', [True, False])
+def test_compact_review_grammar_cannot_offer_impossible_empty_context_verdicts(point):
+    from helvetic_lens.research_model_transport import shape_errors
+    from helvetic_lens.research_review_witnesses import review_schema
+
+    schema = review_schema('A remains unknown.', {}, {'C0': {}}, point=point)
+    verdicts = schema['properties']['overall']['properties']['verdict']['enum']
+    assert verdicts == (['not_established'] if point else ['supported', 'not_established'])
+    judgment = {'verdict': 'contradicted', 'reason': '', 'citation_refs': []}
+    data = {'overall': judgment, 'clauses': {'S0': judgment},
+        'concern_checks': [{'id': 'C0', 'outcome': 'resolved', 'reason': '', 'citation_refs': []}],
+        **({} if point else {'gap_status': 'unresolved'})}
+    assert shape_errors(data, schema, {})
+
+
+@pytest.mark.parametrize('point,verdict', [(False, 'supported'), (False, 'not_established'), (True, 'not_established')])
+def test_compact_review_preserves_valid_witness_free_gap_and_unresolved_concern(point, verdict):
+    from helvetic_lens.research_model_transport import shape_errors
+    from helvetic_lens.research_review_witnesses import invalid_review, review_schema
+
+    assertion = 'A remains unknown.'
+    concerns = {'C0': {}}
+    judgment = {'verdict': verdict, 'reason': '', 'citation_refs': []}
+    data = {'overall': judgment, 'clauses': {'S0': judgment},
+        'concern_checks': [{'id': 'C0', 'outcome': 'cannot_assess', 'reason': '', 'citation_refs': []}],
+        **({} if point else {'gap_status': 'unresolved'})}
+    assert not shape_errors(data, review_schema(assertion, {}, concerns, point=point), {})
+    assert invalid_review(data, assertion, concerns, point=point) is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('overall', ['supported', 'contradicted', 'not_established'])
 async def test_whole_assertion_judgment_checks_relationships_without_requiring_connective_spans(overall):
     from helvetic_lens.product_exploration import AssessmentOutcome

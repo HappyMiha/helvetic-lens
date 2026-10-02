@@ -93,6 +93,29 @@ def test_provider_metadata_keeps_every_unfinished_warning_and_discovery_obligati
     assert different['unvalidated_proposals'] == ['Unverified proposal']
 
 
+def test_reflection_preserves_only_selected_exact_source_leads_and_honest_scope():
+    wire = corpus(2)
+    wire.work = {'phase': 'reflect'}
+    wire.input['sources'][0]['section_review'] = {'summary': 'Repeated derived synopsis' * 100}
+    wire.input['sources'][0]['discovery_links'] = [
+        {'title': 'Read the original', 'url': 'https://example.test/original',
+            'context': wire.references[1]['quote'], 'kind': 'reference'},
+        {'title': 'Unrelated', 'url': 'https://example.test/unrelated', 'context': 'Other material'},
+        {'title': 'Navigation', 'url': 'https://example.test/home', 'context': wire.references[1]['quote'], 'kind': 'navigation'}]
+    wire.input['sources'][1]['discovery_links'] = [{'title': 'Unselected', 'url': 'https://example.test/other',
+        'context': wire.references[2]['quote'], 'kind': 'reference'}]
+    before = deepcopy(wire.__dict__)
+    selected = {1: wire.references[1]}
+    result = provider_input(wire, selected)
+    assert result['discovery_leads'] == [{'citation_ref': 1, 'url': 'https://example.test/original', 'title': 'Read the original'}]
+    assert result['evidence_scope']['all_originals_supplied'] is False
+    assert result['evidence_scope']['absence_established'] is False
+    assert 'section_review' not in result['sources'][0] and 'discovery_links' not in result['sources'][0]
+    assert wire.__dict__ == before
+    empty = bounded_schema({'properties': {'gaps': {'type': 'array', 'items': {'type': 'object'}}}}, {})
+    assert empty['properties']['gaps']['maxItems'] == 0
+
+
 @pytest.mark.asyncio
 async def test_completed_document_metadata_does_not_displace_a_whole_short_original():
     wire, model = corpus(1, 'An exact qualified observation. ' * 40), Selector(lambda *_: True)

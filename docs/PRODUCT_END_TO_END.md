@@ -1351,3 +1351,68 @@ contradictions, failed-document recovery and the backlog contract. Exact API Ruf
 and diff checks pass. No client changes or repeat frontend publication are needed.
 Full delivered-answer content acceptance remains open until the next ordinary
 same-investigation retry produces an independently checked final result.
+
+
+### Route research reflection through the existing evidence search
+
+MV2-020/023: native13407 completes reconciliation for all 16 retained documents,
+including the complete 55-page assessment, but its next Reflection sends a
+359,213-character corpus to the hosted model and repeatedly receives a rate-limit
+response. Final answer requests already use local hybrid evidence retrieval;
+reflection bypasses that shared path. Scope: reuse the existing current-authorized
+local retrieval and whole-passage evidence pack for reflection, preserve exact
+citation rebinding and useful source discovery leads, and explicitly distinguish
+a selected view from complete-corpus absence. Keep originals, full reading,
+source policy, user question, attempted queries and continuation opportunities.
+Do not add a new model-based selector or total research budget.
+
+Dependencies: current same-run work scope, shared hybrid retrieval, source-use
+metadata policy, Reflection contract and native retry semantics. Acceptance:
+the real retained Reflection input fits the configured per-request transport
+allowance without dropping original text from storage; source IDs remain current,
+unsupported gap citations are rejected, relevant unread leads remain available,
+and rate-limit recovery does not misrepresent selected evidence as exhaustive.
+The active immutable native13407 continues unchanged; code acceptance and the
+next independently reviewed delivered answer remain separate.
+
+
+The same pinned run subsequently stops during answer validation with
+`research_evidence_group_too_large`: one actual precision-correction response follows
+a new private draft before the next required group exceeds the transport allowance.
+Include that observed request-boundary failure in this scope. Preserve every
+selected support/contrary quotation and stored original; eliminate redundant
+request representation or optional context before retrying. Do not weaken factual
+review or publish the private draft as a delivered answer. Native13407 is terminal
+at 820.6 seconds, with no new delivered answer; its originals remain the baseline.
+
+
+Recorded Reflection envelope replay: the exact retained request shrinks from
+361,049 to 23,942 characters through the existing selection/packing functions,
+with 30 exact original windows from five sources and all host originals unchanged.
+This 3.918-second offline check deliberately uses the lexical fallback and makes
+zero network/model calls or database writes; it does not establish semantic
+ranking accuracy or whole-investigation success. All returned lead URLs must be
+bound to selected referring citations, and selected material explicitly cannot
+establish corpus-wide absence. Native full-path evidence remains separate.
+
+
+Native13407 diagnosis is exact: the recorded P0 precision repair binds to canonical
+refs 608/652/653 in the 951-reference wire and leaves no quantity errors. Its next
+reasoned-review request needs all 17 surrounding windows, but repeating the same
+judgment schema for three verdicts expands that request to 26,203 characters.
+Factoring those repeated objects into flat verdict/outcome enums reduces the same
+request to 21,337 characters. Every original, instruction and payload field stays
+unchanged. All other recorded point reviews fit at 11,275–18,269 characters.
+The existing host checks still reject missing positive or contradictory witnesses,
+missing concern witnesses and malformed/duplicate references before acceptance or
+caching. Legitimate witness-free gap judgments remain allowed.
+
+Validation: 106 affected evidence-pack, model-transport and synthesis-resume cases;
+six native preparation recovery/stall/access-withdrawal variants; 71 final-review
+and source-use cases; backlog contract; exact API Ruff and diff checks pass.
+Native reflection-stall retains a failed branch even when an available final answer
+allows the investigation itself to finish, preserving existing explicit retry
+semantics. The isolated pilot now records only failure code-location metadata
+(no locals or source text) to make any subsequent failure actionable. This coherent
+change is ready for normal publication and another ordinary retained-investigation
+retry; no final answer has yet passed native content acceptance.

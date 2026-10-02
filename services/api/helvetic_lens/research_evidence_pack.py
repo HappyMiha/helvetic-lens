@@ -2,6 +2,7 @@
 import json
 from copy import deepcopy
 from time import monotonic
+from urllib.parse import urlsplit
 
 from .config import DomainError
 from .product_operations import fingerprint
@@ -40,6 +41,13 @@ def provider_input(wire, references):
     # replaced by the selected provider view. The full host corpus stays intact.
     result = deepcopy({**wire.input, 'sources': []})
     result['sources'] = provider_sources(wire, references)
+    if getattr(wire, 'work', {}).get('phase') == 'reflect':
+        result['discovery_leads'] = selected_leads(wire, references)
+        result['evidence_scope'] = {
+            'available_references': len(wire.references), 'selected_references': len(references),
+            'all_originals_supplied': len(references) == len(wire.references), 'absence_established': False,
+            'scope': 'These originals were selected from retained material. Unselected material is not evidence of absence. '
+                'Propose only consequential evidence-backed next readings; listed links are unread leads, not findings.'}
     mission = result.get('research_mission')
     if isinstance(mission, dict):
         if mission.get('question') == result.get('original_question'):
@@ -58,6 +66,23 @@ def provider_input(wire, references):
     return result
 
 
+def selected_leads(wire, references):
+    """Keep unread source URLs only with an exact selected referring witness."""
+    sources = {source['id']: source for source in wire.input.get('sources', [])}
+    leads = {}
+    for key, ref in references.items():
+        for link in sources.get(ref['source_id'], {}).get('discovery_links', []):
+            url, context = link.get('url'), link.get('context')
+            if (not isinstance(url, str) or url in leads or urlsplit(url).scheme not in {'http', 'https'}
+                    or not urlsplit(url).hostname or link.get('kind') == 'navigation'
+                    or not isinstance(context, str) or not context.strip()):
+                continue
+            quote, referring = ' '.join(ref['quote'].split()), ' '.join(context.split())
+            if quote in referring or referring in quote or url in ref['quote']:
+                leads[url] = {'citation_ref': key, 'url': url, 'title': str(link.get('title', ''))[:300]}
+    return list(leads.values())
+
+
 def bounded_schema(schema, references):
     """Use the existing response shape, scoped to the actually supplied refs."""
     result = deepcopy(schema)
@@ -72,7 +97,7 @@ def bounded_schema(schema, references):
             if 'citation_ref' in properties and allowed:
                 properties['citation_ref'] = {'type': 'integer', 'enum': allowed}
             if not allowed:
-                for key in ('points', 'evidence', 'next_checks', 'directions'):
+                for key in ('points', 'evidence', 'next_checks', 'directions', 'gaps'):
                     if properties.get(key, {}).get('type') == 'array':
                         properties[key].update(minItems=0, maxItems=0)
             for item in value.values():

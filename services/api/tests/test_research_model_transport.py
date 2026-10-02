@@ -413,6 +413,67 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
     assert not research_gateway.answer_quantity_errors(result.mission_checkpoint.answer)
 
 
+@pytest.mark.asyncio
+async def test_reflection_uses_local_selected_originals_and_repairs_unshown_reference_within_envelope(monkeypatch):
+    from types import SimpleNamespace
+
+    from helvetic_lens import research_active_retrieval
+    from helvetic_lens.analysis import ModelClient
+    from helvetic_lens.config import Settings
+    from helvetic_lens.product_iterative_research import Reflection
+    from helvetic_lens.research_evidence_pack import request_characters
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom', apertus_context_chars=12000)
+    client, calls, ranked = ModelClient(settings), [], []
+    sources = []
+    for index in range(1, 51):
+        quote = f'Station {index} capacity remains provisional; consult the original register. ' + 'Operational qualification. ' * 10
+        sources.append({'id': f'{index:036d}', 'sha256': f'{index:064x}', 'url': f'https://example.test/{index}',
+            'title': f'Original station {index}', 'excerpts': [{'passage': 'p1', 'text': quote}],
+            'section_review': {'summary': 'Repeated derived material. ' * 50},
+            'discovery_links': [{'url': f'https://example.test/register/{index}', 'title': 'The original register',
+                'context': quote, 'kind': 'reference'}]})
+    work = {'phase': 'reflect', 'unmetered_research': True, 'input': {
+        'question': 'Explain station capacity and the remaining qualifications.', 'sources': sources,
+        'previous_public_queries': ['Earlier register query'], 'search_continuation': {'pages_checked': 1}}}
+    original = deepcopy(work['input'])
+
+    async def rank(service, wire, question, seconds, **kwargs):
+        ranked.append(list(wire.references))
+        return {'rankings': [{'query': question, 'references': list(wire.references)}],
+            'coverage': {'method': 'local_hybrid', 'semantic_status': 'ready'}}
+
+    async def complete(system, content, **kwargs):
+        data = json.loads(content)
+        assert request_characters(system, data, kwargs['response_schema']) <= settings.apertus_context_chars
+        assert 'sources' in data, 'Oversized format feedback must retry the bounded original request'
+        refs = [p['citation_ref'] for source in data['sources'] for p in source['excerpts']]
+        assert refs and len(refs) < 50 and 50 not in refs
+        assert all('section_review' not in source and 'discovery_links' not in source for source in data['sources'])
+        assert data['discovery_leads'] and all(lead['citation_ref'] in refs for lead in data['discovery_leads'])
+        assert data['evidence_scope']['absence_established'] is False
+        calls.append(data)
+        # A known canonical ref that was NOT supplied must not pass decoding.
+        # The large malformed outcome also makes feedback exceed the envelope.
+        return json.dumps({'outcome': 'Invalid repeated draft. ' * 1000 if len(calls) == 1 else 'One selected original motivates reading its register.',
+            'gaps': [{'question': 'What does the original register establish?', 'query': data['discovery_leads'][0]['url'],
+                'purpose': 'Read the register named by this exact source.', 'priority': 3,
+                'kind': 'independent_verification', 'catalogues': [], 'citation_ref': 50 if len(calls) == 1 else refs[0]}],
+            'search_deeper': False})
+
+    monkeypatch.setattr(research_active_retrieval, 'rank_evidence', rank)
+    monkeypatch.setattr(client, 'complete', complete)
+    raw = await research_gateway._complete(SimpleNamespace(model_client=client, settings=settings), work, '', Reflection, 60)
+    result = Reflection.model_validate_json(raw)
+    assert result.gaps[0].source_id == sources[0]['id']
+    assert len(ranked) == 1 and len(calls) == 2
+    assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
+    assert 'answer_review' not in work['model_route']
+    assert work['model_route']['format_repair_mode'] == 'fresh_bounded_draft'
+    assert work['input'] == original
+
+
 def test_multipart_answer_requires_every_request_and_retains_canonical_repair_bindings():
     from helvetic_lens.product_research_mission import schema as mission_schema
     schema = mission_schema(AssessedBriefing)

@@ -562,7 +562,7 @@ async def execute(service, job_id, worker):
         from .research_synthesis_resume import completed_work, made_progress
 
         prior_parts = completed_work(state.get(synthesis_checkpoint))
-        if work["phase"] == "brief":
+        if work["phase"] in {"brief", "reflect"}:
             state.pop(synthesis_checkpoint, None)
             if transient and unmetered(run) and run.status in ACTIVE and work.get(synthesis_checkpoint):
                 # This remains a private proposal. All post-provider fences above

@@ -356,7 +356,8 @@ def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypa
 
 
 @pytest.mark.parametrize('outcome', ['continue', 'stall', 'withdraw'])
-def test_evidence_preparation_retains_batches_privately_and_only_new_work_continues(signed, monkeypatch, outcome):
+@pytest.mark.parametrize('phase', ['brief', 'reflect'])
+def test_evidence_preparation_retains_batches_privately_and_only_new_work_continues(signed, monkeypatch, outcome, phase):
     import json
 
     from test_product_early_orientation import exclude
@@ -376,7 +377,7 @@ def test_evidence_preparation_retains_batches_privately_and_only_new_work_contin
         'policy_fingerprint': 'selection-policy', 'selected': []}
 
     async def preparing(service, work, seconds):
-        if work['phase'] != 'brief':
+        if work['phase'] != phase or (calls and work['branch_id'] != calls[0]):
             return await execute(service, work, seconds)
         calls.append(work['branch_id'])
         if len(calls) == 1:
@@ -395,14 +396,18 @@ def test_evidence_preparation_retains_batches_privately_and_only_new_work_contin
 
     monkeypatch.setattr(research_gateway, 'execute', preparing)
     result = complete(client, service, root + '/investigations', run)
-    expected = {'continue': 'completed', 'stall': 'failed', 'withdraw': 'paused'}
+    # A failed reflection remains retryable even when other branches produced
+    # a final briefing; only an unavailable final briefing fails the whole run.
+    expected = {'continue': 'completed', 'stall': 'failed' if phase == 'brief' else 'completed', 'withdraw': 'paused'}
     assert result['status'] == expected[outcome]
     assert len(calls) == (1 if outcome == 'withdraw' else 2)
     assert marker not in json.dumps(result) and marker not in client.get(root + '/export').text
     with service.db.session() as session:
-        state = session.get(InvestigationBranch, calls[0]).checkpoint
+        branch = session.get(InvestigationBranch, calls[0])
+        state = branch.checkpoint
         assert not state.get('provider_retries'), 'A selection deadline is not a provider outage'
         if outcome == 'stall':
+            assert branch.status == 'failed'
             assert state[KEY]['parts']['evidence_selection'] == {marker: batch}
             assert state['error'].startswith('Evidence selection is incomplete.')
         else:

@@ -149,21 +149,23 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     content = json.dumps(provider_input, ensure_ascii=False)
     resume = None
     selected = None
-    if wire and wire.answer and service.settings.apertus_provider != "docker":
+    if wire and (wire.answer or work["phase"] == "reflect") and service.settings.apertus_provider != "docker":
         from . import research_evidence_pack as evidence_pack
         from .research_synthesis_resume import DraftCheckpoint
 
-        resume = DraftCheckpoint(work, service.settings, system, ANSWER_WORKFLOW, response_schema, content, options,
+        workflow = ANSWER_WORKFLOW if wire.answer else "research-reflection/v1-local-evidence"
+        resume = DraftCheckpoint(work, service.settings, system, workflow, response_schema, content, options,
             preparation_policy=evidence_pack.POLICY)
         if resume.value:
             work["model_route"]["resumed_stage"] = resume.value["stage"]
-        work["model_route"]["answer_review"] = deepcopy((resume.value or {}).get("review") or {})
-        work["model_route"]["answer_review"].update(contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
+        if wire.answer:
+            work["model_route"]["answer_review"] = deepcopy((resume.value or {}).get("review") or {})
+            work["model_route"]["answer_review"].update(contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
 
         def retain_selection():
             state = resume.value or {}
             resume.save(state.get("stage", "preparing"), state.get("raw", ""),
-                state.get("hints", []), work["model_route"]["answer_review"])
+                state.get("hints", []), work["model_route"].get("answer_review", {}))
 
         retain_selection()
         selected = await evidence_pack.select_evidence(service, wire, wire.input["original_question"],
@@ -176,13 +178,16 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         resume.bind_request(response_schema, content)
         if resume.value is None:
             work["model_route"].pop("resumed_stage", None)
-            work["model_route"]["answer_review"] = {"contract": "cited-answer-review/v2", "workflow": ANSWER_WORKFLOW}
+            if wire.answer:
+                work["model_route"]["answer_review"] = {"contract": "cited-answer-review/v2", "workflow": ANSWER_WORKFLOW}
         retain_selection()
         work["model_route"].update(response_schema_fingerprint=fingerprint(response_schema),
             provider_input_fingerprint=fingerprint(provider_input))
         work["model_route"]["evidence_transport"].update(selected_references=len(selected),
             provider_input_characters=len(content))
-    saved = resume.value if resume and resume.value and resume.value["stage"] != "preparing" else None
+    # Reflection retains selection progress only; it never restores final-answer
+    # draft/review stages or publishes a cached proposal as a research decision.
+    saved = resume.value if resume and wire.answer and resume.value and resume.value["stage"] != "preparing" else None
     if saved:
         raw = saved["raw"]
         work["model_route"]["resumed_stage"] = saved["stage"]
@@ -190,7 +195,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     else:
         remaining = seconds - (monotonic() - started)
         if resume and remaining < 8:
-            raise DomainError("The selected evidence is retained; the next work step will draft the answer.",
+            raise DomainError("The selected evidence is retained; analysis will continue in the next work step.",
                 503, "research_evidence_pack_incomplete")
         raw = await service.model_client.complete(system, content,
             response_schema=response_schema,
@@ -199,7 +204,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         work["model_route"].setdefault("answer_review", {}).update(
             contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
     review_hints = deepcopy(saved.get("hints", [])) if saved else []
-    if resume and not saved:
+    if resume and wire.answer and not saved:
         resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
     raw = response_object(raw, schema)
     wire_raw = raw
@@ -273,7 +278,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 raw = await service.model_client.complete(repair_system, json.dumps(repair_input, ensure_ascii=False),
                     response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
                 raw = response_object(raw, schema)
-                if resume:
+                if resume and wire.answer:
                     resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
                 raw = decode_provider_response(wire, raw, response_schema) if wire else raw
                 if work["phase"] == "brief":

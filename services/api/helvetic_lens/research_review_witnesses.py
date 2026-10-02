@@ -14,17 +14,16 @@ def review_schema(assertion, references, concerns, *, point=True):
     refs = {'type': 'array', 'items': {'type': 'integer', **({'enum': list(references)} if references else {})},
         'maxItems': min(8, len(references))}
     def judgment():
-        variants = []
-        for verdict in ('supported', 'contradicted', 'not_established'):
-            witness = verdict == 'contradicted' or point and verdict == 'supported'
-            if witness and not references:
-                continue
-            props = {'verdict': {'type': 'string', 'enum': [verdict]},
-                'reason': {'type': 'string', 'maxLength': 200},
-                'citation_refs': {**refs, 'minItems': int(witness)}}
-            variants.append({'type': 'object', 'properties': props,
-                'required': list(props), 'additionalProperties': False})
-        return {'anyOf': variants}
+        # Conditional witnesses are enforced by invalid_review before any
+        # judgment is accepted or cached. Repeating this entire object for
+        # each verdict wastes the request allowance needed by the originals.
+        verdicts = [verdict for verdict in ('supported', 'contradicted', 'not_established')
+            if references or not (verdict == 'contradicted' or point and verdict == 'supported')]
+        props = {'verdict': {'type': 'string', 'enum': verdicts},
+            'reason': {'type': 'string', 'maxLength': 200},
+            'citation_refs': {**refs, 'minItems': 0}}
+        return {'type': 'object', 'properties': props,
+            'required': list(props), 'additionalProperties': False}
     schema = {'type': 'object', 'properties': {'overall': judgment(),
         'clauses': {'type': 'object', 'properties': {key: judgment() for key in assertion_clauses(assertion)},
             'required': list(assertion_clauses(assertion)), 'additionalProperties': False}},
@@ -33,18 +32,12 @@ def review_schema(assertion, references, concerns, *, point=True):
         schema['properties']['gap_status'] = {'type': 'string', 'enum': ['unresolved', 'answered', 'answer_available', 'outside_request']}
         schema['required'].append('gap_status')
     if concerns:
-        variants = []
-        for outcome in ('resolved', 'remains', 'cannot_assess'):
-            if outcome != 'cannot_assess' and not references:
-                continue
-            props = {'id': {'type': 'string', 'enum': list(concerns)},
-                'outcome': {'type': 'string', 'enum': [outcome]},
-                'reason': {'type': 'string', 'maxLength': 200},
-                'citation_refs': {**refs, 'minItems': int(outcome != 'cannot_assess')}}
-            variants.append({'type': 'object', 'properties': props,
-                'required': list(props), 'additionalProperties': False})
+        props = {'id': {'type': 'string', 'enum': list(concerns)},
+            'outcome': {'type': 'string', 'enum': ['resolved', 'remains', 'cannot_assess'] if references else ['cannot_assess']},
+            'reason': {'type': 'string', 'maxLength': 200},
+            'citation_refs': {**refs, 'minItems': 0}}
         schema['properties']['concern_checks'] = {'type': 'array', 'minItems': len(concerns), 'maxItems': len(concerns),
-            'items': {'anyOf': variants}}
+            'items': {'type': 'object', 'properties': props, 'required': list(props), 'additionalProperties': False}}
         schema['required'].append('concern_checks')
     return schema
 

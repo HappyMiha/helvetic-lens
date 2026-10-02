@@ -94,6 +94,9 @@ def prepare(session, run, branch, state, work):
             "title": work["item"]["title"], "snippet": work["item"].get("summary", "")}
     elif branch.phase == "reflect":
         work["input"] = research.prepare_reflection(session, run, branch)
+        from .research_synthesis_resume import KEY
+        if work["unmetered_research"] and state.get(KEY):
+            work[KEY] = deepcopy(state[KEY])
         work["input"]["search_continuation"] = {"available_channels": list(state.get("next_discovery_cursors", {})),
             "remaining_candidates": max(0, len(state.get("candidates", [])) - state.get("gate_index", 0)),
             "pages_checked": len(state.get("discovery_history", [])), "scope": "More source-owned results may be available; exhaustive coverage is not implied."}
