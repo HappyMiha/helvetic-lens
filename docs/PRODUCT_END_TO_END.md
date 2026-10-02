@@ -652,3 +652,43 @@ dependency invalidation case passed (the enclosing 48-case run took 39.81 second
 Exact API lint and backlog structure guard passed. A read-only second review
 found no remaining blocker within this change. These checks do not establish
 real-provider answer quality; the next ordinary continuation will assess it.
+
+
+### Avoid resending identical source passages in continuation
+
+Core b7c9913 activated at 06:16:15 UTC. Both public clients, session discovery,
+readiness and anonymous private-route denial passed after deployment. Ordinary
+continuation recalled six originals, but EarlyOrientation submitted 388,965 bytes
+and received four HTTP 429 responses. Its provider input contains about 156 KB of
+canonical source windows plus 143 KB of the same saved originals, alongside
+historical claims. A small planning request succeeded. The trace does not prove
+that size alone caused rate limiting; it does prove unnecessary duplication.
+
+The scoped change aliases only exact (source ID, hash, locator, raw text)
+matches to existing canonical citation references. Every other excerpt/source
+annotation and historical claim remains unchanged. Unmatched/short passages stay
+verbatim; no new citation authority, truncation, source deletion or fabricated
+coverage is introduced. Canonical input and source validation are unchanged.
+Acceptance checks exact and multi-window matches, changed identities/text,
+annotations and unchanged output citation decoding. This transport module is
+already loaded in the current b7c9913 pilot; that run retains its original code
+and recorded hashes. The new transport is evaluated separately after it ends.
+
+
+The alias transport is implemented. A read-only replay reconstructed the actual
+continuation input and first asserted its canonical source windows match the
+recorded b7c9913 request. It reduced provider-input JSON from 363,344 to 258,278
+UTF-8 bytes (28.92%), aliasing 436 saved passages. All 500 canonical citation
+references, source windows and historical claims remain equal. This measurement
+excludes schema/system overhead and does not prove a provider quota change.
+Forty-eight focused transport/backlog tests and exact API lint passed. An older
+transport fixture now returns the mandatory final literal judgment already
+required by the shipped reviewer; it still proves dated context recovery without
+regenerating the answer. The current live continuation still uses preloaded
+b7c9913 and must not be reported as validation of this new transport.
+
+Aliasing additionally requires exact window offsets to cover every non-whitespace
+character of the full raw excerpt. A short qualifier omitted by the pre-existing
+citation window threshold keeps the entire saved excerpt verbatim. Three
+prefix/middle/tail regression cases cover this edge; independent read-only review
+confirmed unchanged canonical windows and complete alias coverage.

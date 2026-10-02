@@ -377,7 +377,12 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
     client, calls = ModelClient(settings), []
     async def complete(*args, **kwargs):
         calls.append(1)
-        assert len(calls) <= 2, args[0][-2400:]  # Initial answer and semantic review only.
+        assert len(calls) <= 3, 'Initial draft, semantic draft check and final literal review only.'
+        value = json.loads(args[1])
+        if 'final_claims_and_gaps' in value:
+            assert value['selected_citation_refs'] == [1, 2]
+            verdict = {'verdict': 'supported', 'reason': '', 'citation_refs': [1, 2]}
+            return json.dumps({'overall': verdict, 'clauses': {'S0': verdict}})
         return json.dumps({'answer': {'status': 'possible_answer', 'points': [
             {'statement': 'The committee adopted the revised unit in 2005.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
             'remaining_gaps': []}, 'next_action': 'finish', 'reason': 'The original records the decision.'})
@@ -400,7 +405,7 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
     schema = mission_schema(AssessedBriefing)
     raw = await research_gateway._complete(SimpleNamespace(model_client=client, settings=settings), work, '', schema, 90)
     result = schema.model_validate_json(raw)
-    assert len(calls) == 2
+    assert len(calls) == 3
     assert len(result.mission_checkpoint.answer.points[0].evidence) == 2
     assert not research_gateway.answer_quantity_errors(result.mission_checkpoint.answer)
 

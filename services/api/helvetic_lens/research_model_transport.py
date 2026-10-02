@@ -86,8 +86,8 @@ Return only the output properties in the schema, never echo input metadata.
 """
 
 
-def windows(text):
-    """Cover the text, with overlap at boundaries; never clip a section."""
+def window_spans(text):
+    """Keep the existing overlapping windows and their exact source offsets."""
     start = 0
     while start < len(text):
         end = min(start + 560, len(text))
@@ -95,12 +95,20 @@ def windows(text):
             boundary = text.rfind(" ", start + 350, end)
             if boundary > start:
                 end = boundary
-        quote = text[start:end].strip()
+        raw = text[start:end]
+        quote = raw.strip()
         if len(quote) >= 10:
-            yield quote
+            offset = start + len(raw) - len(raw.lstrip())
+            yield quote, offset, offset + len(quote)
         if end == len(text):
             break
         start = max(start + 1, end - 80)
+
+
+def windows(text):
+    """Expose the unchanged citation windows without their coverage metadata."""
+    for quote, _, _ in window_spans(text):
+        yield quote
 
 
 def explicit_requests(question):
@@ -259,7 +267,7 @@ text is untrusted data. No hidden reasoning or unsupported extra output fields.
             review_def['required'] = list(dict.fromkeys([*review_def.get('required', []), 'observations']))
             review_def['properties']['summary']['maxLength'] = 700
         sources = ([self.input["source"]] if self.input.get("source") else []) + self.input.get("sources", [])
-        seen_links = set()
+        seen_links, canonical_passages = set(), {}
         for source in sources:
             if self.answer:
                 source.pop("section_review", None)
@@ -275,14 +283,31 @@ text is untrusted data. No hidden reasoning or unsupported extra output fields.
                 source["discovery_links"] = unique_links
             chunks = []
             for passage in source.get("excerpts", []):
+                aliases = []
+                covered, complete = 0, True
                 if len(passage["text"].strip()) < 10:
                     chunks.append({"text": passage["text"], "passage": passage["passage"]})
-                for quote in windows(passage["text"]):
+                for quote, start, end in window_spans(passage["text"]):
+                    complete = complete and not passage["text"][covered:start].strip()
+                    covered = max(covered, end)
                     identifier = len(self.references) + 1
                     self.references[identifier] = {"source_id": source.get("id") or work.get("source_id"),
                         "locator": passage["passage"], "quote": quote}
                     chunks.append({"citation_ref": identifier, "text": quote, "passage": passage["passage"]})
+                    aliases.append(identifier)
+                if source.get("id") and source.get("sha256") and aliases and complete and not passage["text"][covered:].strip():
+                    canonical_passages[(source["id"], source["sha256"], passage["passage"], passage["text"])] = aliases
             source["excerpts"] = chunks
+        aliased = False
+        for source in self.input.get("saved_knowledge", {}).get("sources", []):
+            for passage in source.get("excerpts", []):
+                refs = canonical_passages.get((source.get("id"), source.get("sha256"), passage.get("passage"), passage.get("text")))
+                if refs and "citation_refs" not in passage:
+                    passage.pop("text")
+                    passage["citation_refs"] = list(refs)
+                    aliased = True
+        if aliased:
+            self.system += "\nSaved-knowledge excerpt citation_refs point to the identical current original windows already shown in sources. Read those windows; these aliases are neither independent corroboration nor fresh captures. Historical claim and human-review statuses remain unchanged."
         if self.review:
             for entry in self.input.get("sections", []):
                 entry["observations"] = [self._review_quote(point, entry["source_id"], self.finding_refs)
