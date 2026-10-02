@@ -41,6 +41,10 @@ Check claims against their selected passages. Check each gap against ALL supplie
 originals: information may already be present in an unselected passage. Do not
 answer the research question instead of reviewing the supplied assertion. For a
 gap, assess its entire literal sentence, not a corrected interpretation.
+Each passage citation_ref and concern original_refs refers to the exact original
+text supplied once in source_context (or sources for a gap). Citation roles belong
+to the reviewed statement; concern references are fallible objections, not extra
+selected support. delivered_points uses the same original reference table.
 source_context supplies the exact surrounding text from the cited originals.
 Use it to understand a clipped sentence's subject, qualifications and references;
 do not invent a different event from a fragment. It is not additional selected
@@ -102,7 +106,7 @@ claims. A metadata entry can establish its publication details; it cannot by
 itself establish the referenced work's scientific, legal or other substantive
 conclusion. Judge context-role citations by the same evidence-use boundary.
 """
-POLICY = fingerprint({'contract': 'final-answer-entailment/v19-coherent-coverage', 'review': REVIEW, 'focus': FOCUS,
+POLICY = fingerprint({'contract': 'final-answer-entailment/v20-canonical-review-originals', 'review': REVIEW, 'focus': FOCUS,
     'source_use': SOURCE_USE_POLICY, 'coverage': [COVERAGE_SYSTEM, COVERAGE_CRITERIA]})
 
 
@@ -162,6 +166,56 @@ def carry_concerns(existing, previous, issues, context_refs=()):
         'context_refs': list(dict.fromkeys([*existing.get('context_refs', []), *context_refs]))}
 
 
+def review_projection(wire, item, previous=None, delivered=()):
+    """Project host-owned witnesses to IDs; keep their unchanged originals once."""
+    identities, texts = {}, {}
+    for key, ref in wire.references.items():
+        identities.setdefault((ref['source_id'], ref['locator'], ref['quote']), key)
+        texts.setdefault(ref['quote'], []).append(key)
+    required = []
+
+    def retain(keys):
+        if any(type(key) is not int or key not in wire.references for key in keys):
+            raise ValueError('Unbound review original')
+        required.extend(key for key in keys if key not in required)
+        return list(dict.fromkeys(keys))
+
+    def original(ref):
+        identity = (ref.get('source_id'), ref.get('locator'), ref.get('quote'))
+        if identity not in identities:
+            raise ValueError('Unbound review original')
+        return retain([identities[identity]])[0]
+
+    def point(value, field):
+        result = deepcopy(value)
+        result[field] = [{'citation_ref': original(ref), 'role': ref['role'],
+            **({'source_use': ref['source_use']} if 'source_use' in ref else {})} for ref in value[field]]
+        return result
+
+    projected = point(item, 'passages') if 'passages' in item else deepcopy(item)
+    delivered = [point(value, 'evidence') for value in delivered]
+    concerns = None
+    if previous is not None:
+        concerns = {'previous_statements': deepcopy(previous['previous_statements']), 'concerns': {}}
+        for index, issue in enumerate(previous['issues']):
+            if not isinstance(issue, dict):
+                raise ValueError('Unbound review concern')
+            value = deepcopy(issue)
+            refs = list(value.pop('original_refs', []))
+            for text in value.pop('original_text', []):
+                if text not in texts:
+                    raise ValueError('Unbound review original')
+                # A legacy text-only witness can identify several originals.
+                # Retain all exact matches rather than invent source ownership.
+                refs.extend(texts[text])
+            value['original_refs'] = retain(refs)
+            for note in value.get('reviewer_notes', []):
+                note['original_refs'] = retain([*note.pop('original_refs', []),
+                    *(original(ref) for ref in note.pop('originals', []))])
+            concerns['concerns'][f'C{index}'] = value
+    return projected, concerns, delivered, required
+
+
 async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, on_progress=None, concerns=None):
     """Complex factual relationships need synthesis, not a fast coverage label."""
     from .research_model_transport import shape_errors
@@ -184,13 +238,21 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
     for key, item in items.items():
         # Other answers and irrelevant originals can cause a reviewer to infer
         # intended meaning rather than evaluate this literal statement.
-        payload = {'final_claims_and_gaps': {key: item},
+        try:
+            projected, previous, delivered, required = review_projection(wire, item, (concerns or {}).get(key),
+                [point.model_dump() for point in answer.points] if key.startswith('L') else ())
+            retained = (concerns or {}).get(key, {}).get('context_refs', [])
+            if any(type(ref) is not int or ref not in wire.references for ref in retained):
+                raise ValueError('Unbound review original')
+            required = list(dict.fromkeys([*required, *retained]))
+        except (ValueError, KeyError, TypeError):
+            failures[key] = 'unbound_original_reference'
+            continue
+        payload = {'final_claims_and_gaps': {key: projected},
             'original_question': wire.input.get('original_question', '')}
-        concern_ids = {}
-        if key in (concerns or {}):
-            previous = concerns[key]
-            concern_ids = {f'C{i}': issue for i, issue in enumerate(previous['issues'])}
-            payload['prior_review_concerns'] = {'previous_statements': previous['previous_statements'], 'concerns': concern_ids}
+        concern_ids = previous['concerns'] if previous is not None else {}
+        if previous is not None:
+            payload['prior_review_concerns'] = previous
         keys = []
         if key.startswith('L'):
             context = wire.references
@@ -198,16 +260,14 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             owner = next((key for key, slot in getattr(wire, 'response_slots', {}).items()
                 if slot['remaining_gap'].strip() == item['gap']), None)
             payload['research_question'] = getattr(wire, 'request_keys', {}).get(owner) or wire.input.get('original_question', '')
-            payload['delivered_points'] = [point.model_dump() for point in answer.points]
+            payload['delivered_points'] = delivered
         else:
-            selected = {(ref['source_id'], ref['locator'], ref['quote']) for ref in item['passages']}
-            keys = [key for key, ref in wire.references.items()
-                if (ref['source_id'], ref['locator'], ref['quote']) in selected]
+            selected = {ref['citation_ref'] for ref in projected['passages']}
+            keys = [ref for ref in wire.references if ref in selected]
             context = contextual_references(wire, keys)
             # Rebinding positive citations must not hide earlier contradictory
             # originals or qualifications from the mandatory candidate check.
-            retained = (concerns or {}).get(key, {}).get('context_refs', [])
-            context = {ref: value for ref, value in wire.references.items() if ref in context or ref in retained}
+            context = {ref: value for ref, value in wire.references.items() if ref in context or ref in required}
             payload['source_context'] = source_groups(wire, context)
             payload['selected_citation_refs'] = keys
         assertion = item.get('statement', item.get('gap'))
@@ -238,7 +298,6 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
                 reference_uses={ref: use for ref, use in getattr(wire, 'reference_uses', {}).items() if ref in context})
             task = json.dumps({name: value for name, value in payload.items()
                 if name not in {'sources', 'source_context'}}, ensure_ascii=False)
-            required = keys + list((concerns or {}).get(key, {}).get('context_refs', [])) if key.startswith('P') else []
             context = await select_evidence(service, candidate_wire, task, deadline-monotonic(),
                 checkpoints=checkpoints.setdefault('original_selection', {}), on_progress=on_progress,
                 fits=fits, required_refs=required, request_size=request_size)

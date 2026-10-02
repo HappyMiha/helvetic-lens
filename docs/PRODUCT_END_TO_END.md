@@ -1505,3 +1505,46 @@ or final content acceptance.110 affected tests and one native orientation
 preparation/privacy/reuse case passed; full API Ruff/diff and independent review
 passed. Native47955 remains active on its original6fd957b snapshot, continues
 source analysis after four oversized-orientation429responses, and is not interrupted.
+
+
+### Complete final review of a continued dossier
+
+MV2-020/023: native47955 ended failed after1,622.87seconds/68steps on pinned6fd957b,
+with six current documents fully read/analysed, a private Briefing622 and partial
+final-review progress, but no delivered answer. The terminal error is
+research_evidence_group_too_large in reasoned_review's required original evidence
+selection. Orientation's earlier oversized request is already fixed in live6a67154.
+Scope: reconstruct the exact failing final assertion and request; remove redundant
+transport representation where possible, retaining all mandatory originals,
+qualifications, prior objections, source IDs and strict factual validation. If the
+irreducible evidence still does not fit, design an explicit complete-source review
+contract instead of dropping passages. Dependency: frozen native47955 artifacts
+and existing bounded pack/resume machinery. Acceptance requires ordinary same-ID
+retry through the actual final answer, then independent source-grounded content
+review. No new provider probes, forced status, context-budget increase, production
+fixture or automatic acceptance of a private candidate is permitted.
+
+The recorded repaired assertion was reconstructed exactly from correction624 and
+its native fingerprint. Either possible fast-review objection made the old
+mandatory envelope exceed24,000 characters (24,128/24,131). The reviewer now sees
+each immutable original once in the shared source table; citations retain their
+canonical reference and role, and objection witnesses refer to those same IDs.
+Earlier objections and the delivered points used when assessing gaps remain
+mandatory evidence. Unknown identities leave review pending before dispatch.
+The private review policy changes, so incompatible old synthesis/review caches
+cannot be reused; unchanged new reviews remain reusable. Public answer schemas,
+provider settings and strict factual judgment validation are unchanged.
+
+Offline replay through the actual request builder reaches the model boundary at
+21,337/21,340 characters for the two objection variants, preserving all19 exact
+mandatory originals and the literal assertion. The capture-only boundary makes
+zero provider/network calls or database writes; it establishes transport fit,
+not factual acceptance. Independent review found no material blocker in witness
+identity, metadata scope, mandatory selection or cache binding. Ordinary retry
+and acceptance of a new delivered answer remain required.
+
+Validation: 114 affected final-review, narrowing, correction, atomic-delivery,
+fast-signal and reference-use tests passed. The backlog guard, exact API Ruff and
+diff checks passed. Existing fixtures now assert canonical witness references
+and their supplied originals, preserving the metadata-use label. No client code
+changed, and no client rebuild or republishing is required for this core fix.

@@ -48,7 +48,8 @@ async def test_final_fast_objection_can_be_dismissed_by_originals_without_rewrit
             assert bool(concerns) == (fast_choice in {'not_established', 'contradicted'})
             if concerns:
                 issue = next(iter(concerns.values()))
-                assert issue['original_text'] == [source['quote']]
+                assert issue['original_refs'] == [1] and 'original_text' not in issue
+                assert payload['source_context'][0]['passages'][0]['text'] == source['quote']
                 assert 'advisory' in issue['instruction']
                 response['concern_checks'] = [{'id': key, 'outcome': 'resolved',
                     'reason': 'The supported paraphrase preserves the original meaning.', 'citation_refs': [1]} for key in concerns]
