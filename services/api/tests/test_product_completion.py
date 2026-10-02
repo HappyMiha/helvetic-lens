@@ -23,12 +23,14 @@ from helvetic_lens.product_investigation_models import InvestigationBranch
 from helvetic_lens.product_models import PrivateDossierFollow
 
 
-def finish_mission(monkeypatch, model, *, deepen=False):
+def finish_mission(monkeypatch, model, *, deepen=False, branch_requests_more=False):
     base = model.complete
     async def answer(system, user, **kwargs):
         if kwargs['response_schema']['title'] == 'Comparison':
             return json.dumps({'changes': []})
         value = json.loads(await base(system, user, **kwargs))
+        if kwargs['response_schema']['title'] == 'Reflection' and branch_requests_more:
+            value['search_deeper'] = True
         if kwargs['response_schema']['title'] == 'Briefing':
             data = json.loads(user)
             source = data['sources'][0]
@@ -73,7 +75,8 @@ def test_scheduled_checks_use_completion_mission_without_daily_start_quota(signe
     assert due(service)['started'] == 0
 
 
-def test_native_mission_resumes_a_saved_page_without_replaying_prior_candidates(signed, monkeypatch):
+@pytest.mark.parametrize('branch_requests_more', [False, True])
+def test_native_mission_resumes_a_saved_page_without_replaying_prior_candidates(signed, monkeypatch, branch_requests_more):
     client, service, _, model = signed
     trace = adapters(monkeypatch, service, model)
     base = decision_search.federated_retrieve
@@ -87,7 +90,7 @@ def test_native_mission_resumes_a_saved_page_without_replaying_prior_candidates(
             value['next_cursors'] = {'broad': '2'}
         return value
     monkeypatch.setattr(decision_search, 'federated_retrieve', paged)
-    finish_mission(monkeypatch, model, deepen=True)
+    finish_mission(monkeypatch, model, deepen=True, branch_requests_more=branch_requests_more)
     root, run, _ = start(client)
     result = complete(client, service, root + '/investigations', run)
     assert result['status'] == 'completed'

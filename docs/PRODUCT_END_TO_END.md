@@ -263,3 +263,30 @@ Multi-passage conclusions stay in the typed answer with their full evidence set.
 The single-citation legacy card no longer labels one fragment as direct proof of
 a combined conclusion. The current dossier reader already renders the complete
 typed answer; single-citation legacy findings remain compatible.
+
+## Global completion before more discovery
+
+MV2-020/023 follow-through: a live branch reflection requested deeper discovery
+because it overlooked a publication date. Automatic branch-local reactivation
+can postpone the mission's original-question checkpoint while other branches
+continue reading. For completion-based missions, finish each reflected reading
+batch and let the existing global checkpoint choose which saved candidates/pages
+to resume. Legacy bounded investigations retain automatic branch continuation.
+Dependencies: current mission scheduling, saved frontiers, exact evidence and
+whole-document reading/review; no new provider or source access. Acceptance: a
+branch request to search deeper cannot bypass the original-question checkpoint;
+that checkpoint can still resume a saved page without replaying candidates.
+No incomplete document is marked read, and no total research quota is introduced.
+
+Request-focused release `338e23b7c176c282d1e32d9461fc04274814b79b`
+activated automatically at 2026-10-02T01:20:14Z. Public ready returned 200 with
+`git-338e23b7c176`, database/Redis ready; both client homes returned 200 and
+anonymous private-dossier requests returned 401. The clients remain Sites 86.
+
+Global-checkpoint follow-through checks passed: both native saved-page variants
+(including a branch that repeatedly requests deeper discovery), both product
+legacy follow-up/identity cases, exact API lint and backlog guard. Global mission
+checkpoints still resume authorized saved frontiers; this is evidence-based
+coordination rather than a new round, depth, source or account quota. The ongoing
+public pilot began before this scheduler change and must not be reported as its
+live acceptance. No active pilot was restarted or interrupted for the update.

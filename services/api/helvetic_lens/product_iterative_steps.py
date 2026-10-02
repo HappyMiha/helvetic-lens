@@ -342,6 +342,10 @@ def apply(session, run, branch, state, work, result):
         state.update(reflection_done=True, outcome=result.outcome)
         from .product_document_reading import failed_analysis
         branch.status = "failed" if failed_analysis(state) else "completed"
-        if branch.status == "completed" and result.search_deeper and discovery_available(state):
+        from .product_research_mission import enabled as mission_enabled
+        # A mission assesses the original question across all read batches before
+        # selecting saved frontiers to deepen. Branch-local relevance is not an
+        # instruction to postpone that global completion check indefinitely.
+        if branch.status == "completed" and result.search_deeper and discovery_available(state) and not mission_enabled(run):
             continue_discovery(branch, state)
     branch.checkpoint = deepcopy(state)
