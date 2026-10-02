@@ -3,6 +3,7 @@ import json
 from copy import deepcopy
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 
 from helvetic_lens import product_document_analysis as documents
 from helvetic_lens import research_gateway
@@ -326,6 +327,7 @@ async def test_known_invalid_answer_is_rejected_when_repair_time_is_exhausted(mo
     from helvetic_lens.product_research_mission import schema as mission_schema
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     client = ModelClient(settings)
+    @atomic_pack_model
     async def complete(*args, **kwargs):
         return json.dumps({'answer': {'status': 'possible_answer', 'points': [
             {'statement': 'The mountain measures 999 metres.', 'support_refs': [1]}],
@@ -375,6 +377,7 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
     from helvetic_lens.product_research_mission import schema as mission_schema
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     client, calls = ModelClient(settings), []
+    @atomic_pack_model
     async def complete(*args, **kwargs):
         calls.append(1)
         assert len(calls) <= 3, 'Initial draft, semantic draft check and final literal review only.'

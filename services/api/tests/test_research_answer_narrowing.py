@@ -35,8 +35,8 @@ async def test_exact_candidate_is_rechecked_with_all_old_context(monkeypatch, ca
     revised = 'The registry is operated by North Reach.'
     async def cannot_improve(*args, **kwargs):
         if case == 'rewrite_after_resume' and interrupted[0]:
-            return AssessmentPoint(statement=revised, evidence=[{**refs[1], 'role': 'support'}]), '', {'status': 'proposed'}
-        return point.model_copy(deep=True), '', {'status': 'proposed'}
+            return [AssessmentPoint(statement=revised, evidence=[{**refs[1], 'role': 'support'}])], '', {'status': 'proposed'}
+        return [point.model_copy(deep=True)], '', {'status': 'proposed'}
 
     async def audit(*args, **kwargs):
         narrowed = answer.points and answer.points[0].statement == good
@@ -139,7 +139,7 @@ async def test_missing_positive_witnesses_rebind_without_rewriting_facts(monkeyp
     assert proposal['candidates']['P0']['statement'] == statement
     assert [ref['quote'] for ref in proposal['candidates']['P0']['evidence']] == [ref['quote'] for ref in refs.values()]
     async def unchanged(*args, **kwargs):
-        return point.model_copy(deep=True), '', {'status': 'proposed'}
+        return [point.model_copy(deep=True)], '', {'status': 'proposed'}
     async def covered(*args, **kwargs):
         return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
     monkeypatch.setattr('helvetic_lens.research_final_review.answer_request', unchanged)

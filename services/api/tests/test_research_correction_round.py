@@ -38,8 +38,8 @@ async def test_deadline_and_regrouped_points_resume_exact_pending_correction(mon
         calls.append(request)
         if request == 'Southern registry?' and not blocked[0]:
             blocked[0] = True
-            return None, '', {'status': 'unavailable'}
-        return point('Northern' if request == 'Northern registry?' else 'Southern'), '', {'status': 'proposed'}
+            return [], '', {'status': 'unavailable'}
+        return [point('Northern' if request == 'Northern registry?' else 'Southern')], '', {'status': 'proposed'}
     def persist():
         snapshots.append(json.loads(json.dumps(state)))
     monkeypatch.setattr(review, 'audit', audit)

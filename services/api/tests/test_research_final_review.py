@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
@@ -51,6 +52,7 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
     def point(index, statement=None):
         return {'statement': statement or good[index], 'evidence': [{'citation_ref': index+1, 'role': 'support'}]}
 
+    @atomic_pack_model
     async def complete(system, text, **options):
         value = json.loads(text)
         calls.append(value)
@@ -171,6 +173,7 @@ async def test_single_question_resumes_corrected_private_point_after_incomplete_
     schema = mission_schema(Briefing)
     assert EvidenceWire(work, schema, '').request_keys == {}
 
+    @atomic_pack_model
     async def complete(system, text, **options):
         value = json.loads(text)
         if 'final_claims_and_gaps' in value:
@@ -243,6 +246,7 @@ async def test_final_counterexample_corrects_its_own_gap_and_unavailable_review_
             choice = 'covered' if 'specific_request' in state else 'supported' if 'statement' in state else 'L0'
             return Decision('jev', 'test', choice, {choice: 1}, 1, 1, 1, 1, 1)
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             if 'final_claims_and_gaps' in value:
@@ -303,6 +307,7 @@ async def test_review_of_an_unrelated_assertion_cannot_decide_the_actual_gap():
     answer = AssessmentOutcome(status='not_found', points=[], limitations=['The adoption date is not supplied.'])
     wire = SimpleNamespace(input={'sources': []}, references={})
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             assert 'question' not in json.loads(text)
             return json.dumps({'overall': {'verdict': 'supported', 'reason': '', 'citation_refs': []},
@@ -322,6 +327,7 @@ async def test_only_host_registered_workflow_notices_are_exempt_from_factual_gap
     wire = SimpleNamespace(input={}, references={}, workflow_gaps={gap})
     class Model:
         calls = 0
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             self.calls += 1
             return '{}'
@@ -357,6 +363,7 @@ async def test_private_resume_preserves_exact_host_notice_provenance(monkeypatch
 
     class Model:
         interrupted = False
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             item = next(iter(json.loads(text)['final_claims_and_gaps'].values()))
             assertion = item.get('statement', item.get('gap'))
@@ -396,6 +403,7 @@ async def test_final_review_reads_cited_original_context_without_borrowing_other
         'evidence': [{**refs[2], 'role': 'support'}]}], limitations=[])
     wire = SimpleNamespace(input={}, references=refs)
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             assert [p['text'] for group in value['source_context'] for p in group['passages']] == [refs[1]['quote'], refs[2]['quote']]
@@ -429,6 +437,7 @@ async def test_invalid_negative_is_pending_and_only_its_check_is_repeated(failur
     wire = SimpleNamespace(input={}, references=refs)
     calls = []
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             key, item = next(iter(value['final_claims_and_gaps'].items()))
@@ -491,6 +500,7 @@ async def test_whole_assertion_judgment_checks_relationships_without_requiring_c
         'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
     wire = SimpleNamespace(input={}, references={1: ref})
     class Model:
+        @atomic_pack_model
         async def complete(self, *args, **kwargs):
             return review_json({'overall': {'verdict': overall, 'reason': '', 'citation_refs': [1]},
                 'clauses': [{'claim_as_written': span, 'verdict': 'supported', 'reason': '', 'citation_refs': [1]}
@@ -523,6 +533,7 @@ async def test_only_real_requested_gaps_remain_without_rewriting_completed_answe
         answer.points, wire.point_requests = [], []
     calls = []
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             value = json.loads(text)
             if 'requested_part' in value and kind == 'answer_available':
@@ -560,6 +571,7 @@ async def test_review_feedback_contains_only_literal_claims_and_original_witness
     answer = AssessmentOutcome(status='possible_answer', points=[{'statement': 'The old rule was reaffirmed in 2042.',
         'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             return review_json({'clauses': [{'claim_as_written': answer.points[0].statement, 'verdict': verdict,
                 'citation_refs': [1] if verdict == 'contradicted' else [], 'reason': 'Invented alternative authority acted in 2050.'}]})
@@ -579,6 +591,7 @@ async def test_deadline_yield_is_distinct_from_an_unresolved_review_concern():
     answer = AssessmentOutcome(status='possible_answer', points=[{'statement': ref['quote'],
         'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             payload = json.loads(text)
             assert payload['original_question'] == 'Who operates it?'
@@ -606,6 +619,7 @@ async def test_inserting_or_reordering_siblings_reuses_exact_checks_but_changed_
     wire = SimpleNamespace(input={'original_question': 'Who operates these registries?'}, references=refs)
     calls, cache = [], {}
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             item = next(iter(value['final_claims_and_gaps'].values()))

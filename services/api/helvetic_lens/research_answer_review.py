@@ -29,8 +29,9 @@ async def repair_points(service, wire, answer, seconds, *, on_success=None, issu
         request = request or point.statement
         fixed, gap, receipt = await answer_request(service, wire, request, deadline-monotonic(), checkpoints=checkpoints,
             on_progress=(lambda: on_success(receipts)) if on_success else None)
-        if fixed is None:
+        if not fixed:
             continue
+        fixed = fixed[0]  # Numeric repair requests exactly one point.
         answer.points[index] = fixed
         update_gap(wire, answer, bindings[index] if index < len(bindings) else None, gap)
         receipts.append({**receipt, 'point': index, 'before_fingerprint': fingerprint(point.model_dump()),

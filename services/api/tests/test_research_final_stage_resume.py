@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
@@ -13,6 +14,59 @@ from helvetic_lens.config import DomainError, Settings
 from helvetic_lens.product_exploration import AssessmentPoint, Briefing
 from helvetic_lens.product_research_mission import schema as mission_schema
 from helvetic_lens.research_synthesis_resume import KEY
+
+
+@pytest.mark.asyncio
+async def test_final_coverage_interruption_retains_regrouped_request_ownership(monkeypatch):
+    from test_research_answer_parts import fixture
+
+    from helvetic_lens import research_final_coverage, research_final_review
+    wire, parsed, schema = fixture(2)
+    work = deepcopy(wire.work)
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    raw = wire.encode_checkpoint(parsed)
+    original = ['Published in 2001.', 'An earlier edition was published in 1999.']
+    interrupted = [False]
+    @atomic_pack_model
+    async def complete(system, text, **options):
+        data = json.loads(text)
+        if 'requested_part' not in data:
+            return raw
+        if 'citation_refs' in options['response_schema']['properties']:
+            return selection_json([1, 2], options)
+        index = int('record 2' in data['requested_part'])
+        return json.dumps({'statement': original[index], 'remaining_gap': '',
+            'evidence': [{'citation_ref': index + 1, 'role': 'support'}]})
+    async def audit(*args, **kwargs):
+        return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
+    async def final(service, work, wire, parsed, *args, **kwargs):
+        # A gap-only repair can append an earlier request after a later one.
+        parsed.mission_checkpoint.answer.points.reverse()
+        wire.point_requests.reverse()
+        return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
+    async def reconcile(settings, work, wire, answer, *args, **kwargs):
+        assert wire.point_requests == ['r1', 'r2']
+        assert [p.statement for p in answer.points] == original
+        kwargs['on_progress']()
+        if not interrupted[0]:
+            interrupted[0] = True
+            raise DomainError('Interrupted during complete-answer coverage', 503, 'model_upstream_timeout')
+        return {'status': 'checked', 'removed_notices': 0}
+    async def no_original(*args, **kwargs):
+        return None
+    monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(review, 'audit', audit)
+    monkeypatch.setattr(review, 'original_check', no_original)
+    monkeypatch.setattr(research_final_review, 'finalize', final)
+    monkeypatch.setattr(research_final_coverage, 'reconcile', reconcile)
+    service = SimpleNamespace(settings=settings, model_client=model)
+    with pytest.raises(DomainError):
+        await gateway.complete(service, work, '', schema, 90)
+    slots = json.loads(work[KEY]['raw'])['answer']['responses']
+    assert [slots[key]['points'][0]['statement'] for key in ('r1', 'r2')] == original
+    result = schema.model_validate_json(await gateway.complete(service, work, '', schema, 90))
+    assert [p.statement for p in result.mission_checkpoint.answer.points] == original
 
 
 @pytest.mark.asyncio
@@ -34,6 +88,7 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
         'r2': {'disposition': 'answered', 'remaining_gap': '', 'points': [point(sibling, 2)]}}}, 'next_action': 'finish'})
     calls, interrupted = [], [False]
 
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'final_claims_and_gaps' in value:
@@ -64,8 +119,8 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
         return raw
 
     async def unchanged(*args, **kwargs):
-        return AssessmentPoint(statement=bad, evidence=[{'source_id': 'a' * 36, 'locator': 'p1',
-            'quote': good, 'role': 'support'}]), '', {'status': 'proposed'}
+        return [AssessmentPoint(statement=bad, evidence=[{'source_id': 'a' * 36, 'locator': 'p1',
+            'quote': good, 'role': 'support'}])], '', {'status': 'proposed'}
     async def audit(*args, **kwargs):
         return {'status': 'checked', 'question_coverage': 'covered', 'hints': [], 'decisions': []}
     async def original(*args, **kwargs):
@@ -110,6 +165,7 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
     calls, interrupted = [], [False]
     def point(index, statement):
         return {'statement': statement, 'evidence': [{'citation_ref': index+1, 'role': 'support'}]}
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'final_claims_and_gaps' in value:

@@ -784,3 +784,39 @@ the requested evidence gaps were replaced by validation notices. Terminal native
 completion is therefore not full product acceptance. Preserve tenth-completed-*
 and the isolated database. No further provider run is authorized by this result
 alone; implement a coherent synthesis correction before another evaluation.
+
+
+### Atomic findings and final whole-answer coverage
+
+Scope MV2-020: the terminal f267 dossier exposes a structural synthesis bottleneck:
+each request gets one 700-character point; unrelated factual obligations become
+compound claims, while ownership-based slot gaps can contradict answers already
+present elsewhere. Return multiple atomic points within stable per-request
+capacities totaling the existing eight-point canonical contract. Preserve exact
+quotations, individual quantity checks, validated siblings and durable private
+progress. A final correction replaces only fingerprinted rejected targets; a
+gap-only correction preserves good siblings. Inherit concerns for every new
+point, and bind narrowing to each original point rather than its whole request.
+
+After rejection, evaluate complete coverage against ALL remaining validated
+points, requiring existing point IDs for fully answered requests. Remove only
+exact host-produced validation notices after the last canonical round trip;
+scientific gaps remain independently reviewed. Positive original witnesses that
+explicitly support an accepted assertion cannot remain labelled counterevidence
+to that same assertion. No topic-specific answer facts enter implementation.
+Acceptance: multiple supported points survive a rejected sibling; interrupted
+splices resume without repetition; capacity/canonical round trips are bounded
+without truncation; another slot's explicit answer clears its host notice but
+related background and incomplete coverage do not. Dependencies/source access
+remain the current private checkpoint, original passages and configured models.
+Real content acceptance remains open until a new coherent release is evaluated.
+
+Implementation evidence: request packs retain multiple independently checked
+points, exact citation bindings and interrupted per-point progress. Final repairs
+preserve good siblings and inherited objections; positive witnesses reconcile
+roles and status. Final whole-answer coverage removes only exact private-provenance
+workflow notices, synchronizes native assessment projections and checkpoints the
+regrouped canonical point order. The 152 affected regressions, 12 new atomic and
+interrupted-delivery cases, exact API lint and actual-backlog guard passed. A
+bounded read-only review closed four concrete integration defects. No new live
+content acceptance is implied; fresh native evaluation follows this release.

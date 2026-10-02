@@ -347,6 +347,17 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             route = await original_check(service.settings, work, wire, parsed.mission_checkpoint, seconds - (monotonic() - started))
             work["model_route"]["answer_review"]["original_reading"] = route
             raw = wire.decode(wire.encode_checkpoint(parsed))
+            from .research_final_coverage import reconcile, synchronize_projections
+            delivered = schema.model_validate_json(raw)
+            # decode regroups points by slot and updates wire.point_requests.
+            # Any coverage checkpoint must retain that same canonical ordering.
+            parsed = delivered
+            coverage = await reconcile(service.settings, work, wire, delivered.mission_checkpoint.answer,
+                seconds - (monotonic() - started), checkpoints=resume.parts if resume else None,
+                on_progress=retain_final if resume else None)
+            work["model_route"]["answer_review"]["delivered_coverage"] = coverage
+            synchronize_projections(delivered)
+            raw = delivered.model_dump_json()
     return response_object(raw, schema)
 
 
@@ -363,13 +374,17 @@ def retain_answer_points(parsed, wire, errors, *, allow_empty=False):
         request = wire.request_keys.get(key)
         gap = ("A cited answer could not be validated for: " + request if request else
             "A finding could not be validated against its cited originals: " + answer.points[index].statement[:300])
+        host_notice = True
         if key is not None:
             old_gap = wire.response_slots[key]["remaining_gap"].strip()
+            if old_gap and old_gap not in getattr(wire, "workflow_gaps", set()):
+                gap, host_notice = old_gap, False
             answer.limitations = [value for value in answer.limitations if value != old_gap]
             wire.response_slots[key].update(disposition="unresolved", remaining_gap=gap)
         if gap not in answer.limitations:
             answer.limitations.append(gap)
-        wire.workflow_gaps = {*getattr(wire, 'workflow_gaps', set()), gap}
+        if host_notice:
+            wire.workflow_gaps = {*getattr(wire, 'workflow_gaps', set()), gap}
         new_gaps.append(gap)
     answer.points = [point for index, point in enumerate(answer.points) if index not in rejected]
     wire.point_requests = [key for index, key in enumerate(bindings) if index not in rejected]

@@ -10,7 +10,14 @@ from time import monotonic
 from . import research_answer_review as review
 from .analysis import InferenceBudget
 from .product_operations import fingerprint
-from .research_answer_parts import answer_request, contextual_references, source_groups, update_gap
+from .research_answer_parts import (
+    answer_request,
+    contextual_references,
+    request_capacity,
+    source_groups,
+    splice_points,
+    update_gap,
+)
 from .research_review_witnesses import assertion_clauses, invalid_review, review_schema
 
 REVIEW = """Check the final answer against its original evidence, after rewriting.
@@ -99,7 +106,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         'passages': [ref.model_dump() for ref in point.evidence]} for i, point in enumerate(answer.points)}
     items.update({f'L{i}': {'gap': text} for i, text in enumerate(answer.limitations)
         if text not in getattr(wire, 'workflow_gaps', set())})
-    hints, checked, failures, candidates = [], [], {}, {}
+    hints, checked, failures, candidates, positive_witnesses = [], [], {}, {}, {}
     for key, item in items.items():
         # Other answers and irrelevant originals can cause a reviewer to infer
         # intended meaning rather than evaluate this literal statement.
@@ -117,8 +124,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             owner = next((key for key, slot in getattr(wire, 'response_slots', {}).items()
                 if slot['remaining_gap'].strip() == item['gap']), None)
             payload['research_question'] = getattr(wire, 'request_keys', {}).get(owner) or wire.input.get('original_question', '')
-            payload['delivered_points'] = [point.model_dump() for index, point in enumerate(answer.points)
-                if owner is None or index < len(getattr(wire, 'point_requests', [])) and wire.point_requests[index] == owner]
+            payload['delivered_points'] = [point.model_dump() for point in answer.points]
         else:
             selected = {(ref['source_id'], ref['locator'], ref['quote']) for ref in item['passages']}
             keys = [key for key, ref in wire.references.items()
@@ -192,6 +198,8 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
                 'original_windows': [{'text': context[ref]['quote']} for ref in refs]})
         supported = list(dict.fromkeys(ref for clause in judgments if clause['verdict'] == 'supported'
             for ref in clause['citation_refs']))
+        if key.startswith('P') and key in checked and not rejected:
+            positive_witnesses[fingerprint(answer.points[int(key[1:])].model_dump())] = supported
         needed = [ref for ref in supported if ref not in keys] if key.startswith('P') else []
         if key.startswith('P') and (rejected or needed) and key in checked:
             spans = payload['assertion_clauses']
@@ -215,7 +223,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         if key in items and key not in checked and not any(hint['path'] == path for hint in hints):
             hints.append({'path': path, 'review_signal': 'review_unavailable',
                 'instruction': 'The earlier factual objection has not been resolved by a complete review of this correction.'})
-    return {'status': 'checked' if len(checked) == len(items) else 'partial', 'hints': hints, 'candidates': candidates,
+    return {'status': 'checked' if len(checked) == len(items) else 'partial', 'hints': hints, 'candidates': candidates, 'positive_witnesses': positive_witnesses,
         'points_checked': sum(key.startswith('P') for key in checked),
         'pending_checks': [{'item': key, 'reason': failures.get(key, 'not_completed')} for key in items if key not in checked],
         'model': service.settings.apertus_model,
@@ -287,7 +295,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                     retain()
             result['hints'].extend(reasoning['hints'])
             result['candidates'] = reasoning.get('candidates', {})
-            result['factual_review'] = {k: v for k, v in reasoning.items() if k not in {'hints', 'candidates'}}
+            result['positive_witnesses'] = reasoning.get('positive_witnesses', {})
+            result['factual_review'] = {k: v for k, v in reasoning.items() if k not in {'hints', 'candidates', 'positive_witnesses'}}
             if reasoning['status'] != 'checked':
                 result['status'] = 'partial'
             # Unavailable decisions are never retained as a successful check.
@@ -342,8 +351,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             task['issues'].append({'target': kind, 'signal': hint['review_signal'], 'instruction': hint['instruction'],
                 'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))]})
         for task in tasks.values():
-            task['points'] = list(dict.fromkeys(task['points'])) or [point_identity(i)
-                for i, owner in enumerate(wire.point_requests) if task['key'] is not None and owner == task['key']]
+            task['points'] = list(dict.fromkeys(task['points']))
         # Ordered JSON data survives canonical slot regrouping; indices do not.
         plan = {'tasks': list(tasks.values()), 'observations': observations, 'completed': 0, 'receipts': []}
         checkpoints['final_correction_round'] = plan
@@ -358,34 +366,37 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         old_gaps = task['gaps']
         feedback = {'previous_statements': [answer.points[i].statement for i in indices],
             'previous_gaps': old_gaps, 'issues': task['issues']}
-        fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
-            checkpoints=checkpoints, on_progress=retain, feedback=feedback)
+        owner_siblings = ([i for i, owner in enumerate(wire.point_requests) if owner == key and i not in indices]
+            if wire.request_keys else [i for i in range(len(answer.points)) if i not in indices])
+        feedback['already_answered'] = [answer.points[i].model_dump() for i in owner_siblings]
+        capacity = min(8 - len(answer.points) + len(indices), request_capacity(wire, key) - len(owner_siblings))
+        if capacity > 0:
+            fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
+                checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity)
+        else:
+            fixed, gap, receipt = [], '', {'status': 'unrepresented'}
         if receipt.get('status') == 'unavailable' and defer_pending:
             retain()
             incomplete([{'reason': 'step_deadline'}])
-        if fixed is not None:
+        if fixed:
             inherited = {}
             for index in indices:
                 prior = repaired_concerns.get(point_identity(index), {})
                 inherited = carry_concerns(inherited, prior.get('previous_statements', []),
                     prior.get('issues', []), prior.get('context_refs', []))
-            represented = True
-            if indices:
-                answer.points[indices[0]] = fixed
-            elif (key is not None or not wire.request_keys) and len(answer.points) < 8:
-                answer.points.append(fixed)
-                if key is not None:
-                    wire.point_requests.append(key)
-            else:
-                represented = False  # Never clear a gap for an unrepresented correction.
+            represented = splice_points(wire, answer, indices, fixed, key)
+            if not represented:
                 receipt = {**receipt, 'status': 'unrepresented'}
             if represented:
                 point_issues = [issue for issue in task['issues'] if issue['target'] == 'points']
                 if point_issues or inherited.get('issues') or inherited.get('context_refs'):
-                    binding = fingerprint({'request_key': key, 'point': fixed.model_dump()})
-                    repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
+                    for point in fixed:
+                        binding = fingerprint({'request_key': key, 'point': point.model_dump()})
+                        repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
                 answer.limitations = [text for text in answer.limitations if text not in old_gaps]
                 update_gap(wire, answer, key, gap)
+                if receipt.get('workflow_gap'):
+                    wire.workflow_gaps.add(gap)
         # The answer, inherited concerns and terminal outcome are one checkpoint.
         # Exceptions/deadline deferrals above leave this exact task pending.
         plan['receipts'].append({**receipt, 'request_key': key})
@@ -404,7 +415,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                     for value in checked['hints']):
                 checked['hints'].append(retained)
 
-    # One private reduction per request in this exact-input checkpoint. Its
+    # One private reduction per original point in this exact-input checkpoint. Its
     # sentences are proposals until the complete new assertion passes review.
     from pydantic import ValidationError
 
@@ -415,10 +426,10 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     for target, candidate in checked.pop('candidates', {}).items():
         index = int(target[1:])
         owner = wire.point_requests[index] if index < len(wire.point_requests) else None
-        attempt = owner or target
+        previous = answer.points[index]
+        attempt = fingerprint({'request_key': owner, 'point': previous.model_dump()})
         if attempt in attempts:
             continue
-        previous = answer.points[index]
         try:
             proposed = AssessmentPoint(statement=candidate['statement'], evidence=candidate['evidence'])
         except ValidationError:
@@ -442,7 +453,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         binding = fingerprint({'request_key': owner, 'point': proposed.model_dump()})
         repaired_concerns[binding] = concerns
         answer.points[index] = proposed
-        attempts.append(attempt)
+        attempts.extend([attempt, fingerprint({'request_key': owner, 'point': proposed.model_dump()})])
         narrowed = True
     if narrowed:
         retain()
@@ -473,8 +484,19 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             continue
         notice('The remaining scope needs further review: ' +
             wire.request_keys.get(key, work['input']['original_question'])[:300], key)
+    if not checked.get('factual_review', {}).get('pending_checks'):
+        for point in answer.points:
+            positive = checked.get('positive_witnesses', {}).get(fingerprint(point.model_dump()), [])
+            originals = {(wire.references[ref]['source_id'], wire.references[ref]['locator'], wire.references[ref]['quote'])
+                for ref in positive}
+            for ref in point.evidence:
+                if ref.role == 'counterevidence' and (ref.source_id, ref.locator, ref.quote) in originals:
+                    ref.role = 'support'
+    checked.pop('positive_witnesses', None)
     if checked.get('status') == 'partial':
         notice(REVIEW_NOTICE)
+    from .research_answer_parts import reconcile_status
+    reconcile_status(answer)
     retain()
     # The caller handles coverage separately; factual hints have already been
     # corrected or removed and must never be interpreted as request keys.

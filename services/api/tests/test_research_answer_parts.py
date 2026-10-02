@@ -3,6 +3,7 @@ import json
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 
 from helvetic_lens.product_exploration import AssessmentOutcome, Briefing
 from helvetic_lens.product_research_mission import schema as mission_schema
@@ -38,6 +39,7 @@ async def test_partial_repair_with_eight_requests_owns_its_gap_and_round_trips()
     answer = parsed.mission_checkpoint.answer
     answer.points[-1].statement = 'Published in 2009.'
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1], options)
@@ -55,6 +57,7 @@ async def test_partial_repair_with_eight_requests_owns_its_gap_and_round_trips()
 async def test_explicit_unknown_does_not_leave_previous_slot_answered():
     wire, parsed, schema = fixture()
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1], options)
@@ -73,6 +76,7 @@ async def test_invalid_proposal_never_poisons_a_resumed_selected_pack():
     checkpoints, calls = {}, []
     good = [False]
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 calls.append('select')
@@ -82,12 +86,12 @@ async def test_invalid_proposal_never_poisons_a_resumed_selected_pack():
                 'remaining_gap': '', 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
     service = SimpleNamespace(model_client=Model())
     first, _, receipt = await answer_request(service, wire, wire.request_keys['r1'], 60, checkpoints=checkpoints)
-    assert first is None and receipt['status'] == 'unsupported_precision'
+    assert not first and receipt['status'] == 'unsupported_precision'
     assert all('proposal' not in part for part in checkpoints.values())
     good[0] = True
     fixed, _, _ = await answer_request(service, wire, wire.request_keys['r1'], 60,
         checkpoints=json.loads(json.dumps(checkpoints)))
-    assert fixed.statement == 'Published in 2001.' and calls == ['select', 'write', 'write', 'write']
+    assert fixed[0].statement == 'Published in 2001.' and calls == ['select', 'write', 'write', 'write']
 
 
 @pytest.mark.asyncio
@@ -102,6 +106,7 @@ async def test_replacing_a_part_reconciles_the_answer_status(initial, role, expe
     wire.response_slots['r2'].update(disposition='unresolved', remaining_gap='The second record remains unknown.')
     answer.limitations = ['The second record remains unknown.']
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1], options)
@@ -122,6 +127,7 @@ async def test_citation_correction_preserves_needed_prior_context_only_within_th
     wire = SimpleNamespace(references=refs, input={})
     calls = []
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1, 2, 3], options)
@@ -132,10 +138,10 @@ async def test_citation_correction_preserves_needed_prior_context_only_within_th
     point, _, _ = await answer_request(SimpleNamespace(model_client=Model()), wire, 'Compare the dates.', 60)
     assert len(calls) == 2
     if same_source:
-        assert [ref.quote for ref in point.evidence] == [refs[2]['quote'], refs[3]['quote']]
-        assert point.evidence[-1].role == 'context'
+        assert [ref.quote for ref in point[0].evidence] == [refs[2]['quote'], refs[3]['quote']]
+        assert point[0].evidence[-1].role == 'context'
     else:
-        assert point is None
+        assert not point
 
 
 @pytest.mark.asyncio
@@ -150,6 +156,7 @@ async def test_last_citation_slot_retains_context_covering_the_missing_compariso
     wire = SimpleNamespace(references=refs, input={})
     class Model:
         writes = 0
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json(list(refs), options)
@@ -159,8 +166,8 @@ async def test_last_citation_slot_retains_context_covering_the_missing_compariso
                 'remaining_gap': '', 'evidence': [{'citation_ref': key, 'role': 'support'}
                     for key in (order if self.writes == 1 else range(4, 11))]})
     point, gap, _ = await answer_request(SimpleNamespace(model_client=Model()), wire, 'Compare adoption and publication.', 60)
-    assert point is not None and gap == '' and len(point.evidence) == 8
-    assert point.evidence[-1].quote == quotes[1] and point.evidence[-1].role == 'context'
+    assert bool(point) and gap == '' and len(point[0].evidence) == 8
+    assert point[0].evidence[-1].quote == quotes[1] and point[0].evidence[-1].role == 'context'
 
 
 @pytest.mark.asyncio
@@ -170,6 +177,7 @@ async def test_uncited_short_context_can_complete_only_an_already_selected_origi
         2: {'source_id': 'a' if same_source else 'b', 'locator': 'p2',
             'quote': 'Meeting: 2001; proceedings: 2003.' + (' Extra context.' * 30 if long_context else '')}}
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1], options)
@@ -178,9 +186,9 @@ async def test_uncited_short_context_can_complete_only_an_already_selected_origi
     point, _, _ = await answer_request(SimpleNamespace(model_client=Model()),
         SimpleNamespace(references=refs, input={}), 'Compare adoption and publication.', 60)
     if same_source and not long_context:
-        assert point.evidence[-1].quote == refs[2]['quote'] and point.evidence[-1].role == 'context'
+        assert point[0].evidence[-1].quote == refs[2]['quote'] and point[0].evidence[-1].role == 'context'
     else:
-        assert point is None
+        assert not point
 
 
 @pytest.mark.asyncio
@@ -188,6 +196,7 @@ async def test_unavailable_part_retains_existing_evidence_but_cannot_claim_compl
     wire, parsed, schema = fixture()
     original = parsed.mission_checkpoint.answer.points[0].model_copy(deep=True)
     class Model:
+        @atomic_pack_model
         async def complete(self, *args, **options):
             return selection_json([], options)
     await recover_requests(SimpleNamespace(model_client=Model()), wire, parsed.mission_checkpoint.answer,
@@ -235,6 +244,7 @@ async def test_later_original_reaches_writer_despite_repetitive_early_summary(se
     wire = SimpleNamespace(references=refs, input={'original_question': 'Who operates the registry now?'})
     calls, cache = [], {}
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             payload = json.loads(text)
             selecting = 'citation_refs' in options['response_schema']['properties']
@@ -254,9 +264,9 @@ async def test_later_original_reaches_writer_despite_repetitive_early_summary(se
     service = SimpleNamespace(model_client=Model())
     point, _, receipt = await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
     if selection != 'valid':
-        assert point is None and receipt['status'] == 'invalid_selection' and calls == ['select']
+        assert not point and receipt['status'] == 'invalid_selection' and calls == ['select']
         return
-    assert point.evidence[0].source_id == 'new' and point.evidence[0].quote == refs[13]['quote']
+    assert point[0].evidence[0].source_id == 'new' and point[0].evidence[0].quote == refs[13]['quote']
     await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
     assert calls == ['select', 'write']
     refs[14] = {'source_id': 'addendum', 'locator': 'p1', 'quote': 'The replacement appointment remains current.'}
@@ -269,6 +279,7 @@ async def test_many_sources_keep_their_complete_schema_with_a_supported_transpor
     refs = {i+1: {'source_id': str(i // 12), 'locator': str(i % 12), 'quote': 'An available original passage.'}
         for i in range(65 * 12)}
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             if not 128 <= options['max_output_tokens'] <= 8192:
                 raise ValueError('Invalid per-request output allowance')
@@ -279,4 +290,4 @@ async def test_many_sources_keep_their_complete_schema_with_a_supported_transpor
             return selection_json([], options)
     point, _, receipt = await answer_request(SimpleNamespace(model_client=Model()),
         SimpleNamespace(references=refs, input={}), 'Which originals establish the requested appointment?', 60)
-    assert point is None and receipt['status'] == 'no_selection'
+    assert not point and receipt['status'] == 'no_selection'

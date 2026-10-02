@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
@@ -54,6 +55,7 @@ async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draf
         {'statement': f'Record {n} was published in 1999.',
             'evidence': [{'citation_ref': n, 'role': 'support'}]} for n in (1, 2, 3)]},
         'next_action': 'finish', 'reason': 'The records establish their respective publication years.'})
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'requested_part' not in value:
@@ -105,6 +107,7 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
         'research_mission': {}, 'sources': [{'id': 'a' * 36, 'kind': 'public_source',
             'excerpts': [{'passage': 'p1', 'text': 'The meeting adopted the proposal in 2001.'}]}]}}
     point = {'statement': 'The proposal was adopted in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'requested_part' in value:
@@ -169,6 +172,7 @@ async def test_one_invalid_point_cannot_rewrite_valid_siblings_or_shift_request_
         {'statement': 'It was published in 2003.', 'evidence': [{'citation_ref': 2, 'role': 'support'}]},
         {'statement': 'It expired in 2015.', 'evidence': [{'citation_ref': 3, 'role': 'support'}]}]
     calls = []
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         calls.append(value)
@@ -224,6 +228,7 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
         'research_mission': {}, 'sources': [{'id': 'a' * 36, 'kind': 'public_source',
             'excerpts': [{'passage': 'p1', 'text': 'Adopted in 2001.'}, {'passage': 'p2', 'text': 'Published in 2003.'}]}]}}
     point = {'statement': 'It was adopted in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'requested_part' in value:
@@ -283,6 +288,7 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
                 {'passage': 'p1', 'text': 'Operator: North Reach Survey.'},
                 {'passage': 'p2', 'text': 'The station entered service in 2019.'}]}]}}
     calls = []
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         calls.append(value)

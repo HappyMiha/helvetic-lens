@@ -1,6 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 
 from helvetic_lens import research_answer_review as review
 from helvetic_lens.config import Settings
@@ -104,6 +105,7 @@ async def test_single_point_repair_rebinds_local_refs_without_changing_other_fin
         {'statement': 'The record concerns a fictional event.', 'evidence': [{**refs[77], 'role': 'context'}]}])
     unchanged = answer.points[1].model_copy(deep=True)
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             import json
             state = json.loads(text)
