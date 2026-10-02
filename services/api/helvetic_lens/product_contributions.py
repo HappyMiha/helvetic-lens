@@ -145,6 +145,12 @@ def retry(session, run):
         fail("There are no unavailable investigation steps to retry.", 409)
     for branch in failed:
         state = deepcopy(branch.checkpoint)
+        if branch.phase == "brief":
+            from .research_synthesis_resume import EXHAUSTED_REVIEW, exhausted_review
+
+            intent = exhausted_review(state)
+            if intent:
+                state[EXHAUSTED_REVIEW] = intent
         state.pop("inflight", None)
         state.pop("review_document_index", None)
         state.pop("error", None)

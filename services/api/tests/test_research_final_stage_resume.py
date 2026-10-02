@@ -149,8 +149,9 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
     monkeypatch.setattr('helvetic_lens.research_final_review.answer_request', unchanged)
     schema = mission_schema(Briefing)
     service = SimpleNamespace(settings=settings, model_client=model)
-    with pytest.raises(DomainError, match='Synthetic interruption'):
+    with pytest.raises(DomainError) as failure:
         await gateway.complete(service, work, '', schema, 90)
+    assert failure.value.code == 'model_upstream_timeout'
     saved = json.loads(json.dumps(work[KEY]))
     assert saved['stage'] == 'finalizing'
     assert json.loads(saved['raw'])['answer']['points'] == [point(good, 1), point(sibling, 2)]

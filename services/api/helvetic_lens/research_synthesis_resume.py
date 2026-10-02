@@ -6,6 +6,45 @@ from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
 KEY = "synthesis_checkpoint"
 CONTRACT = "final-synthesis-resume/v2"
+EXHAUSTED_REVIEW = "exhausted_review"
+DEFERRED_ARCHIVE = "deferred_review_checkpoint"
+PROVIDER_INTERRUPTION = {"model_rate_limited", "model_temporarily_unavailable", "model_upstream_timeout",
+    "model_timeout", "model_unreachable", "model_transport_error"}
+
+
+def exhausted_review(state):
+    """Only a terminal, exact-input final review with spent native retries qualifies."""
+    saved = state.get(EXHAUSTED_REVIEW)
+    if isinstance(saved, dict) and saved.get("input_fingerprint") and saved.get("reason") in PROVIDER_INTERRUPTION:
+        return deepcopy(saved)
+    checkpoint = state.get(KEY, {})
+    steps = state.get("steps", [])
+    if checkpoint.get("stage") != "finalizing" or not steps or steps[-1].get("status") != "unavailable":
+        return None
+    execution = steps[-1].get("execution", {})
+    binding = execution.get("evidence_transport", {}).get("input_fingerprint")
+    if not binding or state.get("provider_retries", {}).get(binding, 0) < 3:
+        return None
+    reason = next((step.get("error_code") for step in reversed(steps)
+        if step.get("phase") == "brief" and step.get("execution", {}).get("evidence_transport", {}).get("input_fingerprint") == binding
+        and step.get("error_code") in PROVIDER_INTERRUPTION), None)
+    if reason:
+        return {"input_fingerprint": binding, "checkpoint_binding": checkpoint.get("binding"), "reason": reason}
+    return None
+
+
+def deferred_verification(checkpoint):
+    """Safe public workflow status; private assertions never enter this projection."""
+    from .research_final_review import DEFERRED_NOTICE
+
+    deferred = (checkpoint or {}).get("parts", {}).get("deferred_final_review", {})
+    pending = deferred.get("pending_checks", [])
+    if deferred.get("status") != "qualified_delivery" or not pending:
+        return None
+    reasons = sorted({item.get("reason") for item in pending
+        if isinstance(item, dict) and item.get("reason") in PROVIDER_INTERRUPTION | {"step_deadline", "not_completed"}})
+    return {"status": "partial", "pending_checks": len(pending), "reasons": reasons,
+        "basis": DEFERRED_NOTICE}
 
 
 def completed_work(checkpoint):

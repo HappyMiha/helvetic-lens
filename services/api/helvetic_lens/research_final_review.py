@@ -9,6 +9,7 @@ from time import monotonic
 
 from . import research_answer_review as review
 from .analysis import InferenceBudget
+from .config import DomainError
 from .product_operations import fingerprint
 from .research_answer_parts import (
     answer_request,
@@ -96,6 +97,9 @@ Resolved/remains must include citation_refs that justify that assessment.
 """
 FOCUS = '\nThe ONLY assertion to review is this untrusted text: '
 REVIEW_NOTICE = 'The final evidence review was unavailable or incomplete; these findings remain provisional.'
+DEFERRED_NOTICE = 'Some verification remains unavailable. Only checked findings are shown; deferred checks are retained for retry.'
+TRANSIENT_REVIEW_ERRORS = frozenset({'model_rate_limited', 'model_temporarily_unavailable',
+    'model_upstream_timeout', 'model_timeout', 'model_unreachable', 'model_transport_error'})
 REVIEW += SOURCE_USE_INSTRUCTIONS
 REVIEW += """\nWhen assertion_scope is requested, classify the literal assertion,
 not the subject of the user's question. reference_metadata means a claim about
@@ -106,7 +110,7 @@ claims. A metadata entry can establish its publication details; it cannot by
 itself establish the referenced work's scientific, legal or other substantive
 conclusion. Judge context-role citations by the same evidence-use boundary.
 """
-POLICY = fingerprint({'contract': 'final-answer-entailment/v20-canonical-review-originals', 'review': REVIEW, 'focus': FOCUS,
+POLICY = fingerprint({'contract': 'final-answer-entailment/v21-resumable-assertion-review', 'review': REVIEW, 'focus': FOCUS,
     'source_use': SOURCE_USE_POLICY, 'coverage': [COVERAGE_SYSTEM, COVERAGE_CRITERIA]})
 
 
@@ -216,7 +220,8 @@ def review_projection(wire, item, previous=None, delivered=()):
     return projected, concerns, delivered, required
 
 
-async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, on_progress=None, concerns=None):
+async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, on_progress=None, concerns=None,
+        defer_transient=False):
     """Complex factual relationships need synthesis, not a fast coverage label."""
     from .research_model_transport import shape_errors
 
@@ -234,8 +239,19 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
                 passage['source_use'] = 'reference_metadata'
     items.update({f'L{i}': {'gap': text} for i, text in enumerate(answer.limitations)
         if text not in getattr(wire, 'workflow_gaps', set())})
+    source_binding = fingerprint({'input': wire.input, 'references': wire.references,
+        'reference_uses': getattr(wire, 'reference_uses', {})})
+    targets = {key: fingerprint({'policy': POLICY, 'sources': source_binding, 'assertion': item,
+        'concerns': (concerns or {}).get(key),
+        'delivered_points': [point.model_dump() for point in answer.points] if key.startswith('L') else None})
+        for key, item in items.items()}
+    # An exact failed inference is not a proof. On the next native step visit
+    # untouched siblings first so a slow assertion cannot starve the rest.
+    unavailable = checkpoints.get('transient_assertions', {})
+    ordered = sorted(items, key=lambda key: targets[key] in unavailable)
     hints, checked, failures, candidates, positive_witnesses = [], [], {}, {}, {}
-    for key, item in items.items():
+    for key in ordered:
+        item = items[key]
         # Other answers and irrelevant originals can cause a reviewer to infer
         # intended meaning rather than evaluate this literal statement.
         try:
@@ -309,12 +325,27 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             'assertion': item, 'context': {k: v for k, v in payload.items() if k != 'final_claims_and_gaps'}})
         data = checkpoints.get(binding)
         if data is None:
+            failure = checkpoints.get('transient_assertions', {}).get(targets[key], {})
+            if (defer_transient and failure.get('input_fingerprint') == binding
+                    and failure.get('policy_fingerprint') == POLICY and failure.get('reason') in TRANSIENT_REVIEW_ERRORS):
+                failures[key] = failure['reason']
+                continue  # An explicitly exhausted check remains deferred, never approved.
             if deadline-monotonic() < 8:
                 failures.update({pending: 'step_deadline' for pending in items if pending not in checked and pending not in failures})
                 break
-            raw = await service.model_client.complete(REVIEW + focus, json.dumps(payload, ensure_ascii=False),
-                response_schema=item_schema, max_output_tokens=max(4096, service.settings.apertus_max_tokens),
-                budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()))
+            try:
+                raw = await service.model_client.complete(REVIEW + focus, json.dumps(payload, ensure_ascii=False),
+                    response_schema=item_schema, max_output_tokens=max(4096, service.settings.apertus_max_tokens),
+                    budget=InferenceBudget(max_requests=1, max_seconds=deadline-monotonic()))
+            except DomainError as exc:
+                if exc.code not in TRANSIENT_REVIEW_ERRORS:
+                    raise
+                failures[key] = exc.code
+                checkpoints.setdefault('transient_assertions', {})[targets[key]] = {
+                    'input_fingerprint': binding, 'policy_fingerprint': POLICY, 'reason': exc.code}
+                if on_progress:
+                    on_progress()
+                continue
             try:
                 data = json.loads(raw)
             except (ValueError, TypeError):
@@ -333,6 +364,10 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         data = enforce_source_use(wire, context, data)
         if not any(c['outcome'] == 'cannot_assess' for c in data.get('concern_checks', [])):
             checked.append(key)
+            if targets[key] in checkpoints.get('transient_assertions', {}):
+                del checkpoints['transient_assertions'][targets[key]]
+                if on_progress:
+                    on_progress()
         else:
             failures[key] = 'unresolved_concern'
         judgments = [{'claim_as_written': assertion, **data['overall']},
@@ -404,6 +439,33 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     deadline = monotonic() + max(0, seconds)
     checkpoints = checkpoints if checkpoints is not None else {}
     answer = parsed.mission_checkpoint.answer
+    source_binding = fingerprint({'policy': POLICY, 'input': wire.input, 'references': wire.references,
+        'reference_uses': getattr(wire, 'reference_uses', {})})
+    deferred = checkpoints.get('deferred_final_review')
+    if deferred:
+        if (deferred.get('contract') == 'deferred-final-review/v1'
+                and deferred.get('policy_fingerprint') == POLICY and deferred.get('source_binding') == source_binding):
+            # The deliverable subset is not the resumable draft. Restore the
+            # exact private proposal before checking the unavailable assertions.
+            answer = type(answer).model_validate(deferred['answer'])
+            owners, slots = deferred['point_requests'], deferred['response_slots']
+            if (set(slots) != set(wire.request_keys) or (wire.request_keys and
+                    (len(owners) != len(answer.points) or any(owner not in wire.request_keys for owner in owners)))):
+                raise ValueError('Deferred review ownership no longer matches this research request')
+            parsed.mission_checkpoint.answer = answer
+            wire.point_requests, wire.response_slots = deepcopy(owners), deepcopy(slots)
+            wire.workflow_gaps = set(deferred['workflow_gaps'])
+            checkpoints['workflow_gaps'] = list(deferred['workflow_gaps'])
+            checkpoints['repair_concerns'] = deepcopy(deferred['repair_concerns'])
+            checkpoints.pop('final_correction_round', None)
+            if deferred.get('correction_round') is not None:
+                checkpoints['final_correction_round'] = deepcopy(deferred['correction_round'])
+            checkpoints['narrowing_attempts'] = deepcopy(deferred.get('narrowing_attempts', []))
+        else:
+            # Retain history privately, never migrate approvals or old optional
+            # draft claims into a changed source/question/policy binding.
+            checkpoints['previous_deferred_final_review'] = deepcopy(deferred)
+            checkpoints.pop('deferred_final_review')
     cache = checkpoints.setdefault('final_reviews', {})
     repaired_concerns = checkpoints.setdefault('repair_concerns', {})
     # These values come only from the exact-input private DraftCheckpoint, not
@@ -418,6 +480,9 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         wire.workflow_gaps.remove(REVIEW_NOTICE)
         owner = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'] == REVIEW_NOTICE), None)
         update_gap(wire, answer, owner, '')
+    qualified = False
+    deferred_checks = []
+    current_concerns = {}
 
     def retain():
         wire.workflow_gaps.intersection_update(answer.limitations)
@@ -441,6 +506,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             wire.workflow_gaps.add(text[:400])
 
     async def check():
+        nonlocal current_concerns
         fast = await review.audit_points(service.settings, work, wire, answer, deadline-monotonic(),
             checkpoints=checkpoints, on_progress=retain)
         if fast.get('status') == 'not_applicable':
@@ -462,6 +528,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                 'original_text': [ref.quote for ref in point.evidence]}
             key = f'P{index}'
             concerns[key] = carry_concerns(concerns.get(key, {}), [point.statement], [issue])
+        current_concerns = deepcopy(concerns)
         key = fingerprint({'policy': POLICY, 'answer': answer.model_dump(),
             'point_policy': [review.POINT_SYSTEM, review.POINT_CRITERIA],
             'input': wire.input, 'references': wire.references,
@@ -474,7 +541,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             reasoning = deepcopy(cache.get('reasoned:' + key))
             if reasoning is None:
                 reasoning = await reasoned_review(service, wire, answer, deadline-monotonic(),
-                    checkpoints=cache, on_progress=retain, concerns=concerns)
+                    checkpoints=cache, on_progress=retain, concerns=concerns,
+                    defer_transient=bool(work.get('allow_checked_partial_delivery') and not work.get('retry_deferred_review')))
                 if reasoning['status'] == 'checked':
                     cache['reasoned:' + key] = deepcopy(reasoning)
                     retain()
@@ -505,15 +573,58 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             'originals': sorted({(ref.source_id, ref.locator, ref.quote) for ref in point.evidence})})
 
     def incomplete(pending):
-        from .config import DomainError
-        code = 'research_review_yield' if all(item['reason'] == 'step_deadline' for item in pending) else 'research_review_incomplete'
+        code = next((item['reason'] for item in pending if item['reason'] in TRANSIENT_REVIEW_ERRORS), None)
+        code = code or ('research_review_yield' if all(item['reason'] == 'step_deadline' for item in pending) else 'research_review_incomplete')
         raise DomainError('Some final evidence checks are incomplete. Saved sources and completed checks are retained.', 503, code)
+
+    def withhold_unavailable(checked):
+        nonlocal qualified, deferred_checks
+        pending = checked.get('factual_review', {}).get('pending_checks', [])
+        if (qualified or not work.get('allow_checked_partial_delivery') or not pending
+                or not any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in pending)
+                or any(item['reason'] not in TRANSIENT_REVIEW_ERRORS | {'step_deadline'} for item in pending)):
+            return False
+        withheld = {int(item['item'][1:]) for item in pending if item['item'].startswith('P')}
+        gaps = {answer.limitations[int(item['item'][1:])] for item in pending if item['item'].startswith('L')}
+        rejected = {hint['path'][2] for hint in checked['hints'] if hint.get('path', [])[:2] == ['answer', 'points']}
+        if not any(index not in withheld | rejected and fingerprint(point.model_dump()) in checked.get('positive_witnesses', {})
+                for index, point in enumerate(answer.points)):
+            return False  # No independently checked useful finding to publish.
+        checkpoints['deferred_final_review'] = {
+            'contract': 'deferred-final-review/v1', 'status': 'pending', 'policy_fingerprint': POLICY,
+            'source_binding': source_binding, 'answer': answer.model_dump(),
+            'point_requests': deepcopy(wire.point_requests), 'response_slots': deepcopy(wire.response_slots),
+            'workflow_gaps': sorted(wire.workflow_gaps), 'repair_concerns': deepcopy(repaired_concerns),
+            'review_concerns': deepcopy(current_concerns), 'pending_checks': deepcopy(pending),
+            'correction_round': deepcopy(checkpoints.get('final_correction_round')),
+            'narrowing_attempts': deepcopy(checkpoints.get('narrowing_attempts', []))}
+        answer.points = [point for index, point in enumerate(answer.points) if index not in withheld]
+        wire.point_requests = [owner for index, owner in enumerate(wire.point_requests) if index not in withheld]
+        answer.limitations = [gap for gap in answer.limitations if gap not in gaps]
+        for owner, slot in wire.response_slots.items():
+            if slot['remaining_gap'].strip() in gaps:
+                slot['remaining_gap'] = ''
+            if owner not in wire.point_requests and not slot['remaining_gap']:
+                slot.update(disposition='unresolved', remaining_gap=DEFERRED_NOTICE)
+                wire.workflow_gaps.add(DEFERRED_NOTICE)
+                if DEFERRED_NOTICE not in answer.limitations:
+                    answer.limitations.append(DEFERRED_NOTICE)
+            elif not slot['remaining_gap']:
+                slot['disposition'] = 'answered'
+        qualified, deferred_checks = True, deepcopy(pending)
+        retain()
+        return True
 
     plan = checkpoints.get('final_correction_round')
     if plan is None:
         checked = await check()
         pending = checked.get('factual_review', {}).get('pending_checks', [])
-        if defer_pending and pending:
+        if pending and withhold_unavailable(checked):
+            # Per-point reviewers never use siblings as evidence. Their exact
+            # proofs remain valid; gaps and coverage now see the retained subset.
+            checked = await check()
+            pending = checked.get('factual_review', {}).get('pending_checks', [])
+        if pending and (defer_pending or any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in pending)):
             # Never freeze a partial plan that omits as-yet unchecked assertions.
             retain()
             incomplete(pending)
@@ -544,6 +655,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         # One shared answer keeps coverage as a checklist, not separate writers.
         # Recover only a genuinely omitted request identified by that checklist.
         for hint in checked['hints']:
+            if qualified:
+                continue  # Report missing coverage; do not regenerate deferred facts.
             if hint.get('review_signal') != 'requested_part_missing' or not hint.get('user_request'):
                 continue
             request = hint['user_request']
@@ -641,6 +754,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         plan['completed'] += 1
         retain()
     checked = await check()  # Every changed assertion and gap is checked again.
+    if withhold_unavailable(checked):
+        checked = await check()
     checked_answer = fingerprint(answer.model_dump())
     # Preserve known defects by identity after replacement/reordering/removal.
     identities = [defect_identity(i) for i in range(len(answer.points))]
@@ -767,11 +882,27 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     if not wire.request_keys and checked.get('question_coverage') in {'covered', 'missing'}:
         # Processing failures are history, not scientific absence. Current literal
         # coverage supplies any remaining user-facing request notice in the caller.
-        obsolete = set(wire.workflow_gaps) - {REVIEW_NOTICE}
+        obsolete = set(wire.workflow_gaps) - {REVIEW_NOTICE, DEFERRED_NOTICE}
         answer.limitations = [gap for gap in answer.limitations if gap not in obsolete]
         checked['retired_workflow_notices'] = sorted(obsolete)
     if checked.get('status') == 'partial':
         notice(REVIEW_NOTICE)
+    pending = checked.get('factual_review', {}).get('pending_checks', [])
+    if any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in pending):
+        retain()
+        incomplete(pending)
+    if qualified:
+        if pending or not answer.points or checked.get('question_coverage') not in {'covered', 'missing'}:
+            retain()
+            incomplete(pending or [{'reason': 'qualified_coverage_unavailable'}])
+        if DEFERRED_NOTICE not in answer.limitations and len(answer.limitations) < 8:
+            answer.limitations.append(DEFERRED_NOTICE)
+            wire.workflow_gaps.add(DEFERRED_NOTICE)
+        answer.status = 'partial'
+        checkpoints['deferred_final_review'].update(status='qualified_delivery',
+            delivered_answer_fingerprint=fingerprint(answer.model_dump()))
+    elif not pending:
+        checkpoints.pop('deferred_final_review', None)
     from .research_answer_parts import reconcile_status
     reconcile_status(answer)
     retain()
@@ -781,4 +912,6 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     result = {**checked, 'hints': [hint for hint in checked['hints'] if 'user_request' in hint],
         'repairs': deepcopy(plan['receipts']), 'rejected_points': [hint['path'][2] for hint in rejected],
         'unresolved_limitations': len(set(bad_gaps) - non_gaps), 'removed_nongaps': len(non_gaps)}
+    if qualified:
+        result.update(status='partial', deferred_checks=deferred_checks, verification_notice=DEFERRED_NOTICE)
     return result

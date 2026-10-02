@@ -80,10 +80,13 @@ def prepare(session, run, branch, state, work):
         if branch.phase == "brief" and mission.enabled(run):
             work["input"]["research_mission"] = mission.context(session, run)
         if branch.phase == "orient" or mission.enabled(run):
-            from .research_synthesis_resume import KEY
+            from .research_synthesis_resume import EXHAUSTED_REVIEW, KEY, deferred_verification
 
             if work["unmetered_research"] and state.get(KEY):
                 work[KEY] = deepcopy(state[KEY])
+            if branch.phase == "brief" and work["unmetered_research"] and state.get(EXHAUSTED_REVIEW):
+                work[EXHAUSTED_REVIEW] = deepcopy(state[EXHAUSTED_REVIEW])
+                work["retry_deferred_review"] = bool(deferred_verification(state.get(KEY)))
         if branch.phase == "orient":
             work["early_clarification"] = clarification.enabled(run)
             work["timeout_seconds"] = 45 if work.get("unmetered_research") else 20
@@ -283,7 +286,11 @@ def apply(session, run, branch, state, work, result):
     elif phase == "brief":
         exploration.apply(session, run, work["input"], result)
         branch.status = "completed"
-        mission.apply(session, run, work["input"], result)
+        verification = work.get("deferred_review_verification")
+        mission.apply(session, run, work["input"], result, verification=verification)
+        if verification:
+            branch.status = "failed"
+            state["error"] = verification["basis"]
     elif phase == "orient":
         exploration.apply_orientation(session, run, work["input"], result)
         branch.status = "completed"

@@ -1548,3 +1548,68 @@ fast-signal and reference-use tests passed. The backlog guard, exact API Ruff an
 diff checks passed. Existing fixtures now assert canonical witness references
 and their supplied originals, preserving the metadata-use label. No client code
 changed, and no client rebuild or republishing is required for this core fix.
+
+### Preserve a useful checked answer when an individual review is unavailable
+
+MV2-020/023: native98743 reached final review on live403ac59 without the previous
+request overflow. Four identical P5 requests received upstream Layer7 HTTP504
+after approximately55 seconds each. They fit19,596/24,000 characters and each
+made exactly one HTTP attempt. P0-P4 review results are saved, but P5 aborts the
+sequential pass before P6-P7 or three limitations can be checked. The run failed
+after846.6 seconds/five steps with no delivered answer. Increasing a client
+timeout does not address this observed upstream timeout.
+
+Scope: isolate transient review failures to their exact assertion, let other
+independent checks progress, and use the existing withholding/coverage machinery
+to return only a coherent checked subset when possible. Never publish unchecked
+points or scientific limitations; distinguish unavailable verification from
+missing source evidence. Preserve private deferred-review obligations, exact
+evidence identities, original-reading and access/revision fences. Assess coverage
+again on the actual retained answer, keep genuine gaps, and never mark all checks
+complete merely because a subset can be delivered. If no useful checked answer
+can be established, keep the ordinary recoverable incomplete outcome. Do not
+globally disable defer_pending or publish the saved private draft.
+
+Dependencies: frozen native98743 artifacts, exact-input private DraftCheckpoint,
+existing finalizer withholding and final coverage contracts. Acceptance requires
+a transient unavailable middle assertion not starving later checks; unsupported
+or unavailable assertions remain absent from delivery; recovery preserves the
+deferred obligation; and the actual ordinary same-ID journey delivers a useful
+source-grounded answer. No extra provider probes, model switch, context expansion,
+production fixtures, new quotas or client redesign is in scope.
+
+Individual transient review errors now retain exact failed-assertion bindings;
+untouched assertions run before those failures on the next native step. A checked
+subset is allowed only after ordinary retry of an exhausted final review, with
+both the current evidence input and valid finalizing DraftCheckpoint binding
+matching the exhaustion marker. Changed policy, model, request or checkpoint
+invalidates that authority and its old backoff counter. No approval-cache
+migration is allowed. Unavailable points and scientific gaps stay private; the
+existing isolated point checks and actual-subset coverage govern what is shown.
+
+Qualified delivery keeps the full deferred proposal and its concerns privately,
+marks the brief branch retryable, and publishes review_unavailable with explicit
+verification status. Same-ID retry attempts the deferred work; a changed binding
+requires fresh generation/review and retains the old obligation only as private
+history. Successful completion clears that obligation. Source withdrawal and
+existing access/revision fences still prevent delivery or retained approval reuse.
+The unchanged original-reading gate remains required.
+
+Legal and Pharma now show pending verification separately from genuine source
+gaps. Only the exact host verification notice is removed from the scientific-gap
+list; real gaps remain. Both public Sites91 are active (Legal e0869ac, Pharma
+6b5c55e).469 existing client cases passed per product, and the new rendering case
+passed after correcting its test-only React-node inspection. Client lint,
+typecheck, build and diff checks passed. No production dossiers were created.
+
+Validation:167 affected factual-review/resume cases and42 distinct native
+provider-resume, gateway-binding and qualified-delivery cases passed. Tests cover
+middle-assertion starvation, private pending scientific gaps, explicit exhausted
+retry, actual same-ID recovery, no automatic retry loop, changed-policy counter
+reset and source withdrawal. Two old synthetic-message expectations now assert
+the preserved transient error codes; their substantive recovery checks remain.
+Exact API Ruff, backlog guard and diff checks passed. Independent review found
+and verified fixes for both stale-checkpoint exhaustion authority and inherited
+retry counters. The isolated runner also honors an explicit native retry control
+on a saved qualified answer; six control/identity guard cases passed without
+providers or production writes. Live content acceptance remains outstanding.

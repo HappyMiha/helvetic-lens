@@ -383,8 +383,9 @@ async def test_private_resume_preserves_exact_host_notice_provenance(monkeypatch
     def retain():
         checkpoint.save('reviewed', parsed.mission_checkpoint.answer.model_dump_json(), [], {})
 
-    with pytest.raises(DomainError, match='Synthetic temporary'):
+    with pytest.raises(DomainError) as failure:
         await finalize(service, work, wire, parsed, 60, checkpoints=checkpoint.parts, on_progress=retain)
+    assert failure.value.code == 'model_rate_limited'
     restored_work = json.loads(json.dumps(work))
     checkpoint = DraftCheckpoint(restored_work, *args)
     parsed.mission_checkpoint.answer = AssessmentOutcome.model_validate_json(checkpoint.value['raw'])

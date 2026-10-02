@@ -146,18 +146,25 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     started = monotonic()
     if wire:
         work["model_route"]["evidence_transport"] = wire.receipt
+    from .research_synthesis_resume import EXHAUSTED_REVIEW, PROVIDER_INTERRUPTION
+
+    exhausted = work.get(EXHAUSTED_REVIEW, {})
+    work["allow_checked_partial_delivery"] = False
     content = json.dumps(provider_input, ensure_ascii=False)
     resume = None
     selected = None
     if wire and (wire.answer or work["phase"] in {"reflect", "orient"}) and service.settings.apertus_provider != "docker":
         from . import research_evidence_pack as evidence_pack
-        from .research_synthesis_resume import DraftCheckpoint
+        from .research_synthesis_resume import KEY, DraftCheckpoint
 
         workflow = ANSWER_WORKFLOW if wire.answer else "research-reflection/v1-local-evidence"
         if work["phase"] == "orient":
             workflow = "research-orientation/v1-local-evidence"
+        previous_checkpoint = work.get(KEY)
         resume = DraftCheckpoint(work, service.settings, system, workflow, response_schema, content, options,
             preparation_policy=evidence_pack.POLICY)
+        if previous_checkpoint and resume.value is None:
+            work["synthesis_checkpoint_invalidated"] = True
         if resume.value:
             work["model_route"]["resumed_stage"] = resume.value["stage"]
         if wire.answer:
@@ -180,7 +187,18 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         provider_input = evidence_pack.provider_input(wire, selected)
         response_schema = evidence_pack.bounded_schema(wire.schema, selected)
         content = json.dumps(provider_input, ensure_ascii=False)
+        previous_value = resume.value
         resume.bind_request(response_schema, content)
+        if previous_value and resume.value is None:
+            work["synthesis_checkpoint_invalidated"] = True
+        work["allow_checked_partial_delivery"] = bool(wire.answer and resume.value
+            and resume.value.get("stage") == "finalizing"
+            and exhausted.get("reason") in PROVIDER_INTERRUPTION
+            and exhausted.get("input_fingerprint") == wire.receipt["input_fingerprint"]
+            and exhausted.get("checkpoint_binding") == resume.binding)
+        if exhausted and not work["allow_checked_partial_delivery"]:
+            work.pop(EXHAUSTED_REVIEW, None)
+            work["exhausted_review_invalidated"] = True
         if resume.value is None:
             work["model_route"].pop("resumed_stage", None)
             if wire.answer:
@@ -339,8 +357,14 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 resume.parts['workflow_gaps'] = sorted(set(getattr(wire, 'workflow_gaps', set())) &
                     set(parsed.mission_checkpoint.answer.limitations))
                 resume.save("finalizing", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+            from .research_synthesis_resume import deferred_verification
+
+            verification = deferred_verification(work.get("synthesis_checkpoint")) if work.get("allow_checked_partial_delivery") else None
+            if verification:
+                work["deferred_review_verification"] = verification
+                work["model_route"]["answer_review"]["verification"] = verification
             pending = final_coverage.get("factual_review", {}).get("pending_checks", [])
-            if resume and pending:
+            if resume and pending and not verification:
                 code = "research_review_yield" if all(item["reason"] == "step_deadline" for item in pending) else "research_review_incomplete"
                 raise DomainError("Some final evidence checks are incomplete. Saved sources and completed checks are retained.",
                     503, code)

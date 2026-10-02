@@ -239,6 +239,8 @@ def finish_or_yield(session, run, job):
                     run.stop_reason = f"Research returned a partial answer with {gaps} named gaps. Sources and completed work are retained. Source support is not independent verification."
                 elif unmetered(run) and checkpoints and not checkpoints[-1].get("answer", {}).get("points"):
                     run.stop_reason = f"The completed checks did not produce a validated answer. {pending} issues remain unresolved. Sources and completed work are retained."
+                if run.research_state.get("mission", {}).get("stop") == "review_unavailable":
+                    run.stop_reason = "Checked findings are available; some verification remains unavailable. Retry continues the retained checks."
             from .product_document_reading import incomplete
             unfinished_documents = incomplete(branches)
             if (unmetered(run) and run.research_state.get("mission", {}).get("stop") == "answer_unavailable"
@@ -558,16 +560,35 @@ async def execute(service, job_id, worker):
         retry_key = (work.get("model_route", {}).get("evidence_transport", {}).get("input_fingerprint")
             or work["execution_route"]["input_fingerprint"])
         retries = state.setdefault("provider_retries", {})
+        from .research_synthesis_resume import (
+            DEFERRED_ARCHIVE,
+            EXHAUSTED_REVIEW,
+            PROVIDER_INTERRUPTION,
+            completed_work,
+            exhausted_review,
+            made_progress,
+        )
         from .research_synthesis_resume import KEY as synthesis_checkpoint
-        from .research_synthesis_resume import completed_work, made_progress
 
         prior_parts = completed_work(state.get(synthesis_checkpoint))
+        qualified_delivery = bool(not failed and work.get("deferred_review_verification"))
+        if work.get("exhausted_review_invalidated"):
+            state.pop(EXHAUSTED_REVIEW, None)
+        if work.get("synthesis_checkpoint_invalidated") or work.get("exhausted_review_invalidated"):
+            retries.pop(retry_key, None)
         if work["phase"] in {"brief", "reflect", "orient"}:
-            state.pop(synthesis_checkpoint, None)
-            if transient and unmetered(run) and run.status in ACTIVE and work.get(synthesis_checkpoint):
+            previous = state.pop(synthesis_checkpoint, None)
+            current = work.get(synthesis_checkpoint)
+            if ((previous or {}).get("parts", {}).get("deferred_final_review")
+                    and (previous or {}).get("binding") != (current or {}).get("binding")):
+                state[DEFERRED_ARCHIVE] = previous  # Private history, never migrated into another approval cache.
+            if (transient or qualified_delivery) and unmetered(run) and run.status in ACTIVE and current:
                 # This remains a private proposal. All post-provider fences above
                 # must pass before retaining it, and every later answer is validated.
-                state[synthesis_checkpoint] = deepcopy(work[synthesis_checkpoint])
+                state[synthesis_checkpoint] = deepcopy(current)
+            if run.status not in ACTIVE:
+                state.pop(DEFERRED_ARCHIVE, None)
+                state.pop(EXHAUSTED_REVIEW, None)
         retained_parts = completed_work(state.get(synthesis_checkpoint))
         progressed = made_progress(prior_parts, retained_parts)
         if transient and progressed and unmetered(run) and run.status in ACTIVE:
@@ -728,9 +749,15 @@ async def execute(service, job_id, worker):
                     applicability.remember(run, source, scoped)
                     next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
+        if failed and qualified_delivery:
+            qualified_delivery = False
+            state.pop(synthesis_checkpoint, None)
         if not failed:
             progress.remember(run, work.get("capture_progress"), work.get("capture_dependencies", []))
             queries.remember(run, journal)
+            if work["phase"] == "brief" and not qualified_delivery:
+                state.pop(DEFERRED_ARCHIVE, None)
+                state.pop(EXHAUSTED_REVIEW, None)
         if failed:
             advance(branch, state)
             if transient == "research_review_incomplete":
@@ -742,8 +769,16 @@ async def execute(service, job_id, worker):
         research_gateway.finish(state, work, result, failed=failed, elapsed=perf_counter() - started)
         state.pop("inflight", None)
         queries.finish(state, work, result, failed)
-        state["steps"][-1].update(status="unavailable" if failed else "completed", finished_at=iso(utcnow()))
-        if not failed:
+        state["steps"][-1].update(status="unavailable" if failed or qualified_delivery else "completed", finished_at=iso(utcnow()))
+        if transient:
+            state["steps"][-1]["error_code"] = transient
+        if qualified_delivery:
+            state["steps"][-1]["verification"] = deepcopy(work["deferred_review_verification"])
+        if failed and work["phase"] == "brief" and transient in PROVIDER_INTERRUPTION:
+            intent = exhausted_review(state)
+            if intent:
+                state[EXHAUSTED_REVIEW] = intent
+        if not failed and not qualified_delivery:
             for previous in state["steps"][:-1]:
                 if (previous.get("status") == "unavailable" and previous.get("phase") == work["phase"]
                         and previous.get("source_id") == work.get("source_id")

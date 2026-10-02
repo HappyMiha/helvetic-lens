@@ -95,7 +95,7 @@ def evidence_signature(session, run):
         for s in exploration.sources(session, run).values()))
 
 
-def apply(session, run, supplied, result):
+def apply(session, run, supplied, result, *, verification=None):
     if not enabled(run):
         return
     checkpoint = getattr(result, "mission_checkpoint", None)
@@ -135,6 +135,8 @@ def apply(session, run, supplied, result):
         "evidence_signature": signature, "action": checkpoint.action,
         "deepen_branches": checkpoint.deepen_branches,
         "gaps": [{"question": g.question, "purpose": g.purpose, **pin} for g, pin in gaps]}
+    if verification:
+        record["verification"] = deepcopy(verification)
     previous = state["checkpoints"][-1] if state["checkpoints"] else None
     deeper = []
     from .product_iterative_steps import discovery_available
@@ -148,6 +150,8 @@ def apply(session, run, supplied, result):
     stop = None
     if unfinished:
         stop = "documents_incomplete"
+    elif verification:
+        stop = "review_unavailable"
     elif checkpoint.action == "clarify":
         stop = "needs_direction"
     elif checkpoint.action == "finish":
@@ -186,8 +190,8 @@ def apply(session, run, supplied, result):
         exploration.update(run, status="exploring", briefing=None, observed_query_context=None,
             renewal_context=None, direction_assessment_context=None)
     update(run, checkpoints=[*state["checkpoints"], record],
-        stage="incomplete" if stop == "documents_incomplete" else "waiting_for_direction" if stop == "needs_direction" else "finished" if stop else "deepening",
-        stop=stop)
+        stage="incomplete" if stop in {"documents_incomplete", "review_unavailable"} else "waiting_for_direction" if stop == "needs_direction" else "finished" if stop else "deepening",
+        stop=stop, verification=deepcopy(verification))
     event(session, run, "research_checkpoint", round=state["round"], outcome=answer["status"],
         next_action=stop or "continue", reason=checkpoint.reason)
 
