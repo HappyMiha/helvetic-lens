@@ -1105,3 +1105,20 @@ bounded draft, the existing single format retry reuses the original constrained
 request without the invalid text. It preserves the full selected evidence and
 citation schema; no extra retry loop is added. Both ordinary and oversized
 format-repair/resume cases passed. Exact API Ruff and backlog guards passed.
+
+Native provider compatibility follow-through: b21d670 activated on 2 October
+at 13:54:22 UTC and public ready/product/access checks passed. The first real
+selection call returned HTTP400 with the explicit structured-output grammar error
+`Unimplemented keys: ["uniqueItems"]`. Scope: remove that unsupported schema
+keyword while retaining the existing host-side duplicate-reference rejection.
+This is transport compatibility, not weakened reference validation. Selection
+checkpoints remain bound to the exact changed schema/policy. The failed call and
+all previous terminal artifacts remain retained; no new dossier or forced retry
+state is introduced. Full native content acceptance is still open.
+
+The corrected actual failed selection request was then exercised once against the
+same configured provider: it returned a schema-valid selection of 30 original
+references in 3.86 seconds; the request measured 22,465/24,000 characters. Host
+duplicate checks passed. This verifies the observed grammar incompatibility is
+resolved, not the usefulness of the eventual answer. The 21 selector and two
+bounded follow-through tests passed again, as did exact Ruff and backlog checks.

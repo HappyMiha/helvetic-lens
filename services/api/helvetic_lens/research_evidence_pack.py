@@ -25,7 +25,7 @@ source-keyed citation_refs selection; do not generate findings or an answer.
 required_refs are mandatory existing witnesses: their groups must be retained.
 """
 POLICY = fingerprint({"selection": SYSTEM, "units": "paragraph-with-context/v1", "overhead": 1024,
-    "mission_metadata": "completed-document-counts/v1"})
+    "mission_metadata": "completed-document-counts/v1", "wire_grammar": "host-checked-uniqueness/v2"})
 
 
 def _json(value):
@@ -128,7 +128,7 @@ def _selection(wire, units, question, phase, required_refs):
         eligible = [ref for ref in wire.references if ref in primary and wire.references[ref]['source_id'] == source['id']]
         sources.append({**source, 'selection_key': key, 'selectable_refs': eligible})
         properties[key] = {'type': 'array', 'items': {'type': 'integer', 'enum': eligible},
-            'maxItems': len(eligible), 'uniqueItems': True}
+            'maxItems': len(eligible)}
     payload = {'original_question': question, 'requested_part': question,
         'requests_to_address': explicit_requests(question), 'phase': phase, 'sources': sources,
         'required_refs': [key for unit in units for key in unit['primary'] if key in required_refs]}

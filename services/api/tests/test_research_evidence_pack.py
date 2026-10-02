@@ -42,6 +42,7 @@ class Selector:
 
     async def complete(self, system, text, **options):
         payload = json.loads(text)
+        assert '"uniqueItems"' not in json.dumps(options['response_schema'])
         self.calls.append((system, payload, options))
         return json.dumps({'citation_refs': {source['selection_key']: [key
             for key in source['selectable_refs'] if self.choose(payload, source, key)]
