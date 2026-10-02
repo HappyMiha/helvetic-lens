@@ -308,7 +308,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                     resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
             final_coverage = await finalize(service, work, wire, parsed,
                 seconds - (monotonic() - started), checkpoints=resume.parts if resume else None,
-                on_progress=retain_final)
+                on_progress=retain_final, defer_pending=resume is not None)
             missing = final_coverage.pop("hints")
             unresolved = [wire.request_keys[key] for key, slot in wire.response_slots.items() if slot["disposition"] == "unresolved"]
             missing.extend({"user_request": request} for request in unresolved
@@ -332,6 +332,13 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 parsed.mission_checkpoint.reason = "The cited findings answer part of the question; the remaining requested parts are named as gaps."
             if resume:
                 resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+            pending = final_coverage.get("factual_review", {}).get("pending_checks", [])
+            if resume and pending:
+                from .config import DomainError
+
+                code = "research_review_yield" if all(item["reason"] == "step_deadline" for item in pending) else "research_review_incomplete"
+                raise DomainError("Some final evidence checks are incomplete. Saved sources and completed checks are retained.",
+                    503, code)
             route = await original_check(service.settings, work, wire, parsed.mission_checkpoint, seconds - (monotonic() - started))
             work["model_route"]["answer_review"]["original_reading"] = route
             raw = wire.decode(wire.encode_checkpoint(parsed))

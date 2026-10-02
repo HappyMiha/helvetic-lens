@@ -476,3 +476,122 @@ answer citations and its named gap remain visible. This confirms presentation of
 the retained result, not a fresh live research run or semantic acceptance. Client
 publication succeeded; Core activation is tracked separately in the parent
 checkpoint and production evidence.
+
+
+## Evidence-bound final review and per-point recovery
+
+Scope MV2-020/023: bind each final verdict to the literal current assertion;
+require permitted original witnesses for both support and contradiction; keep
+missing support distinct from a reviewer failure. Free-form reviewer reasons
+must not become new facts or unsupported correction instructions. An invalid,
+uncited or interrupted check stays incomplete. Retain exact-input private drafts
+and successful sibling checks so native retry resumes only missing review work.
+Dependencies: existing final review, source registry, private DraftCheckpoint,
+worker/control fences and partial-result clients. No new providers or permissions.
+Acceptance: neutral multi-event originals separate adoption/replacement from
+publication; fabricated objections do not silently delete supported points or
+produce a positive pass; cited counterevidence still corrects unsupported claims;
+malformed per-point review survives checkpoint restore without repeated completed
+inference; current evidence/actor/revision changes invalidate reuse. One isolated
+public native case follows coherent local validation; operational completion alone
+does not establish factual or professional acceptance.
+
+Implemented and locally validated on 2 October: each supported factual clause and
+contradiction now names permitted original witnesses; a whole-assertion judgment covers relationships across its sentences. Free-form
+reviewer explanations cannot inject a different history into correction instructions.
+The first literal-span protocol restored capitalization only; the final protocol
+uses required host-owned sentence IDs, eliminating model recopy/paraphrase failures. The actual
+serving grammar rejected `uniqueItems`, so witness uniqueness is enforced locally
+instead. Recorded real model responses passed after this presentation-only
+normalization, with no further generation. The fictional standards control answers
+2042 and correctly separates adoption/publication pairs 2040/2041 and 2042/2044;
+independent review accepted that narrow content, not a full public mission.
+
+Malformed, uncited or unfinished final checks return a typed recoverable failure.
+An exact-input private checkpoint retains corrected proposals and completed checks;
+the worker offers explicit retry without buying an automatic series of the same
+failed review. Single-question recovery repeats only its unfinished check. Known
+unchanged factual defects are still rejected; private intermediate answers cannot
+become published output. Source withdrawal, changed evidence, permissions and
+generation fences still invalidate reuse. Validation: 80 focused model/backlog
+checks, nine native provider/checkpoint/withdrawal cases and exact API lint passed;
+independent static review found no remaining blocker. A fresh unseeded public
+ozone-recovery mission is being evaluated separately from these controlled checks.
+
+The fresh ozone mission read and analysed all six originals, but ended after
+739 seconds without an accepted final answer. Provider 429 responses repeated
+while incomplete literal-clause checks were revisited. Useful clause judgments
+were also rejected because connective words were outside their copied spans.
+Follow-through stays within MV2-020/023: require a host-bound whole-assertion
+judgment, retain literal clause checks without mechanical character-union coverage,
+and require an explicit distinction between an unresolved requested issue,
+established information and unrelated background. Repeated explanations must not
+become invented knowledge gaps. Negative witnesses remain mandatory. Acceptance:
+unchanged provider/evidence/privacy boundaries; retained public answer reaches the
+native final reader with meaningful limitations, or remains explicitly incomplete.
+The first explicit retry returned two judgments, but only one passed the literal
+contract; a subsequent provider 429
+failed immediately because the previous attempt's outage counter was still
+exhausted. Explicit revision-checked retry now starts a fresh bounded provider
+backoff allowance for failed branches only. It retains the same private draft and
+completed reading; ordinary job deliveries never reset the allowance.
+
+
+Final implementation also distinguishes a completed work batch from an unavailable
+review. Deadline-deferred checks (`step_deadline`) continue automatically only if
+validated part proposals/selections or exact review entries were durably retained.
+Empty maps, notices, raw draft changes and accounting do not count as progress.
+`cannot_assess` concerns have their own reason and cannot trigger this continuation.
+The worker yields before applying an unfinished answer or advancing the branch;
+all existing source, actor, generation and lease fences remain in force. Invalid
+reviews still require explicit retry, rather than automatic repeated inference.
+
+Host-owned sentence spans preserve the complete assertion, retain shared verbs
+and group excess sentences without dropping the tail. The response must judge
+all required sentence IDs plus the entire assertion. The original question is
+supplied as untrusted reference context to both per-request writing and final
+review, not as evidence. Final-review v13 and part-policy v11 invalidate old
+private inference caches while retaining captured source work. Historical windows
+and actual gaps are explicitly distinguished from explanatory conclusions.
+
+Validation after this follow-through: 88 focused checks including the exact backlog
+guard passed; the two new native automatic-continuation/source-withdrawal cases
+and the noise-only progress check passed. Nine earlier native recovery cases and
+two related retry cases passed, including the updated explicit-retry allowance
+case. Exact API lint passed. A fourth native ozone attempt uses the normal retry
+route after these coherent changes; its execution hashes and all previous failed
+artifacts are retained separately. No production dossier or email was created.
+
+
+Live follow-through exposed two general remaining mechanisms: a newly repaired
+first point reindexed unchanged siblings, changing only P0/P1 labels in otherwise
+identical review payloads and unnecessarily repeating their checks. Per-assertion
+cache identity must ignore presentation indices but retain literal text, evidence,
+question, policy and concerns. Also, a global twelve-window selection could spend
+eleven slots on one early summary and omit a later direct original already in the
+source registry. Selection must account for each source independently, preserving
+exact references and explicit empty selections without treating them as evidence
+of absence. Acceptance uses neutral multiple-source fixtures, source-change cache
+invalidation and reordering without repeated successful checks. This extends the
+same MV2-020/023 end-to-end direction, without new access or provider authority.
+
+
+Implemented follow-through: requested-answer-pack v12 now requires a source-local
+selection for every source group, with exact source-owned reference enums and
+independent allowances. The writer receives the union; empty selections stay
+fallible relevance decisions, never evidence of absence. Per-assertion review
+identity excludes only list position. Inserting/reordering siblings reuses their
+exact checks; changed question/evidence/concerns still invalidates reuse. Final
+review v14 also requires original witnesses in the generation schema for resolved
+or remaining prior concerns, matching the existing host validation.
+
+Final focused validation: 92 passed, including source competition, missing-source
+and cross-source reference rejection, late-original propagation, source-change
+invalidation, sibling reordering and question-change invalidation. The earlier
+native provider/retry gates remain recorded above; the three affected explicit
+retry/withdrawal cases were rerun after the worker change and passed. A fifth
+ordinary native retry is running against the exact preloaded final implementation.
+The preceding attempt was not accepted: 541.5 seconds, automatic deadline yield
+worked, but repeated provider429 prevented delivery and retained drafts still had
+semantic defects. Content acceptance is separate from release of these validated
+workflow and evidence-selection fixes; no general professional accuracy is claimed.

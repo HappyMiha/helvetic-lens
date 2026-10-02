@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
 from helvetic_lens import research_gateway as gateway
@@ -15,8 +16,22 @@ from helvetic_lens.product_research_mission import schema as mission_schema
 from helvetic_lens.research_synthesis_resume import KEY
 
 
+def review_json(data, *, gap=False):
+    """A complete synthetic reviewer response with an explicit overall verdict."""
+    clause = data['clauses'][0]
+    data.setdefault('overall', {key: clause[key] for key in ('verdict', 'reason', 'citation_refs')})
+    if gap:
+        data.setdefault('gap_status', 'unresolved')
+    from helvetic_lens.research_review_witnesses import assertion_clauses
+    judgments = [
+        {key: value for key, value in clause.items() if key != 'claim_as_written'}
+        for clause in data['clauses'] for _ in assertion_clauses(clause['claim_as_written'])]
+    data['clauses'] = {f'S{i}': value for i, value in enumerate(judgments)}
+    return json.dumps(data)
+
+
 @pytest.mark.asyncio
-@pytest.mark.parametrize('correction', ['correct', 'unresolved', 'unchanged', 'rate_limit', 'role_only', 'paraphrase', 'missing_concern_check'])
+@pytest.mark.parametrize('correction', ['correct', 'unresolved', 'unchanged', 'rate_limit', 'role_only', 'paraphrase', 'missing_concern_check', 'malformed_review', 'uncited_objection'])
 async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypatch, correction):
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
@@ -43,26 +58,33 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
             checks.extend(item['statement'] for item in value['final_claims_and_gaps'].values() if 'statement' in item)
             if correction == 'role_only' and failed[0]:
                 return '{}'
+            pending = correction in {'malformed_review', 'uncited_objection'} and not failed[0] and any(
+                item.get('statement') == bad for item in value['final_claims_and_gaps'].values())
+            if pending:
+                failed[0] = True
+                if correction == 'malformed_review':
+                    return '{"clauses": ['
             def rejected(item):
                 return item.get('statement') == bad or (item.get('statement') == paraphrase and bool(value.get('prior_review_concerns')))
             data = {'clauses': [{'claim_as_written': item.get('statement', item.get('gap')),
                 'verdict': 'contradicted' if rejected(item) else 'supported',
-                'reason': 'The original says replaced, not ratified again.' if rejected(item) else ''}
+                'reason': 'The original says replaced, not ratified again.' if rejected(item) else '',
+                'citation_refs': value.get('selected_citation_refs', [])}
                 for key, item in value['final_claims_and_gaps'].items()]}
-            if any('statement' in item for item in value['final_claims_and_gaps'].values()):
-                data['supporting_citation_refs'] = value['selected_citation_refs']
             if value.get('prior_review_concerns') and correction != 'missing_concern_check':
                 data['concern_checks'] = [{'id': key, 'outcome': 'remains' if any(
                     rejected(item) for item in value['final_claims_and_gaps'].values()) else 'resolved',
-                    'reason': 'The original says replaced, not ratified again.'} for key in value['prior_review_concerns']['concerns']]
-            return json.dumps(data)
+                    'reason': 'The original says replaced, not ratified again.', 'citation_refs': value['selected_citation_refs']} for key in value['prior_review_concerns']['concerns']]
+            if pending:
+                data['clauses'][0]['citation_refs'] = []
+            return review_json(data, gap=next(iter(value['final_claims_and_gaps'])).startswith('L'))
         if 'requested_part' not in value:
             return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
                 f'r{i+1}': {'disposition': 'answered', 'points': [point(i)], 'remaining_gap': ''} for i in (0, 1)}},
                 'next_action': 'finish'})
         index = 0 if value['requested_part'].startswith('Who') else 1
         if 'citation_refs' in options['response_schema']['properties']:
-            return json.dumps({'citation_refs': [index+1]})
+            return selection_json([index+1], options)
         statement = good[0] if index == 0 else bad
         if value.get('review_feedback'):
             assert index == 1, 'An independent valid answer must not be regenerated'
@@ -97,14 +119,20 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
     monkeypatch.setattr(model, 'complete', complete)
     monkeypatch.setattr(review.decision, 'engines', lambda settings: {'jev': Engine(), 'laya': Engine()})
     schema = mission_schema(Briefing)
-    if correction == 'rate_limit':
-        with pytest.raises(DomainError, match='Synthetic temporary'):
+    if correction in {'rate_limit', 'malformed_review', 'uncited_objection'}:
+        with pytest.raises(DomainError):
             await gateway.complete(service, work, '', schema, 90)
         assert 'final_reviews' in work[KEY]['parts']
         before = len(checks)
         work = {**initial, KEY: json.loads(json.dumps(work[KEY]))}
         result = await gateway.complete(service, work, '', schema, 90)
-        assert checks[before:] == good[1:], 'Unchanged exact claim reviews must not be bought again'
+        assert checks[before:] == (good[1:] if correction == 'rate_limit' else [bad, good[1]]), 'Unchanged exact claim reviews must not be bought again'
+    elif correction in {'role_only', 'missing_concern_check'}:
+        with pytest.raises(DomainError) as failure:
+            await gateway.complete(service, work, '', schema, 90)
+        assert failure.value.code == 'research_review_incomplete'
+        from helvetic_lens.research_model_transport import EvidenceWire
+        result = EvidenceWire(work, schema, '').decode(work[KEY]['raw'])
     else:
         result = await gateway.complete(service, work, '', schema, 90)
     answer = schema.model_validate_json(result).mission_checkpoint.answer
@@ -112,17 +140,81 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
     assert bad in checks, 'The bad final rewrite was absent from the earlier draft'
     assert all(p.statement not in {bad, paraphrase} for p in answer.points)
     assert not gateway.answer_quantity_errors(answer)
-    if correction in {'correct', 'rate_limit'}:
+    if correction in {'correct', 'rate_limit', 'malformed_review', 'uncited_objection'}:
         assert [p.statement for p in answer.points] == good
         assert answer.status == 'possible_answer' and answer.limitations == []
     elif correction == 'missing_concern_check':
-        assert [p.statement for p in answer.points] == good[:1]
+        assert [p.statement for p in answer.points] == good  # Private pending draft, never returned by gateway.
         assert answer.status == 'partial' and any('review was unavailable' in gap for gap in answer.limitations)
     else:
         assert len(answer.points) == 1 and answer.status == 'partial'
         assert any('Distinguish the old rule' in gap for gap in answer.limitations)
     assert len([value for value in calls if 'requested_part' not in value and 'final_claims_and_gaps' not in value]) == 2
     assert 'previous_statements' not in json.dumps(work['model_route'])
+
+
+@pytest.mark.asyncio
+async def test_single_question_resumes_corrected_private_point_after_incomplete_concern_review(monkeypatch):
+    from helvetic_lens.research_model_transport import EvidenceWire
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    service = SimpleNamespace(settings=settings, model_client=model)
+    source = 'The old rule was replaced in 2042, not reaffirmed.'
+    wrong = 'The old rule was reaffirmed in 2042.'
+    right = 'The old rule was replaced in 2042.'
+    work = {'phase': 'brief', 'unmetered_research': True, 'input': {
+        'original_question': 'What happened to the old rule?', 'research_mission': {},
+        'sources': [{'id': 'a' * 36, 'kind': 'public_source', 'url': 'https://example.org/rule',
+            'excerpts': [{'passage': 'p1', 'text': source}]}]}}
+    initial, calls = deepcopy(work), []
+    schema = mission_schema(Briefing)
+    assert EvidenceWire(work, schema, '').request_keys == {}
+
+    async def complete(system, text, **options):
+        value = json.loads(text)
+        if 'final_claims_and_gaps' in value:
+            statement = next(iter(value['final_claims_and_gaps'].values()))['statement']
+            calls.append(statement)
+            if statement == right and calls.count(right) == 1:
+                return '{"clauses": ['
+            data = {'clauses': [{'claim_as_written': statement, 'verdict': 'contradicted' if statement == wrong else 'supported',
+                'reason': '', 'citation_refs': [1]}]}
+            if value.get('prior_review_concerns'):
+                data['concern_checks'] = [{'id': key, 'outcome': 'resolved', 'reason': '', 'citation_refs': [1]}
+                    for key in value['prior_review_concerns']['concerns']]
+            return review_json(data)
+        if 'requested_part' in value:
+            if 'citation_refs' in options['response_schema']['properties']:
+                calls.append('select')
+                return selection_json([1], options)
+            calls.append('repair')
+            return json.dumps({'statement': right, 'remaining_gap': '', 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+        calls.append('draft')
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
+            'points': [{'statement': wrong, 'evidence': [{'citation_ref': 1, 'role': 'support'}]}]}, 'next_action': 'finish'})
+
+    async def audit(*args, **kwargs):
+        return {'status': 'checked', 'question_coverage': 'covered', 'hints': [], 'decisions': []}
+
+    async def original(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(review, 'audit', audit)
+    monkeypatch.setattr(review, 'original_check', original)
+    with pytest.raises(DomainError) as failure:
+        await gateway.complete(service, work, '', schema, 90)
+    assert failure.value.code == 'research_review_incomplete'
+    retained = json.loads(json.dumps(work[KEY]))
+    private = schema.model_validate_json(EvidenceWire(work, schema, '').decode(retained['raw']))
+    assert [point.statement for point in private.mission_checkpoint.answer.points] == [right]
+    before = len(calls)
+    resumed = {**initial, KEY: retained}
+    result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
+    assert calls[before:] == [right], 'Only the unfinished concern check should be repeated'
+    assert [point.statement for point in result.mission_checkpoint.answer.points] == [right]
+    assert result.mission_checkpoint.answer.limitations == []
 
 
 @pytest.mark.asyncio
@@ -156,13 +248,13 @@ async def test_final_counterexample_corrects_its_own_gap_and_unavailable_review_
             if 'final_claims_and_gaps' in value:
                 if corrected[0]:
                     return '{}'
-                return json.dumps({**({'supporting_citation_refs': [1]} if any('statement' in item for item in value['final_claims_and_gaps'].values()) else {}),
-                    'clauses': [{'claim_as_written': item.get('statement', item.get('gap')),
+                return review_json({'clauses': [{'claim_as_written': item.get('statement', item.get('gap')),
                     'verdict': 'contradicted' if 'gap' in item else 'supported',
-                    'reason': 'The original explicitly supplies the opening date.' if 'gap' in item else ''}
-                    for key, item in value['final_claims_and_gaps'].items()]})
+                    'reason': 'The original explicitly supplies the opening date.' if 'gap' in item else '', 'citation_refs': [1]}
+                    for key, item in value['final_claims_and_gaps'].items()]},
+                    gap=next(iter(value['final_claims_and_gaps'])).startswith('L'))
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], options)
             corrected[0] = True
             return json.dumps({'statement': ref['quote'], 'remaining_gap': '',
                 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
@@ -213,8 +305,8 @@ async def test_review_of_an_unrelated_assertion_cannot_decide_the_actual_gap():
     class Model:
         async def complete(self, system, text, **options):
             assert 'question' not in json.loads(text)
-            return json.dumps({'clauses': [{'claim_as_written': 'The document was published in 2003.',
-                'verdict': 'supported', 'reason': 'This discusses a different assertion.'}]})
+            return json.dumps({'overall': {'verdict': 'supported', 'reason': '', 'citation_refs': []},
+                'clauses': {'unrelated': {'verdict': 'supported', 'reason': '', 'citation_refs': []}}, 'gap_status': 'unresolved'})
     retained = {}
     result = await reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
         wire, answer, 60, checkpoints=retained)
@@ -272,8 +364,7 @@ async def test_private_resume_preserves_exact_host_notice_provenance(monkeypatch
             if assertion == model_gap and not self.interrupted:
                 self.interrupted = True
                 raise DomainError('Synthetic temporary rate limit', 503, 'model_rate_limited')
-            return json.dumps({**({'supporting_citation_refs': [1]} if 'statement' in item else {}),
-                'clauses': [{'claim_as_written': assertion, 'verdict': 'supported', 'reason': ''}]})
+            return review_json({'clauses': [{'claim_as_written': assertion, 'verdict': 'supported', 'reason': '', 'citation_refs': [1]}]}, gap='gap' in item)
 
     monkeypatch.setattr(review, 'audit', covered)
     service = SimpleNamespace(settings=settings, model_client=Model())
@@ -309,8 +400,8 @@ async def test_final_review_reads_cited_original_context_without_borrowing_other
             value = json.loads(text)
             assert [p['text'] for group in value['source_context'] for p in group['passages']] == [refs[1]['quote'], refs[2]['quote']]
             assert len(value['final_claims_and_gaps']['P0']['passages']) == 1
-            return json.dumps({'supporting_citation_refs': [1, 2] if missing_direct_support else [] if missing_direct_support is None else [2],
-                'clauses': [{'claim_as_written': answer.points[0].statement,
+            return review_json({'clauses': [{'claim_as_written': answer.points[0].statement,
+                'citation_refs': [1, 2] if missing_direct_support else [] if missing_direct_support is None else [2],
                 'verdict': 'supported', 'reason': 'The original identifies the subject of this definition.'}]})
     result = await reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()), wire, answer, 60)
     assert result['status'] == ('partial' if missing_direct_support is None else 'checked')
@@ -321,3 +412,214 @@ async def test_final_review_reads_cited_original_context_without_borrowing_other
     else:
         assert result['hints'] == []
     assert len(answer.points[0].evidence) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('failure', ['uncited_negative', 'foreign_reference', 'different_assertion', 'missing_overall', 'duplicate_reference', 'malformed'])
+async def test_invalid_negative_is_pending_and_only_its_check_is_repeated(failure):
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import reasoned_review
+    refs = {
+        1: {'source_id': 'a', 'locator': 'p1', 'quote': 'The old standard was adopted in 2040 and published in 2041.'},
+        2: {'source_id': 'b', 'locator': 'p1', 'quote': 'The digital standard was adopted in 2042 and published in 2044.'},
+        3: {'source_id': 'foreign', 'locator': 'p1', 'quote': 'Unrelated evidence must not be borrowed.'},
+    }
+    answer = AssessmentOutcome(status='possible_answer', points=[{'statement': refs[i]['quote'],
+        'evidence': [{**refs[i], 'role': 'support'}]} for i in (1, 2)], limitations=[])
+    wire = SimpleNamespace(input={}, references=refs)
+    calls = []
+    class Model:
+        async def complete(self, system, text, **options):
+            value = json.loads(text)
+            key, item = next(iter(value['final_claims_and_gaps'].items()))
+            calls.append(key)
+            clause = {'claim_as_written': item['statement'], 'verdict': 'supported',
+                'reason': '', 'citation_refs': value['selected_citation_refs']}
+            if key == 'P1' and calls.count(key) == 1:
+                if failure == 'malformed':
+                    return '{"clauses": ['
+                clause.update(verdict='contradicted', reason='A later authority adopted it in 2050.')
+                if failure == 'uncited_negative':
+                    clause['citation_refs'] = []
+                if failure == 'foreign_reference':
+                    clause['citation_refs'] = [3]
+                if failure == 'different_assertion':
+                    return json.dumps({'overall': {k: clause[k] for k in ('verdict', 'reason', 'citation_refs')},
+                        'clauses': {'unrelated': {k: clause[k] for k in ('verdict', 'reason', 'citation_refs')}}})
+                if failure == 'missing_overall':
+                    return json.dumps({'clauses': [clause]})
+                if failure == 'duplicate_reference':
+                    clause['citation_refs'] = [2, 2]
+            return review_json({'clauses': [clause]})
+    service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
+    cache = {}
+    pending = await reasoned_review(service, wire, answer, 60, checkpoints=cache)
+    assert pending['status'] == 'partial' and pending['points_checked'] == 1
+    assert [c['item'] for c in pending['pending_checks']] == ['P1']
+    assert pending['hints'] == [] and len(cache) == 1
+    assert '2050' not in json.dumps(cache)
+    complete = await reasoned_review(service, wire, answer, 60, checkpoints=json.loads(json.dumps(cache)))
+    assert complete['status'] == 'checked' and complete['pending_checks'] == []
+    assert calls == ['P0', 'P1', 'P1']
+
+
+def test_sentence_registry_preserves_all_literal_text_and_shared_relationships():
+    from helvetic_lens.research_review_witnesses import assertion_clauses, invalid_review
+
+    assertion = 'A was adopted; the newer B replaced A. These actions are distinct.'
+    registry = assertion_clauses(assertion)
+    assert ''.join(registry.values()) == assertion and len(registry) == 2
+    assert 'the newer B' in registry['S0']
+    many = ' '.join(f'Sentence {i}.' for i in range(12))
+    assert len(assertion_clauses(many)) == 8 and ''.join(assertion_clauses(many).values()) == many
+    verdict = {'verdict': 'supported', 'citation_refs': [1]}
+    data = {'overall': verdict, 'clauses': dict.fromkeys(registry, verdict)}
+    assert invalid_review(data, assertion, {}, point=True) is None
+    del data['clauses']['S1']
+    assert invalid_review(data, assertion, {}, point=True) == 'incomplete_assertion_check'
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('overall', ['supported', 'contradicted', 'not_established'])
+async def test_whole_assertion_judgment_checks_relationships_without_requiring_connective_spans(overall):
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import reasoned_review
+
+    statement = 'A was adopted in 2040, while B replaced A in 2042.'
+    ref = {'source_id': 'a', 'locator': 'p1', 'quote': 'A adopted in 2040. B replaced A in 2042.'}
+    answer = AssessmentOutcome(status='possible_answer', points=[{'statement': statement,
+        'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
+    wire = SimpleNamespace(input={}, references={1: ref})
+    class Model:
+        async def complete(self, *args, **kwargs):
+            return review_json({'overall': {'verdict': overall, 'reason': '', 'citation_refs': [1]},
+                'clauses': [{'claim_as_written': span, 'verdict': 'supported', 'reason': '', 'citation_refs': [1]}
+                    for span in (statement,)]})
+    result = await reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()), wire, answer, 60)
+    assert result['status'] == 'checked' and result['pending_checks'] == []
+    if overall == 'supported':
+        assert result['hints'] == []
+    else:
+        assert result['hints'][0]['review_signal'] == overall
+        assert statement in result['hints'][0]['instruction']
+        assert result['hints'][0]['original_windows'] == [{'text': ref['quote']}]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('kind', ['answered', 'outside_request', 'unresolved', 'answer_available'])
+async def test_only_real_requested_gaps_remain_without_rewriting_completed_answer(monkeypatch, kind):
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import finalize
+
+    ref = {'source_id': 'a', 'locator': 'p1', 'quote': 'North Reach Survey operates the registry.'}
+    gaps = {'answered': ref['quote'], 'outside_request': 'Economic impacts remain unknown.',
+        'unresolved': 'The future operator after the transfer is unspecified.', 'answer_available': 'The operator is unspecified.'}
+    question = 'Who operates the registry now and after the planned transfer?'
+    answer = AssessmentOutcome(status='partial', points=[{'statement': ref['quote'], 'evidence': [{**ref, 'role': 'support'}]}],
+        limitations=[gaps[kind]])
+    wire = SimpleNamespace(input={'original_question': question}, references={1: ref}, request_keys={'r1': question},
+        point_requests=['r1'], response_slots={'r1': {'disposition': 'unresolved', 'remaining_gap': gaps[kind]}})
+    if kind == 'answer_available':
+        answer.points, wire.point_requests = [], []
+    calls = []
+    class Model:
+        async def complete(self, system, text, **kwargs):
+            value = json.loads(text)
+            if 'requested_part' in value and kind == 'answer_available':
+                if 'citation_refs' in kwargs['response_schema']['properties']:
+                    return selection_json([1], kwargs)
+                return json.dumps({'statement': ref['quote'], 'remaining_gap': '',
+                    'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+            assert 'final_claims_and_gaps' in value, 'Do not regenerate a completed independent finding'
+            key, item = next(iter(value['final_claims_and_gaps'].items()))
+            calls.append(key)
+            is_gap = 'gap' in item
+            if is_gap:
+                assert value['research_question'] == question
+                assert bool(value['delivered_points']) == (kind != 'answer_available')
+            return review_json({'clauses': [{'claim_as_written': item.get('statement', item.get('gap')),
+                'verdict': 'supported', 'reason': '', 'citation_refs': [1]}],
+                **({'gap_status': kind} if is_gap else {})}, gap=is_gap)
+    async def covered(*args, **kwargs):
+        return {'status': 'checked', 'hints': [], 'decisions': [], 'question_coverage': 'covered'}
+    monkeypatch.setattr(review, 'audit', covered)
+    result = await finalize(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
+        {'input': {'original_question': question}}, wire, SimpleNamespace(mission_checkpoint=SimpleNamespace(answer=answer)), 60)
+    assert calls == (['L0', 'P0'] if kind == 'answer_available' else ['P0', 'L0'])
+    assert answer.points[0].statement == ref['quote'] and wire.point_requests == ['r1']
+    assert answer.limitations == ([gaps[kind]] if kind == 'unresolved' else [])
+    assert result['removed_nongaps'] == int(kind in {'answered', 'outside_request'})
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('verdict', ['contradicted', 'not_established'])
+async def test_review_feedback_contains_only_literal_claims_and_original_witnesses(verdict):
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import reasoned_review
+    ref = {'source_id': 'a', 'locator': 'p1', 'quote': 'The old rule was repealed in 2042.'}
+    answer = AssessmentOutcome(status='possible_answer', points=[{'statement': 'The old rule was reaffirmed in 2042.',
+        'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
+    class Model:
+        async def complete(self, system, text, **options):
+            return review_json({'clauses': [{'claim_as_written': answer.points[0].statement, 'verdict': verdict,
+                'citation_refs': [1] if verdict == 'contradicted' else [], 'reason': 'Invented alternative authority acted in 2050.'}]})
+    result = await reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
+        SimpleNamespace(input={}, references={1: ref}), answer, 60)
+    assert result['status'] == 'checked' and result['pending_checks'] == []
+    assert result['hints'][0]['review_signal'] == verdict
+    assert '2050' not in json.dumps(result['hints'])
+    assert result['hints'][0]['original_windows'] == ([{'text': ref['quote']}] if verdict == 'contradicted' else [])
+
+
+@pytest.mark.asyncio
+async def test_deadline_yield_is_distinct_from_an_unresolved_review_concern():
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import reasoned_review
+    ref = {'source_id': 'a', 'locator': 'p1', 'quote': 'A operates the registry.'}
+    answer = AssessmentOutcome(status='possible_answer', points=[{'statement': ref['quote'],
+        'evidence': [{**ref, 'role': 'support'}]}], limitations=[])
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            assert payload['original_question'] == 'Who operates it?'
+            assert payload['assertion_clauses'] == {'S0': ref['quote']}
+            return review_json({'clauses': [{'claim_as_written': ref['quote'], 'verdict': 'supported',
+                'reason': '', 'citation_refs': [1]}], 'concern_checks': [
+                    {'id': 'C0', 'outcome': 'cannot_assess', 'reason': '', 'citation_refs': []}]})
+    service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
+    wire = SimpleNamespace(input={'original_question': 'Who operates it?'}, references={1: ref})
+    deferred = await reasoned_review(service, wire, answer, 0)
+    assert deferred['pending_checks'] == [{'item': 'P0', 'reason': 'step_deadline'}]
+    unresolved = await reasoned_review(service, wire, answer, 60,
+        concerns={'P0': {'previous_statements': [], 'issues': ['Recheck the operator.']}})
+    assert unresolved['pending_checks'] == [{'item': 'P0', 'reason': 'unresolved_concern'}]
+
+
+@pytest.mark.asyncio
+async def test_inserting_or_reordering_siblings_reuses_exact_checks_but_changed_question_does_not():
+    from helvetic_lens.product_exploration import AssessmentOutcome, AssessmentPoint
+    from helvetic_lens.research_final_review import reasoned_review
+    refs = {i: {'source_id': str(i), 'locator': 'p1', 'quote': name + ' operates the named registry.'}
+        for i, name in enumerate(['North Reach Survey', 'Lake Survey', 'Mountain Survey'], 1)}
+    points = [AssessmentPoint(statement=ref['quote'], evidence=[{**ref, 'role': 'support'}]) for ref in refs.values()]
+    answer = AssessmentOutcome(status='possible_answer', points=points[:2], limitations=[])
+    wire = SimpleNamespace(input={'original_question': 'Who operates these registries?'}, references=refs)
+    calls, cache = [], {}
+    class Model:
+        async def complete(self, system, text, **options):
+            value = json.loads(text)
+            item = next(iter(value['final_claims_and_gaps'].values()))
+            calls.append(item['statement'])
+            verdict = {'verdict': 'supported', 'reason': '', 'citation_refs': value['selected_citation_refs']}
+            return json.dumps({'overall': verdict, 'clauses': dict.fromkeys(value['assertion_clauses'], verdict)})
+    service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
+    assert (await reasoned_review(service, wire, answer, 60, checkpoints=cache))['status'] == 'checked'
+    answer.points = list(reversed(answer.points))
+    await reasoned_review(service, wire, answer, 60, checkpoints=cache)
+    assert len(calls) == 2
+    answer.points.insert(0, points[2])
+    await reasoned_review(service, wire, answer, 60, checkpoints=cache)
+    assert len(calls) == 3
+    wire.input['original_question'] = 'Who operated those registries before the transfer?'
+    await reasoned_review(service, wire, answer, 60, checkpoints=cache)
+    assert len(calls) == 6

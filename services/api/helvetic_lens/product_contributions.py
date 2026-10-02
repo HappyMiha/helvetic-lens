@@ -144,6 +144,9 @@ def retry(session, run):
         state.pop("inflight", None)
         state.pop("review_document_index", None)
         state.pop("error", None)
+        # A new, revision-checked user retry may wait through a fresh temporary
+        # outage. Ordinary job redelivery must never renew this allowance.
+        state.pop("provider_retries", None)
         iterative = (run.research_state or {}).get("version") == "iterative-v1"
         if iterative:
             state.pop("question_finished", None)

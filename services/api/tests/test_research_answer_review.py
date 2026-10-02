@@ -109,7 +109,7 @@ async def test_single_point_repair_rebinds_local_refs_without_changing_other_fin
             state = json.loads(text)
             assert state['requested_part'] == 'When was the record published?'
             if 'citation_refs' in kwargs['response_schema']['properties']:
-                return json.dumps({'citation_refs': [77]})
+                return json.dumps({'citation_refs': {'S0': [77]}})
             assert state['sources'][0]['passages'][0]['citation_ref'] == 1
             assert state['sources'][0]['passages'][0]['text'] == refs[77]['quote']
             return json.dumps({'evidence': [{'citation_ref': 1, 'role': 'support'}],

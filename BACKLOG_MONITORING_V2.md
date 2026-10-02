@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: Sites87 live; Core retry/provenance implemented and validated, activation pending. Cited partial UI verified. [Evidence](docs/PRODUCT_END_TO_END.md).
+Question-to-dossier IN PROGRESS: Core7f1d942/Sites87 live. Evidence-bound review, source-local selection and automatic saved-progress continuation validated; live acceptance open. [Evidence](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2768,7 +2768,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** question-to-dossier IN PROGRESS, Sites87 live; Core retry/provenance implemented and validated, activation pending. Cited partial UI verified. Acceptance open. [Acceptance](docs/PRODUCT_END_TO_END.md).
+**Current direction:** question-to-dossier IN PROGRESS, Core7f1d942/Sites87 live. Evidence-bound review, source-local selection and automatic saved-progress continuation validated; live acceptance open. Acceptance open. [Acceptance](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

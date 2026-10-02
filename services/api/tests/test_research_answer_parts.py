@@ -11,6 +11,12 @@ from helvetic_lens.research_answer_review import repair_points
 from helvetic_lens.research_model_transport import EvidenceWire
 
 
+def selection_json(refs, options):
+    sources = options['response_schema']['properties']['citation_refs']['properties']
+    return json.dumps({'citation_refs': {key: [ref for ref in refs if ref in value['items']['enum']]
+        for key, value in sources.items()}})
+
+
 def fixture(count=2):
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {
         'original_question': ' '.join(f'When was record {i} published?' for i in range(1, count+1)),
@@ -34,7 +40,7 @@ async def test_partial_repair_with_eight_requests_owns_its_gap_and_round_trips()
     class Model:
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], options)
             return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '  The edition date is unknown.  ',
                 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
     await repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60)
@@ -51,7 +57,7 @@ async def test_explicit_unknown_does_not_leave_previous_slot_answered():
     class Model:
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], options)
             return json.dumps({'statement': '', 'evidence': [], 'remaining_gap': 'The original does not identify this edition.'})
     await recover_requests(SimpleNamespace(model_client=Model()), wire, parsed.mission_checkpoint.answer,
         [wire.request_keys['r2']], 60)
@@ -70,7 +76,7 @@ async def test_invalid_proposal_never_poisons_a_resumed_selected_pack():
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 calls.append('select')
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], options)
             calls.append('write')
             return json.dumps({'statement': 'Published in 2001.' if good[0] else 'Published in 2099.',
                 'remaining_gap': '', 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
@@ -98,7 +104,7 @@ async def test_replacing_a_part_reconciles_the_answer_status(initial, role, expe
     class Model:
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], options)
             return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '',
                 'evidence': [{'citation_ref': 1, 'role': role}]})
     answer.points[0].evidence[0].role = role
@@ -118,7 +124,7 @@ async def test_citation_correction_preserves_needed_prior_context_only_within_th
     class Model:
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1, 2, 3]})
+                return selection_json([1, 2, 3], options)
             calls.append(json.loads(text))
             return json.dumps({'statement': 'The current record was published in 2013 and took effect in 2015.',
                 'remaining_gap': '', 'evidence': [{'citation_ref': key, 'role': 'support'}
@@ -146,7 +152,7 @@ async def test_last_citation_slot_retains_context_covering_the_missing_compariso
         writes = 0
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': list(refs)})
+                return selection_json(list(refs), options)
             self.writes += 1
             statement = 'The record was adopted in 2001 and published in 2003.'
             return json.dumps({'statement': statement + (' Another copy was published in 2099.' if self.writes == 1 else ''),
@@ -166,7 +172,7 @@ async def test_uncited_short_context_can_complete_only_an_already_selected_origi
     class Model:
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], options)
             return json.dumps({'statement': 'The record was adopted in 2001 and published in 2003.',
                 'remaining_gap': '', 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
     point, _, _ = await answer_request(SimpleNamespace(model_client=Model()),
@@ -183,7 +189,7 @@ async def test_unavailable_part_retains_existing_evidence_but_cannot_claim_compl
     original = parsed.mission_checkpoint.answer.points[0].model_copy(deep=True)
     class Model:
         async def complete(self, *args, **options):
-            return json.dumps({'citation_refs': []})
+            return selection_json([], options)
     await recover_requests(SimpleNamespace(model_client=Model()), wire, parsed.mission_checkpoint.answer,
         [wire.request_keys['r1']], 60)
     answer = schema.model_validate_json(wire.decode(wire.encode_checkpoint(parsed))).mission_checkpoint.answer
@@ -217,3 +223,42 @@ def test_selected_citation_labels_are_not_factual_numbers_but_unknown_labels_and
     assert data['statement'] == 'It was published in 2099 (citation_ref 78).'
     answer.points[0].statement = data['statement']
     assert answer_quantity_errors(answer)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('selection', ['valid', 'missing_source', 'foreign_source'])
+async def test_later_original_reaches_writer_despite_repetitive_early_summary(selection):
+    refs = {i: {'source_id': 'summary', 'locator': f'p{i}', 'quote': 'A summary of the former operator.'}
+        for i in range(1, 12)}
+    refs[12] = {'source_id': 'old', 'locator': 'p1', 'quote': 'The previous review did not identify the successor.'}
+    refs[13] = {'source_id': 'new', 'locator': 'p1', 'quote': 'The replacement operator is North Reach Survey.'}
+    wire = SimpleNamespace(references=refs, input={'original_question': 'Who operates the registry now?'})
+    calls, cache = [], {}
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            selecting = 'citation_refs' in options['response_schema']['properties']
+            calls.append('select' if selecting else 'write')
+            if selecting:
+                data = json.loads(selection_json(list(refs), options))
+                if selection == 'missing_source':
+                    del data['citation_refs']['S2']
+                if selection == 'foreign_source':
+                    data['citation_refs']['S0'] = [13]
+                return json.dumps(data)
+            evidence = [ref for source in payload['sources'] for ref in source['passages']]
+            late = next(ref for ref in evidence if ref['text'] == refs[13]['quote'])
+            assert len(evidence) >= 13, 'An early summary must not crowd out the later direct original'
+            return json.dumps({'statement': refs[13]['quote'], 'remaining_gap': '',
+                'evidence': [{'citation_ref': late['citation_ref'], 'role': 'support'}]})
+    service = SimpleNamespace(model_client=Model())
+    point, _, receipt = await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
+    if selection != 'valid':
+        assert point is None and receipt['status'] == 'invalid_selection' and calls == ['select']
+        return
+    assert point.evidence[0].source_id == 'new' and point.evidence[0].quote == refs[13]['quote']
+    await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
+    assert calls == ['select', 'write']
+    refs[14] = {'source_id': 'addendum', 'locator': 'p1', 'quote': 'The replacement appointment remains current.'}
+    await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
+    assert calls == ['select', 'write', 'select', 'write'], 'A newly authorized original invalidates the previous selection'

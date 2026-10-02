@@ -272,3 +272,42 @@ No specific historical answer, date or authority is hardcoded in the product.
 The changed behavior has 68 affected regression checks, exact lint and independent
 static review. These prove the implementation's fences and recovery, not universal
 model accuracy or professional/human acceptance.
+
+
+## Ozone-recovery native journey, 2 October 2026
+
+The isolated `/tmp/hl-public-ozone-end-to-end` mission starts from an unseeded
+public question about recovery versus reports of a large Antarctic ozone hole.
+It uses the configured provider and the native API/worker, with zero production
+dossiers or emails. The first attempt ended after 739.04 seconds/50 worker steps
+and 42 model calls without a delivered answer. Subsequent normal retries retained
+reading and valid checks. The third attempt reached a cited partial checkpoint
+and autonomously followed a linked Nature original into round two, then stopped
+after 434.16 seconds because the work-step deadline left final checks unfinished.
+That procedural stop is now a progress-only automatic continuation, not a request
+for the user to retry. Earlier artifacts remain under first-/second-/third-attempt
+names, with exact preloaded implementation hashes; this is not a fresh-run timing
+benchmark and elapsed times must not be reported as the full journey duration.
+
+Independent inspection of the third attempt confirmed all 13 distinct displayed
+source/locator/quote/hash tuples. Content acceptance remained PARTIAL: the retained
+answer conflated WMO 2025 with CAMS 2024, while an unaccepted draft asserted missing
+statistical recovery evidence despite a newer captured abstract reporting it.
+Explanations were also placed in the gap field, and historical observation windows
+lost their endpoints. These failures are not erased by later reviewer results.
+The seventh captured document was a subscription preview (abstract, bibliography
+and extended captions); its complete capture does not mean the full paper was read.
+The controlled fictional standards result is a separate narrow factual pass, not
+a public or professional acceptance substitute. Subsequent evaluation follows the
+same native retry route after coherent generic fixes, without injected answers,
+forced database status, substituted source evidence or new providers.
+
+
+The fourth attempt ended after 541.5 seconds with provider429. Its new drafts
+contained nineteen exact citation triples but still generalized the earlier
+closure of one year to two years, invented global/ecosystem gaps and failed to
+select the newer original. It also exposed repeated checks caused solely by
+changed point indices. Final source-local selection and index-independent review
+caching address those mechanisms; the fifth ordinary retry is recorded separately.
+Native automatic deadline continuation is demonstrated, but that alone is not
+content acceptance. No failed output is reclassified as a successful dossier.

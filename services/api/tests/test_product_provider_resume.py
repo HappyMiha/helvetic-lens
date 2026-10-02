@@ -72,10 +72,12 @@ def test_private_final_checkpoint_is_hidden_and_obeys_native_pause_and_source_fe
 
 
 def test_same_provider_input_does_not_restart_outage_retries_when_accounting_changes(signed, monkeypatch):
+    from test_product_investigations import complete
+
     from helvetic_lens import research_gateway
     client, service, _, model = signed
     pipeline(monkeypatch, service, model)
-    _, run, _ = start(client)
+    root, run, _ = start(client)
     execute = research_gateway.execute
     calls = []
     async def unavailable(service, work, seconds):
@@ -101,6 +103,19 @@ def test_same_provider_input_does_not_restart_outage_retries_when_accounting_cha
         branch = session.get(InvestigationBranch, calls[0])
         assert branch.checkpoint['provider_retries'] == {'same-original-provider-input': 3}
         assert branch.checkpoint.get('failed_extract_indices')
+    value = complete(client, service, root, run)
+    result = post(client, root + '/' + run['id'] + '/control', {'action': 'retry', 'expected_revision': value['revision']})
+    assert result.status_code == 200, result.text
+    before = len(calls)
+    tick(service, run['id'])
+    assert len(calls) == before + 1
+    with service.db.session() as session:
+        branch = session.get(InvestigationBranch, calls[-1])
+        assert branch.checkpoint['provider_retries'] == {'same-original-provider-input': 1}
+        job = session.get(Job, session.get(Investigation, run['id']).job_id)
+        assert job.error_code == 'research_provider_backoff'
+    tick(service, run['id'])
+    assert len(calls) == before + 1, 'Redelivery cannot bypass the new retry backoff'
 
 
 @pytest.mark.parametrize('pause', [False, True])
@@ -174,3 +189,114 @@ def test_linked_source_leads_do_not_invalidate_unchanged_canonical_evidence(sign
     supplied = trace['briefings'][-1]
     assert any(source.get('discovery_links') for source in supplied['synthesis_sources'])
     assert all('discovery_links' not in source for source in supplied['sources'])
+
+
+@pytest.mark.parametrize('withdraw', [False, True])
+def test_incomplete_final_review_requires_explicit_retry_and_retains_private_checkpoint(signed, monkeypatch, withdraw):
+    import json
+
+    from test_product_early_orientation import exclude
+    from test_product_exploration import adapters
+    from test_product_exploration import start as explore
+    from test_product_iterative_research import complete
+
+    from helvetic_lens import research_gateway
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    client, service, identity, model = signed
+    adapters(monkeypatch, service, model)
+    root, run, _ = explore(client)
+    original, calls, sources = research_gateway.execute, [], []
+    marker = 'PRIVATE CHECKED SIBLINGS AND PENDING FINAL REVIEW'
+    async def incomplete(service, work, seconds):
+        if work['phase'] != 'brief':
+            return await original(service, work, seconds)
+        calls.append(work['branch_id'])
+        if len(calls) == 1:
+            sources.extend(s['id'] for s in work['input']['sources'])
+            work[KEY] = {'raw': marker, 'stage': 'reviewed'}
+            if withdraw:
+                exclude(service, identity, sources[0])
+            raise DomainError('Fictional incomplete evidence review', 503, 'research_review_incomplete')
+        assert work[KEY]['raw'] == marker
+        assert [s['id'] for s in work['input']['sources']] == sources
+        return await original(service, work, seconds)
+    monkeypatch.setattr(research_gateway, 'execute', incomplete)
+    result = complete(client, service, root + '/investigations', run)
+    url = root + '/investigations/' + run['id']
+    assert marker not in json.dumps(result) and marker not in client.get(root + '/export').text
+    with service.db.session() as session:
+        branch = session.get(InvestigationBranch, calls[0])
+        if withdraw:
+            assert KEY not in branch.checkpoint
+            assert result['status'] == 'paused'
+            return
+        assert branch.checkpoint[KEY]['raw'] == marker
+        assert not branch.checkpoint.get('provider_retries'), 'Invalid review is not automatically repurchased'
+    assert result['status'] == 'failed' and result['retry']['available'] is True and len(calls) == 1
+    tick(service, run['id'])
+    assert len(calls) == 1
+    reply = post(client, url + '/control', {'action': 'retry', 'expected_revision': result['revision']})
+    assert reply.status_code == 200, reply.text
+    finished = complete(client, service, root + '/investigations', reply.json())
+    assert finished['status'] == 'completed' and len(calls) == 2
+    with service.db.session() as session:
+        assert KEY not in session.get(InvestigationBranch, calls[0]).checkpoint
+
+
+def test_only_validated_saved_work_counts_as_progress():
+    from helvetic_lens.research_synthesis_resume import completed_work
+    saved = {'parts': {'empty': {}, 'workflow_gaps': ['Notice'], 'repair_concerns': {'P0': {}},
+        'final_reviews': {'clauses:actual': {'overall': {'verdict': 'supported'}}}}, 'raw': 'First draft'}
+    prior = completed_work(saved)
+    saved['raw'] = 'Changed draft'
+    saved['parts']['workflow_gaps'].append('Another notice')
+    saved['parts']['empty2'] = {}
+    saved['parts']['final_reviews']['reasoned:aggregate'] = {'status': 'partial'}
+    assert completed_work(saved) == prior
+    saved['parts']['final_reviews']['clauses:actual']['overall']['verdict'] = 'not_established'
+    assert completed_work(saved) != prior
+
+
+@pytest.mark.parametrize('withdraw', [False, True])
+def test_completed_review_work_continues_automatically_with_source_and_privacy_fences(signed, monkeypatch, withdraw):
+    import json
+
+    from test_product_early_orientation import exclude
+    from test_product_exploration import adapters
+    from test_product_exploration import start as explore
+    from test_product_iterative_research import complete
+
+    from helvetic_lens import research_gateway
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    client, service, identity, model = signed
+    adapters(monkeypatch, service, model)
+    root, run, _ = explore(client)
+    execute, calls, sources = research_gateway.execute, [], []
+    marker = 'PRIVATE REVIEW CHECKPOINT'
+    async def yielded(service, work, seconds):
+        if work['phase'] != 'brief':
+            return await execute(service, work, seconds)
+        calls.append(work['branch_id'])
+        if len(calls) == 1:
+            sources.extend(s['id'] for s in work['input']['sources'])
+            work[KEY] = {'raw': marker, 'stage': 'reviewed', 'parts': {
+                'final_reviews': {'clauses:checked': {'overall': {'verdict': 'supported'}}}}}
+            if withdraw:
+                exclude(service, identity, sources[0])
+            raise DomainError('Work step ended after retained progress', 503, 'research_review_yield')
+        assert work[KEY]['raw'] == marker
+        assert [s['id'] for s in work['input']['sources']] == sources
+        return await execute(service, work, seconds)
+    monkeypatch.setattr(research_gateway, 'execute', yielded)
+    result = complete(client, service, root + '/investigations', run)
+    assert result['status'] == ('paused' if withdraw else 'completed')
+    assert len(calls) == (1 if withdraw else 2)
+    assert marker not in json.dumps(result) and marker not in client.get(root + '/export').text
+    with service.db.session() as session:
+        state = session.get(InvestigationBranch, calls[0]).checkpoint
+        assert KEY not in state
+        if not withdraw:
+            assert not state.get('provider_retries')
+            assert any(step.get('checkpointed') and step['status'] == 'completed' for step in state['steps'])

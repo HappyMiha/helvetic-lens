@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
 from helvetic_lens import research_gateway as gateway
@@ -63,7 +64,7 @@ async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draf
         ref = next(v for v in passages if v['text'].startswith(f'Record {number} '))
         if 'citation_refs' in kwargs['response_schema']['properties']:
             calls.append('select' + str(number))
-            return json.dumps({'citation_refs': [ref['citation_ref']]})
+            return selection_json([ref['citation_ref']], kwargs)
         calls.append(number)
         if number == 3 and fail[0]:
             fail[0] = False
@@ -108,7 +109,7 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
         value = json.loads(user)
         if 'requested_part' in value:
             if 'citation_refs' in kwargs['response_schema']['properties']:
-                return json.dumps({'citation_refs': [1]})
+                return selection_json([1], kwargs)
             return json.dumps({**point, 'remaining_gap': ''})
         return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
             key: {'disposition': 'answered', 'points': [point], 'remaining_gap': ''} for key in ('r1', 'r2')}},
@@ -176,11 +177,11 @@ async def test_one_invalid_point_cannot_rewrite_valid_siblings_or_shift_request_
                 index = 0 if value['requested_part'] == 'When was it adopted?' else 1
                 ref = next(ref for ref in refs if ('Adopted' if index == 0 else 'Published') in ref['text'])
                 if 'citation_refs' in kwargs['response_schema']['properties']:
-                    return json.dumps({'citation_refs': [ref['citation_ref']]})
+                    return selection_json([ref['citation_ref']], kwargs)
                 return json.dumps({**points[index], 'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'}], 'remaining_gap': ''})
             ref = next(ref for ref in refs if ref['text'] == 'Expiry is not specified.')
             if 'citation_refs' in kwargs['response_schema']['properties']:
-                return json.dumps({'citation_refs': [ref['citation_ref']]})
+                return selection_json([ref['citation_ref']], kwargs)
             return json.dumps({'statement': 'It expired in 2015.', 'remaining_gap': '',
                 'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'}]})
         assert 'previous_invalid_response' not in value, 'Valid siblings must never be regenerated'
@@ -227,7 +228,7 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
         if 'requested_part' in value:
             refs = [ref for source in value['sources'] for ref in source['passages']]
             if 'citation_refs' in kwargs['response_schema']['properties']:
-                return json.dumps({'citation_refs': [ref['citation_ref'] for ref in refs]})
+                return selection_json([ref['citation_ref'] for ref in refs], kwargs)
             if value['requested_part'] == 'When was it adopted?':
                 return json.dumps({**point, 'remaining_gap': ''})
             return json.dumps({'statement': 'It was adopted in 2001 and published in 2003.', 'remaining_gap': '',
@@ -287,13 +288,13 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
         if 'requested_part' in value:
             if value['requested_part'] == 'Who operates the station?':
                 if 'citation_refs' in kwargs['response_schema']['properties']:
-                    return json.dumps({'citation_refs': [1]})
+                    return selection_json([1], kwargs)
                 return json.dumps({'statement': 'North Reach Survey operates the station.', 'remaining_gap': '',
                     'evidence': [{'citation_ref': 1, 'role': 'support'}]})
             assert value['sources'][0]['title'] == 'Station registry'
             refs = [p for source in value['sources'] for p in source['passages'] if '2019' in p['text']]
             if 'citation_refs' in kwargs['response_schema']['properties']:
-                return json.dumps({'citation_refs': [refs[0]['citation_ref']]})
+                return selection_json([refs[0]['citation_ref']], kwargs)
             return json.dumps({'statement': 'The station entered service in 2019.', 'remaining_gap': '',
                 'evidence': [{'citation_ref': refs[0]['citation_ref'], 'role': 'support'}]})
         assert 'reason' not in kwargs['response_schema']['properties']
