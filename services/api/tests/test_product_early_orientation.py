@@ -76,7 +76,7 @@ def test_failed_early_orientation_does_not_stop_or_repeat_remaining_research(sig
     async def response(system, user, **kwargs):
         result = await base(system, user, **kwargs)
         if kwargs["response_schema"]["title"] == "EarlyOrientation":
-            assert kwargs["budget"].max_seconds <= 20
+            assert kwargs["budget"].max_seconds <= 45
             if mode == "provider_failure":
                 raise RuntimeError("PRIVATE PROVIDER DETAIL")
             value = json.loads(result)

@@ -97,7 +97,7 @@ def finish(state, work, result, *, failed, elapsed):
         receipt["output_fingerprint"] = fingerprint(serial)
     if work.get("model_route"):
         receipt.update({key: work["model_route"].get(key) for key in
-            ("provider", "model", "prompt_fingerprint", "response_schema_fingerprint", "output_allowance", "format_repair", "answer_review", "model_usage", "model_requests", "evidence_transport")})
+            ("provider", "model", "prompt_fingerprint", "response_schema_fingerprint", "output_allowance", "format_repair", "answer_review", "model_usage", "model_requests", "evidence_transport", "resumed_stage")})
     if isinstance(result, dict) and work["phase"] == "gate":
         receipt["decision"] = {key: result.get(key) for key in ("engine", "model", "verdict", "confidence")}
         receipt["decision"]["measurement"] = deepcopy(result.get("usage"))
@@ -161,23 +161,39 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     if wire:
         work["model_route"]["evidence_transport"] = wire.receipt
     content = json.dumps(provider_input, ensure_ascii=False)
-    raw = await service.model_client.complete(system, content,
-        response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
-    review_hints = []
-    if wire and wire.answer:
+    resume = None
+    if wire and wire.answer and service.settings.apertus_provider != "docker":
+        from .research_synthesis_resume import DraftCheckpoint
+
+        resume = DraftCheckpoint(work, service.settings, system, ANSWER_REVIEW, response_schema, content, options)
+    saved = resume.value if resume else None
+    if saved:
+        raw = saved["raw"]
+        work["model_route"]["resumed_stage"] = saved["stage"]
+        work["model_route"]["answer_review"] = deepcopy(saved.get("review") or {})
+    else:
+        raw = await service.model_client.complete(system, content,
+            response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=seconds), **options)
+    review_hints = deepcopy(saved.get("hints", [])) if saved else []
+    if resume and not saved:
+        resume.save("draft", raw, review_hints, {})
+    if wire and wire.answer and (not saved or saved["stage"] != "reviewed"):
         remaining = seconds - (monotonic() - started)
         if remaining <= 5:
             raise ValueError("Final answer review has no repair time remaining")
-        work["model_route"]["answer_review"] = {"contract": "cited-answer-review/v1", "prompt_fingerprint": fingerprint(ANSWER_REVIEW)}
+        work["model_route"].setdefault("answer_review", {}).update(
+            contract="cited-answer-review/v1", prompt_fingerprint=fingerprint(ANSWER_REVIEW))
         try:
             draft = schema.model_validate_json(wire.decode(response_object(raw, schema)))
         except (ValueError, KeyError, TypeError):
             draft = None
-        if draft is not None:
+        if draft is not None and not work["model_route"]["answer_review"].get("focused_checks"):
             from .research_answer_review import audit
             checked = await audit(service.settings, work, wire, draft.mission_checkpoint.answer, remaining - 20)
             review_hints = checked.pop("hints")
             work["model_route"]["answer_review"]["focused_checks"] = checked
+        if resume:
+            resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
         remaining = seconds - (monotonic() - started)
         # A separately framed review checks relevance and entailment, not just
         # JSON shape. It shares the original request registry and cannot expand
@@ -185,6 +201,8 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         raw = await service.model_client.complete(system + "\n" + ANSWER_REVIEW,
             json.dumps({**wire.answer_review_input(raw), "review_hints": review_hints}, ensure_ascii=False),
             response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
+        if resume:
+            resume.save("reviewed", raw, review_hints, work["model_route"]["answer_review"])
     raw = response_object(raw, schema)
     wire_raw = raw
     # Hosted JSON mode does not enforce the schema. Repair the format once with
@@ -212,12 +230,24 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             context = await complete_citation_context(service.settings, work, wire,
                 parsed.mission_checkpoint.answer, seconds - (monotonic() - started))
             work["model_route"]["answer_review"]["citation_context"] = context
-            repairs = await repair_points(service, wire, parsed.mission_checkpoint.answer, seconds - (monotonic() - started))
+            def retain_repairs(receipts):
+                work["model_route"]["answer_review"]["point_repairs"] = deepcopy(receipts)
+                if resume:
+                    resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+            retain_repairs([])
+            repairs = await repair_points(service, wire, parsed.mission_checkpoint.answer, seconds - (monotonic() - started),
+                on_success=retain_repairs)
             work["model_route"]["answer_review"]["point_repairs"] = repairs
             wire_raw = wire.encode_checkpoint(parsed)
+            if resume:
+                resume.save("reviewed", wire_raw, review_hints, work["model_route"]["answer_review"])
             raw = wire.decode(wire_raw)
             parsed = schema.model_validate_json(raw)
             errors = answer_quantity_errors(parsed.mission_checkpoint.answer, wire.references)
+            if errors:
+                work["model_route"]["answer_review"]["unresolved_points"] = retain_answer_points(parsed, wire, errors)
+                raw = wire.decode(wire.encode_checkpoint(parsed))
+                errors = []
         if errors:
             remaining = seconds - (monotonic() - started)
             if remaining <= 5:
@@ -229,6 +259,8 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                         **({"review_hints": review_hints} if review_hints else {})}, ensure_ascii=False),
                     response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
                 raw = response_object(raw, schema)
+                if resume:
+                    resume.save("reviewed", raw, review_hints, work["model_route"]["answer_review"])
                 raw = wire.decode(raw) if wire else raw
                 if work["phase"] == "brief":
                     parsed = schema.model_validate_json(raw)
@@ -240,14 +272,89 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                         raw = wire.decode(wire.encode_checkpoint(parsed))
                         parsed = schema.model_validate_json(raw)
                     if getattr(parsed, "mission_checkpoint", None) and answer_quantity_errors(parsed.mission_checkpoint.answer):
-                        raise ValueError("Answer quantities are absent from their selected original evidence")
+                        if not wire:
+                            raise ValueError("Answer quantities are absent from their selected original evidence")
+                        work["model_route"]["answer_review"]["unresolved_points"] = retain_answer_points(
+                            parsed, wire, answer_quantity_errors(parsed.mission_checkpoint.answer))
+                        raw = wire.decode(wire.encode_checkpoint(parsed))
         if wire and wire.answer:
-            from .research_answer_review import original_check
+            from .research_answer_review import audit, original_check
             parsed = schema.model_validate_json(raw)
+            final_coverage = await audit(service.settings, work, wire, parsed.mission_checkpoint.answer,
+                seconds - (monotonic() - started), coverage_only=True)
+            missing = final_coverage.pop("hints")
+            if missing:
+                from .research_answer_review import repair_points
+                issues = [{"path": ["answer", "points", index, "statement"],
+                    "reason": "The current statement does not answer this requested part: " + hint["user_request"]
+                    + ". Answer that part directly from the originals, rather than repeating the main conclusion."}
+                    for hint in missing for index, key in enumerate(wire.point_requests)
+                    if wire.request_keys.get(key) == hint["user_request"]]
+                def retain_coverage(receipts):
+                    work["model_route"]["answer_review"]["coverage_repairs"] = deepcopy(receipts)
+                    if resume:
+                        resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+                corrections = await repair_points(service, wire, parsed.mission_checkpoint.answer,
+                    seconds - (monotonic() - started), issues=issues, on_success=retain_coverage)
+                work["model_route"]["answer_review"]["coverage_repairs"] = corrections
+                if resume:
+                    resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
+                if corrections:
+                    final_coverage = await audit(service.settings, work, wire, parsed.mission_checkpoint.answer,
+                        seconds - (monotonic() - started), coverage_only=True)
+                    revised_missing = final_coverage.pop("hints")
+                    if final_coverage.get("question_coverage") is not None:
+                        missing = revised_missing
+            work["model_route"]["answer_review"]["final_coverage"] = final_coverage
+            for hint in missing:
+                request = hint["user_request"]
+                gap = "This answer has not resolved the requested part: " + request
+                key = next((key for key, value in wire.request_keys.items() if value == request), None)
+                answer = parsed.mission_checkpoint.answer
+                if key is not None:
+                    old_gap = wire.response_slots[key]["remaining_gap"].strip()
+                    answer.limitations = [value for value in answer.limitations if value != old_gap]
+                    wire.response_slots[key].update(disposition="unresolved", remaining_gap=gap)
+                if gap not in answer.limitations and len(answer.limitations) < 8:
+                    answer.limitations.append(gap)
+                answer.status = "partial" if answer.points else "not_found"
+                parsed.mission_checkpoint.reason = "The cited findings answer part of the question; the remaining requested parts are named as gaps."
+            if resume:
+                resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, work["model_route"]["answer_review"])
             route = await original_check(service.settings, work, wire, parsed.mission_checkpoint, seconds - (monotonic() - started))
             work["model_route"]["answer_review"]["original_reading"] = route
             raw = wire.decode(wire.encode_checkpoint(parsed))
     return response_object(raw, schema)
+
+
+def retain_answer_points(parsed, wire, errors):
+    """Reject unsupported findings without rewriting independent valid siblings."""
+    answer = parsed.mission_checkpoint.answer
+    rejected = {error["path"][2] for error in errors}
+    if len(rejected) == len(answer.points):
+        raise ValueError("Answer quantities are absent from their selected original evidence")
+    bindings = list(wire.point_requests)
+    new_gaps = []
+    for index in sorted(rejected):
+        key = bindings[index] if index < len(bindings) else None
+        request = wire.request_keys.get(key)
+        gap = ("A cited answer could not be validated for: " + request if request else
+            "A finding could not be validated against its cited originals: " + answer.points[index].statement[:300])
+        if key is not None:
+            old_gap = wire.response_slots[key]["remaining_gap"].strip()
+            answer.limitations = [value for value in answer.limitations if value != old_gap]
+            wire.response_slots[key].update(disposition="unresolved", remaining_gap=gap)
+        if gap not in answer.limitations:
+            answer.limitations.append(gap)
+        new_gaps.append(gap)
+    answer.points = [point for index, point in enumerate(answer.points) if index not in rejected]
+    wire.point_requests = [key for index, key in enumerate(bindings) if index not in rejected]
+    answer.status = "partial"
+    parsed.mission_checkpoint.reason = "The cited findings are retained; findings that could not be validated are named as unresolved parts."
+    # Multipart slots own their gaps and reserve space before unrelated limitations.
+    owned = [value["remaining_gap"] for value in wire.response_slots.values() if value["remaining_gap"]]
+    answer.limitations = list(dict.fromkeys([*owned, *new_gaps, *answer.limitations]))[:8]
+    return sorted(rejected)
 
 
 def answer_quantity_errors(answer, references=None):
@@ -255,6 +362,9 @@ def answer_quantity_errors(answer, references=None):
     def quantities(text):
         # Canonicalise digit grouping only, never guess a decimal separator or
         # validate conversions by pooling digits from unrelated quantities.
+        # Bibliographic page labels attach directly to a number (p103, pp41–45).
+        # They can ground 'page 103'; arbitrary alphanumeric IDs still cannot.
+        text = re.sub(r"(?<!\w)(?:pp?|pages?)\.?\s*(?=\d)", " ", text, flags=re.I)
         text = re.sub(r"(?<!\d)\d{1,3}(?:[ ,\u00a0\u202f]\d{3})+(?!\d)",
             lambda match: re.sub(r"[ ,\u00a0\u202f]", "", match[0]), text)
         return numeric_tokens(text)

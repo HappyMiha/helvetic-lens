@@ -299,19 +299,26 @@ def page_result_visible(session, run):
 
 
 def payload(session, run, *, include_retained=False):
-    from .product_claim_evolution import projection
-    from .product_contributions import original
-    from .product_monitoring_outcomes import project as outcome
     from .product_monitoring_research import trigger_for, trigger_payload
-    from .product_observed_queries import public_steps
-    from .research_coverage import project as coverage_manifest
 
     trigger = trigger_for(session, run)
     if not page_result_visible(session, run):
         return {**summary(run), "evidence_unavailable": True, "monitoring_trigger": trigger_payload(session, trigger),
             "original": None, "evidence_basis": "The retained page evidence is no longer accessible.", "coverage": "Unavailable",
             **{key: [] for key in ("plans", "branches", "sources", "claims", "evidence", "entities", "relationships", "activity")}}
+    from .research_read_view import read_view
+
+    return read_view(_readable_payload)(session, run, trigger, include_retained=include_retained)
+
+
+def _readable_payload(session, run, trigger, *, include_retained):
+    from .product_claim_evolution import projection
+    from .product_contributions import original
+    from .product_monitoring_outcomes import project as outcome
+    from .product_monitoring_research import trigger_payload
+    from .product_observed_queries import public_steps
     from .product_web_research import trigger_for as web_trigger_for
+    from .research_coverage import project as coverage_manifest
 
     web_trigger = web_trigger_for(session, run)
     changes = projection(session, run)

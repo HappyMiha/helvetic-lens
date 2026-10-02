@@ -21,6 +21,40 @@ def section():
         'read_question': {'question_id': 'd' * 36, 'question': 'Compare the measurements.'}}}
 
 
+def test_new_plan_explicitly_chooses_catalogues_and_general_search_skips_unrelated_feeds(monkeypatch):
+    import asyncio
+
+    from helvetic_lens import decision_search, search_channels
+    from helvetic_lens.config import Settings
+    from helvetic_lens.product_iterative_research import ResearchPlan
+
+    wire = EvidenceWire({'phase': 'plan', 'input': {'question': 'Compare two definitions.', 'branch_slots': 2,
+        'available_catalogues': {'finma_news': 'FINMA current news feed'}}}, ResearchPlan, '')
+    data = {'objective': 'Compare the original definitions.', 'completion_criteria': ['Both definitions compared.'],
+        'branches': [{'question': f'What does definition {n} mean?', 'query': f'Original definition {n}',
+            'purpose': 'Find the original source.', 'priority': 5, 'catalogues': []} for n in (1, 2)]}
+    for missing in (None, 'omitted'):
+        bad = deepcopy(data)
+        if missing is None:
+            bad['branches'][0]['catalogues'] = None
+        else:
+            bad['branches'][0].pop('catalogues')
+        with pytest.raises(ValueError):
+            wire.decode(json.dumps(bad))
+    plan = ResearchPlan.model_validate_json(wire.decode(json.dumps(data)))
+    calls = []
+    async def broad(*args, **kwargs):
+        calls.append('web')
+        return {'items': []}
+    async def catalogue(*args, **kwargs):
+        pytest.fail('A general question must not dispatch an unrelated catalogue.')
+    monkeypatch.setattr(decision_search, 'retrieve', broad)
+    monkeypatch.setattr(search_channels, 'direct_search', catalogue)
+    result = asyncio.run(decision_search.federated_retrieve(Settings(web_search_provider='searxng'),
+        plan.branches[0].query, 'web', 'deep', 'legal', selected_catalogues=plan.branches[0].catalogues))
+    assert calls == ['web'] and result['items'] == []
+
+
 def test_section_contract_keeps_exact_quotes_and_does_not_mutate_previous_claims():
     work = section()
     before = deepcopy(work)
@@ -303,7 +337,7 @@ async def test_known_invalid_answer_is_rejected_when_repair_time_is_exhausted(mo
     monkeypatch.setattr(research_gateway, 'monotonic', lambda: next(times))
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {'original_question': 'How high is it?',
         'sources': [section()['input']['source']], 'research_mission': {}, 'assessment_question': {'question_id': 'q'}}}
-    with pytest.raises(ValueError, match='no repair time'):
+    with pytest.raises(ValueError, match='Answer quantities are absent'):
         await research_gateway._complete(SimpleNamespace(model_client=client, settings=settings), work, '',
             mission_schema(AssessedBriefing), 10)
 
@@ -349,7 +383,7 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
             {'statement': 'The committee adopted the revised unit in 2005.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
             'remaining_gaps': []}, 'next_action': 'finish', 'reason': 'The original records the decision.'})
     monkeypatch.setattr(client, 'complete', complete)
-    async def audit(*args):
+    async def audit(*args, **kwargs):
         return {'hints': [], 'status': 'checked'}
     async def original(*args):
         return None

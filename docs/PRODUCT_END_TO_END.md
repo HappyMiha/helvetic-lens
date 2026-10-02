@@ -36,6 +36,34 @@ Dependencies: native missions/jobs, existing Jev/Laya and configured reasoning
 provider, source adapters/readers, current access/consent, shared dossier quota
 and existing clients. No domain-specific pilot answers or hardcoded source lists.
 
+Continuation performance follow-through (MV2-020/023): a read-only GET of an
+isolated public pilot took 33.1 seconds without model/search calls. Repeated
+current-source, ancestry and memory validation dominates projection. Reuse one
+projection during briefing preparation and cache repeated read checks only inside
+an explicit, synchronous read view. Never retain a cache across mutation, a
+transaction, provider execution or another request. Acceptance: unchanged dossier
+content, immediate invalidation after changed/excluded historical sources, fresh
+post-provider fences, and a measured repeat of the same isolated GET.
+The same continuation also exposed an omitted optional catalogue selection:
+the provider correctly received available catalogues but omitted its choice,
+silently enabling every product catalogue for a general question. Require an
+explicit array in the provider wire contract (empty means broad web/direct URLs),
+including generated follow-up gaps. Keep legacy stored plans compatible. Check
+that decoded scope reaches native discovery without unrelated catalogue calls.
+The fresh pilot exposed another completion barrier: after draft, review and
+focused corrections, a real provider 429 restarted the entire final synthesis.
+Retain the private intermediate draft/review checkpoint for the identical prompt,
+schema, provider/model and public evidence input. Resume the unfinished stage only
+after existing lease, access and evidence fences; revalidate all proposals before
+publication. Never expose the raw checkpoint in GET/export/event payloads. Test
+same-input recovery, changed input/model rejection, pause/revocation, and cleanup.
+The latest native retry exposed a remaining all-or-nothing final validation:
+one unsupported point triggered a full rewrite, losing valid siblings. Repair
+only that point; retain valid siblings with a named unresolved request if the
+correction fails. An entirely unsupported answer must still fail. A missing
+request gets a focused correction from the already read originals before being
+reported as a gap; never regenerate unrelated answer sections for this repair.
+
 ## Acceptance
 
 Replay recorded failures and test changed transport, source safety and recovery
@@ -123,7 +151,7 @@ jobs; they are not a new internal research quota.
 
 The first source-guided pilot reproduced further model formatting errors and a false
 branch premise; it did not pass. Those failures motivated the unified transport and
-original-question synthesis. The saved NASA pilot now returns a substantive answer with three exact citations to NASA originals, distinguishing multi-decade and single-year rates. Independent review accepted this narrow reconciliation; historical cutoff and same-unit comparison remain clarity improvements. The unseeded mountain and BIPM cases remain pending. No production
+original-question synthesis. The saved NASA pilot now returns a substantive answer with three exact citations to NASA originals, distinguishing multi-decade and single-year rates. Independent review accepted this narrow reconciliation; historical cutoff and same-unit comparison remain clarity improvements. The mountain definitions pass, but primary-source citation coverage is partial; BIPM's full requested comparison is still being evaluated. No production
 fixture dossiers or real emails were created.
 
 ## Release checks, 2 October 2026
@@ -141,3 +169,56 @@ focused transport/audit/exact-URL regressions plus the two-case literal-URL
 regression preserving parentheses. These suites overlap; the counts
 are not a unique total. Exact API lint and backlog guard passed. Controlled tests
 are separate from live quality acceptance.
+
+Core `cd3c921349a09c677ba3a3365a9e315b1c942a81` activated automatically at
+2026-10-01T23:08:14Z. Public `/api/ready` returned HTTP 200 with release
+`git-cd3c921349a0`, database and Redis ready. Both custom client domains and their
+public dossier lists returned 200; anonymous private dossier APIs returned 401.
+
+The continuation follow-through adds a fresh synchronous read view, reusing
+boolean guards and copied claim-review projections only until that view returns
+or raises. Standalone guards and later requests/provider fences remain fresh.
+Briefing preparation computes its dossier projection once. On the same isolated
+SQLite backup, cached and uncached authenticated GET responses were byte-for-byte
+identical (460,792 bytes), with 7.151 s versus 21.620 s elapsed without profiling.
+The earlier cProfile comparison was 11.076 s versus 31.838 s. No model/search
+calls occurred in these measurements; this is one continuation, not a production
+latency guarantee. Newly generated catalogue selections are explicit arrays;
+omission/null no longer silently selects every product feed. Legacy saved plans
+remain compatible, and broad web/direct source access is retained with `[]`.
+
+Final synthesis now retains a private draft/review checkpoint and each accepted
+point correction before a later transient provider failure. Reuse requires the
+same original prompt, evidence input, schema, endpoint/model and generation
+settings; current access, lease and source fences still run. Checkpoints are never
+displayed or exported as accepted findings, and are cleared on success or replaced
+input. Docker inference does not reuse them without a verified runtime identity.
+
+Bibliographic labels such as `p103` can support “page 103” without triggering an
+unnecessary rewrite. Wrong numerical values still fail; numeric presence alone
+does not establish semantic entailment. Precision repair cannot invent a new
+counterevidence role. A final per-request coverage check catches lost request
+parts after corrections and records an explicit unresolved part with partial
+status. This additional model check is fallible; unavailable review remains
+visible rather than claiming verification.
+
+Follow-through checks passed: 22 current-source/memory-fence and orientation
+cases, seven native provider recovery/checkpoint cases, and 59 focused synthesis,
+transport and audit cases plus the backlog guard. The isolated read-view invalidation/equality check,
+unified-core cases and backlog guard also passed. A stale test fixture requiring
+an orientation timeout of at most 20 seconds was updated to the existing admitted
+research setting of 45 seconds; no production privacy rule was relaxed.
+
+Once a final answer parses, numerical correction no longer regenerates its valid
+siblings. Failed individual corrections become named request gaps; entirely
+invalid answers still fail. Missing request coverage gets a focused correction
+against the already read originals, followed by another coverage check. An
+unavailable recheck cannot clear a previously known gap. New rejected-point gaps
+survive the limitations capacity and request bindings survive checkpoint storage.
+The completion summary explicitly calls a partial mission a partial answer.
+
+Latest native BIPM recovery completed in 77.3 s with one correct finding, four
+exact citations and two named gaps. Full semantic coverage remains unaccepted;
+see [independent live evidence](PUBLIC_RESEARCH_ACCEPTANCE.md). This verifies a
+usable partial delivery after retained-work recovery, not reliable completion
+of every complex question or a fresh end-to-end latency benchmark.

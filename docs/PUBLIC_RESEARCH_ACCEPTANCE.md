@@ -52,9 +52,9 @@ Repairs retain exact-cited siblings, expose rejected proposals as interpretation
 gaps, preserve complete-document requirements, prioritize submitted source URLs
 and retry final synthesis only after source work. Five claims survived the last
 mountain recovery; the run still did not complete a validated final dossier.
-Remaining live blockers are provider availability, strict final/whole-document
-output reliability and discovery relevance. No successful live answer or full
-product readiness is claimed.
+At this initial observation, live blockers were provider availability, strict
+final/whole-document output reliability and discovery relevance. No successful
+live answer had yet been observed; later recovery results are recorded below.
 
 Actual token counters are retained when providers return them; billing cost is
 unknown, never reported as zero. Detailed counts and local evidence paths are in
@@ -96,7 +96,40 @@ through provider timeouts/rate limits. Its initial 561.6 s run failed final cita
 validation; a 48.1 s native retry completed after concise per-request responses.
 The publication comparison was still lost. Focused point repair now receives its
 exact user-request binding and short numerical source context, preserving the part
-being answered. Native continuation of that saved dossier is under evaluation.
+being answered. Its subsequent continuation, using the already published code,
+took 3,455.0 s and failed final validation after 64 model exchanges. It retained
+the source work and reported `answer_unavailable`, with no final answer. This is
+a recorded failure, not completion or latest-code acceptance.
+
+A fresh explicit-catalogue run completed in 982.5 s, with ten source entries,
+nine document records fully read/reviewed and 17 exact citation triples.
+Independent review rated the answer **PARTIAL**: the 1960/1967 distinction was
+correct, but final answer points still omitted the requested publication dates.
+Two citations confirming historical repeal were incorrectly labelled
+counterevidence. The evidence contained the missing dates, so this is a synthesis
+failure, not a source-access gap. Evidence is retained in the parent host's
+`/tmp/hl-public-second-explicit-scope/first-completed-result.json` and
+`first-completed-receipt.json`. Native retry correctly declined because this
+completed run had no unavailable steps; no database state was altered to force it.
+
+The follow-through retains successful synthesis corrections across transient
+provider errors, recognizes attached page labels such as `p103`, and checks each
+literal request again after correction. Missing requested parts become named
+partial-answer gaps. Controlled tests prove these contracts; they do not prove
+live factual accuracy. The next native retry failed after 87.2 s when one invalid
+point triggered a whole-answer rewrite. The follow-through now preserves valid
+siblings and repairs missing requests separately; unsupported points become named
+gaps, while an entirely invalid answer still fails.
+
+Native recovery then produced a validated **partial** answer in 77.3 s with four
+exact citations and explicit gaps. The 1967 atomic-adoption conclusion is correct;
+the 1960 astronomical explanation and publication comparison remain missing.
+No false counterevidence survived. This demonstrates retained-work recovery and
+honest partial completion; it is not full BIPM acceptance. The final coverage
+records nine sources, six reused and one unchecked; three current document
+records completed reading/review. Do not describe these as nine newly reviewed
+originals. The final dossier is retained at
+`/tmp/hl-public-second-request-sections/result.json` on the parent host.
 The full BIPM requested answer remains unaccepted until independently checked. See [delivery contract](PRODUCT_END_TO_END.md)
 and the parent end-to-end checkpoint.
 Production dossier writes and emails remain zero.

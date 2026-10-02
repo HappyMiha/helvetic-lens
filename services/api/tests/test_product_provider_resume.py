@@ -13,6 +13,64 @@ from helvetic_lens.product_investigation_models import Investigation, Investigat
 from helvetic_lens.product_investigations import rows
 
 
+@pytest.mark.parametrize('action', ['continue', 'pause', 'withdraw'])
+def test_private_final_checkpoint_is_hidden_and_obeys_native_pause_and_source_fences(signed, monkeypatch, action):
+    import json
+
+    from test_product_early_orientation import exclude
+    from test_product_exploration import adapters
+    from test_product_exploration import start as explore
+
+    from helvetic_lens import research_gateway
+    from helvetic_lens.research_synthesis_resume import KEY
+
+    client, service, identity, model = signed
+    adapters(monkeypatch, service, model)
+    root, run, _ = explore(client)
+    execute, calls, source_ids = research_gateway.execute, [], []
+    marker = 'PRIVATE UNFINISHED ANSWER CHECKPOINT'
+    async def interrupted(service, work, seconds):
+        if work['phase'] != 'brief':
+            return await execute(service, work, seconds)
+        calls.append(work['branch_id'])
+        if len(calls) == 1:
+            source_ids.extend(s['id'] for s in work['input']['sources'])
+            work[KEY] = {'raw': marker, 'stage': 'reviewed'}
+            raise DomainError('Synthetic provider outage', 503, 'model_rate_limited')
+        assert work[KEY]['raw'] == marker
+        return await execute(service, work, seconds)
+    monkeypatch.setattr(research_gateway, 'execute', interrupted)
+    for _ in range(45):
+        tick(service, run['id'])
+        with service.db.session() as session:
+            job = session.get(Job, session.get(Investigation, run['id']).job_id)
+            if job.error_code == 'research_provider_backoff':
+                break
+    else:
+        pytest.fail('No private final checkpoint was retained')
+    url = root + '/investigations/' + run['id']
+    value = client.get(url).json()
+    assert marker not in json.dumps(value)
+    assert marker not in client.get(root + '/export').text
+    with service.db.session() as session:
+        assert session.get(InvestigationBranch, calls[0]).checkpoint[KEY]['raw'] == marker
+    if action == 'pause':
+        assert post(client, url + '/control', {'action': 'pause', 'expected_revision': value['revision']}).status_code == 200
+    elif action == 'withdraw':
+        exclude(service, identity, source_ids[0])
+    with service.db.session() as session:
+        job = session.get(Job, session.get(Investigation, run['id']).job_id)
+        job.available_at = utcnow() - timedelta(seconds=1)
+        session.commit()
+    tick(service, run['id'])
+    assert len(calls) == (2 if action == 'continue' else 1)
+    with service.db.session() as session:
+        branch = session.get(InvestigationBranch, calls[0])
+        if action == 'continue':
+            assert KEY not in branch.checkpoint
+    assert marker not in client.get(url).text
+
+
 def test_same_provider_input_does_not_restart_outage_retries_when_accounting_changes(signed, monkeypatch):
     from helvetic_lens import research_gateway
     client, service, _, model = signed

@@ -232,6 +232,10 @@ def finish_or_yield(session, run, job):
                 if limits and not unmetered(run):
                     run.status = "paused"
                 run.stop_reason = ("Research checks finished. " if unmetered(run) else f"Research paused at its budget ({limits}). " if limits else "Bounded research finished. ") + f"{pending} questions remain open or unresolved; {failed_steps} paths include unavailable or interrupted steps. Source support is not independent verification."
+                checkpoints = run.research_state.get("mission", {}).get("checkpoints", [])
+                if unmetered(run) and checkpoints and checkpoints[-1].get("answer", {}).get("status") == "partial":
+                    gaps = len(checkpoints[-1]["answer"].get("limitations", []))
+                    run.stop_reason = f"Research returned a partial answer with {gaps} named gaps. Sources and completed work are retained. Source support is not independent verification."
             from .product_document_reading import incomplete
             unfinished_documents = incomplete(branches)
             if (unmetered(run) and run.research_state.get("mission", {}).get("stop") == "answer_unavailable"
@@ -541,6 +545,14 @@ async def execute(service, job_id, worker):
         retry_key = (work.get("model_route", {}).get("evidence_transport", {}).get("input_fingerprint")
             or work["execution_route"]["input_fingerprint"])
         retries = state.setdefault("provider_retries", {})
+        from .research_synthesis_resume import KEY as synthesis_checkpoint
+
+        if work["phase"] == "brief":
+            state.pop(synthesis_checkpoint, None)
+            if transient and unmetered(run) and run.status in ACTIVE and work.get(synthesis_checkpoint):
+                # This remains a private proposal. All post-provider fences above
+                # must pass before retaining it, and every later answer is validated.
+                state[synthesis_checkpoint] = deepcopy(work[synthesis_checkpoint])
         if transient and unmetered(run) and run.status in ACTIVE and retries.get(retry_key, 0) < 3:
             retries[retry_key] = retries.get(retry_key, 0) + 1
             when = utcnow() + timedelta(seconds=30 * 2 ** (retries[retry_key] - 1))

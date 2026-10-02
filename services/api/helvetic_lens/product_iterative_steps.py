@@ -79,6 +79,10 @@ def prepare(session, run, branch, state, work):
         work["input"] = exploration.prepare(session, run, early=branch.phase == "orient")
         if branch.phase == "brief" and mission.enabled(run):
             work["input"]["research_mission"] = mission.context(session, run)
+            from .research_synthesis_resume import KEY
+
+            if work["unmetered_research"] and state.get(KEY):
+                work[KEY] = deepcopy(state[KEY])
         if branch.phase == "orient":
             work["early_clarification"] = clarification.enabled(run)
             work["timeout_seconds"] = 45 if work.get("unmetered_research") else 20

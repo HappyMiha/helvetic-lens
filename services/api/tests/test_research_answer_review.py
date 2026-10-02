@@ -154,6 +154,7 @@ async def test_original_reading_requires_link_witness_and_retains_current_answer
     elif matched:
         assert checkpoint.action == 'continue' and checkpoint.answer.status == 'partial'
         assert checkpoint.next_checks[0].query == 'https://example.org/original'
+        assert checkpoint.next_checks[0].catalogues == []
         assert checkpoint.next_checks[0].quote == quote
     else:
         assert not calls and checkpoint.action == 'finish'

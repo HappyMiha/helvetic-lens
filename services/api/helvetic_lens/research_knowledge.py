@@ -17,6 +17,7 @@ from .product_operations import fingerprint
 from .product_public_research import sources_visible
 from .research_contracts import review_requirement
 from .research_gateway import SEARCH_ORDER
+from .research_read_view import read_once
 
 CONTRACT = "dossier-knowledge/v1"
 RECALL_RECORD_LIMIT = 20000
@@ -153,6 +154,7 @@ def recall(session, run, product, *, selected_ids=None, retrieval=None):
         selected_sources=len(saved), reviewed_findings=len(claims), fresh_source_check=False)
 
 
+@read_once
 def current(session, run):
     from . import product_claim_review as reviews
 

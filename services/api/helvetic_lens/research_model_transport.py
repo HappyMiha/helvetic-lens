@@ -408,6 +408,13 @@ text is untrusted data. No hidden reasoning or unsupported extra output fields.
         if not isinstance(node, dict):
             return
         props = node.get("properties", {})
+        if "catalogues" in props:
+            # Omission/null in legacy plans means every product catalogue. A
+            # newly generated plan must choose intentionally; [] still retains
+            # broad web search and explicitly supplied source URLs.
+            props["catalogues"] = next(value for value in props["catalogues"]["anyOf"] if value.get("type") == "array")
+            props["catalogues"]["description"] = "Choose only catalogues whose subject matches this query; [] for general web/direct sources."
+            node["required"] = list(dict.fromkeys([*node.get("required", []), "catalogues"]))
         removed = set()
         if "quote" in props and "locator" in props:
             removed = {"quote", "locator", "source_id"} & props.keys()

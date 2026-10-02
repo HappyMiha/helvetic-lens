@@ -36,7 +36,9 @@ def setup(monkeypatch, service, model, mode=None):
         title = kwargs['response_schema']['title']
         if title == 'EarlyOrientation':
             assert 'No generic domain checklist' in system
-            assert 0 < kwargs['budget'].deadline - time.monotonic() <= 20
+            # Admitted completion-based research allows 45 seconds for this
+            # single operation; legacy bounded runs retain their shorter timeout.
+            assert 0 < kwargs['budget'].deadline - time.monotonic() <= 45
             source = data['sources'][0]
             cite = {'source_id': source['id'], 'quote': source['excerpts'][0]['text'], 'locator': 'p1'}
             result.update(clarification='Would you like to verify identity or follow the recipient records?',

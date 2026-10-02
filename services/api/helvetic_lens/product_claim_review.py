@@ -16,6 +16,7 @@ from .product_investigation_models import (
 )
 from .product_source_authority import options as source_options
 from .product_source_authority import recorded as source_recorded
+from .research_read_view import read_once
 
 PAGE_SIZE = 10
 EVIDENCE_LIMIT = 100
@@ -134,6 +135,7 @@ def decision_state(latest, latest_visible, current):
         "finding_status": "PENDING_REVIEW" if stale or not decision else decision.upper()}
 
 
+@read_once
 def projection(session, claim, *, current=None):
     """Current private search metadata; no reviewer identity, reason or history."""
     current = current or context(session, claim)

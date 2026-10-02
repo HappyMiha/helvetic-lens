@@ -17,6 +17,7 @@ from .product_api import fail, iso
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import ACTIVE, Citation, citation, event, rows, scope
 from .product_source_reviews import current_reviews
+from .research_read_view import read_once, read_view
 
 CONTRACT = "exploration/v1"
 ASSESSMENT_CONTRACT = "selected-question-assessment/v1"
@@ -218,6 +219,7 @@ def sources(session, run):
         and not s.snapshot.get("duplicate_of")}
 
 
+@read_view
 def prepare(session, run, *, early=False):
     from .product_document_analysis import compact_sources
 
@@ -227,6 +229,7 @@ def prepare(session, run, *, early=False):
             for q in run.research_state["questions"]]}
     synthesis_sources = deepcopy(value["sources"])
     state = run.research_state["exploration"]
+    projected = projection(session, run)
     if early:
         from . import product_early_clarification as clarification
 
@@ -235,8 +238,8 @@ def prepare(session, run, *, early=False):
             value["claims"] = informed.public_claims(session, run, {s["id"] for s in value["sources"]})
         informed.prepare(session, run, value)
     if not early:
-        value["research_scope"] = projection(session, run)["research_scope"]
-        value["question_assessments"] = projection(session, run)["question_assessments"]
+        value["research_scope"] = projected["research_scope"]
+        value["question_assessments"] = projected["question_assessments"]
         from . import product_question_renewal as renewal
 
         renewal.prepare(session, run, value)
@@ -246,10 +249,10 @@ def prepare(session, run, *, early=False):
     if not early and state.get("assessment_contract") == ASSESSMENT_CONTRACT:
         value["assessment_question"] = {"contract": ASSESSMENT_CONTRACT,
             "question_id": state["previous"]["follow_up_id"], "question": run.question}
-    orientation = projection(session, run).get("orientation")
+    orientation = projected.get("orientation")
     if not early and orientation and orientation["status"] == "ready":
         value["early_orientation"] = orientation["briefing"]
-        value["interpretation_changes"] = projection(session, run)["changes"]
+        value["interpretation_changes"] = projected["changes"]
     if not early:
         # Keep canonical source records intact for exact current-rights fences.
         # Reconciliation selects original passages; it is not answer evidence.
@@ -418,6 +421,7 @@ def validated_question_points(session, run, supplied, assessment):
     return value
 
 
+@read_once
 def adaptive_current(session, run):
     from . import product_branch_assessment as branch_assessment
     from . import product_direction_assessment as direction_assessment
