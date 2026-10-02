@@ -126,12 +126,16 @@ def test_all_inputs_not_just_quoted_inputs_remain_source_contained(signed, monke
         assert value["exploration"]["orientation"]["status"] == "evidence_changed"
     assert value["exploration"]["orientation"]["briefing"] is None
     assert "PRIVATE" not in json.dumps(value["exploration"])
-    complete(client, service, root + "/investigations", run)
-    assert "early_orientation" not in trace["briefings"][0]
+    final = complete(client, service, root + "/investigations", run)
+    if during_model:
+        assert final["status"] == "paused", 'Withdrawn synthesis inputs must stop the active worker'
+        assert not trace.get("briefings"), 'No final model call may use withdrawn evidence'
+    else:
+        assert "early_orientation" not in trace["briefings"][0]
 
 
 @pytest.mark.parametrize("constraint", ["one_source", "time"])
-def test_early_checkpoint_is_optional_when_evidence_or_remaining_time_is_insufficient(signed, monkeypatch, constraint):
+def test_early_checkpoint_needs_evidence_but_unmetered_research_has_no_elapsed_budget(signed, monkeypatch, constraint):
     client, service, _, model = signed
     trace = adapters(monkeypatch, service, model)
     if constraint == "one_source":
@@ -149,7 +153,7 @@ def test_early_checkpoint_is_optional_when_evidence_or_remaining_time_is_insuffi
                 "used": {"active_seconds": 320}}
             session.commit()
     final = complete(client, service, root + "/investigations", run)
-    assert not trace.get("orientations")
+    assert bool(trace.get("orientations")) == (constraint == "time")
     assert final["exploration"]["status"] == "ready"
 
 

@@ -118,8 +118,12 @@ def retryable_branches(session, run):
     if run.status not in {"failed", "completed"} or run.research_state.get("exploration", {}).get("continued_by"):
         return []
     result = []
-    for branch in rows(session, InvestigationBranch, run):
-        if branch.status != "failed":
+    branches = rows(session, InvestigationBranch, run)
+    reached_brief = any(branch.phase == "brief" for branch in branches)
+    for branch in branches:
+        # Early orientation cannot help recover an already prepared final answer.
+        # Preserve its history, but retry actual failed research instead.
+        if branch.status != "failed" or (branch.phase == "orient" and reached_brief):
             continue
         state = branch.checkpoint
         documents = state.get("document_reads", {})

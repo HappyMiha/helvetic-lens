@@ -14,7 +14,8 @@ from helvetic_lens.product_investigations import rows
 
 
 @pytest.mark.parametrize('action', ['continue', 'pause', 'withdraw'])
-def test_private_final_checkpoint_is_hidden_and_obeys_native_pause_and_source_fences(signed, monkeypatch, action):
+@pytest.mark.parametrize('interruption', ['provider', 'deadline'])
+def test_private_final_checkpoint_is_hidden_and_obeys_native_pause_and_source_fences(signed, monkeypatch, action, interruption):
     import json
 
     from test_product_early_orientation import exclude
@@ -36,6 +37,11 @@ def test_private_final_checkpoint_is_hidden_and_obeys_native_pause_and_source_fe
         if len(calls) == 1:
             source_ids.extend(s['id'] for s in work['input']['sources'])
             work[KEY] = {'raw': marker, 'stage': 'reviewed'}
+            if interruption == 'deadline':
+                import asyncio
+                # Exercise the builtin exception produced by an expired task deadline.
+                async with asyncio.timeout(0):
+                    await asyncio.sleep(0)
             raise DomainError('Synthetic provider outage', 503, 'model_rate_limited')
         assert work[KEY]['raw'] == marker
         return await execute(service, work, seconds)
@@ -303,7 +309,8 @@ def test_completed_review_work_continues_automatically_with_source_and_privacy_f
 
 
 @pytest.mark.parametrize('progress', [True, False])
-def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypatch, progress):
+@pytest.mark.parametrize('interruption', ['provider', 'deadline'])
+def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypatch, progress, interruption):
     from test_product_exploration import adapters
     from test_product_exploration import start as explore
 
@@ -325,6 +332,8 @@ def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypa
             parts['final_reviews'] = {f'clauses:accepted-{i}': {'overall': {'verdict': 'supported'}}
                 for i in range(len(calls))}
         work[KEY] = {'stage': 'reviewed', 'raw': f'Private draft {len(calls)}', 'parts': parts}
+        if interruption == 'deadline':
+            raise TimeoutError('Worker step deadline')
         raise DomainError('Temporary outage after work or unchanged input', 503, 'model_rate_limited')
     monkeypatch.setattr(research_gateway, 'execute', intermittent)
     for _ in range(60):
@@ -344,3 +353,33 @@ def test_only_new_validated_work_renews_a_later_provider_outage(signed, monkeypa
         pytest.fail('Provider recovery never reached a final state')
     assert final_status == ('completed' if progress else 'failed')
     assert len(calls) == (5 if progress else 4)
+
+
+@pytest.mark.parametrize('brief_status', [None, 'failed', 'completed'])
+def test_retry_eligibility_skips_only_obsolete_early_orientation(signed, monkeypatch, brief_status):
+    from test_product_exploration import adapters
+    from test_product_exploration import start as explore
+
+    from helvetic_lens.product_contributions import retryable_branches
+    client, service, _, model = signed
+    adapters(monkeypatch, service, model)
+    _, run, _ = explore(client)
+    with service.db.session() as session:
+        saved = session.get(Investigation, run['id'])
+        saved.status = 'failed'
+        def branch(phase, status):
+            value = InvestigationBranch(organization_id=saved.organization_id, dossier_id=saved.dossier_id,
+                investigation_id=saved.id, query=phase, phase=phase, status=status, reason='Synthetic unavailable phase',
+                checkpoint={'steps': [{'status': 'unavailable'}]})
+            session.add(value)
+            session.flush()
+            return value
+        orient = branch('orient', 'failed')
+        source = branch('reflect', 'failed')
+        brief = branch('brief', brief_status) if brief_status else None
+        candidates = {b.id for b in retryable_branches(session, saved)}
+        assert (orient.id in candidates) == (brief_status is None)
+        assert source.id in candidates, 'Final recovery must not hide unfinished source work'
+        if brief is not None:
+            assert (brief.id in candidates) == (brief_status == 'failed')
+        assert orient.status == 'failed', 'Historical errors are not rewritten as success'

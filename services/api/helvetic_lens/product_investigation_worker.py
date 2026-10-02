@@ -476,7 +476,7 @@ async def execute(service, job_id, worker):
         # Provider bodies and untrusted source strings never become job errors,
         # integration-log messages or publicly observable reasoning.
         failed = True
-        code = getattr(exc, "code", None)
+        code = getattr(exc, "code", None) or ("model_timeout" if isinstance(exc, TimeoutError) else None)
         if code in {"model_rate_limited", "model_temporarily_unavailable", "model_upstream_timeout", "model_timeout", "model_unreachable", "model_transport_error", "research_review_incomplete", "research_review_yield"}:
             transient = code
 

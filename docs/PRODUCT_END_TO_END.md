@@ -749,3 +749,38 @@ Its trace repeated correction writers 6/10/6 times for the three requests; nativ
 artifacts and the isolated database were preserved as ninth-failed-*. No further
 provider attempt was started while that run was active. Content acceptance stays
 open until the corrected runtime completes and its output is independently read.
+
+
+### Keep final recovery durable at the worker boundary
+
+Scope MV2-020: ninth-failed native evidence also confirms that expiration of the
+worker's asyncio deadline raised builtin TimeoutError, which was not classified
+as transient and erased the private final checkpoint. Classify that exception
+through the existing transient/fence path; do not catch external cancellation.
+Ordinary retry also re-admitted a failed optional early orientation despite an
+existing brief branch, buying four obsolete calls before answer recovery. Exclude
+that optional branch after the durable briefing milestone, preserving initial
+orientation and source retries. Acceptance: native deadline retry preserves exact
+private work; source/lease/privacy fences and consecutive-outage handling remain;
+final retry eligibility excludes obsolete orientation but retains genuine work.
+Existing source/provider readiness and automatic release dependencies unchanged.
+
+Implemented both worker-boundary fixes. Exact API lint and independent read-only
+review passed. The 35-case native group passed 30 cases initially; three new
+fixture rows lacked their required reason, and two older orientation expectations
+pre-dated source-withdrawal pausing and unmetered account research. Corrected the
+fixtures and strengthened those two expectations (no final inference after source
+withdrawal; elapsed accounting does not suppress unmetered orientation). All five
+affected reruns passed. No provider or production data was used by these tests.
+
+The exact f26714f native continuation completed in 1,397.3 seconds, 13 steps,
+with 12 source entries: six current documents and six reused captures. It retained
+one point/eight exact quotation references and three gaps. Both unchanged product
+readers rendered that real answer and every quotation/gap. The durable correction
+round completed its two tasks once across provider interruptions. Independent
+content acceptance FAILED: full recovery was wrongly called unknown despite a
+retained negative answer; two supportive passages were labelled counterevidence;
+the requested evidence gaps were replaced by validation notices. Terminal native
+completion is therefore not full product acceptance. Preserve tenth-completed-*
+and the isolated database. No further provider run is authorized by this result
+alone; implement a coherent synthesis correction before another evaluation.
