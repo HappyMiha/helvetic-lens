@@ -290,3 +290,19 @@ checkpoints still resume authorized saved frontiers; this is evidence-based
 coordination rather than a new round, depth, source or account quota. The ongoing
 public pilot began before this scheduler change and must not be reported as its
 live acceptance. No active pilot was restarted or interrupted for the update.
+
+A retained real provider correction finally supplied the requested publication
+comparison, but inserted `(citation_ref N)` presentation labels into its prose.
+The numeric gate correctly rejected these as unexplained numbers. Normalize
+only this exact transport label when N is already selected in that point's
+evidence; preserve all factual numbers and reject unknown labels as before.
+Acceptance: replay the retained actual correction, retain its full citation
+bindings, and prove that a mismatched label or an unsupported year is not cleared.
+
+The retained three-call correction replay passed with identical source payloads,
+five exact canonical citations, no numeric errors and no requested-part gap.
+Independent review accepted its decision/publication comparison. This is a
+retained-output pass, not a fresh full mission; see PUBLIC_RESEARCH_ACCEPTANCE.md.
+The affected focused suites passed 81 cases plus the backlog guard; exact lint
+passed. Global checkpoint release `b2081c4b288bdde38e6fd77e993ca810b3d57c51`
+activated automatically at 2026-10-02T01:32:13Z.

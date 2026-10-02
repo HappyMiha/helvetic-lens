@@ -156,3 +156,19 @@ def test_combined_answer_cannot_be_projected_as_one_direct_legacy_quote():
     assert {ref.quote for ref in result.mission_checkpoint.answer.points[0].evidence} == {
         'The records were published in 2001.', 'An earlier edition was published in 1999.'}
     assert len(result.findings) == 1  # Only the independent single-citation sibling.
+
+
+def test_selected_citation_labels_are_not_factual_numbers_but_unknown_labels_and_dates_still_fail():
+    from helvetic_lens.research_answer_parts import remove_citation_labels
+    from helvetic_lens.research_gateway import answer_quantity_errors
+    data = {'statement': 'It was published in 2001 (citation_ref 77).', 'evidence': [{'citation_ref': 77, 'role': 'support'}]}
+    remove_citation_labels(data)
+    assert data['statement'] == 'It was published in 2001.'
+    answer = AssessmentOutcome(status='possible_answer', limitations=[], points=[{'statement': data['statement'],
+        'evidence': [{'source_id': 'a', 'locator': 'p1', 'quote': 'Published in 2001.', 'role': 'support'}]}])
+    assert not answer_quantity_errors(answer)
+    data['statement'] = 'It was published in 2099 (citation_ref 78).'
+    remove_citation_labels(data)
+    assert data['statement'] == 'It was published in 2099 (citation_ref 78).'
+    answer.points[0].statement = data['statement']
+    assert answer_quantity_errors(answer)

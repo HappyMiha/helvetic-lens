@@ -168,3 +168,26 @@ These are real provider calls over supplied synthetic evidence, not discovery or
 whole-document reading acceptance. The traces retain unknown billing cost and
 actual failures. No production dossier, email, new provider or key was created.
 The native public continuation and its terminal result are recorded separately.
+
+## Retained BIPM publication correction — 2 October 2026
+
+The released-code final synthesis received a real 429; one delayed native
+checkpoint continuation retained earlier work and completed with a partial result.
+Its last actual proposal supplied the missing decision/publication distinction,
+but inserted selected citation IDs as presentation labels in the statement.
+Those numbers caused precision validation to reject the otherwise useful point.
+
+Current code replayed the three retained selection/writing/correction responses
+through `answer_request`, asserting byte-equivalent decoded source payloads and
+exact canonical source/locator/quote bindings. Removing only selected
+`(citation_ref N)` labels gave no quantity errors and no remaining part gap.
+An independent content review accepted the narrow comparison: 1956 decision,
+1960 ratification, 1961 proceedings; 1967 atomic adoption/replacement and 1969
+proceedings. The separately retained first point explicitly answers the atomic
+adoption question. The answer does not claim 1969 was the first or only publication.
+
+Artifact: `/tmp/hl-request-pack-evaluation-released-338e23b/bipm-publication-normalized-replay.json`.
+This is a substantive retained-output replay PASS, not a newly completed live
+mission. The earlier partial result and all failures remain unchanged. Unknown
+labels and unsupported factual years still fail regression checks. No additional
+provider call, production dossier or email was needed for this replay.

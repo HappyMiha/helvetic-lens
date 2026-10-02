@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: Core338e23b/Sites86 live; global completion checkpoints tested; release pending. Broader quality open. [Evidence](docs/PRODUCT_END_TO_END.md).
+Question-to-dossier IN PROGRESS: Coreb2081c4/Sites86 live; citation-label replay passed. Broader live quality open. [Evidence](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2768,7 +2768,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** question-to-dossier IN PROGRESS, Core265afbe/Sites86 live. NASA narrow pass; BIPM partial. Tested: global checkpoints control saved-frontier deepening after each read batch; source-start instructions stay operational context. [Acceptance](docs/PRODUCT_END_TO_END.md). Full architecture/human acceptance not claimed.
+**Current direction:** question-to-dossier IN PROGRESS, Coreb2081c4/Sites86 live. NASA narrow pass; BIPM retained-output comparison passed. Global checkpoints deployed; citation-label correction tested. [Acceptance](docs/PRODUCT_END_TO_END.md). Full architecture/human acceptance not claimed.
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in
