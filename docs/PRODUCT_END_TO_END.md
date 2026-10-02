@@ -831,3 +831,32 @@ round, withhold that unverified point, keep its requested gap and publish only
 independently checked siblings. Real timeouts, malformed reviews and uncompleted
 checks still resume privately. Acceptance covers the actual cannot_assess result
 versus deadline interruption; no scientific facts or source gates change.
+
+
+### Compose one dossier instead of rewriting each sentence
+
+MV2-020/023, 2 October: Core2c514ef/Sites88 are live. The real isolated
+seven-document journey ended with a useful partial answer, but repeated findings,
+an unsupported demand for certainty about future events, and answered material
+labelled as gaps. Exact quotation matching is not substantive acceptance.
+The trace shows the unified draft already covered the main distinctions; the
+unconditional per-sentence writers then duplicated and weakened it.
+
+Keep one canonical answer and the literal request checklist. Remove native
+per-sentence ownership and unconditional regeneration. The existing durable
+correction round repairs only identified unsupported assertions or omitted
+requests, preserving all other points and full source review. Numerical repair
+may correct only its supplied assertion. Source-established uncertainty is a
+cited conclusion; future guarantees are not missing evidence. Dependencies and
+source readiness are unchanged: existing captured public originals, current
+providers, source/consent fences and saved native work. Acceptance covers a
+complete draft without part writers, one omitted-part correction, retained
+siblings across interruption, exact citations and an actual native result.
+
+Implemented the shared-answer path. All169 affected checks, including complete
+draft/no-part-writer, one omitted request, numerical rejection, retained citations
+and interrupted final repair, passed. Exact API lint, backlog guard and independent
+read-only review passed. Coverage is checked on the actual surviving findings;
+known coverage replaces obsolete host notices, while source gaps and unavailable
+review remain explicit. The next ordinary public continuation uses captured work
+and the exact recorded implementation; substantive acceptance remains pending.

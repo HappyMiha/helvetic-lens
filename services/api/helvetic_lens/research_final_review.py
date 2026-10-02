@@ -75,7 +75,10 @@ answer that requested part and this entry merely repeats their explanation;
 answer_available when originals contain an answer that delivered_points omit;
 outside_request for optional unrequested background. The absence of a topic
 from these selected sources does not prove the world lacks that evidence. Do not
-require all possible related science before answering the actual question.
+require all possible related science before answering the actual question. A claim
+that evidence is missing must identify a specific source-established unknown;
+a demand for guaranteed future outcomes is not established merely because the
+sources discuss conditional projections or possible influences.
 When prior_review_concerns are supplied, explicitly judge EVERY concern against
 the corrected statement and its current citations. Check whether the SAME wrong
 relationship remains under new wording; do not split away the disputed connection.
@@ -343,13 +346,22 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             else:
                 identity = answer.limitations[index]
                 key = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'].strip() == identity), None)
-                focus = wire.request_keys.get(key) or work['input']['original_question']
+                focus = wire.request_keys.get(key) or ('Resolve this stated limitation using the originals: ' + identity)
             observations.append({'hint': deepcopy(hint), 'identity': defect_identity(index) if kind == 'points' else identity})
             task = tasks.setdefault(key or (kind, index), {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
             task[kind if kind == 'points' else 'gaps'].append(identity)
             # Citation numbers belong to this review, not the correction pack.
             task['issues'].append({'target': kind, 'signal': hint['review_signal'], 'instruction': hint['instruction'],
                 'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))]})
+        # One shared answer keeps coverage as a checklist, not separate writers.
+        # Recover only a genuinely omitted request identified by that checklist.
+        for hint in checked['hints']:
+            if hint.get('review_signal') != 'requested_part_missing' or not hint.get('user_request'):
+                continue
+            request = hint['user_request']
+            tasks.setdefault(('request', request), {'key': None, 'focus': request,
+                'points': [], 'gaps': [], 'issues': [{'target': 'coverage',
+                    'signal': 'requested_part_missing', 'instruction': hint.get('instruction', 'Answer only this omitted request from the original evidence.'), 'original_text': []}]})
         for task in tasks.values():
             task['points'] = list(dict.fromkeys(task['points']))
         # Ordered JSON data survives canonical slot regrouping; indices do not.
@@ -403,6 +415,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         plan['completed'] += 1
         retain()
     checked = await check()  # Every changed assertion and gap is checked again.
+    checked_answer = fingerprint(answer.model_dump())
     # Preserve known defects by identity after replacement/reordering/removal.
     identities = [defect_identity(i) for i in range(len(answer.points))]
     for observation in plan['observations']:
@@ -477,6 +490,10 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         if hint.get('path', [])[:2] == ['answer', 'limitations']]
     non_gaps = {answer.limitations[hint['path'][2]] for hint in checked['hints']
         if hint.get('path', [])[:2] == ['answer', 'limitations'] and hint.get('review_signal') == 'not_a_gap'}
+    answered_text = {point.statement.strip() for point in answer.points}
+    repeated = {gap for gap in answer.limitations if gap.strip() in answered_text}
+    bad_gaps = list(dict.fromkeys([*bad_gaps, *repeated]))
+    non_gaps.update(repeated)
     gap_keys = {gap: next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'].strip() == gap), None)
         for gap in bad_gaps}
     if rejected:
@@ -511,6 +528,22 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                 if ref.role == 'counterevidence' and (ref.source_id, ref.locator, ref.quote) in originals:
                     ref.role = 'support'
     checked.pop('positive_witnesses', None)
+    if fingerprint(answer.model_dump()) != checked_answer:
+        # Removing an unsupported answer can reopen a previously covered request.
+        # Coverage must describe the actual delivered siblings, not the old draft.
+        coverage = await review.audit(service.settings, work, wire, answer,
+            deadline-monotonic(), coverage_only=True)
+        checked['question_coverage'] = coverage.get('question_coverage')
+        checked['hints'] = [hint for hint in checked['hints'] if 'user_request' not in hint] + [
+            hint for hint in coverage.get('hints', []) if 'user_request' in hint]
+        if coverage.get('question_coverage') is None:
+            checked['status'] = 'partial'
+    if not wire.request_keys and checked.get('question_coverage') in {'covered', 'missing'}:
+        # Processing failures are history, not scientific absence. Current literal
+        # coverage supplies any remaining user-facing request notice in the caller.
+        obsolete = set(wire.workflow_gaps) - {REVIEW_NOTICE}
+        answer.limitations = [gap for gap in answer.limitations if gap not in obsolete]
+        checked['retired_workflow_notices'] = sorted(obsolete)
     if checked.get('status') == 'partial':
         notice(REVIEW_NOTICE)
     from .research_answer_parts import reconcile_status

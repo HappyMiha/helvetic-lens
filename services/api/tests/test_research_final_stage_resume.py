@@ -4,7 +4,6 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
-from research_pack_fixtures import atomic_pack_model
 from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
@@ -17,37 +16,44 @@ from helvetic_lens.research_synthesis_resume import KEY
 
 
 @pytest.mark.asyncio
-async def test_final_coverage_interruption_retains_regrouped_request_ownership(monkeypatch):
-    from test_research_answer_parts import fixture
-
+async def test_final_coverage_interruption_retains_flat_final_order_and_citations(monkeypatch):
     from helvetic_lens import research_final_coverage, research_final_review
-    wire, parsed, schema = fixture(2)
-    work = deepcopy(wire.work)
+
+    original = ['Published in 2001.', 'An earlier edition was published in 1999.']
+    work = {'phase': 'brief', 'unmetered_research': True, 'input': {
+        'original_question': 'When were the two editions published?', 'research_mission': {},
+        'sources': [{'id': 'a', 'kind': 'public_source', 'title': 'Original registry',
+            'excerpts': [{'passage': f'p{i + 1}', 'text': statement}
+                for i, statement in enumerate(original)]}]}}
+    initial = deepcopy(work)
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
-    raw = wire.encode_checkpoint(parsed)
-    original = ['Published in 2001.', 'An earlier edition was published in 1999.']
-    interrupted = [False]
-    @atomic_pack_model
+    schema = mission_schema(Briefing)
+    raw = json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [
+        {'statement': statement, 'evidence': [{'citation_ref': i + 1, 'role': 'support'}]}
+        for i, statement in enumerate(original)]}, 'next_action': 'finish'})
+    calls, interrupted = [], [False]
     async def complete(system, text, **options):
         data = json.loads(text)
-        if 'requested_part' not in data:
-            return raw
-        if 'citation_refs' in options['response_schema']['properties']:
-            return selection_json([1, 2], options)
-        index = int('record 2' in data['requested_part'])
-        return json.dumps({'statement': original[index], 'remaining_gap': '',
-            'evidence': [{'citation_ref': index + 1, 'role': 'support'}]})
+        assert 'requested_part' not in data, 'A complete shared draft needs no request-pack rewrite'
+        outcome = options['response_schema']['$defs']['AssessmentOutcome']['properties']
+        assert 'points' in outcome and 'responses' not in outcome
+        calls.append(data)
+        return raw
     async def audit(*args, **kwargs):
         return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
     async def final(service, work, wire, parsed, *args, **kwargs):
-        # A gap-only repair can append an earlier request after a later one.
-        parsed.mission_checkpoint.answer.points.reverse()
-        wire.point_requests.reverse()
+        assert wire.point_requests == [] and wire.request_keys == {}
+        # A final correction can change the readable point order. Resume must
+        # retain that corrected order and its citations, not restore the draft.
+        answer = parsed.mission_checkpoint.answer
+        if [p.statement for p in answer.points] == original:
+            answer.points.reverse()
         return {'status': 'checked', 'hints': [], 'question_coverage': 'covered'}
     async def reconcile(settings, work, wire, answer, *args, **kwargs):
-        assert wire.point_requests == ['r1', 'r2']
-        assert [p.statement for p in answer.points] == original
+        assert wire.point_requests == [] and wire.request_keys == {}
+        assert [p.statement for p in answer.points] == original[::-1]
+        assert [p.evidence[0].quote for p in answer.points] == original[::-1]
         kwargs['on_progress']()
         if not interrupted[0]:
             interrupted[0] = True
@@ -63,10 +69,16 @@ async def test_final_coverage_interruption_retains_regrouped_request_ownership(m
     service = SimpleNamespace(settings=settings, model_client=model)
     with pytest.raises(DomainError):
         await gateway.complete(service, work, '', schema, 90)
-    slots = json.loads(work[KEY]['raw'])['answer']['responses']
-    assert [slots[key]['points'][0]['statement'] for key in ('r1', 'r2')] == original
-    result = schema.model_validate_json(await gateway.complete(service, work, '', schema, 90))
-    assert [p.statement for p in result.mission_checkpoint.answer.points] == original
+    saved = json.loads(json.dumps(work[KEY]))
+    points = json.loads(saved['raw'])['answer']['points']
+    assert [p['statement'] for p in points] == original[::-1]
+    assert [p['evidence'][0]['citation_ref'] for p in points] == [2, 1]
+    before = len(calls)
+    resumed = {**initial, KEY: saved}
+    result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
+    assert len(calls) == before == 2, 'Coverage resume must not repeat draft generation or review'
+    assert [p.statement for p in result.mission_checkpoint.answer.points] == original[::-1]
+    assert [p.evidence[0].quote for p in result.mission_checkpoint.answer.points] == original[::-1]
 
 
 @pytest.mark.asyncio
@@ -83,12 +95,10 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
     initial = deepcopy(work)
     def point(statement, ref):
         return {'statement': statement, 'evidence': [{'citation_ref': ref, 'role': 'support'}]}
-    raw = json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
-        'r1': {'disposition': 'answered', 'remaining_gap': '', 'points': [point(bad, 1)]},
-        'r2': {'disposition': 'answered', 'remaining_gap': '', 'points': [point(sibling, 2)]}}}, 'next_action': 'finish'})
+    raw = json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
+        'points': [point(bad, 1), point(sibling, 2)]}, 'next_action': 'finish'})
     calls, interrupted = [], [False]
 
-    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'final_claims_and_gaps' in value:
@@ -109,16 +119,14 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
             return json.dumps({'overall': verdict, 'clauses': {'S0': verdict},
                 **({'concern_checks': [{'id': key, 'outcome': 'resolved', 'reason': '', 'citation_refs': [1]}
                     for key in value['prior_review_concerns']['concerns']]} if value.get('prior_review_concerns') else {})})
-        if 'requested_part' in value:
-            first = value['requested_part'] == 'Who operates the registry?'
-            calls.append(('synthesis', value['requested_part']))
-            if 'citation_refs' in kwargs['response_schema']['properties']:
-                return selection_json([1 if first else 2], kwargs)
-            return json.dumps({**point(bad if first else sibling, 1 if first else 2), 'remaining_gap': ''})
+        assert 'requested_part' not in value, 'Only the failed final assertion may be corrected'
         calls.append(('draft', ''))
         return raw
 
     async def unchanged(*args, **kwargs):
+        assert args[2] == bad
+        assert [p['statement'] for p in kwargs['feedback']['already_answered']] == [sibling]
+        calls.append(('correction', bad))
         return [AssessmentPoint(statement=bad, evidence=[{'source_id': 'a' * 36, 'locator': 'p1',
             'quote': good, 'role': 'support'}])], '', {'status': 'proposed'}
     async def audit(*args, **kwargs):
@@ -135,8 +143,8 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
         await gateway.complete(service, work, '', schema, 90)
     saved = json.loads(json.dumps(work[KEY]))
     assert saved['stage'] == 'finalizing'
-    slots = json.loads(saved['raw'])['answer']['responses']
-    assert slots['r1']['points'] == [point(good, 1)] and slots['r2']['points'] == [point(sibling, 2)]
+    assert json.loads(saved['raw'])['answer']['points'] == [point(good, 1), point(sibling, 2)]
+    assert calls.count(('draft', '')) == 2 and calls.count(('correction', bad)) == 1
     before = len(calls)
     resumed = {**initial, KEY: saved}
     result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
@@ -165,7 +173,6 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
     calls, interrupted = [], [False]
     def point(index, statement):
         return {'statement': statement, 'evidence': [{'citation_ref': index+1, 'role': 'support'}]}
-    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'final_claims_and_gaps' in value:
@@ -181,8 +188,10 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
                     'reason': '', 'citation_refs': [ref]} for key in value['prior_review_concerns']['concerns']]}
                     if value.get('prior_review_concerns') else {})})
         if 'requested_part' in value:
-            index = ['Who operates the registry?', 'Who owns the archive?', 'Is the archive public?'].index(value['requested_part'])
             repair = bool(value.get('review_feedback'))
+            assert repair, 'A complete shared draft needs no unconditional request packs'
+            index = wrong.index(value['requested_part'])
+            assert index < 2, 'The valid sibling must never be rewritten'
             selection = 'citation_refs' in kwargs['response_schema']['properties']
             calls.append(('select' if selection else 'write', index, repair))
             if selection:
@@ -191,14 +200,19 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
                 interrupted[0] = True
                 raise DomainError('Synthetic writer interruption', 503, 'model_rate_limited')
             if repair and index == 0 and first_result == 'unresolved':
-                return json.dumps({'statement': '', 'evidence': [], 'remaining_gap': ''})
-            return json.dumps({**point(index, source[index] if repair else wrong[index]), 'remaining_gap': ''})
+                return json.dumps({'points': [], 'remaining_gap': ''})
+            return json.dumps({'points': [point(index, source[index])], 'remaining_gap': ''})
         calls.append(('draft',))
-        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
-            f'r{i+1}': {'disposition': 'answered', 'remaining_gap': '', 'points': [point(i, wrong[i])]}
-            for i in range(3)}}, 'next_action': 'finish'})
-    async def audit(*args, **kwargs):
-        return {'status': 'checked', 'question_coverage': 'covered', 'hints': [], 'decisions': []}
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
+            'points': [point(i, wrong[i]) for i in range(3)]}, 'next_action': 'finish'})
+    async def audit(settings, work, wire, answer, seconds, **kwargs):
+        statements = {p.statement for p in answer.points}
+        assert statements & {source[1], wrong[1]} and source[2] in statements
+        operator_present = bool(statements & {source[0], wrong[0]})
+        return {'status': 'checked', 'question_coverage': 'covered' if operator_present else 'missing',
+            'hints': [] if operator_present else [{'path': ['answer'],
+                'review_signal': 'requested_part_missing', 'user_request': 'Who operates the registry?',
+                'instruction': 'The remaining answer does not identify the registry operator.'}], 'decisions': []}
     async def original(*args, **kwargs):
         return None
     monkeypatch.setattr(model, 'complete', complete)
@@ -209,8 +223,14 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
         await gateway.complete(service, work, '', schema, 90)
     saved = json.loads(json.dumps(work[KEY]))
     plan = saved['parts']['final_correction_round']
+    assert saved['stage'] == 'finalizing'
     assert plan['completed'] == 1 and len(plan['tasks']) == 2
     assert len(plan['receipts']) == 1
+    assert calls.count(('draft',)) == 2
+    assert [call for call in calls if call[0] == 'select'] == [('select', 0, True), ('select', 1, True)]
+    saved_points = json.loads(saved['raw'])['answer']['points']
+    assert saved_points == [point(0, source[0] if first_result == 'corrected' else wrong[0]),
+        point(1, wrong[1]), point(2, source[2])]
     before = len(calls)
     resumed = {**initial, KEY: saved}
     result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
@@ -220,5 +240,12 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
     assert [call for call in later if call[0] == 'write'] == [('write', 1, True)]
     assert result.mission_checkpoint.answer.points[-1].statement == source[2]
     assert [p.statement for p in result.mission_checkpoint.answer.points] == (source if first_result == 'corrected' else source[1:])
+    assert [p.evidence[0].quote for p in result.mission_checkpoint.answer.points] == (source if first_result == 'corrected' else source[1:])
+    answer = result.mission_checkpoint.answer
+    if first_result == 'corrected':
+        assert answer.status == 'possible_answer' and not answer.limitations
+    else:
+        assert answer.status == 'partial'
+        assert answer.limitations == ['This answer has not resolved the requested part: Who operates the registry?']
     assert 'final_correction_round' not in json.dumps(resumed['model_route'])
     assert all('review_feedback' not in json.dumps(ref.model_dump()) for p in result.mission_checkpoint.answer.points for ref in p.evidence)

@@ -107,16 +107,20 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
         'research_mission': {}, 'sources': [{'id': 'a' * 36, 'kind': 'public_source',
             'excerpts': [{'passage': 'p1', 'text': 'The meeting adopted the proposal in 2001.'}]}]}}
     point = {'statement': 'The proposal was adopted in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}
+    calls = []
     @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'requested_part' in value:
-            if 'citation_refs' in kwargs['response_schema']['properties']:
+            assert value['requested_part'] == 'Distinguish adoption from publication.'
+            selection = 'citation_refs' in kwargs['response_schema']['properties']
+            calls.append('select' if selection else 'correction')
+            if selection:
                 return selection_json([1], kwargs)
             return json.dumps({**point, 'remaining_gap': ''})
-        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
-            key: {'disposition': 'answered', 'points': [point], 'remaining_gap': ''} for key in ('r1', 'r2')}},
-            'next_action': 'finish', 'reason': 'The adoption year is provided.'})
+        calls.append('draft_or_review')
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [point]},
+            'next_action': 'finish'})
     async def audit(*args, coverage_only=False):
         return {'status': 'checked', 'question_coverage': 'missing', 'hints': [
             {'user_request': 'Distinguish adoption from publication.', 'review_signal': 'requested_part_missing'}], 'decisions': []}
@@ -130,7 +134,9 @@ async def test_final_coverage_check_names_a_lost_request_instead_of_claiming_com
     answer = schema.model_validate_json(raw).mission_checkpoint.answer
     assert answer.status == 'partial'
     assert answer.limitations == ['This answer has not resolved the requested part: Distinguish adoption from publication.']
-    assert len(answer.points) == 2 and not gateway.answer_quantity_errors(answer)
+    assert answer.points[0].statement == point['statement'] and not gateway.answer_quantity_errors(answer)
+    assert all('2003' not in value.statement for value in answer.points)
+    assert calls == ['draft_or_review', 'draft_or_review', 'select', 'correction']
 
 
 @pytest.mark.parametrize('change', ['source', 'prompt', 'schema', 'model', 'endpoint', 'temperature', 'tamper'])
@@ -158,8 +164,8 @@ def test_changed_generation_or_evidence_cannot_reuse_a_saved_proposal(change, st
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('earlier_empty', [False, True])
-async def test_one_invalid_point_cannot_rewrite_valid_siblings_or_shift_request_bindings(monkeypatch, earlier_empty):
+@pytest.mark.parametrize('invalid_first', [False, True])
+async def test_one_invalid_point_cannot_rewrite_or_shift_valid_siblings(monkeypatch, invalid_first):
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {
@@ -167,35 +173,34 @@ async def test_one_invalid_point_cannot_rewrite_valid_siblings_or_shift_request_
         'research_mission': {}, 'sources': [{'id': 'a' * 36, 'kind': 'public_source',
             'excerpts': [{'passage': 'p1', 'text': 'Adopted in 2001.'},
                 {'passage': 'p2', 'text': 'Published in 2003.'}, {'passage': 'p3', 'text': 'Expiry is not specified.'}]}]}}
-    points = [
+    valid = [
         {'statement': 'It was adopted in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]},
-        {'statement': 'It was published in 2003.', 'evidence': [{'citation_ref': 2, 'role': 'support'}]},
-        {'statement': 'It expired in 2015.', 'evidence': [{'citation_ref': 3, 'role': 'support'}]}]
+        {'statement': 'It was published in 2003.', 'evidence': [{'citation_ref': 2, 'role': 'support'}]}]
+    invalid = {'statement': 'It expired in 2015.', 'evidence': [{'citation_ref': 3, 'role': 'support'}]}
+    points = [invalid, *valid] if invalid_first else [*valid, invalid]
     calls = []
     @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         calls.append(value)
+        if 'previous_proposal' in value:
+            assert value['previous_proposal']['statement'] == invalid['statement']
+            assert not {'points', 'requested_part', 'remaining_gap'} & value.keys()
+            assert kwargs['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            return json.dumps(value['previous_proposal'])
         if 'requested_part' in value:
+            assert value['requested_part'] == invalid['statement'], 'Numeric repair must target only the invalid assertion'
             refs = [ref for source in value['sources'] for ref in source['passages']]
-            if value['requested_part'] != 'When did it expire?':
-                index = 0 if value['requested_part'] == 'When was it adopted?' else 1
-                ref = next(ref for ref in refs if ('Adopted' if index == 0 else 'Published') in ref['text'])
-                if 'citation_refs' in kwargs['response_schema']['properties']:
-                    return selection_json([ref['citation_ref']], kwargs)
-                return json.dumps({**points[index], 'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'}], 'remaining_gap': ''})
             ref = next(ref for ref in refs if ref['text'] == 'Expiry is not specified.')
             if 'citation_refs' in kwargs['response_schema']['properties']:
                 return selection_json([ref['citation_ref']], kwargs)
-            return json.dumps({'statement': 'It expired in 2015.', 'remaining_gap': '',
+            return json.dumps({**invalid, 'remaining_gap': '',
                 'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'}]})
         assert 'previous_invalid_response' not in value, 'Valid siblings must never be regenerated'
-        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
-            f'r{i+1}': ({'disposition': 'unresolved', 'points': [], 'remaining_gap': 'Adoption has not been answered.'}
-                if earlier_empty and i == 0 else {'disposition': 'answered', 'points': [point], 'remaining_gap': ''})
-            for i, point in enumerate(points)}}, 'next_action': 'finish', 'reason': 'Everything is answered.'})
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': points},
+            'next_action': 'finish'})
     async def audit(*args, **kwargs):
-        return {'status': 'checked', 'hints': [], 'decisions': []}
+        return {'status': 'partial', 'question_coverage': None, 'hints': [], 'decisions': []}
     async def context(*args, **kwargs):
         return []
     async def original(*args, **kwargs):
@@ -208,19 +213,19 @@ async def test_one_invalid_point_cannot_rewrite_valid_siblings_or_shift_request_
     result = schema.model_validate_json(await gateway.complete(
         SimpleNamespace(settings=settings, model_client=model), work, '', schema, 90))
     answer = result.mission_checkpoint.answer
-    assert [point.statement for point in answer.points] == [point['statement'] for point in points[:2]]
+    assert [point.statement for point in answer.points] == [point['statement'] for point in valid]
+    assert [point.evidence[0].quote for point in answer.points] == ['Adopted in 2001.', 'Published in 2003.']
     assert answer.status == 'partial' and not gateway.answer_quantity_errors(answer)
-    assert answer.limitations == ['A cited answer could not be validated for: When did it expire?']
-    assert result.mission_checkpoint.reason != 'Everything is answered.'
-    retained = json.loads(work[KEY]['raw'])['answer']['responses']
-    assert retained['r1']['points'] == [points[0]] and retained['r2']['points'] == [points[1]]
-    assert retained['r3']['points'] == [] and retained['r3']['disposition'] == 'unresolved'
-    assert len(calls) == 9  # draft/review, three independent packs and one invalid-precision correction
+    assert 'A finding could not be validated against its cited originals: It expired in 2015.' in answer.limitations
+    retained = json.loads(work[KEY]['raw'])['answer']
+    assert retained['points'] == valid and 'responses' not in retained
+    assert len([call for call in calls if not {'requested_part', 'previous_proposal'} & call.keys()]) == 2
+    assert len(calls) == 5  # Draft/review, one selection, and one bounded invalid-precision retry.
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('review_available', [True, False, 'covered_but_wrong'])
-async def test_missing_requested_distinction_is_repaired_without_rewriting_other_points(monkeypatch, review_available):
+@pytest.mark.parametrize('coverage', ['missing', 'unavailable_after_repair', 'complete'])
+async def test_missing_requested_distinction_is_repaired_without_rewriting_other_points(monkeypatch, coverage):
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {
@@ -228,24 +233,33 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
         'research_mission': {}, 'sources': [{'id': 'a' * 36, 'kind': 'public_source',
             'excerpts': [{'passage': 'p1', 'text': 'Adopted in 2001.'}, {'passage': 'p2', 'text': 'Published in 2003.'}]}]}}
     point = {'statement': 'It was adopted in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}
+    distinction = {'statement': 'It was adopted in 2001 and published in 2003.',
+        'evidence': [{'citation_ref': ref, 'role': 'support'} for ref in (1, 2)]}
+    calls = []
     @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'requested_part' in value:
+            assert coverage != 'complete', 'A complete shared draft must not invoke any request-pack writer'
+            assert value['requested_part'] == 'Distinguish adoption from publication.'
+            assert value['review_feedback']['already_answered'][0]['statement'] == point['statement']
             refs = [ref for source in value['sources'] for ref in source['passages']]
-            if 'citation_refs' in kwargs['response_schema']['properties']:
+            selection = 'citation_refs' in kwargs['response_schema']['properties']
+            calls.append('select' if selection else 'correction')
+            if selection:
                 return selection_json([ref['citation_ref'] for ref in refs], kwargs)
-            if value['requested_part'] == 'When was it adopted?':
-                return json.dumps({**point, 'remaining_gap': ''})
-            return json.dumps({'statement': 'It was adopted in 2001 and published in 2003.', 'remaining_gap': '',
+            return json.dumps({**distinction, 'remaining_gap': '',
                 'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'} for ref in refs]})
-        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
-            key: {'disposition': 'answered', 'points': [point], 'remaining_gap': ''} for key in ('r1', 'r2')}},
-            'next_action': 'finish', 'reason': 'The available records address the question.'})
+        calls.append('draft_or_review')
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
+            'points': [point, distinction] if coverage == 'complete' else [point]}, 'next_action': 'finish'})
     async def audit(settings, work, wire, answer, seconds, *, coverage_only=False):
-        missing = review_available != 'covered_but_wrong' and '2003' not in answer.points[1].statement
-        return {'status': 'checked', 'question_coverage': 'missing' if missing else 'covered' if review_available else None,
-            'hints': [{'user_request': 'Distinguish adoption from publication.', 'review_signal': 'requested_part_missing'}] if missing else [], 'decisions': []}
+        missing = not any('2003' in point.statement for point in answer.points)
+        known = missing or coverage != 'unavailable_after_repair'
+        return {'status': 'checked' if known else 'partial',
+            'question_coverage': 'missing' if missing else 'covered' if known else None,
+            'hints': [{'user_request': 'Distinguish adoption from publication.', 'review_signal': 'requested_part_missing'}]
+                if missing else [], 'decisions': []}
     async def original(*args, **kwargs):
         return None
     monkeypatch.setattr(model, 'complete', complete)
@@ -255,12 +269,15 @@ async def test_missing_requested_distinction_is_repaired_without_rewriting_other
     result = schema.model_validate_json(await gateway.complete(
         SimpleNamespace(settings=settings, model_client=model), work, '', schema, 90))
     answer = result.mission_checkpoint.answer
-    assert answer.status == ('possible_answer' if review_available else 'partial')
-    assert answer.limitations == ([] if review_available else [
-        'This answer has not resolved the requested part: Distinguish adoption from publication.'])
-    assert answer.points[0].statement == point['statement']
-    assert answer.points[1].statement == 'It was adopted in 2001 and published in 2003.'
+    assert [point.statement for point in answer.points] == [point['statement'], distinction['statement']]
+    assert answer.points[0].evidence[0].quote == 'Adopted in 2001.'
     assert not gateway.answer_quantity_errors(answer)
+    assert answer.status == ('partial' if coverage == 'unavailable_after_repair' else 'possible_answer')
+    if coverage == 'unavailable_after_repair':
+        assert answer.limitations and work['model_route']['answer_review']['final_coverage']['question_coverage'] is None
+    else:
+        assert not answer.limitations
+    assert calls == ['draft_or_review', 'draft_or_review'] + ([] if coverage == 'complete' else ['select', 'correction'])
 
 
 def test_rejected_finding_gap_survives_a_full_single_request_limitations_list():
@@ -278,7 +295,7 @@ def test_rejected_finding_gap_survives_a_full_single_request_limitations_list():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('available', [True, False])
-async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unknown_review_is_covered(monkeypatch, available):
+async def test_source_pack_recovers_a_named_omission_without_claiming_unknown_review_is_covered(monkeypatch, available):
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {
@@ -293,11 +310,7 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
         value = json.loads(user)
         calls.append(value)
         if 'requested_part' in value:
-            if value['requested_part'] == 'Who operates the station?':
-                if 'citation_refs' in kwargs['response_schema']['properties']:
-                    return selection_json([1], kwargs)
-                return json.dumps({'statement': 'North Reach Survey operates the station.', 'remaining_gap': '',
-                    'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+            assert value['requested_part'] == 'When did it enter service?'
             assert value['sources'][0]['title'] == 'Station registry'
             refs = [p for source in value['sources'] for p in source['passages'] if '2019' in p['text']]
             if 'citation_refs' in kwargs['response_schema']['properties']:
@@ -305,15 +318,15 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
             return json.dumps({'statement': 'The station entered service in 2019.', 'remaining_gap': '',
                 'evidence': [{'citation_ref': refs[0]['citation_ref'], 'role': 'support'}]})
         assert 'reason' not in kwargs['response_schema']['properties']
-        return json.dumps({'answer': {'status': 'partial', 'remaining_gaps': [], 'responses': {
-            'r1': {'disposition': 'answered', 'points': [{'statement': 'North Reach Survey operates the station.',
-                'evidence': [{'citation_ref': 1, 'role': 'support'}]}], 'remaining_gap': ''},
-            'r2': {'disposition': 'unresolved', 'points': [], 'remaining_gap': 'The commissioning date is not established.'}}},
-            'next_action': 'finish'})
-    async def audit(*args, **kwargs):
-        return {'status': 'checked' if available else 'partial', 'hints': ([] if available or kwargs.get('coverage_only') else
-            [{'user_request': 'When did it enter service?', 'review_signal': 'requested_part_missing'}]), 'decisions': [],
-            'question_coverage': 'covered' if available else None}
+        return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'points': [
+            {'statement': 'North Reach Survey operates the station.',
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}]}, 'next_action': 'finish'})
+    async def audit(settings, work, wire, answer, seconds, **kwargs):
+        missing = not any('2019' in point.statement for point in answer.points)
+        known = missing or available
+        return {'status': 'checked' if known else 'partial', 'hints': [
+            {'user_request': 'When did it enter service?', 'review_signal': 'requested_part_missing'}] if missing else [],
+            'decisions': [], 'question_coverage': 'missing' if missing else 'covered' if known else None}
     async def original(*args, **kwargs):
         return None
     monkeypatch.setattr(model, 'complete', complete)
@@ -323,11 +336,12 @@ async def test_source_pack_recovers_an_empty_request_slot_without_claiming_unkno
     result = schema.model_validate_json(await gateway.complete(
         SimpleNamespace(settings=settings, model_client=model), work, '', schema, 90))
     answer = result.mission_checkpoint.answer
-    assert answer.points[1].statement == 'The station entered service in 2019.'
+    assert [point.statement for point in answer.points] == [
+        'North Reach Survey operates the station.', 'The station entered service in 2019.']
     assert answer.status == ('possible_answer' if available else 'partial')
     assert not answer.limitations if available else any('When did it enter service?' in gap for gap in answer.limitations)
     assert 'Start with' not in str(answer.limitations)
-    assert len(calls) == 6
+    assert len(calls) == 4
     assert work[KEY]['parts'] and 'parts' not in work['model_route']
 
 

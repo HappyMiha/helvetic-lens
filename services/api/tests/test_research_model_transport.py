@@ -60,7 +60,7 @@ def test_section_contract_keeps_exact_quotes_and_does_not_mutate_previous_claims
     work = section()
     before = deepcopy(work)
     schema = documents.schema(ScopedExtraction)
-    wire = EvidenceWire(work, schema, 'Complex original contract')
+    wire = EvidenceWire(work, schema, 'Complex original contract', shared_answer=False)
     assert work == before
     assert 'existing_claims' not in wire.input
     assert set(wire.schema['properties']) == {'section_review', 'read_relevance'}
@@ -113,7 +113,7 @@ def test_short_table_cells_and_bad_optional_metadata_do_not_erase_reading():
     work = section()
     work['input']['source']['excerpts'].append({'passage': 'page-5-cell-1', 'text': 'No'})
     schema = documents.schema(ScopedExtraction)
-    wire = EvidenceWire(work, schema, '')
+    wire = EvidenceWire(work, schema, '', shared_answer=False)
     assert wire.input['source']['excerpts'][-1] == {'passage': 'page-5-cell-1', 'text': 'No'}
     response = {'section_review': {'summary': 'The source describes a local datum.',
         'observations': [{'role': 'support', 'citation_ref': 1}]},
@@ -155,7 +155,7 @@ def test_single_final_answer_materializes_consistent_dossier_fields():
         'sources': [section()['input']['source']], 'research_mission': {'round': 1},
         'direction_assessment_target': {'selection': None, 'question': 'Compare the measurement definitions.'}}}
     schema = mission_schema(RenewedSuggestedDirectionBriefing)
-    wire = EvidenceWire(work, schema, '')
+    wire = EvidenceWire(work, schema, '', shared_answer=False)
     assert set(wire.schema['properties']) == {'answer', 'next_action', 'next_checks', 'deepen_branches', 'clarification', 'directions'}
     raw = {'mission_checkpoint': {'answer': {'status': 'possible_answer',
         'points': [{'statement': 'The measurement uses a local datum.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
@@ -248,7 +248,7 @@ def test_mission_legacy_cards_never_promote_context_or_counterevidence_to_direct
     work = {'phase': 'brief', 'input': {'original_question': 'Which datum is supported?',
         'sources': [source], 'assessment_question': {'question_id': 'test-question'}, 'research_mission': {}}}
     schema = mission_schema(AssessedBriefing)
-    wire = EvidenceWire(work, schema, '')
+    wire = EvidenceWire(work, schema, '', shared_answer=False)
     result = schema.model_validate_json(wire.decode(json.dumps(answer_wire({'mission_checkpoint': {
         'answer': {'status': status, 'points': points, 'limitations': ['The available record does not settle this.']},
         'action': 'finish', 'reason': 'Useful available checks are exhausted.'}}))))
@@ -419,7 +419,7 @@ def test_multipart_answer_requires_every_request_and_retains_canonical_repair_bi
     source = section()['input']['source']
     work = {'phase': 'brief', 'input': {'original_question': 'What does the record establish? When?',
         'sources': [source], 'research_mission': {}, 'assessment_question': {'question_id': 'q'}}}
-    wire = EvidenceWire(work, schema, '')
+    wire = EvidenceWire(work, schema, '', shared_answer=False)
     assert wire.request_keys == {'r1': 'What does the record establish?', 'r2': 'When?'}
     point = {'statement': 'The fictional mountain measures 123 metres above a local datum.',
         'evidence': [{'citation_ref': 1, 'role': 'support'}]}

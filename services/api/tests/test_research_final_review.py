@@ -81,9 +81,10 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
                 data['clauses'][0]['citation_refs'] = []
             return review_json(data, gap=next(iter(value['final_claims_and_gaps'])).startswith('L'))
         if 'requested_part' not in value:
-            return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
-                f'r{i+1}': {'disposition': 'answered', 'points': [point(i)], 'remaining_gap': ''} for i in (0, 1)}},
-                'next_action': 'finish'})
+            # The reviewed unified draft introduces the same semantic regression.
+            revised = len([call for call in calls if 'requested_part' not in call and 'final_claims_and_gaps' not in call]) > 1
+            return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
+                'points': [point(0), point(1, bad if revised else good[1])]}, 'next_action': 'finish'})
         index = 0 if value['requested_part'].startswith('Who') else 1
         if 'citation_refs' in options['response_schema']['properties']:
             return selection_json([index+1], options)
@@ -110,7 +111,7 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
             if correction == 'role_only' and failed[0]:
                 raise DecisionUnavailable('quota')
             if 'specific_request' in state:
-                choice = 'covered'
+                choice = 'missing' if state['specific_request'].startswith('Distinguish') and len(state['answer_points']) < 2 else 'covered'
             elif 'statement' in state:
                 checks.append(state['statement'])
                 choice = 'contradicted' if state['statement'] == bad else 'supported'
@@ -150,7 +151,7 @@ async def test_final_semantic_rewrite_is_checked_repaired_and_resumable(monkeypa
         assert answer.status == 'partial' and any('review was unavailable' in gap for gap in answer.limitations)
     else:
         assert len(answer.points) == 1 and answer.status == 'partial'
-        assert any('Distinguish the old rule' in gap for gap in answer.limitations)
+        assert any((bad if correction == 'role_only' else 'Distinguish the old rule') in gap for gap in answer.limitations)
     assert len([value for value in calls if 'requested_part' not in value and 'final_claims_and_gaps' not in value]) == 2
     assert 'previous_statements' not in json.dumps(work['model_route'])
 

@@ -25,7 +25,7 @@ def fixture(count=2):
             'excerpts': [{'passage': 'p1', 'text': 'The records were published in 2001.'},
                 {'passage': 'p2', 'text': 'An earlier edition was published in 1999.'}]}]}}
     schema = mission_schema(Briefing)
-    wire = EvidenceWire(work, schema, '')
+    wire = EvidenceWire(work, schema, '', shared_answer=False)
     raw = json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [], 'responses': {
         key: {'disposition': 'answered', 'remaining_gap': '', 'points': [{'statement': 'Published in 2001.',
             'evidence': [{'citation_ref': 1, 'role': 'support'}]}]} for key in wire.request_keys}}, 'next_action': 'finish'})
