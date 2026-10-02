@@ -227,15 +227,18 @@ def finish_or_yield(session, run, job):
             run.stop_reason = (f"Finished {success} of {len(branches)} branches within the research budget. "
                 f"{failed_steps} branches contain unavailable or interrupted steps. Coverage is not exhaustive.")
             if research.enabled(run):
-                pending = sum(q["status"] in {"open", "investigating", "unresolved"} for q in run.research_state["questions"])
+                from .research_coverage import unresolved_questions
+                checkpoints = run.research_state.get("mission", {}).get("checkpoints", [])
+                pending = len(unresolved_questions(run, answer=checkpoints[-1].get("answer") if checkpoints else None))
                 limits = ", ".join(run.research_state["stops"])
                 if limits and not unmetered(run):
                     run.status = "paused"
                 run.stop_reason = ("Research checks finished. " if unmetered(run) else f"Research paused at its budget ({limits}). " if limits else "Bounded research finished. ") + f"{pending} questions remain open or unresolved; {failed_steps} paths include unavailable or interrupted steps. Source support is not independent verification."
-                checkpoints = run.research_state.get("mission", {}).get("checkpoints", [])
                 if unmetered(run) and checkpoints and checkpoints[-1].get("answer", {}).get("status") == "partial":
                     gaps = len(checkpoints[-1]["answer"].get("limitations", []))
                     run.stop_reason = f"Research returned a partial answer with {gaps} named gaps. Sources and completed work are retained. Source support is not independent verification."
+                elif unmetered(run) and checkpoints and not checkpoints[-1].get("answer", {}).get("points"):
+                    run.stop_reason = f"The completed checks did not produce a validated answer. {pending} issues remain unresolved. Sources and completed work are retained."
             from .product_document_reading import incomplete
             unfinished_documents = incomplete(branches)
             if (unmetered(run) and run.research_state.get("mission", {}).get("stop") == "answer_unavailable"

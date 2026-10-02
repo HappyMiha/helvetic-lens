@@ -616,3 +616,39 @@ large-source selection transport retains all 65 tested source groups within the
 supported output allowance. Focused validation is now 94 passing cases. All four affected
 native intermittent-outage/noise/counter checks passed in 72.92 seconds; publication/activation and
 the ongoing real-provider mission remain explicit in the parent checkpoint.
+
+
+### Preserve useful conclusions without hiding unanswered requests
+
+The sixth native retry completed in 628.69 seconds with saved source work, but
+returned zero answer points after final rejection. This is failed substantive
+acceptance, not a successful research result. Both unchanged product readers
+render that exact empty answer and its four limitations; no browser acceptance
+or full-paper access is implied. Core a914286 was activated at 05:48:12 UTC and
+public readiness, both clients and anonymous private-route denial were verified.
+
+Next MV2-020 scope uses the same authorized public originals and private synthesis
+checkpoint: propose one exact supported-sentence subset before discarding an
+entire compound point, or attach all positive witnesses without changing its
+words. Never truncate a witness union to fit. Recheck the new full assertion,
+request coverage, specific old objections and omitted qualifications, retaining
+all original review context including counterevidence. Pending checks remain
+private and resume the same candidate. The terminal summary and coverage must
+report actual final limitations, independently of completed search branches.
+Acceptance requires supported content surviving an unsupported sibling, omitted
+qualifications and hidden counterevidence failing, interrupted reviews resuming,
+and an empty final answer never claiming zero unresolved work. Real-provider
+content acceptance remains open; no topic-specific facts enter implementation.
+
+
+Implemented and reviewed: one private narrowing attempt per request, mandatory
+full-statement re-review, all earlier context/objections carried across later
+rewrites, original shape and quantity checks, no witness truncation. Coverage
+uses the same evidence-fenced mission projection as the reader. Final limitations
+remain visible after branch completion; an empty answer has an explicit outcome.
+104 focused cases passed before the final inheritance regression; all 49 affected
+narrowing/final-review cases passed after it. The native empty-answer/status/source-
+dependency invalidation case passed (the enclosing 48-case run took 39.81 seconds).
+Exact API lint and backlog structure guard passed. A read-only second review
+found no remaining blocker within this change. These checks do not establish
+real-provider answer quality; the next ordinary continuation will assess it.

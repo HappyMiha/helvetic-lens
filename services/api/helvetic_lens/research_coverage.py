@@ -9,6 +9,23 @@ from .research_knowledge import source_ref
 CONTRACT = "research-coverage/v1"
 
 
+def unresolved_questions(run, *, answer=None):
+    """Completed search branches do not discharge unanswered synthesis work."""
+    questions = [{"question": q["question"], "status": q["status"], "reason": q.get("waiting_reason")}
+        for q in run.research_state.get("questions", []) if q["status"] in {"open", "investigating", "unresolved"}]
+    if answer is not None:
+        gaps = answer.get("limitations", [])
+        if not gaps and not answer.get("points"):
+            gaps = [run.question]
+        known = {" ".join(item["question"].split()) for item in questions}
+        for gap in gaps:
+            key = " ".join(gap.split())
+            if key and key not in known:
+                questions.append({"question": gap, "status": "unresolved", "reason": "Unresolved in the current answer."})
+                known.add(key)
+    return questions
+
+
 def project(session, run):
     branches = rows(session, InvestigationBranch, run)
     sources = rows(session, InvestigationSource, run)
@@ -65,8 +82,10 @@ def project(session, run):
             "analysed_at": latest.get("finished_at") if latest else source.snapshot.get("analysis_completed_at") if retained_analysis else None})
         if source.url in candidates:
             candidates[source.url].update(source_id=source.id, read_status=state, analysis_status=analysis)
-    unresolved = [{"question": q["question"], "status": q["status"], "reason": q.get("waiting_reason")}
-        for q in run.research_state.get("questions", []) if q["status"] in {"open", "investigating", "unresolved"}]
+    from .product_research_mission import project as mission_projection
+    # The mission reader owns the source/hash/quote fences for final gaps.
+    mission = mission_projection(session, run)
+    unresolved = unresolved_questions(run, answer=(mission or {}).get("answer"))
     omitted = sum(branch.checkpoint.get("candidate_counts", {}).get("outside_candidate_budget", 0) for branch in branches)
     failures = sum(e["status"] in {"unavailable", "interrupted"} for e in executions)
     partial_channels = sum(c["status"] not in {"complete", "empty"} for c in channels)

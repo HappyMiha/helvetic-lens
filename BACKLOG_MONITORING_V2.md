@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: Coredc9ef11/Sites87 live. Evidence-bound review and source-local selection validated; refining recovery after intermittent outages. Acceptance open. [Evidence](docs/PRODUCT_END_TO_END.md).
+Question-to-dossier IN PROGRESS: Corea914286/Sites87 live. Native recovery verified; final answer failed. Scope: preserve verified sentences, recheck context and report unresolved work. Acceptance open. [Evidence](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2768,7 +2768,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** question-to-dossier IN PROGRESS, Coredc9ef11/Sites87 live. Evidence-bound review and source-local selection validated; refining recovery after intermittent outages. Acceptance open. Acceptance open. [Acceptance](docs/PRODUCT_END_TO_END.md).
+**Current direction:** question-to-dossier IN PROGRESS, Corea914286/Sites87 live. Native recovery verified; final answer failed. Scope: preserve verified sentences, recheck context and report unresolved work. Acceptance open. [Acceptance](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

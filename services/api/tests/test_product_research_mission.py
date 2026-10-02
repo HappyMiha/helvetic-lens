@@ -284,3 +284,46 @@ def test_failed_whole_document_review_never_finishes_and_retry_keeps_read_sectio
     assert [s["id"] for s in result["sources"]] == source_ids
     assert len(calls) == 2 and "sections" in calls[-1]
     assert client.get(route + "/files/" + entry["id"]).content == TEXT.encode()
+
+
+def test_empty_final_answer_keeps_unresolved_work_in_native_status_and_coverage(signed, monkeypatch):
+    client, service, _, model = signed
+    adapters(monkeypatch, service, model)
+    base = model.complete
+    gap = 'The captured originals did not establish the recipient.'
+
+    async def complete_model(system, user, **options):
+        if options['response_schema']['title'] == 'Briefing':
+            value = json.loads(await base(system, user, **options))
+            value.update(findings=[], mission_checkpoint={'answer': {'status': 'not_found', 'points': [], 'limitations': [gap]},
+                'action': 'finish', 'reason': 'No supported answer could be established.'})
+            return json.dumps(value)
+        return await base(system, user, **options)
+
+    monkeypatch.setattr(model, 'complete', complete_model)
+    root, run, _ = start(client)
+    identifier = run['id']
+    route = root + '/investigations/' + identifier
+    for _ in range(50):
+        tick(service, identifier)
+        state = client.get(route).json()
+        if state['status'] not in {'queued', 'running'}:
+            break
+    assert state['exploration']['mission']['answer']['points'] == []
+    assert 'did not produce a validated answer' in state['stop_reason']
+    assert '0 questions remain' not in state['stop_reason']
+    assert state['coverage_manifest']['summary']['open_questions'] >= 1
+    assert any(q['question'] == gap for q in state['coverage_manifest']['open_questions'])
+
+    # Adaptive input can remain current while a final checkpoint's own evidence
+    # dependency is stale. Its answer and derived gaps must both disappear.
+    with service.db.session() as session:
+        saved = session.get(Investigation, identifier)
+        from copy import deepcopy
+        data = deepcopy(saved.research_state)
+        data['mission']['checkpoints'][-1]['source_dependencies'][0]['sha256'] = 'f' * 64
+        saved.research_state = data
+        session.commit()
+    changed = client.get(route).json()
+    assert changed['exploration']['mission']['answer'] is None
+    assert gap not in json.dumps(changed['coverage_manifest']['open_questions'])

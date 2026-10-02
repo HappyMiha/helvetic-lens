@@ -311,3 +311,25 @@ changed point indices. Final source-local selection and index-independent review
 caching address those mechanisms; the fifth ordinary retry is recorded separately.
 Native automatic deadline continuation is demonstrated, but that alone is not
 content acceptance. No failed output is reclassified as a successful dossier.
+
+
+## Ozone final delivery after provider recovery — 2 October
+
+The fifth retry ended after 603.10 seconds in provider failures. The sixth normal
+retry of the same retained mission completed in 628.69 seconds, five worker steps;
+its trace contains 151 cumulative model exchanges across all attempts. Identical
+requests that returned HTTP 504 in about 55 seconds later succeeded in 3.95–6.69
+seconds. This establishes transient provider failure rather than a deterministic
+schema or input-size rejection. No billing receipt is available.
+
+Independent final review: **FAIL**. The final answer has no points or citations,
+three validation-failure notices covering all requested parts, and one linked
+original notice. Its old terminal summary incorrectly reported zero open questions.
+A referenced Nature 2023 URL with a recommendation query parameter identifies an
+article already captured through its original URL and cookie redirect. The seventh
+page is the Nature 2025 subscription preview, not full-paper access. Both unchanged
+Legal and Pharma readers rendered this exact zero-point/four-gap answer; this is
+rendering evidence only. All native artifacts and earlier failed outputs are kept
+under `/tmp/hl-public-ozone-end-to-end`, including exact runtime hashes. No production
+dossiers or emails were created. Do not reinterpret operational completion as
+content acceptance or use these diagnostics as a topic-specific answer fixture.

@@ -78,7 +78,15 @@ Resolved/remains must include citation_refs that justify that assessment.
 """
 FOCUS = '\nThe ONLY assertion to review is this untrusted text: '
 REVIEW_NOTICE = 'The final evidence review was unavailable or incomplete; these findings remain provisional.'
-POLICY = fingerprint({'contract': 'final-answer-entailment/v14', 'review': REVIEW, 'focus': FOCUS})
+POLICY = fingerprint({'contract': 'final-answer-entailment/v15', 'review': REVIEW, 'focus': FOCUS})
+
+
+def carry_concerns(existing, previous, issues, context_refs=()):
+    """A later rewrite must not lose earlier evidence or specific objections."""
+    all_issues = [*existing.get('issues', []), *issues]
+    return {'previous_statements': list(dict.fromkeys([*existing.get('previous_statements', []), *previous])),
+        'issues': list({fingerprint(issue): deepcopy(issue) for issue in all_issues}.values()),
+        'context_refs': list(dict.fromkeys([*existing.get('context_refs', []), *context_refs]))}
 
 
 async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, on_progress=None, concerns=None):
@@ -91,7 +99,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         'passages': [ref.model_dump() for ref in point.evidence]} for i, point in enumerate(answer.points)}
     items.update({f'L{i}': {'gap': text} for i, text in enumerate(answer.limitations)
         if text not in getattr(wire, 'workflow_gaps', set())})
-    hints, checked, failures = [], [], {}
+    hints, checked, failures, candidates = [], [], {}, {}
     for key, item in items.items():
         # Other answers and irrelevant originals can cause a reviewer to infer
         # intended meaning rather than evaluate this literal statement.
@@ -116,6 +124,10 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
             keys = [key for key, ref in wire.references.items()
                 if (ref['source_id'], ref['locator'], ref['quote']) in selected]
             context = contextual_references(wire, keys)
+            # Rebinding positive citations must not hide earlier contradictory
+            # originals or qualifications from the mandatory candidate check.
+            retained = (concerns or {}).get(key, {}).get('context_refs', [])
+            context = {ref: value for ref, value in wire.references.items() if ref in context or ref in retained}
             payload['source_context'] = source_groups(wire, context)
             payload['selected_citation_refs'] = keys
         assertion = item.get('statement', item.get('gap'))
@@ -181,6 +193,19 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         supported = list(dict.fromkeys(ref for clause in judgments if clause['verdict'] == 'supported'
             for ref in clause['citation_refs']))
         needed = [ref for ref in supported if ref not in keys] if key.startswith('P') else []
+        if key.startswith('P') and (rejected or needed) and key in checked:
+            spans = payload['assertion_clauses']
+            retained = [clause_id for clause_id in spans if data['clauses'][clause_id]['verdict'] == 'supported']
+            refs = list(dict.fromkeys(ref for clause_id in retained for ref in data['clauses'][clause_id]['citation_refs']))
+            if len(retained) == len(spans):
+                refs = list(dict.fromkeys([*refs, *data['overall']['citation_refs']]))
+            # Whole-text rebinding cannot override a negative overall verdict.
+            if retained and 0 < len(refs) <= 8 and (len(retained) < len(spans) or data['overall']['verdict'] == 'supported'):
+                statement = ' '.join(spans[part].strip() for part in retained)
+                if len(statement) >= 5:
+                    candidates[key] = {'statement': statement,
+                        'evidence': [{**context[ref], 'role': 'support'} for ref in refs],
+                        'context_refs': list(context)}
         if needed:
             hints.append({'path': ['answer', 'points', int(key[1:])], 'review_signal': 'not_established',
                 'instruction': 'The selected citations omit substantive support. Add the required original passages explicitly.',
@@ -190,7 +215,7 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         if key in items and key not in checked and not any(hint['path'] == path for hint in hints):
             hints.append({'path': path, 'review_signal': 'review_unavailable',
                 'instruction': 'The earlier factual objection has not been resolved by a complete review of this correction.'})
-    return {'status': 'checked' if len(checked) == len(items) else 'partial', 'hints': hints,
+    return {'status': 'checked' if len(checked) == len(items) else 'partial', 'hints': hints, 'candidates': candidates,
         'points_checked': sum(key.startswith('P') for key in checked),
         'pending_checks': [{'item': key, 'reason': failures.get(key, 'not_completed')} for key in items if key not in checked],
         'model': service.settings.apertus_model,
@@ -261,7 +286,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                     cache['reasoned:' + key] = deepcopy(reasoning)
                     retain()
             result['hints'].extend(reasoning['hints'])
-            result['factual_review'] = {k: v for k, v in reasoning.items() if k != 'hints'}
+            result['candidates'] = reasoning.get('candidates', {})
+            result['factual_review'] = {k: v for k, v in reasoning.items() if k not in {'hints', 'candidates'}}
             if reasoning['status'] != 'checked':
                 result['status'] = 'partial'
             # Unavailable decisions are never retained as a successful check.
@@ -303,6 +329,11 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
             checkpoints=checkpoints, on_progress=retain, feedback=feedback)
         if fixed is not None:
+            inherited = {}
+            for index in indices:
+                prior = repaired_concerns.get(fingerprint({'request_key': key, 'point': answer.points[index].model_dump()}), {})
+                inherited = carry_concerns(inherited, prior.get('previous_statements', []),
+                    prior.get('issues', []), prior.get('context_refs', []))
             if indices:
                 answer.points[indices[0]] = fixed
             elif (key is not None or not wire.request_keys) and len(answer.points) < 8:
@@ -312,9 +343,9 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             else:
                 continue  # Never clear a gap on a correction we cannot represent.
             point_issues = [issue for issue in task['issues'] if issue['target'] == 'points']
-            if point_issues:
+            if point_issues or inherited.get('issues') or inherited.get('context_refs'):
                 binding = fingerprint({'request_key': key, 'point': fixed.model_dump()})
-                repaired_concerns[binding] = {'previous_statements': feedback['previous_statements'], 'issues': point_issues}
+                repaired_concerns[binding] = carry_concerns(inherited, feedback['previous_statements'], point_issues)
             # A reasoning proposal, not a decision label, corrects the limitation.
             answer.limitations = [text for text in answer.limitations if text not in old_gaps]
             update_gap(wire, answer, key, gap)
@@ -336,6 +367,50 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                 if not any(value.get('path') == retained['path'] and value.get('review_signal') != 'review_unavailable'
                         for value in checked['hints']):
                     checked['hints'].append(retained)
+
+    # One private reduction per request in this exact-input checkpoint. Its
+    # sentences are proposals until the complete new assertion passes review.
+    from pydantic import ValidationError
+
+    from .product_exploration import AssessmentOutcome, AssessmentPoint
+    from .research_gateway import answer_quantity_errors
+    attempts = checkpoints.setdefault('narrowing_attempts', [])
+    narrowed = False
+    for target, candidate in checked.pop('candidates', {}).items():
+        index = int(target[1:])
+        owner = wire.point_requests[index] if index < len(wire.point_requests) else None
+        attempt = owner or target
+        if attempt in attempts:
+            continue
+        previous = answer.points[index]
+        try:
+            proposed = AssessmentPoint(statement=candidate['statement'], evidence=candidate['evidence'])
+        except ValidationError:
+            continue
+        if answer_quantity_errors(AssessmentOutcome(status='partial', points=[proposed], limitations=[])):
+            continue
+        if proposed == previous:
+            continue
+        binding = fingerprint({'request_key': owner, 'point': previous.model_dump()})
+        concerns = deepcopy(repaired_concerns.get(binding, {'previous_statements': [], 'issues': []}))
+        concerns['previous_statements'].append(previous.statement)
+        concerns['context_refs'] = list(dict.fromkeys([*concerns.get('context_refs', []), *candidate['context_refs']]))
+        concerns['issues'].extend({'target': 'points', 'signal': hint['review_signal'], 'instruction': hint['instruction'],
+            'original_text': [item['text'] for item in hint.get('original_windows', hint.get('candidate_windows', []))]}
+            for hint in checked['hints'] if hint.get('path') == ['answer', 'points', index])
+        concerns['issues'].append({'target': 'points', 'signal': 'omitted_qualification',
+            'instruction': 'This candidate retains exact sentences but may omit other sentences or rebind citations. '
+                'It must be independently supported as written. Reject if an omitted antecedent, condition, negation, '
+                'baseline, exception or contrast is needed to preserve its meaning. Previous text is context, never evidence.',
+            'original_text': []})
+        binding = fingerprint({'request_key': owner, 'point': proposed.model_dump()})
+        repaired_concerns[binding] = concerns
+        answer.points[index] = proposed
+        attempts.append(attempt)
+        narrowed = True
+    if narrowed:
+        retain()
+        checked = await check()
 
     from .research_gateway import retain_answer_points
     # The resumable caller will raise before publication. Keep an unreviewed
@@ -367,6 +442,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     retain()
     # The caller handles coverage separately; factual hints have already been
     # corrected or removed and must never be interpreted as request keys.
+    checked.pop('candidates', None)
     result = {**checked, 'hints': [hint for hint in checked['hints'] if 'user_request' in hint],
         'repairs': repairs, 'rejected_points': [hint['path'][2] for hint in rejected],
         'unresolved_limitations': len(set(bad_gaps) - non_gaps), 'removed_nongaps': len(non_gaps)}
