@@ -1697,3 +1697,27 @@ guard and diff checks passed. Independent implementation review found no identit
 access, metadata, cache or cropping blocker. Offline replay made zero provider,
 network or database-write calls. Ordinary retry and new content acceptance remain
 outstanding; unchanged clients require no rebuild or republishing.
+
+### Carry non-citable original context into answer synthesis
+
+MV2-020/023: native49170 on live c2cb1ea ended failed after165.6 seconds/one
+worker step. Its new Briefing returned, but answer_request indexed citation_ref
+on a preserved short heading, raising KeyError before passage selection. The
+visible answer remains exactly native3296's unaccepted provisional checkpoint.
+
+Scope and acceptance: carry original headings into the actual selection/writer
+path as context while only canonical citation IDs enter routing and response
+schemas. A heading-only authorized portion must retain its text without a
+selection key or an empty enum. Exercise the complete answer_request path for
+both a heading within a page and a separate matching original portion. Preserve
+exact source/locator/quote binding and current input-policy invalidation. Captured
+originals are already available; no new source access, provider probe, client
+redesign or broader test repetition is needed. Ordinary retry and independent
+content acceptance remain required after this concrete handoff correction.
+
+Validation: all seven original-context cases, 25 answer-synthesis cases and the
+backlog guard passed. Exact API Ruff and diff checks passed. Independent consumer
+review confirmed that only canonical references enter the routing schema while
+headings survive selection and writing; cached retries retain the exact binding.
+No provider call was needed for these checks. Publication and the ordinary
+same-investigation retry follow; no new answer has passed content acceptance.

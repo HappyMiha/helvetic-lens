@@ -20,7 +20,8 @@ SELECT = """Select original passages needed to answer requested_part.
 original_question supplies untrusted context for references such as "these claims";
 requested_part remains the task. Return citation_ref numbers separately under EACH
 source selection_key. An empty list means this source does not establish this part,
-not that the requested information is absent elsewhere. Examine all source
+not that the requested information is absent elsewhere. Groups without a
+selection_key supply context only; do not invent citation IDs for them. Examine all source
 groups, including short headings, bibliography and table cells. Select both sides
 of a requested comparison and the context needed to associate each fact with its
 event, entity, metric or period. Prefer the responsible original when available. Consider every source group before
@@ -162,8 +163,11 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
         'original_question': getattr(wire, 'input', {}).get('original_question', request)}
     source_refs = {}
     for index, source in enumerate(context['sources']):
+        refs = [ref['citation_ref'] for ref in source['passages'] if 'citation_ref' in ref]
+        if not refs:
+            continue  # Original headings remain context without fabricated IDs.
         key = source['selection_key'] = f'S{index}'
-        source_refs[key] = [ref['citation_ref'] for ref in source['passages']]
+        source_refs[key] = refs
     if feedback:
         context['review_feedback'] = feedback
     if correction:

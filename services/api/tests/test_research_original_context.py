@@ -1,4 +1,5 @@
 """Sparse selected PDF lines cannot stand in for their original scope context."""
+import json
 from copy import deepcopy
 from types import SimpleNamespace
 
@@ -8,7 +9,7 @@ from helvetic_lens import product_document_analysis as analysis
 from helvetic_lens.config import DomainError
 from helvetic_lens.product_exploration import Briefing
 from helvetic_lens.product_research_mission import schema as mission_schema
-from helvetic_lens.research_answer_parts import contextual_references, source_groups
+from helvetic_lens.research_answer_parts import answer_request, contextual_references, source_groups
 from helvetic_lens.research_evidence_pack import _units, provider_sources, select_evidence
 from helvetic_lens.research_model_transport import EvidenceWire
 from helvetic_lens.research_original_context import expand_sources
@@ -107,3 +108,61 @@ async def test_mandatory_page_larger_than_envelope_is_not_silently_cropped():
             required_refs=[12], fits=lambda refs: len(refs) <= 3)
     assert caught.value.code == 'research_evidence_group_too_large'
     assert wire.references == before
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('separate_heading_portion', [False, True])
+async def test_answer_request_keeps_page_heading_without_inventing_a_citation(separate_heading_portion):
+    heading = ('page-5-text-1-char-1', 'Europe')
+    observation = 'The regional measured total remained unchanged against its baseline.'
+    qualification = 'The separate polar region was not measured by this comparison.'
+    body = source('body', [('page-5-text-2-char-1', observation),
+        ('page-5-text-3-char-1', qualification)])
+    originals = [source('unrelated', [('page-1-text-1-char-1', 'A different original describes registry administration.')],
+        sha='b' * 64, url='https://example.test/registry.pdf')]
+    if separate_heading_portion:
+        originals.append(source('heading', [heading]))
+    else:
+        body['excerpts'].insert(0, {'passage': heading[0], 'text': heading[1]})
+    originals.append(body)
+    wire = wire_for(originals)
+    before = deepcopy(wire.__dict__)
+    canonical = next(key for key, ref in wire.references.items() if ref['quote'] == observation)
+    cache, calls = {}, []
+
+    class Model:
+        async def complete(self, system, text, **options):
+            payload = json.loads(text)
+            groups = payload['sources']
+            headings = [p for group in groups for p in group['passages'] if p['text'] == heading[1]]
+            assert headings == [{'text': heading[1]}], 'The scope heading remains uncitable original context'
+            props = options['response_schema']['properties']
+            if 'citation_refs' in props:
+                calls.append('select')
+                allowed = props['citation_refs']['properties']
+                assert {ref for spec in allowed.values() for ref in spec['items']['enum']} == set(wire.references)
+                assert all(spec['items']['enum'] for spec in allowed.values()), 'Context-only portions need no empty routing enum'
+                for group in groups:
+                    refs = [p['citation_ref'] for p in group['passages'] if 'citation_ref' in p]
+                    if refs:
+                        assert allowed[group['selection_key']]['items']['enum'] == refs
+                    else:
+                        assert group.get('selection_key') not in allowed
+                return json.dumps({'citation_refs': {key: [canonical] if canonical in spec['items']['enum'] else []
+                    for key, spec in allowed.items()}})
+            calls.append('write')
+            supplied = {p['citation_ref']: p['text'] for group in groups for p in group['passages'] if 'citation_ref' in p}
+            assert set(supplied.values()) == {observation, qualification}
+            enum = props['points']['items']['properties']['evidence']['items']['properties']['citation_ref']['enum']
+            assert enum == list(supplied) == [1, 2], 'Writer IDs bind only the selected canonical page windows'
+            return json.dumps({'points': [{'statement': observation,
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}], 'remaining_gap': ''})
+
+    service = SimpleNamespace(model_client=Model())
+    points, gap, receipt = await answer_request(service, wire, wire.input['original_question'], 60, checkpoints=cache)
+    assert calls == ['select', 'write'] and receipt['status'] == 'proposed' and gap == ''
+    assert points[0].evidence[0].model_dump() == {**wire.references[canonical], 'role': 'support'}
+    assert points[0].statement == observation and wire.__dict__ == before
+    resumed, _, resumed_receipt = await answer_request(service, wire, wire.input['original_question'], 0,
+        checkpoints=json.loads(json.dumps(cache)))
+    assert resumed == points and resumed_receipt['status'] == 'proposed' and calls == ['select', 'write']
