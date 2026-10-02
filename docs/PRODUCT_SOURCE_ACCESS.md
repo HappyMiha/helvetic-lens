@@ -86,5 +86,5 @@ burst guard protects the existing engine without introducing a daily allowance.
 Acceptance: exact service authentication, private-route isolation, bounded input,
 burst throttling and sanitized engine failure; verify real production results
 and subsequent Legal Feed monitoring after deployment. Local acceptance passes:
-3 machine-integration tests, 11 existing search-adapter scenarios and the backlog
+4 machine-integration tests, 11 existing search-adapter scenarios and the backlog
 guard; API lint passes. Production activation remains pending. This does not close broader source coverage gates.

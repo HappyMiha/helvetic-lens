@@ -45,6 +45,8 @@ async def handle(request, settings, limiter):
         return reply({"detail": error.message}, error.status)
     except DecisionUnavailable:
         return reply({"detail": "Search engines temporarily unavailable."}, 503)
+    if not result["items"] and result.get("omitted_records", 0):
+        return reply({"detail": "Search returned no usable public links."}, 503)
     return reply({"provider": "SearXNG", "partial": result["status"] == "partial",
         "results": [{"title": item["title"], "link": item["url"], "snippet": item["summary"]}
                     for item in result["items"]]})

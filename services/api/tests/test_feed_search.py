@@ -56,3 +56,15 @@ def test_bridge_reports_upstream_outage_and_is_disabled_without_key(client, monk
     from pydantic import SecretStr
     client.app.state.feed_test_settings.legal_feed_search_token = SecretStr("")
     assert client.post(feed_search.PATH, json={"query": "Ozempic"}, headers=AUTH).status_code == 401
+
+
+def test_discarded_results_are_not_a_successful_empty_search(client, monkeypatch):
+    async def invalid(*args, **kwargs):
+        return {"items": [], "omitted_records": 2, "status": "complete"}
+    monkeypatch.setattr(feed_search, "searxng", invalid)
+    assert client.post(feed_search.PATH, json={"query": "Ozempic"}, headers=AUTH).status_code == 503
+    async def empty(*args, **kwargs):
+        return {"items": [], "omitted_records": 0, "status": "complete"}
+    monkeypatch.setattr(feed_search, "searxng", empty)
+    result = client.post(feed_search.PATH, json={"query": "Ozempic"}, headers=AUTH)
+    assert result.status_code == 200 and result.json()["results"] == []
