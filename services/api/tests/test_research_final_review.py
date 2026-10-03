@@ -509,11 +509,13 @@ async def test_compact_review_grammar_cannot_accept_or_cache_a_missing_witness(t
     calls = []
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             payload = json.loads(text)
             calls.append(payload)
             good = {'verdict': 'supported', 'reason': '', 'citation_refs': [1]}
-            data = {'overall': deepcopy(good), 'clauses': {'S0': deepcopy(good)},
+            data = {'overall': deepcopy(good), 'clauses': {'S0': {**good, 'witnesses': [
+                {'citation_ref': 1, 'quote': ref['quote'], 'scope_relation': 'compatible'}]}},
                 'concern_checks': [{'id': 'C0', 'outcome': 'resolved', 'reason': '', 'citation_refs': [1]}]}
             item = data['overall'] if target == 'overall' else data['clauses']['S0'] if target == 'clause' else data['concern_checks'][0]
             item['verdict' if target != 'concern' else 'outcome'] = verdict
@@ -548,7 +550,7 @@ def test_compact_review_grammar_cannot_offer_impossible_empty_context_verdicts(p
     verdicts = schema['properties']['overall']['properties']['verdict']['enum']
     assert verdicts == (['not_established'] if point else ['supported', 'not_established'])
     judgment = {'verdict': 'contradicted', 'reason': '', 'citation_refs': []}
-    data = {'overall': judgment, 'clauses': {'S0': judgment},
+    data = {'overall': judgment, 'clauses': {'S0': {**judgment, 'witnesses': []}},
         'concern_checks': [{'id': 'C0', 'outcome': 'resolved', 'reason': '', 'citation_refs': []}],
         **({} if point else {'gap_status': 'unresolved'})}
     assert shape_errors(data, schema, {})
@@ -562,7 +564,7 @@ def test_compact_review_preserves_valid_witness_free_gap_and_unresolved_concern(
     assertion = 'A remains unknown.'
     concerns = {'C0': {}}
     judgment = {'verdict': verdict, 'reason': '', 'citation_refs': []}
-    data = {'overall': judgment, 'clauses': {'S0': judgment},
+    data = {'overall': judgment, 'clauses': {'S0': {**judgment, 'witnesses': []}},
         'concern_checks': [{'id': 'C0', 'outcome': 'cannot_assess', 'reason': '', 'citation_refs': []}],
         **({} if point else {'gap_status': 'unresolved'})}
     assert not shape_errors(data, review_schema(assertion, {}, concerns, point=point), {})
@@ -591,7 +593,7 @@ def test_conditional_concern_grammar_matches_existing_host_witness_contract(meta
         **({'assertion_scope': 'reference_metadata'} if metadata else {})}
     item = {'id': 'C0', 'outcome': outcome, 'reason': '', 'citation_refs': witnesses,
         **({'assertion_scope': 'reference_metadata'} if metadata else {})}
-    data = {'overall': deepcopy(judgment), 'clauses': {'S0': deepcopy(judgment)}, 'concern_checks': [item]}
+    data = {'overall': deepcopy(judgment), 'clauses': {'S0': {**judgment, 'witnesses': []}}, 'concern_checks': [item]}
     assert (not shape_errors(data, schema, {})) == accepted
     assert (invalid_review(data, assertion, concerns, point=True) is None) == accepted
     if metadata:
@@ -781,6 +783,7 @@ async def test_semantic_point_corrections_preserve_shared_slot_siblings_and_gaps
     writes, selections, cache = [], [], {}
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             if 'final_claims_and_gaps' in value:
@@ -875,6 +878,7 @@ async def test_review_transports_large_originals_once_with_bound_concern_witness
     calls, cache = [], {}
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             calls.append(value)
@@ -923,6 +927,7 @@ async def test_unbound_review_original_stays_pending_without_model_dispatch(unbo
         concern['context_refs'] = [99]
 
     class Model:
+        @atomic_pack_model
         async def complete(self, *args, **kwargs):
             pytest.fail('Unknown original identity must not reach the reviewer')
 
@@ -997,6 +1002,7 @@ async def test_gap_review_retrieves_complete_originals_without_mandating_all_del
             'coverage': {'method': 'test_ranked_originals', 'semantic_status': 'test_fixture'}}
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **options):
             value = json.loads(text)
             assert research_evidence_pack.request_characters(system, value, options['response_schema']) <= 24000
@@ -1044,6 +1050,7 @@ async def test_unbound_delivered_original_keeps_gap_pending_without_dispatch():
         limitations=['The transfer date remains unknown.'])
 
     class Model:
+        @atomic_pack_model
         async def complete(self, *args, **kwargs):
             pytest.fail('An unbound delivered original must not reach either point or gap review')
 

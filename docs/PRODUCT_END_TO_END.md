@@ -2094,3 +2094,56 @@ the changed rejection/recovery variant was repeated and passed. Independent revi
 exact API Ruff, diff and backlog guard passed. No provider calls were used for
 these checks. A faithful isolated copy of frozen native67646 will exercise ordinary
 Retry next; delivery and actual content acceptance are still unproven.
+
+Native17340 delivered a new partial answer through the ordinary retry in151.9s
+with zero new Apertus requests (933 retained calls), using a faithful isolated
+copy of frozen67646. Both unchanged client readers render its three findings,
+seven citations and one operational notice. Core62bc14d activated at07:34:21UTC;
+public readiness and exact release identity passed at07:34:57UTC. Publication
+and source binding pass; independent content acceptance remains PARTIAL.
+
+### Bind the assertion to the evidence it actually cites
+
+The delivered third point transfers uncertainty about non-polar observations to
+Antarctica and upgrades a requirement for knowledge into evidence being absent.
+All seven quote/locator/hash identities are authentic, but authenticity alone does
+not establish the claim. The saved reviewer response902 swapped refs141/142 in
+its prose reasons and accepted an Antarctic assertion using explicitly midlatitude
+text. Full context was present; no rejection was lost. Both reasons hit the200
+character limit. Its actual generation already put references/reasons before
+verdicts, so reordering alone cannot address the observed correspondence failure.
+
+Scope: within the existing final-review call, bind each clause's comparison to a
+short exact witness from its stated reference. Compare material scope and permit
+valid paraphrases; incompatible or unestablished scope cannot support the clause.
+A need for information does not by itself prove information is missing. Invalid
+witness binding remains an unavailable review, never a factual negative. Preserve
+context-based citation repair, current source/access checks, full originals and
+private recovery. No additional reviewer, provider call, domain-specific rules or
+manual answer replacement. Dependencies are the existing clause review/correction
+path and captured originals; Legal and Pharma share the same implementation.
+
+Acceptance: mispaired quotations cannot authorize publication; an explicit scope
+mismatch reaches ordinary targeted correction; compatible paraphrases with bound
+originals remain eligible. Overall approval cannot override a negative clause.
+Changed review policy invalidates earlier approvals, while source reading remains
+reusable. Tests establish the host contract only; actual semantic acceptance still
+requires a newly generated native result against the frozen user question.
+
+Implemented exact per-clause witness binding and material-scope comparison inside
+the existing review call. Quote/ref mismatch stays unavailable and cannot be
+cached as a factual judgment. Explicit incomparable scope reaches ordinary
+correction, including when overall/concern outputs approve the clause. Original
+context may still propose a citation repair for a separate recheck. Layout-only
+whitespace, soft hyphens and actual PDF line wrapping are accepted; inline
+punctuation, hyphens and negation remain exact. Reasons allow600 characters.
+
+All108 distinct affected cases pass, including16 witness/correction/cache/layout
+cases and existing final-stage/resilience/coverage recovery. Exact API Ruff, diff,
+backlog guard and independent review pass. The exact former902 input with the new
+contract uses16,267 of24,000 characters; all29 canonical references and23 context
+fragments remain unchanged. No provider calls were used for these checks. Final
+review policy changes invalidate old approval receipts; the legacy synthesis
+binding also requires one regeneration, without losing captured source reading.
+Scope compatibility remains a fallible model judgment. New native content
+acceptance has not yet been established.
