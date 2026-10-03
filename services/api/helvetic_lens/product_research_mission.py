@@ -243,14 +243,46 @@ def apply_continuation(session, run, supplied, result, work):
     event(session, run, "research_continued", round=state["round"], next_checks=len(gaps), frontiers=len(deeper))
 
 
-def checked_delivery(result, verification):
-    """Publish the checked subset without executing its private draft controls."""
+def remember_delivery(work, result):
+    """Only the completed host review can authorize a separate delivery view."""
+    work["completed_answer_delivery"] = {
+        "input_fingerprint": fingerprint(work["input"]),
+        "output_fingerprint": fingerprint(result.model_dump(mode="json"))}
+
+
+def delivery_current(work, result):
+    receipt = work.get("completed_answer_delivery")
+    return bool(work.get("phase") == "brief" and result is not None and isinstance(receipt, dict)
+        and receipt.get("input_fingerprint") == fingerprint(work["input"])
+        and receipt.get("output_fingerprint") == fingerprint(result.model_dump(mode="json")))
+
+
+def checked_delivery(result, verification=None):
+    """Keep a checked answer separate from non-executable draft controls."""
+    checkpoint = result.mission_checkpoint
+    if not verification and checkpoint.action == "continue":
+        # Executable reading still passes every ordinary citation/current-input
+        # validator before it can release further work.
+        return result
     delivered = result.model_copy(deep=True)
-    delivered.clarification, delivered.directions = "", []
     checkpoint = delivered.mission_checkpoint
-    checkpoint.action, checkpoint.reason = "finish", verification["basis"]
+    clarifying = bool(not verification and checkpoint.action == "clarify"
+        and delivered.clarification.strip() and len(delivered.directions) >= 2
+        and len({direction.question.strip().casefold() for direction in delivered.directions}) == len(delivered.directions))
+    if not clarifying:
+        delivered.clarification, delivered.directions = "", []
+    if verification:
+        checkpoint.action, checkpoint.reason = "finish", verification["basis"]
+    elif checkpoint.action == "clarify" and not clarifying:
+        # No choice can be requested without alternatives. An empty continuation
+        # settles through the existing no-useful-next-check path, not a claim
+        # that all requested research has been completed.
+        checkpoint.action = "continue"
+        checkpoint.reason = "The checked findings are retained; no complete next action was supplied."
+    # Finish and clarification do not execute a reading plan. Complete cited
+    # clarification alternatives themselves retain their ordinary validators.
     checkpoint.next_checks, checkpoint.deepen_branches = [], []
-    if hasattr(delivered, "question_renewals"):
+    if verification and hasattr(delivered, "question_renewals"):
         delivered.question_renewals = []
         # Omission is deliberate here; stale optional-output parse failures do
         # not describe these empty updates. Current input validation still runs.

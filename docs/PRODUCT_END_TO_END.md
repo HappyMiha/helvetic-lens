@@ -2211,3 +2211,68 @@ Captured942/943/945 envelopes are11,035/19,401/17,236 characters within24k,
 preserving all66 canonical reference/full-text identities and surrounding context.
 Invalid selections are rejected; fixtures do not repair malformed explicit
 witnesses. These checks prove attachment and transport, not semantic acceptance.
+
+### Complete answer delivery and optional research controls
+
+Native70689 on937e6df finished failed after21new calls. Canonical choices bind
+correctly (13 returned review objects); exact current factual validation passes
+for the3 retained points. Ordinary mission application rejects `clarify` with an
+empty question/no alternatives, after successful final review. The old partial
+answer remains unchanged. This is the ordinary counterpart of the earlier
+deferred-delivery control coupling. Private synthesis was cleared before
+publication, so retry must redraft. The stale last-step error is not the terminal
+cause; exact offline current-fingerprint replay confirms invalid_evidence.
+
+Scope: make host-verified final answer publication independent of non-executable
+private next-action fields. Keep complete cited clarification/validated future
+work on their existing paths; preserve early interaction and private continuation.
+Retain the exact private final candidate until application succeeds, with fresh
+source/authorization fences on retry. No model review bypass, manual answer or
+forced status. Acceptance is ordinary and deferred delivery of checked findings,
+valid cited choices still pausing, source changes still rejecting, and retry
+reusing a failed private publication without another paid redraft.
+
+Content acceptance remains open independently: the actual model reviews still
+approve some numeric/scope errors and misclassify optional detail as missing
+required evidence. Publication success must not be reported as semantic PASS.
+
+Evidence-packing scope in the same user journey: native70689's draft uses34 refs,
+29 from one related-scope page (~81% of source text); two other sources supply
+only headings. Direct original-question evidence exists in current wire refs83–84
+with complete page context79–94. Current source-first packing ignores local
+retrieval scores and measured marginal cost. Replace that priority with
+incremental relevance across literal question parts under the real caller
+envelope; retain whole structural units and mandatory witnesses, make source
+diversity a preference, and expose existing subset/absence metadata to brief.
+No new inference, domain rules, evidence rewriting or claim that retrieval alone
+proves answer coverage. Validate exact captured envelope and source identities,
+plus generic distinct-question coverage and required-context/cache/privacy cases.
+
+Exact feasibility replay confirms this is a selection choice, not an impossible
+context limit: complete direct-question page context alone costs19,548 chars;
+with retained recovery/variability passages21,084; replacing the related page in
+the actual23,943-char packet costs22,467, below24k. Keeping both costs30,850.
+This replay reuses unchanged canonical originals and the exact recorded writer
+envelope. Original hybrid ranks were not retained; offline lexical diagnostics
+are not presented as a reconstruction of those ranks.
+
+Delivery validation:19 distinct relevant cases pass, covering host receipt
+binding/emission, incomplete and complete clarification, retained failed final
+publication with same-ID retry, valid continued reading, and existing qualified
+delivery/source-withdrawal boundaries. Independent production review found no
+blocker; source/access/lease/current-input fences are unchanged. Shared API Ruff, diff and backlog guard pass.
+
+Final packing validation:34 relevant cases pass, including complete mandatory
+context, caches/access, distinct requested parts, single-query opposing sources,
+actual envelope cost, and equivalent text split into1or8PDF lines. New selection
+weights local query priority by previously unselected original text, with smooth
+diminishing returns, a bounded source-diversity preference and measured cost.
+This is reference novelty, not semantic deduplication or proof of new facts.
+Rejected candidates do not trigger quadratic reordering. Every accepted union
+still passes the exact caller envelope. Independent review found no blocker.
+
+The labeled lexical-only offline check selects22 unchanged refs/four sources,
+including completepage4 and direct refs83–84, at24,000/24,000chars in0.477s.
+All selected structural context remains intact; no encoder/provider/network/DB
+access occurred. This is a retrieval/transport check, not historical hybrid-rank
+replay, production latency measurement or final answer semantic acceptance.

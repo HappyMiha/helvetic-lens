@@ -1,5 +1,6 @@
 """Local retrieval packs complete exact originals for bounded synthesis requests."""
 import json
+import math
 from copy import deepcopy
 from time import monotonic
 from urllib.parse import urlsplit
@@ -10,8 +11,8 @@ from .research_original_context import POLICY as ORIGINAL_CONTEXT_POLICY
 from .research_original_context import provider_excerpts, reference_units
 from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
 
-POLICY = fingerprint({'contract': 'local-hybrid-evidence-pack/v1',
-    'units': ORIGINAL_CONTEXT_POLICY, 'packing': 'request-source-diversity/v1',
+POLICY = fingerprint({'contract': 'local-hybrid-evidence-pack/v2',
+    'units': ORIGINAL_CONTEXT_POLICY, 'packing': 'incremental-question-relevance-cost/v1',
     'mission_metadata': 'completed-document-counts/v1', 'cost': 'actual-caller-envelope/v1',
     'source_use': SOURCE_USE_POLICY})
 
@@ -38,12 +39,15 @@ def provider_input(wire, references):
     # replaced by the selected provider view. The full host corpus stays intact.
     result = deepcopy({**wire.input, 'sources': []})
     result['sources'] = provider_sources(wire, references)
-    if getattr(wire, 'work', {}).get('phase') == 'reflect':
+    phase = getattr(wire, 'work', {}).get('phase')
+    if phase == 'reflect':
         result['discovery_leads'] = selected_leads(wire, references)
+    if phase in {'reflect', 'brief'}:
         result['evidence_scope'] = {
             'available_references': len(wire.references), 'selected_references': len(references),
             'all_originals_supplied': len(references) == len(wire.references), 'absence_established': False,
             'scope': 'These originals were selected from retained material. Unselected material is not evidence of absence. '
+                'A missing detail in this packet does not establish a knowledge gap. '
                 'Propose only consequential evidence-backed next readings; listed links are unread leads, not findings.'}
     mission = result.get('research_mission')
     if isinstance(mission, dict):
@@ -133,22 +137,62 @@ def _references(wire, units):
     return {key: value for key, value in wire.references.items() if key in retained}
 
 
-def _diverse_units(units, rankings, required):
-    """Interleave requested distinctions, preferring a new source on each turn."""
-    owners = {key: index for index, unit in enumerate(units) for key in unit['primary']}
-    queues = [list(dict.fromkeys(owners[key] for key in ranking['references'])) for ranking in rankings]
-    seen = set(required)
-    sources = {units[index]['source_id'] for index in seen}
-    while any(queues):
-        for queue in queues:
-            queue[:] = [index for index in queue if index not in seen]
-            if not queue:
-                continue
-            candidate = next((index for index in queue if units[index]['source_id'] not in sources), queue[0])
-            queue.remove(candidate)
-            seen.add(candidate)
-            sources.add(units[candidate]['source_id'])
-            yield candidate
+def _question_scores(rankings):
+    """Comparable retrieval priorities per literal query, never proof of coverage."""
+    queries = {}
+    for ranking in rankings:
+        supplied, scores = ranking.get('scores', {}), {}
+        for position, key in enumerate(ranking['references'], 1):
+            value = supplied.get(key, supplied.get(str(key))) if isinstance(supplied, dict) else None
+            scores[key] = (float(value) if type(value) in (int, float) and math.isfinite(value) and value >= 0
+                else 1 / (60 + position))
+        maximum = max(scores.values(), default=0)
+        if maximum:
+            queries[ranking['query']] = {key: value / maximum for key, value in scores.items()}
+    return list(queries.values())
+
+
+def _incremental_units(wire, units, rankings, selected, retained, costs, request_size, allowance):
+    """Prefer new question relevance, using cost estimates only for ordering."""
+    scores = _question_scores(rankings)
+    pool = {index for index, unit in enumerate(units)
+        if any(key in row for row in scores for key in unit['primary'])} - selected
+    empty_cost = request_size({})
+    # Weight original text, not the number of PDF lines/citation records. A
+    # heading does not supply as much material as a complete relevant passage.
+    text_weights = {key: len(''.join(ref['quote'].split())) for key, ref in wire.references.items()}
+    while pool:
+        present = {key: ref for key, ref in wire.references.items() if key in retained}
+        room = max(1, allowance - request_size(present))
+        accumulated = [sum(row.get(key, 0) * text_weights[key] for key in retained) for row in scores]
+        sources = {ref['source_id'] for ref in present.values()}
+
+        def priority(index):
+            unit = units[index]
+            novel = set(unit['references']) - retained
+            # Smooth diminishing returns retain independently relevant or
+            # opposing originals after the highest-ranked passage is present.
+            gain = sum(math.sqrt(1 + previous + sum(row.get(key, 0) * text_weights[key] for key in novel))
+                - math.sqrt(1 + previous) for row, previous in zip(scores, accumulated))
+            weights = {key: max(1, len(ref['quote'])) for key, ref in unit['references'].items()}
+            # Standalone costs use the actual caller envelope. Discount overlap
+            # for ordering; the caller still checks every accepted union exactly.
+            marginal = max(0, costs[index] - empty_cost) * sum(
+                weight for key, weight in weights.items() if key not in retained) / sum(weights.values())
+            # Diversity is a bounded preference, not a right to displace much
+            # stronger evidence merely because its source is already present.
+            diversity = 1.25 if unit['source_id'] not in sources else 1
+            return (gain * diversity / (1 + marginal / room), gain, -marginal, -index)
+
+        snapshot = set(retained)
+        ordered = sorted(((priority(index), index) for index in pool), reverse=True)
+        for priority_value, index in ordered:
+            if priority_value[0] <= 0:
+                return  # No new ranked originals, not a claim the question is answered.
+            pool.remove(index)
+            yield index
+            if retained != snapshot:
+                break  # Rejected unions leave every remaining priority unchanged.
 
 
 def _coverage(wire, checkpoints, receipt):
@@ -231,12 +275,12 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
     retained = set(mandatory)
     selected_units = set(required)
     rejected, ranked_groups = [], set(required)
-    for index in _diverse_units(units, rankings, required):
+    for index in _incremental_units(wire, units, rankings, selected_units, retained, costs, request_size, allowance):
         ranked_groups.add(index)
         candidate_keys = retained | set(units[index]['references'])
         candidate = {key: value for key, value in wire.references.items() if key in candidate_keys}
         if fits(candidate):
-            retained = candidate_keys
+            retained.update(candidate_keys)
             selected_units.add(index)
         else:
             rejected.append(index)

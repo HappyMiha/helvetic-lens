@@ -118,6 +118,18 @@ def test_reflection_preserves_only_selected_exact_source_leads_and_honest_scope(
     assert empty['properties']['gaps']['maxItems'] == 0
 
 
+def test_brief_selected_packet_is_not_evidence_of_absence():
+    wire = corpus(2)
+    wire.work = {'phase': 'brief'}
+    before = deepcopy(wire.__dict__)
+    result = provider_input(wire, {1: wire.references[1]})
+    assert result['evidence_scope']['available_references'] == 2
+    assert result['evidence_scope']['selected_references'] == 1
+    assert result['evidence_scope']['all_originals_supplied'] is False
+    assert result['evidence_scope']['absence_established'] is False
+    assert wire.__dict__ == before
+
+
 @pytest.mark.asyncio
 async def test_completed_document_metadata_does_not_displace_a_whole_short_original():
     wire, model = corpus(1, 'An exact qualified observation. ' * 40), Selector(lambda *_: True)
@@ -166,7 +178,8 @@ async def test_complete_paragraph_and_adjacent_qualification_are_not_sliced(monk
     wire = corpus(1)
     wire.references = {i: {'source_id': 's1', 'locator': f'p{i}' if i < 28 else 'p28',
         'quote': f'Exact window {i}. ' + 'Original context. ' * 24} for i in range(1, 31)}
-    ranking(monkeypatch, [{'query': 'qualification', 'references': [29, *range(1, 29), 30]}])
+    ranking(monkeypatch, [{'query': 'qualification', 'references': [29, *range(1, 29), 30],
+        'scores': {key: 1 if key == 29 else .1 for key in wire.references}}])
     result = await select_evidence(service(Selector(None)), wire, 'Explain the qualification.', 60,
         fits=lambda refs: len(refs) <= 4)
     assert set(result) == {27, 28, 29, 30}
@@ -186,7 +199,81 @@ async def test_question_parts_and_source_diversity_share_the_pack(monkeypatch):
     ranking(monkeypatch)
     result = await select_evidence(service(Selector(None)), wire, 'Compare the sources.', 60,
         fits=lambda refs: len(refs) <= 4)
-    assert set(result) == {1, 2, 18, 19}, 'One long source cannot occupy every available slot first'
+    assert {1, 2} <= set(result) and set(result).intersection({18, 19})
+    assert len({ref['source_id'] for ref in result.values()}) >= 2, 'Independent sources retain a chance despite one long source'
+
+
+@pytest.mark.asyncio
+async def test_single_query_keeps_a_second_relevant_opposing_original(monkeypatch):
+    wire = corpus(3)
+    wire.references[1]['quote'] = 'The reported effect increased in the first observation.'
+    wire.references[2]['quote'] = 'An independent observation did not reproduce the reported increase.'
+    wire.references[3]['quote'] = 'An unrelated publication heading.'
+    ranking(monkeypatch, [{'query': 'Is the reported effect consistent?', 'references': [1, 2, 3],
+        'scores': {1: 1, 2: .85, 3: .01}}])
+    result = await select_evidence(service(Selector(None)), wire, wire.input['original_question'], 60,
+        fits=lambda refs: len(refs) <= 2)
+    assert set(result) == {1, 2}
+    assert result[2]['quote'] == wire.references[2]['quote']
+
+
+@pytest.mark.asyncio
+async def test_splitting_one_pdf_page_into_more_lines_does_not_increase_its_relevance(monkeypatch):
+    body = 'A complete passage with its original qualifications and conditions. ' * 10
+    selected_sources = []
+    for fragments in (1, 8):
+        wire = corpus(2)
+        offsets = [len(body) * index // fragments for index in range(fragments + 1)]
+        wire.references = {index + 1: {'source_id': 's1', 'locator': f'page-1-text-{index + 1}-char-1',
+            'quote': body[offsets[index]:offsets[index + 1]]} for index in range(fragments)}
+        wire.references[100] = {'source_id': 's2', 'locator': 'page-2-text-1-char-1', 'quote': body}
+        ranking(monkeypatch, [{'query': 'The requested finding and conditions', 'references': [100, *range(1, fragments + 1)],
+            'scores': {key: .8 if key == 100 else .7 for key in wire.references}}])
+
+        def measured(refs):
+            return 10 + sum(len(ref['quote']) for ref in refs.values())
+
+        result = await select_evidence(service(Selector(None), 10 + len(body)), wire, wire.input['original_question'], 60,
+            request_size=measured)
+        selected_sources.append({ref['source_id'] for ref in result.values()})
+        assert result == {key: wire.references[key] for key in result}
+    assert selected_sources == [{'s2'}, {'s2'}]
+
+
+@pytest.mark.asyncio
+async def test_a_second_relevant_passage_beats_unrelated_source_diversity(monkeypatch):
+    wire = corpus(4)
+    wire.references[2].update(source_id='s1', locator='separate-section')
+    wire.input['sources'][0]['original_context']['captured_complete'] = False
+    ranking(monkeypatch, [
+        {'query': 'Observed change', 'references': [1, 3, 4, 2], 'scores': {1: 1, 3: .2, 4: .1, 2: 0}},
+        {'query': 'Remaining uncertainty', 'references': [2, 3, 4, 1], 'scores': {2: 1, 3: .2, 4: .1, 1: 0}}])
+    result = await select_evidence(service(Selector(None)), wire, wire.input['original_question'], 60,
+        fits=lambda refs: len(refs) <= 2)
+    assert set(result) == {1, 2}
+    assert result == {key: wire.references[key] for key in result}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('required', [(), (1,)])
+async def test_actual_envelope_cost_preserves_complementary_question_evidence_and_mandatory_units(monkeypatch, required):
+    wire = corpus(3)
+    ranking(monkeypatch, [
+        {'query': 'Observed change', 'references': [1, 2, 3], 'scores': {1: 1, 2: .95, 3: 0}},
+        {'query': 'Remaining uncertainty', 'references': [3, 1, 2], 'scores': {3: 1, 1: 0, 2: 0}}])
+    costs = {1: 75, 2: 20, 3: 50}
+    calls = []
+
+    def measured(refs):
+        calls.append(tuple(refs))
+        return 10 + sum(costs[key] for key in refs)
+
+    result = await select_evidence(service(Selector(None), 100), wire, wire.input['original_question'], 60,
+        request_size=measured, required_refs=required)
+    assert set(result) == ({1} if required else {2, 3})
+    assert measured(result) <= 100
+    assert all(ref == wire.references[key] for key, ref in result.items())
+    assert len(calls) < 12, 'Priority ordering must not serialize every candidate union repeatedly'
 
 
 @pytest.mark.asyncio

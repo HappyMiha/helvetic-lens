@@ -577,6 +577,8 @@ async def execute(service, job_id, worker):
 
         prior_parts = completed_work(state.get(synthesis_checkpoint))
         qualified_delivery = bool(not failed and work.get("deferred_review_verification"))
+        from .product_research_mission import delivery_current
+        completed_delivery = bool(not failed and delivery_current(work, result))
         if work.get("exhausted_review_invalidated"):
             state.pop(EXHAUSTED_REVIEW, None)
         if work.get("synthesis_checkpoint_invalidated") or work.get("exhausted_review_invalidated"):
@@ -587,7 +589,7 @@ async def execute(service, job_id, worker):
             if ((previous or {}).get("parts", {}).get("deferred_final_review")
                     and (previous or {}).get("binding") != (current or {}).get("binding")):
                 state[DEFERRED_ARCHIVE] = previous  # Private history, never migrated into another approval cache.
-            if (transient or packing_failure or qualified_delivery) and unmetered(run) and run.status in ACTIVE and current:
+            if (transient or packing_failure or qualified_delivery or completed_delivery) and unmetered(run) and run.status in ACTIVE and current:
                 # This remains a private proposal. All post-provider fences above
                 # must pass before retaining it, and every later answer is validated.
                 state[synthesis_checkpoint] = deepcopy(current)
@@ -768,6 +770,7 @@ async def execute(service, job_id, worker):
             progress.remember(run, work.get("capture_progress"), work.get("capture_dependencies", []))
             queries.remember(run, journal)
             if work["phase"] == "brief" and not qualified_delivery:
+                state.pop(synthesis_checkpoint, None)
                 state.pop(DEFERRED_ARCHIVE, None)
                 state.pop(EXHAUSTED_REVIEW, None)
         if failed:

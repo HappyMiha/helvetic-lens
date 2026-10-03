@@ -295,7 +295,7 @@ def apply(session, run, branch, state, work, result):
             branch.status = "completed"
         else:
             verification = work.get("deferred_review_verification")
-            if verification:
+            if verification or mission.delivery_current(work, result):
                 result = mission.checked_delivery(result, verification)
             exploration.apply(session, run, work["input"], result)
             branch.status = "completed"

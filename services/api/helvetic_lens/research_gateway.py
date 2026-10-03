@@ -432,6 +432,12 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 on_progress=retain_final if resume else None)
             work["model_route"]["answer_review"]["delivered_coverage"] = coverage
             synchronize_projections(delivered)
+            if resume:
+                retain_final()
+            if (not pending and final_coverage.get("factual_review", {}).get("status") == "checked"
+                    and coverage.get("status") in {"checked", "not_applicable"}):
+                from .product_research_mission import remember_delivery
+                remember_delivery(work, delivered)
             raw = delivered.model_dump_json()
     return response_object(raw, schema)
 
