@@ -126,11 +126,14 @@ def review_projection(wire, item, previous=None, delivered=()):
         required.extend(key for key in keys if key not in required)
         return list(dict.fromkeys(keys))
 
-    def original(ref):
+    def bound_reference(ref):
         identity = (ref.get('source_id'), ref.get('locator'), ref.get('quote'))
         if identity not in identities:
             raise ValueError('Unbound review original')
-        return retain([identities[identity]])[0]
+        return identities[identity]
+
+    def original(ref):
+        return retain([bound_reference(ref)])[0]
 
     def point(value, field):
         result = deepcopy(value)
@@ -139,7 +142,13 @@ def review_projection(wire, item, previous=None, delivered=()):
         return result
 
     projected = point(item, 'passages') if 'passages' in item else deepcopy(item)
-    delivered = [point(value, 'evidence') for value in delivered]
+    # A gap needs the answer's statements to assess coverage. Each point has its
+    # own factual review; its citations are not mandatory evidence for every gap.
+    # Still reject unbound references before using that point as answer context.
+    for value in delivered:
+        for ref in value['evidence']:
+            bound_reference(ref)
+    delivered = [{'statement': value['statement']} for value in delivered]
     concerns = None
     if previous is not None:
         concerns = {'previous_statements': deepcopy(previous['previous_statements']), 'concerns': {}}
@@ -264,7 +273,8 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
         # Position is presentation, not evidence identity. Inserting or removing
         # a sibling must not repurchase an unchanged factual check.
         binding = 'clauses:' + fingerprint({'policy': POLICY, 'kind': 'point' if key.startswith('P') else 'gap',
-            'assertion': item, 'context': {k: v for k, v in payload.items() if k != 'final_claims_and_gaps'}})
+            'assertion': item, 'context': {k: v for k, v in payload.items() if k != 'final_claims_and_gaps'},
+            **({'delivered_points': [point.model_dump() for point in answer.points]} if key.startswith('L') else {})})
         data = checkpoints.get(binding)
         if data is None:
             failure = checkpoints.get('transient_assertions', {}).get(targets[key], {})

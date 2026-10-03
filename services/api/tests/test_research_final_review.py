@@ -902,39 +902,120 @@ async def test_unbound_review_original_stays_pending_without_model_dispatch(unbo
 
 
 @pytest.mark.asyncio
-async def test_gap_review_binds_delivered_point_ids_to_supplied_originals(monkeypatch):
-    from helvetic_lens import research_evidence_pack
+@pytest.mark.parametrize('prior_concern', [False, True])
+async def test_gap_review_retrieves_complete_originals_without_mandating_all_delivered_sources(monkeypatch, prior_concern):
+    from helvetic_lens import research_active_retrieval, research_evidence_pack
     from helvetic_lens.product_exploration import AssessmentOutcome
     from helvetic_lens.research_final_review import reasoned_review
 
-    refs = {i: {'source_id': f'source-{i}', 'locator': 'p1', 'quote': text}
-        for i, text in enumerate(['North Survey operates the registry.', 'The transfer date is unspecified.',
-            'Other original context. ' * 400], 1)}
-    answer = AssessmentOutcome(status='partial', points=[{'statement': refs[1]['quote'],
-        'evidence': [{**refs[1], 'role': 'support'}]}], limitations=['The transfer date remains unknown.'])
-    wire = SimpleNamespace(input={}, references=refs)
-    calls = []
+    refs, sources, pages, points = {}, [], [], []
+    for index in range(5):
+        source_id, page = f'sibling-{index}', []
+        for line in range(15):
+            key = len(refs) + 1
+            refs[key] = {'source_id': source_id, 'locator': f'page-1-text-{line}',
+                'quote': (f'Registry {index}, record {line}: ' + 'The operator retains the recorded responsibility. ' * 8).rstrip()}
+            page.append(key)
+        pages.append(page)
+        sources.append({'id': source_id, 'title': source_id, 'excerpts': [
+            {'passage': refs[key]['locator'], 'text': refs[key]['quote']} for key in page]})
+        points.append({'statement': f'Registry {index} retains its operator.',
+            'evidence': [{**refs[page[0]], 'role': 'support'}]})
+    for source_id, texts in [('transfer', ['The transfer date has not been determined.',
+            'The successor must be elected before a transfer can be scheduled.']),
+            ('objection', ['The earlier timetable was withdrawn.', 'That timetable cannot establish a current transfer date.'])]:
+        page = []
+        for line, text in enumerate(texts):
+            key = len(refs) + 1
+            refs[key] = {'source_id': source_id, 'locator': f'page-1-text-{line}', 'quote': text}
+            page.append(key)
+        pages.append(page)
+        sources.append({'id': source_id, 'title': source_id, 'excerpts': [
+            {'passage': refs[key]['locator'], 'text': refs[key]['quote']} for key in page]})
+    relevant, objection = pages[-2:]
+    answer = AssessmentOutcome(status='partial', points=points, limitations=['The transfer date remains unknown.'])
+    wire = SimpleNamespace(input={'original_question': 'Who operates these registries, and when is the transfer?',
+        'sources': sources}, references=refs)
+    concerns = {'L0': {'previous_statements': [], 'issues': [{'instruction': 'Check the withdrawn timetable.',
+        'original_refs': [objection[0]]}]}} if prior_concern else None
+    before = deepcopy((answer.model_dump(), refs, sources, concerns))
+    calls, selections, cache = [], [], {}
+    real_select = research_evidence_pack.select_evidence
 
     async def select(service, candidate, question, seconds, **options):
-        assert options['required_refs'] == [1], 'Delivered citations remain mandatory when gap context is packed'
-        selected = {i: refs[i] for i in (1, 2)}
-        assert options['fits'](selected)
+        assert candidate.references == refs, 'Gap retrieval must consider originals beyond the current answer'
+        assert options['required_refs'] == (objection[:1] if prior_concern else [])
+        siblings = {key: refs[key] for page in pages[:5] for key in page}
+        assert not options['fits'](siblings), 'The old all-sibling mandatory pack would overflow'
+        selected = await real_select(service, candidate, question, seconds, **options)
+        assert set(relevant) <= set(selected)
+        if prior_concern:
+            assert set(objection) <= set(selected), 'A prior objection keeps its whole original page'
+        assert not set(siblings) <= set(selected)
+        for page in pages:
+            assert not set(page).intersection(selected) or set(page) <= set(selected), 'Never crop an original page'
+        selections.append(selected)
         return selected
+
+    async def rank(service, candidate, question, seconds, **options):
+        assert candidate.references == refs
+        return {'rankings': [{'query': 'transfer date', 'references': [*relevant,
+            *(key for key in refs if key not in relevant)]}],
+            'coverage': {'method': 'test_ranked_originals', 'semantic_status': 'test_fixture'}}
 
     class Model:
         async def complete(self, system, text, **options):
             value = json.loads(text)
-            calls.append(value)
+            assert research_evidence_pack.request_characters(system, value, options['response_schema']) <= 24000
             key, item = next(iter(value['final_claims_and_gaps'].items()))
+            calls.append(key)
             if key == 'L0':
-                assert value['delivered_points'] == [{'statement': refs[1]['quote'],
-                    'evidence': [{'citation_ref': 1, 'role': 'support'}]}]
-                assert {p['citation_ref'] for group in value['sources'] for p in group['passages']} == {1, 2}
-            return review_json({'clauses': [{'claim_as_written': item.get('statement', item.get('gap')),
-                'verdict': 'supported', 'reason': '', 'citation_refs': [1] if key == 'P0' else [2]}]}, gap=key == 'L0')
+                assert value['delivered_points'] == [{'statement': point.statement} for point in answer.points]
+                supplied = {p['citation_ref']: p['text'] for group in value['sources'] for p in group['passages']}
+                assert supplied == {key: ref['quote'] for key, ref in selections[-1].items()}
+                witnesses = relevant[:1]
+            else:
+                assert [{**refs[ref], 'role': 'support'} for ref in value['selected_citation_refs']] == [
+                    ref.model_dump() for ref in answer.points[int(key[1:])].evidence]
+                witnesses = value['selected_citation_refs']
+            data = {'clauses': [{'claim_as_written': item.get('statement', item.get('gap')),
+                'verdict': 'supported', 'reason': '', 'citation_refs': witnesses}]}
+            if key == 'L0' and prior_concern:
+                data['concern_checks'] = [{'id': 'C0', 'outcome': 'resolved',
+                    'reason': 'The withdrawn timetable is not used as a current date.', 'citation_refs': objection[:1]}]
+            return review_json(data, gap=key == 'L0')
 
     monkeypatch.setattr(research_evidence_pack, 'select_evidence', select)
-    settings = Settings(_env_file=None, apertus_context_chars=11000)
-    result = await reasoned_review(SimpleNamespace(settings=settings, model_client=Model()), wire, answer, 60)
-    assert result['status'] == 'checked' and len(calls) == 2
-    assert answer.points[0].evidence[0].model_dump() == {**refs[1], 'role': 'support'}
+    monkeypatch.setattr(research_active_retrieval, 'rank_evidence', rank)
+    service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
+    result = await reasoned_review(service, wire, answer, 60, checkpoints=cache, concerns=concerns)
+    assert result['status'] == 'checked' and calls == ['P0', 'P1', 'P2', 'P3', 'P4', 'L0']
+    assert (answer.model_dump(), refs, sources, concerns) == before
+    cache = json.loads(json.dumps(cache))
+    await reasoned_review(service, wire, answer, 60, checkpoints=cache, concerns=concerns)
+    assert len(calls) == 6, 'Exact checked points and the gap resume without new inference'
+    answer.points[0].evidence[0].locator = refs[pages[0][1]]['locator']
+    answer.points[0].evidence[0].quote = refs[pages[0][1]]['quote']
+    await reasoned_review(service, wire, answer, 60, checkpoints=cache, concerns=concerns)
+    assert calls[6:] == ['P0', 'L0'], 'Changed private citations invalidate gap proof without rechecking unchanged siblings'
+
+
+@pytest.mark.asyncio
+async def test_unbound_delivered_original_keeps_gap_pending_without_dispatch():
+    from helvetic_lens.product_exploration import AssessmentOutcome
+    from helvetic_lens.research_final_review import reasoned_review
+
+    ref = {'source_id': 'registry', 'locator': 'p1', 'quote': 'North Survey operates the registry.'}
+    answer = AssessmentOutcome(status='partial', points=[{'statement': ref['quote'],
+        'evidence': [{**ref, 'source_id': 'another-tenant', 'role': 'support'}]}],
+        limitations=['The transfer date remains unknown.'])
+
+    class Model:
+        async def complete(self, *args, **kwargs):
+            pytest.fail('An unbound delivered original must not reach either point or gap review')
+
+    cache = {}
+    result = await reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
+        SimpleNamespace(input={}, references={1: ref}), answer, 60, checkpoints=cache)
+    assert result['status'] == 'partial' and cache == {}
+    assert result['pending_checks'] == [{'item': key, 'reason': 'unbound_original_reference'} for key in ('P0', 'L0')]

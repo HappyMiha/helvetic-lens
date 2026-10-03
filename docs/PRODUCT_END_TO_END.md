@@ -1773,3 +1773,41 @@ Both exact recommendation-dependency cases passed without re-running the earlier
 journeys. Four existing final-stage resume cases also passed. Exact API Ruff and
 diff checks passed on the combined change. Publication and native public-source
 acceptance follow; these checks do not certify the scientific answer.
+
+### Complete-original final-review transport
+
+MV2-020/023: native61985 on live29bfea9 completed its next reading and returned
+to synthesis, then failed after4,013 seconds/206 steps with
+research_evidence_group_too_large in final reasoned review. Its71 new model calls
+include source extraction/reconciliation; the private continuation avoided
+intermediate answer review as intended. The delivered answer is exactly the old,
+unaccepted native3296/49170 answer. Frozen61985 JSON and SQLite preserve evidence.
+
+Scope: resolve the actual mandatory-original request overflow at the transport
+boundary, without trimming evidence, weakening validation or adding another
+review layer. Reconstruct the actual request and its fixed/schema/source costs;
+check deployment-specific provider constraints before changing any allowance.
+The frozen request identifies a semantic dependency error: each gap forces all
+delivered points' citations into its mandatory evidence, even though those points
+have their own factual checks. L0 requires 28,515/24,000 characters with 78 refs
+across 11 complete groups. Removing duplicate schema alone cannot fit it.
+
+Pass delivered statements as coverage context, validate their exact private
+citations and bind them to the gap cache, while retaining only the actual
+assertion and prior concern witnesses as mandatory originals. Gap retrieval still
+ranks the whole retained corpus and transports complete selected source groups.
+Keep independent point review/cache and provider settings unchanged. Acceptance
+requires oversized unrelated siblings no longer to prevent a gap check, relevant
+originals and prior objections to remain intact, and exact-input resume to reuse
+only compatible checks. A subsequent
+ordinary same-ID retry must deliver a useful source-grounded answer; transport fit
+alone is not content acceptance. Existing source access is sufficient; no new
+keys, production fixtures, repeated unchanged semantic reviews or provider probes.
+
+Implemented the scoped correction without changing provider allowance or adding a
+model call. The frozen L0 mandatory overhead falls from 28,515 to 7,858 characters
+before relevant full-corpus retrieval. All 59 final-review cases and the backlog
+guard pass, including three complete-page packing, citation identity and resume
+regressions. Exact API Ruff, diff checks and independent production review pass.
+No originals were cropped. Production activation and native content acceptance
+remain separate next gates.
