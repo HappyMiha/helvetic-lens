@@ -2778,7 +2778,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** IN PROGRESS, Coref43b07a/Sites92 live. Preserve source conditions/dates and reuse dependencies within each read pass. [Scope/acceptance](docs/PRODUCT_END_TO_END.md).
+**Current direction:** IN PROGRESS, Coreacf40c9/Sites92 live. Reuse eligible complete originals; preserve source conditions, dates and current-question analysis. [Scope/acceptance](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

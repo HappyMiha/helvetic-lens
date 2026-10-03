@@ -5,8 +5,9 @@ from pydantic import ValidationError
 
 from . import product_informed_research as informed
 from .config import DomainError
-from .product_api import fail, iso
+from .product_api import fail
 from .product_operations import fingerprint
+from .research_knowledge import captured_at
 
 CONTRACT = "early-clarification/v1"
 CONTEXT_CONTRACT = "selected-direction/v1"
@@ -146,7 +147,7 @@ def context(session, run):
         "original_question": selected["original_question"], "question": direction["question"],
         "why": direction["why"], "quote": direction["quote"], "locator": direction["locator"],
         "source": {"id": source.id, "sha256": source.sha256, "title": source.title,
-            "url": source.url, "captured_at": iso(source.created_at)}}
+            "url": source.url, "captured_at": captured_at(source)}}
 
 
 def input_current(session, run, supplied):

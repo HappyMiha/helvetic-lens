@@ -8,6 +8,7 @@ from .product_api import iso
 from .product_investigation_models import InvestigationBranch
 from .product_investigations import ACTIVE, rows
 from .product_operations import fingerprint
+from .research_knowledge import captured_at
 
 CONTRACT = "research-activity/v1"
 PURPOSE_CONTRACT = "research-purpose/v1"
@@ -140,4 +141,4 @@ def projection(session, run, available, *, invalid=False):
         "checking_alternative": recovery.alternative(state, branch.phase),
         "testing_query": bool(state.get("query_recovery", {}).get("query")) and branch.phase == "search",
         "latest_source": {"id": latest.id, "title": latest.title, "url": latest.url,
-            "captured_at": iso(latest.created_at)} if latest else None}
+            "captured_at": captured_at(latest)} if latest else None}

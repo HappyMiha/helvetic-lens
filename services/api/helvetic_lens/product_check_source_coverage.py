@@ -2,10 +2,10 @@
 from sqlalchemy import select
 
 from .decision_search import public_url
-from .product_api import iso
 from .product_investigation_models import Investigation, InvestigationSource, WebResearchTrigger
 from .product_public_research import sources_visible
 from .product_source_reviews import current_reviews
+from .research_knowledge import captured_at
 
 CONTRACT = "check-source-coverage/v1"
 PRIOR_LIMIT = 12
@@ -95,7 +95,7 @@ def candidate(session, run, item, steps, blocked):
     if not available(session, run, source) or source.investigation_id != run.id or source.url != url:
         return hidden()
     row.update(source_id=source.id, investigation_id=run.id,
-        capture_state=source.snapshot.get("capture_state"), captured_at=iso(source.created_at))
+        capture_state=source.snapshot.get("capture_state"), captured_at=captured_at(source))
     extraction = [s for s in steps if s.get("phase") == "extract" and s.get("source_id") == source.id]
     last = extraction[-1] if extraction else {}
     row["analysis_status"] = ("not_needed" if row["capture_state"] == "unchanged" else
@@ -143,6 +143,6 @@ def project(session, run, branches):
             "investigation_id": source.investigation_id, "read_status": "not_checked",
             "analysis_status": "not_started", "capture_state": None, "attempt": None,
             "attempt_count": 0, "last_success_at": source.snapshot.get("analysis_completed_at"),
-            "captured_at": iso(source.created_at)}
+            "captured_at": captured_at(source)}
         result["sources"].append(row)
     return result

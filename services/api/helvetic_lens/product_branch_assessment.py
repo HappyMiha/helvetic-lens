@@ -12,6 +12,7 @@ from .product_api import fail, iso
 from .product_investigation_models import Investigation, InvestigationBranch
 from .product_investigations import Citation, citation, event, rows
 from .product_operations import fingerprint
+from .research_knowledge import captured_at
 
 CONTRACT = "branch-question-assessment/v1"
 UPDATE_CONTRACT = "question-research-update/v1"
@@ -292,7 +293,7 @@ def context(session, run, question, dependencies):
             "sha256": source.sha256,
             "title": source.title,
             "url": source.url,
-            "captured_at": iso(source.created_at),
+            "captured_at": captured_at(source),
         },
         "source_dependencies": dependencies,
         "basis": "further_question",

@@ -14,6 +14,7 @@ from .product_investigation_models import (
 )
 from .product_provenance import canonical
 from .product_public_research import eligible, sources_visible
+from .research_knowledge import captured_at
 
 ENTITY_LIMIT = 120
 SUGGESTION_LIMIT = 30
@@ -72,7 +73,7 @@ def mention(session, entity):
         "identifier": {key: identifier[key] for key in ("value", "issuer", "jurisdiction", "kind")},
         "quote": quote, "locator": locator,
         "source": {"id": source.id, "title": source.title, "url": source.url, "kind": source.kind,
-            "sha256": source.sha256, "captured_at": iso(source.created_at)},
+            "sha256": source.sha256, "captured_at": captured_at(source)},
         "capture_fingerprint": digest(source.snapshot.get("excerpts", []))}
 
 

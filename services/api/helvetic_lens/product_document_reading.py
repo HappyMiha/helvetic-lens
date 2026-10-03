@@ -49,6 +49,8 @@ def remember(session, run, state, work, result):
         "unread_reason": reading.get("unread_reason") or ("Some pages could not be read." if warnings else "Section analysis and whole-document review are pending.")}
     if result.get("_retained_document"):
         saved["retained_document"] = result["_retained_document"]
+    if work.get("retained_capture_origins"):
+        saved["retained_capture_origins"] = deepcopy(work["retained_capture_origins"])
     buffer = previous.get("buffer", {"cursor": reading["cursor"], "excerpts": [], "pages": reading.get("pages")})
     buffer["excerpts"].extend(result.get("excerpts", []))
     if buffer.get("pages"):
@@ -62,7 +64,7 @@ def remember(session, run, state, work, result):
         state["error"] = saved["error"]
     if not reading["next_cursor"]:
         state["read_index"] = state.get("read_index", 0) + 1
-    if reading["next_cursor"] and sum(len(p["text"]) for p in buffer["excerpts"]) < BATCH_CHARACTERS:
+    if reading["next_cursor"] and not work.get("retained_capture") and sum(len(p["text"]) for p in buffer["excerpts"]) < BATCH_CHARACTERS:
         return None
     saved.pop("buffer", None)
     return {**{k: v for k, v in result.items() if k != "_retained_document"},
@@ -109,7 +111,7 @@ def failed_analysis(state):
 
 def projection(state):
     # Parser buffers and storage keys are internal, never model or reader input.
-    return [{k: v for k, v in reading.items() if k not in {"retained_document", "buffer", "source_ids", "review_tree"}}
+    return [{k: v for k, v in reading.items() if k not in {"retained_document", "retained_capture_origins", "buffer", "source_ids", "review_tree"}}
         for reading in state.get("document_reads", {}).values()]
 
 

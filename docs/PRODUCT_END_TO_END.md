@@ -2347,3 +2347,50 @@ mutation or provider execution within current read-view callers. Exact API Ruff,
 backlog guard and diff checks pass. Only this read-view performance change is ready
 for publication; the four-file qualification candidate remains unpublished while
 native6691 continues. No new provider call was needed to validate scoped reuse.
+
+
+### Read an eligible saved original before downloading it again
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Native6691
+recaptured three originals with exactly the same URL, SHA, excerpts and section
+coverage as its parent investigation; none requested source refresh. Initial recall
+selected different documents, and subsequent capture duplicate checks only saw
+the current investigation. The existing retained-capture gateway input has no
+producer. This is an avoidable source-read miss, separate from inference reuse.
+
+When an approved public URL reaches reading without explicit refresh, use existing
+research-knowledge eligibility and provenance rules to admit a complete saved
+original from the same authorized dossier. Keep its original capture time and
+content unchanged. Missing, incomplete, excluded, changed or inaccessible evidence
+must not be silently admitted; retain ordinary fetching where appropriate. A
+source refresh request always follows live retrieval. Continue analysis for the
+current question/context; a matching content hash alone cannot authorize reuse of
+old model conclusions. Recheck admitted provenance at the existing post-provider
+application boundary. No new provider, cache service or corpus-wide exposure.
+
+Dependencies are existing native source storage, rights checks, capture metadata
+and the retained-capture gateway route. Acceptance: an eligible prior complete
+original avoids network retrieval and is analyzed under the current question;
+refresh, partial/ineligible sources and cross-dossier access do not reuse it;
+withdrawal or changed evidence between preparation and application is rejected.
+Use focused integration checks and exact recorded capture replay without provider
+probes. Native6691 continues on its immutable earlier snapshot; its result cannot
+establish behavior or latency of this later change.
+
+Implementation uses the existing database capture route and source validation chain.
+Fresh reads are still required when requested or when complete eligible history is
+unavailable. Each copied section receives current-question extraction; prior
+analysis/classification is removed. Historical capture time is stored explicitly
+on new retained snapshots and projected through a small accessor. `created_at`
+remains the admission/search-pagination fence; legacy date bindings stay unchanged.
+
+Twelve focused cases cover single/multipart native reading, current-question
+analysis, exact passages and historical dates, admission events, incomplete or
+ineligible originals, explicit refresh, source withdrawal/change after dispatch,
+and legacy timestamp compatibility. An offline replay of all three actual duplicate
+originals preserves 17/25/53 excerpts (3023/2472/3975 characters) and complete cursors,
+with prior analysis absent, zero provider requests and no database writes. Required
+API Ruff, diff and backlog checks pass; independent review found no material
+blocker. This establishes capture reuse and rights behavior, not semantic answer
+quality or an end-to-end speedup. The four-file qualification candidate remains
+unpublished; native6691 does not contain this later capture change.

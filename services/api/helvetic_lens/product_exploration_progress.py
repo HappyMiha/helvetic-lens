@@ -2,9 +2,10 @@
 from . import product_exploration as exploration
 from . import product_exploration_followups as followups
 from . import product_source_relationships as relationships
-from .product_api import fail, iso
+from .product_api import fail
 from .product_investigation_models import Investigation
 from .product_operations import fingerprint
+from .research_knowledge import captured_at
 
 CONTRACT = "episode-capture-progress/v1"
 HISTORY_CONTRACT = "typed-capture-history/v1"
@@ -24,7 +25,7 @@ source/excerpt identifiers. Earlier metadata is provenance, not new evidence.
 def record(source):
     return {"id": source.id, "investigation_id": source.investigation_id,
         "kind": source.kind, "sha256": source.sha256, "title": source.title,
-        "url": source.url, "captured_at": iso(source.created_at)}
+        "url": source.url, "captured_at": captured_at(source)}
 
 
 def state(run):

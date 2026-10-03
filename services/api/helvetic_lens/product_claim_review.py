@@ -16,6 +16,7 @@ from .product_investigation_models import (
 )
 from .product_source_authority import options as source_options
 from .product_source_authority import recorded as source_recorded
+from .research_knowledge import captured_at
 from .research_read_view import read_once, read_query
 
 PAGE_SIZE = 10
@@ -54,7 +55,7 @@ def evidence(session, row):
     return {"id": row.id, "claim_id": row.claim_id, "relation": row.relation, "quote": row.quote,
         "locator": row.locator, "valid": valid,
         "source": {"id": source.id, "investigation_id": source.investigation_id, "title": source.title,
-            "url": source.url, "kind": source.kind, "sha256": source.sha256, "captured_at": iso(source.created_at),
+            "url": source.url, "kind": source.kind, "sha256": source.sha256, "captured_at": captured_at(source),
             "capture_fingerprint": digest(source.snapshot), "saved_version": version}}
 
 

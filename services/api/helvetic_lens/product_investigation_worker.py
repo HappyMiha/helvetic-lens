@@ -349,7 +349,7 @@ async def execute(service, job_id, worker):
                     state["steps"][-1].update(status="interrupted", finished_at=iso(utcnow()))
                 # Replaying a local portion is safe: same original hash/cursor and
                 # deterministic parser, with no duplicate model or network request.
-                local_read = branch.phase == "read" and state.get("steps", [{}])[-1].get("execution", {}).get("provider") == "local_reader"
+                local_read = branch.phase == "read" and state.get("steps", [{}])[-1].get("execution", {}).get("provider") in {"local_reader", "database"}
                 if not local_read:
                     advance(branch, state, interrupted=True)
                 settle(branch, state)
@@ -382,6 +382,7 @@ async def execute(service, job_id, worker):
                         from . import product_document_reading as document_reading
 
                         document_reading.prepare(run, state, work)
+                        research_knowledge.prepare_capture(session, run, state, work)
 
                         if state.get("contribution_entry_id"):
                             from .product_contributions import PUBLIC_READ_PURPOSE
@@ -443,7 +444,7 @@ async def execute(service, job_id, worker):
                             work["skipped_paid_search"] = "Episode paid-search allowance reached; free sources continue."
                             search_requests = 0
                         if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product,
-                                search_requests=search_requests, local_read=bool(work.get("retained_document") or work.get("file"))):
+                                search_requests=search_requests, local_read=bool(work.get("retained_document") or work.get("retained_capture") or work.get("file"))):
                             work = None
                         elif branch.phase == "search" and not unmetered(run):
                             skipped = reserve_paid_or_skip(session, service.settings, search_requests)
@@ -542,6 +543,8 @@ async def execute(service, job_id, worker):
                 exploration.update(run, revision=run.event_sequence + 1)
             event(session, run, "investigation_paused", reason=run.stop_reason)
         if work["phase"] == "read" and ({work["item"]["url"], (result or {}).get("url"), *((result or {}).get("redirect_chain", []))} & blocked):
+            failed = True
+        if work.get("retained_capture_origins") and not research_knowledge.origins_current(session, run, work["retained_capture_origins"]):
             failed = True
         if work["phase"] == "document_review":
             from .product_document_analysis import current as document_current
@@ -688,6 +691,7 @@ async def execute(service, job_id, worker):
                     else:
                         source, fresh = snapshot(session, run, {**result, "title": work["item"]["title"],
                             "retrieval_queries": work["item"].get("retrieval_queries", [work["query"]])}, public=True)
+                    research_knowledge.remember_capture(run, work)
                     if work.get("research"):
                         source.snapshot = {**source.snapshot, "branch_id": branch.id, "research_question": work["query"],
                             "relevance_gate": next((d for d in reversed(state.get("decisions", [])) if d["url"] == source.url and d["verdict"] == "relevant"), None)}

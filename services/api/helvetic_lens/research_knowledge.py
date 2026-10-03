@@ -12,7 +12,13 @@ from sqlalchemy.orm import aliased
 from .decision_search import lexical_order
 from .domain_packs import for_product
 from .product_api import iso
-from .product_investigation_models import ClaimEvidence, DossierClaim, Investigation, InvestigationSource
+from .product_investigation_models import (
+    ClaimEvidence,
+    DossierClaim,
+    Investigation,
+    InvestigationBranch,
+    InvestigationSource,
+)
 from .product_operations import fingerprint
 from .product_public_research import sources_visible
 from .research_contracts import review_requirement
@@ -57,12 +63,18 @@ def retained_visible(run):
         pin["source_id"].as_string().is_not(None), ~valid))
 
 
+def captured_at(source):
+    # New retained reads explicitly record their historical capture date. Keep
+    # legacy context/pagination bindings unchanged; created_at remains admission.
+    return source.snapshot.get("captured_at") or iso(source.created_at)
+
+
 def source_ref(source):
     origin = source.snapshot.get("retained_origin") or {}
     return {"id": source.id, "investigation_id": source.investigation_id,
         "source_version": source.sha256, "capture_fingerprint": fingerprint(source.snapshot),
         "title": source.title, "url": source.url, "kind": source.kind,
-        "captured_at": origin.get("captured_at") or iso(source.created_at),
+        "captured_at": origin.get("captured_at") or captured_at(source),
         "retained_from": origin.get("source_id"), "saved_version": source.snapshot.get("saved_page")}
 
 
@@ -84,6 +96,96 @@ def eligible_sources(run):
         Investigation.publication_id.is_(None), sources_visible(),
         source.kind == "public_source", source.snapshot["allow_discovery"].as_boolean().is_not(False),
         source.snapshot["retained_origin"]["source_id"].as_string().is_(None))
+
+
+def origin_pin(source):
+    return {"source_id": source.id, "investigation_id": source.investigation_id,
+        "sha256": source.sha256, "snapshot_fingerprint": fingerprint(source.snapshot),
+        "captured_at": iso(source.created_at)}
+
+
+def origins_current(session, run, pins):
+    ids = [p["source_id"] for p in pins]
+    allowed = {s.id: s for s in session.scalars(eligible_sources(run).where(InvestigationSource.id.in_(ids)))} if ids else {}
+    return all((source := allowed.get(pin["source_id"])) is not None
+        and source.investigation_id == pin["investigation_id"] and source.sha256 == pin["sha256"]
+        and fingerprint(source.snapshot) == pin["snapshot_fingerprint"] for pin in pins)
+
+
+def prepare_capture(session, run, state, work):
+    """Reuse a complete approved original, never its old question-dependent analysis."""
+    from .product_source_recovery import public_state
+
+    if (not work.get("research") or work.get("skip") or run.publication_id is not None
+            or not public_state(state) or state.get("refresh_retained_sources")
+            or "document_cursor" not in work or work.get("retained_document")
+            or run.research_state.get("core", {}).get("recall") is None):
+        return
+    saved = state.get("document_reads", {}).get(str(state.get("read_index", 0)), {})
+    pins = saved.get("retained_capture_origins")
+    url = work["item"]["url"]
+    if not saved and session.scalar(select(InvestigationSource.id).where(
+            InvestigationSource.investigation_id == run.id, InvestigationSource.url == url).limit(1)):
+        work["skip"] = True
+        return
+    if pins:
+        if not origins_current(session, run, pins):
+            work["skip"] = True
+            return
+        sources = [session.get(InvestigationSource, pin["source_id"]) for pin in pins]
+    else:
+        if saved:  # Never splice historical sections into an already-started live read.
+            return
+        latest = session.scalar(eligible_sources(run).where(InvestigationSource.url == url)
+            .order_by(InvestigationSource.created_at.desc(), InvestigationSource.id.desc()).limit(1))
+        branch = session.get(InvestigationBranch, latest.snapshot.get("branch_id")) if latest and latest.snapshot.get("branch_id") else None
+        doc = (branch.checkpoint.get("document_reads", {}).get(str(latest.snapshot.get("document_index")), {})
+            if branch and branch.investigation_id == latest.investigation_id else {})
+        if not doc.get("read_complete") or doc.get("next_cursor") or doc.get("warnings") or doc.get("error"):
+            return
+        allowed = {s.id: s for s in session.scalars(eligible_sources(run).where(InvestigationSource.id.in_(doc.get("source_ids", []))))}
+        sources = [allowed.get(key) for key in doc.get("source_ids", [])]
+        if not sources or any(s is None or s.investigation_id != latest.investigation_id
+                or s.url != url or s.sha256 != doc.get("sha256") for s in sources):
+            return
+        cursor = {"page": 0, "offset": 0}
+        for source in sources:
+            value, reading = source.snapshot, source.snapshot.get("reading", {})
+            if (cursor is None or value.get("status") != "complete" or not value.get("excerpts")
+                    or value.get("warnings") or (value.get("text_truncated") and not reading.get("next_cursor"))
+                    or reading.get("contract") != "document-reading/v1" or reading.get("cursor") != cursor):
+                return
+            cursor = reading.get("next_cursor")
+        if cursor is not None or not sources[-1].snapshot["reading"].get("complete"):
+            return
+        pins = [origin_pin(s) for s in sources]
+    if any(s.url != url or ({s.url, s.snapshot.get("requested_url"), *s.snapshot.get("redirect_chain", [])}
+            & set(work.get("blocked_urls", []))) for s in sources):
+        work["skip"] = True
+        return
+    selected = next((s for s in sources if s.snapshot["reading"]["cursor"] == work["document_cursor"]), None)
+    if selected is None or (work.get("document_sha256") and selected.sha256 != work["document_sha256"]):
+        work["skip"] = True
+        return
+    value = {k: deepcopy(v) for k, v in selected.snapshot.items() if k not in {
+        "branch_id", "research_question", "relevance_gate", "section_review", "professional_facts", "source_class",
+        "analysis_completed", "analysis_completed_at", "analysis_gaps"}}
+    pin = next(pin for pin in pins if pin["source_id"] == selected.id)
+    value.update(title=selected.title, url=selected.url, sha256=selected.sha256,
+        retained_origin=deepcopy(pin), captured_at=pin["captured_at"], key="retained:" + selected.id,
+        scope="Previously captured complete public original, reused without a fresh source request.")
+    value["reading"]["characters_read"] = sum(len(p["text"]) for p in value["excerpts"])
+    work.update(retained_capture=value, retained_capture_origins=pins)
+
+
+def remember_capture(run, work):
+    pins = work.get("retained_capture_origins")
+    if not pins:
+        return
+    core = deepcopy(run.research_state["core"])
+    previous = core["recall"]["origin_pins"]
+    previous.extend(deepcopy(pin) for pin in pins if pin not in previous)
+    run.research_state = {**run.research_state, "core": core}
 
 
 def recall(session, run, product, *, selected_ids=None, retrieval=None):
@@ -111,9 +213,7 @@ def recall(session, run, product, *, selected_ids=None, retrieval=None):
     for source in selected:
         if not source.snapshot.get("excerpts"):
             continue
-        pin = {"source_id": source.id, "investigation_id": source.investigation_id,
-            "sha256": source.sha256, "snapshot_fingerprint": fingerprint(source.snapshot),
-            "captured_at": iso(source.created_at)}
+        pin = origin_pin(source)
         captured, _ = snapshot(session, run, {**deepcopy(source.snapshot), "title": source.title,
             "url": source.url, "sha256": source.sha256, "retained_origin": pin, "key": "retained:" + source.id,
             "scope": "Previously captured public evidence, reused without a fresh source request."}, public=True)
@@ -161,13 +261,8 @@ def current(session, run):
     memory = run.research_state.get("core", {}).get("recall")
     if not memory:
         return True
-    ids = [p["source_id"] for p in memory["origin_pins"]]
-    allowed = {s.id: s for s in session.scalars(eligible_sources(run).where(InvestigationSource.id.in_(ids)))} if ids else {}
-    for pin in memory["origin_pins"]:
-        source = allowed.get(pin["source_id"])
-        if (source is None or source.sha256 != pin["sha256"]
-                or fingerprint(source.snapshot) != pin["snapshot_fingerprint"]):
-            return False
+    if not origins_current(session, run, memory["origin_pins"]):
+        return False
     claim_ids = [claim["historical_claim_id"] for claim in memory["claims"]]
     retained_claims = {claim.id: claim for claim in session.scalars(reviews.claims(run.dossier_id)
         .where(DossierClaim.id.in_(claim_ids)))} if claim_ids else {}

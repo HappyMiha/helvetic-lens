@@ -6,10 +6,11 @@ from pydantic import ValidationError
 from . import product_exploration as exploration
 from . import product_iterative_research as research
 from .config import DomainError
-from .product_api import fail, iso
+from .product_api import fail
 from .product_investigation_models import Investigation
 from .product_investigations import ACTIVE, Citation, citation, plan
 from .product_operations import fingerprint
+from .research_knowledge import captured_at
 from .research_read_view import read_once
 
 CONTEXT_SYSTEM = """The selected_public_check is the user's explicitly chosen
@@ -122,7 +123,7 @@ def saved_context(session, run, question_id):
         "priority": question["priority"], "why": question["purpose"] if ordinary else question["reconsideration"]["why"],
         "original_question": run.question, "quote": trigger["quote"], "locator": trigger["locator"],
         "source": {"id": source.id, "sha256": source.sha256, "title": source.title,
-            "url": source.url, "captured_at": iso(source.created_at)},
+            "url": source.url, "captured_at": captured_at(source)},
         "source_dependencies": dependencies, **({"basis": "open_question",
             "context_fingerprint": question["open_check_context"]["fingerprint"]} if ordinary else {})}
 

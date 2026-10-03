@@ -18,6 +18,7 @@ from .product_investigation_models import (
 from .product_investigations import ACTIVE, event, plan, scope
 from .product_public_research import eligible, sources_visible
 from .product_source_relationships import compare as compare_sources
+from .research_knowledge import captured_at
 
 MAX_CLAIMS = 24
 KINDS = {
@@ -161,7 +162,7 @@ def evidence_payload(session, claim, evidence_id=None):
     evidence, source = value
     return {"quote": evidence.quote, "locator": evidence.locator, "relation": evidence.relation,
         "source": {"id": source.id, "title": source.title, "url": source.url, "kind": source.kind,
-            "sha256": source.sha256, "captured_at": iso(source.created_at)}}
+            "sha256": source.sha256, "captured_at": captured_at(source)}}
 
 
 def payload(session, change):

@@ -17,6 +17,7 @@ from .product_api import fail, iso
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import ACTIVE, Citation, citation, event, rows, scope
 from .product_source_reviews import current_reviews
+from .research_knowledge import captured_at
 from .research_read_view import read_once, read_view
 
 CONTRACT = "exploration/v1"
@@ -634,5 +635,5 @@ def projection(session, run):
     if value.get("briefing"):
         value["briefing"].pop("research_scope_at_briefing", None)
     value["sources"] = [{"id": s.id, "title": s.title, "url": s.url,
-        "captured_at": iso(s.created_at), "excerpts": s.snapshot["excerpts"][:2]} for s in available.values()]
+        "captured_at": captured_at(s), "excerpts": s.snapshot["excerpts"][:2]} for s in available.values()]
     return value

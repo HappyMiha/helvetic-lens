@@ -5,7 +5,6 @@ from sqlalchemy import or_, select
 
 from . import product_entity_identity as identity
 from . import product_professional_context as professional
-from .product_api import iso
 from .product_claim_evolution import query as changes_query
 from .product_claim_review import projection as claim_review
 from .product_investigation_models import (
@@ -18,6 +17,7 @@ from .product_investigation_models import (
 )
 from .product_operations import fingerprint
 from .product_public_research import sources_visible
+from .research_knowledge import captured_at
 
 CONTRACT = "current-dossier-knowledge/v1"
 SYSTEM = """current_dossier_knowledge groups cited identifiers and links earlier
@@ -99,7 +99,7 @@ def project(session, run):
     origins = {}
     for source in source_rows:
         origins.setdefault(source.sha256, []).append({"id": source.id, "title": source.title,
-            "url": source.url, "captured_at": iso(source.created_at)})
+            "url": source.url, "captured_at": captured_at(source)})
     context = professional.project(source_rows)
     context["facts"] = context["facts"][:60]
     return {"contract": CONTRACT, "claims": list(claims.values()), "identities": identities,
