@@ -2276,3 +2276,74 @@ including completepage4 and direct refs83–84, at24,000/24,000chars in0.477s.
 All selected structural context remains intact; no encoder/provider/network/DB
 access occurred. This is a retrieval/transport check, not historical hybrid-rank
 replay, production latency measurement or final answer semantic acceptance.
+
+
+### Faithful conclusions across source conditions and time
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Core f43b07a
+activated at 09:32:25 UTC. Native73113 naturally delivered a new four-point answer
+with ten exact citations in 354.1 seconds, using eleven new model calls. Both
+unchanged product reader components render that actual answer. This is structural
+render evidence, not browser visual acceptance. Independent content acceptance is
+PARTIAL: the main reconciliation is useful, but a conditional future warning in
+a 2022 report became an established current retirement-without-replacement claim.
+
+The complete condition and dated heading reached both Jev and Apertus. Both
+approved the literal overclaim; no negative verdict was overridden by the host.
+More source context or another transport repair does not address this defect.
+Improve the existing synthesis and review instructions as one coherent contract:
+preserve factual vintage, conditions and every material commitment, including
+joined clauses. A capture timestamp does not establish when facts were true.
+Keep supported historical or current observations useful rather than manufacturing
+uncertainty. Use existing correction, exact-input checkpoint invalidation and
+publication paths; no extra reviewer service, keyword truth rules or manual answer.
+
+Dependencies and source readiness are unchanged: authorized retained originals,
+existing configured decision/reasoning engines and normal isolated public research.
+Acceptance separates integration checks from semantic evidence: test preservation
+through correction/resume and cache changes; assess a small paired cross-domain
+set with actual existing models once; then assess a newly generated native answer.
+No test dossier, email or source fixture is added to production. Exact citations,
+a model approval and terminal workflow status alone remain insufficient for PASS.
+
+Two isolated six-case model evaluations did not establish a semantic fix. The
+concise guidance still admitted the known conditional overclaim. A subsequent
+structured-comparison experiment also admitted its premise, falsely rejected a
+correct positive and suffered unavailable checks; its production and test changes
+were removed. Exact-source bindings did not make either model infallible. No
+further reviewer subsystem or prompt benchmark loop is part of this delivery.
+The retained candidate adds only shared qualification guidance to existing writing,
+repair and review stages, with unchanged schemas. Five integration checks cover
+correction, resume and policy invalidation; they are not model-quality evidence.
+
+Its actual synthesis outcome is being assessed through ordinary same-dossier
+continuation in a read-only, hash-recorded unpublished API snapshot, with isolated
+SQLite/assets and existing runtime credentials passed through stdin. Production
+remains f43b07a until evidence justifies publication. There is no manual answer,
+forced research state, extra production dossier or model availability probe.
+
+
+### Faster dependency validation within each research step
+
+Scope agreed 3 October 2026 alongside native6691: reuse repeated read-only
+dependency results within one synchronous validation pass. Each uncached
+`adaptive_current` call creates its own bounded read view; pre-dispatch and
+post-provider checks remain separate, fresh passes. No state survives an await,
+write, commit or validation exit. Source withdrawal, authorization and changed
+research revisions must still invalidate the next pass. Existing memoization
+helpers are sufficient; no new cache service or provider is introduced.
+
+Observed immutable native73113 replay: the same true validation result used
+516 SQL operations and 9.153 seconds without the scoped view, versus 348 operations
+and 3.751 seconds with it; an uncached repeat took 9.139 seconds. This measures
+one read-only guard, not production or whole-research latency. Native6691 uses
+its earlier immutable API snapshot and cannot validate this later performance
+change. Acceptance includes source-change and exception-boundary freshness.
+
+Four focused read-view cases pass, covering reused ancestry checks, fresh later
+passes, committed generation/revision changes, exception cleanup, source exclusion,
+human review and public/private source changes. Independent review found no
+mutation or provider execution within current read-view callers. Exact API Ruff,
+backlog guard and diff checks pass. Only this read-view performance change is ready
+for publication; the four-file qualification candidate remains unpublished while
+native6691 continues. No new provider call was needed to validate scoped reuse.

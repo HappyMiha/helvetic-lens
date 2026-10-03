@@ -6,6 +6,7 @@ from . import product_exploration_progress as progress
 from . import product_observed_queries as queries
 from .product_api import fail
 from .product_operations import fingerprint
+from .research_read_view import read_once
 
 CONTRACT = 'research-continuation-memory/v1'
 MAX_LIMITS = {'episodes': 8, 'searches': 24, 'questions': 12, 'sources': 8, 'segments': 2, 'characters': 1000}
@@ -100,6 +101,7 @@ def initialize(session, run):
     exploration.update(run, research_memory={**value, 'fingerprint': fingerprint(value)})
 
 
+@read_once
 def current(session, run):
     saved = state(run)
     if run.research_state.get('exploration', {}).get('memory_inputs_invalid'):

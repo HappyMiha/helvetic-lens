@@ -422,7 +422,11 @@ def validated_question_points(session, run, supplied, assessment):
 
 
 @read_once
+@read_view
 def adaptive_current(session, run):
+    # One pure validation graph may visit the same ancestor through memory,
+    # query provenance and follow-up checks. Reuse those decisions only here;
+    # the worker's later post-provider invocation owns a new view.
     from . import product_branch_assessment as branch_assessment
     from . import product_direction_assessment as direction_assessment
     from . import product_evidence_applicability as applicability
@@ -436,6 +440,7 @@ def adaptive_current(session, run):
     return research_knowledge.current(session, run) and local_dependencies_current(session, run) and current(session, run) and queries.current(session, run) and memory.current(session, run) and applicability.current(session, run) and references_current(session, run) and read_relevance.current(session, run) and branch_assessment.current(session, run) and renewal.current(session, run) and direction_assessment.current(session, run)
 
 
+@read_once
 def local_dependencies_current(session, run):
     if not enabled(run):
         return True

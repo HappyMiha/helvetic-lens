@@ -9,6 +9,7 @@ from .product_exploration_activity import purpose_binding
 from .product_investigation_models import InvestigationBranch
 from .product_investigations import rows
 from .product_operations import fingerprint
+from .research_read_view import read_once
 
 CONTRACT = "observed-public-queries/v1"
 MAX_ITEMS = 24
@@ -135,6 +136,7 @@ def valid(session, run, branch, step):
     return progress.references_current(session, run, value["sources"])
 
 
+@read_once
 def current(session, run):
     state = (run.research_state or {}).get("exploration", {})
     branches = rows(session, InvestigationBranch, run) if state else []

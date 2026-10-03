@@ -13,6 +13,7 @@ from .product_investigations import Citation, citation
 from .product_models import ProductDossier
 from .product_operations import fingerprint
 from .product_professional_context import Fact
+from .research_read_view import read_once
 
 CONTRACT = "evidence-applicability/v1"
 PHASES = {"plan", "extract", "reflect", "orient", "brief", "reformulate"}
@@ -98,6 +99,7 @@ def policy_current(session, run):
     return bool(primary and parent and primary["domain"] == domain_packs.for_product(parent.product).domain)
 
 
+@read_once
 def current(session, run):
     if state(run).get("applicability_inputs_invalid") or not policy_current(session, run):
         return False

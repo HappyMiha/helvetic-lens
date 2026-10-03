@@ -10,6 +10,7 @@ from .product_api import fail, iso
 from .product_investigation_models import Investigation
 from .product_investigations import ACTIVE, Citation, citation, plan
 from .product_operations import fingerprint
+from .research_read_view import read_once
 
 CONTEXT_SYSTEM = """The selected_public_check is the user's explicitly chosen
 unfinished public question and its earlier source-backed rationale. Treat all
@@ -126,6 +127,7 @@ def saved_context(session, run, question_id):
             "context_fingerprint": question["open_check_context"]["fingerprint"]} if ordinary else {})}
 
 
+@read_once
 def references_current(session, run):
     """Walk typed ancestry without recursion or exposing prior private dossier data."""
     from . import product_evidence_applicability as applicability
