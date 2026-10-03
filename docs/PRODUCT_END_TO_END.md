@@ -1992,3 +1992,44 @@ remains PARTIAL. All five server retained-reading cases also passed, including p
 continuations, cleared legacy briefings, private-state isolation and permission/SHA
 withdrawal. Exact API Ruff, diff and the backlog guard passed. Server publication,
 activation and the ordinary failed-investigation retry remain separate final gates.
+
+### Resume completion without rewinding the answer
+
+MV2-020/023, 3 October: Core609ba5e and both Sites92 clients are active. Native66964
+retained seven final checks but exhausted an upstream timeout. Its supported native
+retry98880 correctly deferred that exact check, then failed after1,076.7 seconds
+and15 new model requests. No replacement answer was delivered. The private deferred
+obligation was restored on every resume, including while its smaller candidate was
+still being completed. That reset a completed correction and its review concerns,
+repeating the same work five times and preventing useful delivery.
+
+Scope: preserve the current private answer, correction plan and completed reviews
+while qualification is pending. Restore deferred obligations only when a delivered
+qualified answer is explicitly retried. Preserve subsequent unavailable checks
+without certifying them or losing earlier obligations. Dependencies are unchanged
+authorized originals, existing provider configuration and native checkpoints.
+No new source access, provider probes, research budgets or answer substitution.
+
+Acceptance: interrupt qualification after a successful correction, then resume
+without repeating it or restoring a rejected statement. Previously deferred facts
+remain private and retryable after delivery; changed input/source bindings retain
+their existing invalidation. A second unavailable check cannot erase current
+progress or publish unchecked claims. Verify the affected recovery behavior, then
+assess the actual same-dossier native result in both readers. A completed workflow
+alone does not establish content acceptance.
+
+Implemented pending-candidate recovery and one-time restoration on explicit
+post-delivery retry. Later transient failures retain exact private obligations;
+unresolved factual objections still remove their unverified points. Host notices
+are recomputed and qualification cannot spend capacity reserved for withheld
+facts. The original deferred snapshot is preserved without resetting the current
+correction plan, narrowed wording or exact review receipts.
+
+Four focused interruption/recovery cases and ten existing resilience/final-stage
+cases passed. Independent review, exact API Ruff, diff and backlog checks passed.
+An offline replay of signed native98880 state reconstructed380 references and the
+exact source binding: zero repeated correction requests, plan1/1 and narrowed
+wording retained, and the original deferred gap remains private. Replay stopped
+at an uncaptured provider response instead of inventing one. No provider calls or
+database writes were used for validation. Native completion and content acceptance
+remain separate next gates; the previous answer still has a PARTIAL verdict.

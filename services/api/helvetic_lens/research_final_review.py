@@ -395,25 +395,31 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     source_binding = fingerprint({'policy': POLICY, 'input': wire.input, 'references': wire.references,
         'reference_uses': getattr(wire, 'reference_uses', {})})
     deferred = checkpoints.get('deferred_final_review')
+    continuing_qualification = False
     if deferred:
         if (deferred.get('contract') == 'deferred-final-review/v1'
                 and deferred.get('policy_fingerprint') == POLICY and deferred.get('source_binding') == source_binding):
-            # The deliverable subset is not the resumable draft. Restore the
-            # exact private proposal before checking the unavailable assertions.
-            answer = type(answer).model_validate(deferred['answer'])
-            owners, slots = deferred['point_requests'], deferred['response_slots']
-            if (set(slots) != set(wire.request_keys) or (wire.request_keys and
-                    (len(owners) != len(answer.points) or any(owner not in wire.request_keys for owner in owners)))):
-                raise ValueError('Deferred review ownership no longer matches this research request')
-            parsed.mission_checkpoint.answer = answer
-            wire.point_requests, wire.response_slots = deepcopy(owners), deepcopy(slots)
-            wire.workflow_gaps = set(deferred['workflow_gaps'])
-            checkpoints['workflow_gaps'] = list(deferred['workflow_gaps'])
-            checkpoints['repair_concerns'] = deepcopy(deferred['repair_concerns'])
-            checkpoints.pop('final_correction_round', None)
-            if deferred.get('correction_round') is not None:
-                checkpoints['final_correction_round'] = deepcopy(deferred['correction_round'])
-            checkpoints['narrowing_attempts'] = deepcopy(deferred.get('narrowing_attempts', []))
+            continuing_qualification = deferred.get('status') == 'pending'
+            if deferred.get('status') == 'qualified_delivery' and work.get('retry_deferred_review'):
+                # Restore deferred obligations once on an explicit post-delivery
+                # retry. Automatic resumes keep the latest atomic candidate,
+                # correction plan and concerns, including during qualification.
+                restored = deferred.get('retry_state', deferred)
+                answer = type(answer).model_validate(restored['answer'])
+                owners, slots = restored['point_requests'], restored['response_slots']
+                if (set(slots) != set(wire.request_keys) or (wire.request_keys and
+                        (len(owners) != len(answer.points) or any(owner not in wire.request_keys for owner in owners)))):
+                    raise ValueError('Deferred review ownership no longer matches this research request')
+                parsed.mission_checkpoint.answer = answer
+                wire.point_requests, wire.response_slots = deepcopy(owners), deepcopy(slots)
+                wire.workflow_gaps = set(restored['workflow_gaps'])
+                checkpoints['workflow_gaps'] = list(restored['workflow_gaps'])
+                checkpoints['repair_concerns'] = deepcopy(restored['repair_concerns'])
+                checkpoints.pop('final_correction_round', None)
+                checkpoints['narrowing_attempts'] = deepcopy(restored.get('narrowing_attempts', []))
+                deferred['status'] = 'checking'
+                if on_progress:
+                    on_progress()
         else:
             # Retain history privately, never migrate approvals or old optional
             # draft claims into a changed source/question/policy binding.
@@ -434,13 +440,57 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         wire.workflow_gaps.remove(REVIEW_NOTICE)
         owner = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'] == REVIEW_NOTICE), None)
         update_gap(wire, answer, owner, '')
-    qualified = False
-    deferred_checks = []
+    qualified = continuing_qualification
+    deferred_checks = deepcopy(deferred.get('pending_checks', [])) if qualified else []
     current_concerns = {}
+
+    def withheld_items():
+        value = checkpoints['deferred_final_review']
+        if 'withheld_items' not in value:
+            # Recover existing bound pending receipts without restoring their
+            # older candidate over more recent completed correction work.
+            value['withheld_items'] = []
+            for item in value['pending_checks']:
+                key, index = item['item'][0], int(item['item'][1:])
+                original = value['answer']['points' if key == 'P' else 'limitations'][index]
+                owner = (value['point_requests'][index] if value['point_requests'] else None) if key == 'P' else next(
+                    (owner for owner, slot in value['response_slots'].items() if slot['remaining_gap'] == original), None)
+                value['withheld_items'].append({**item, 'kind': key, 'value': deepcopy(original),
+                    'position': index, 'owner': owner})
+        return value['withheld_items']
+
+    def retain_retry_state():
+        value = checkpoints['deferred_final_review']
+        restored = answer.model_dump()
+        # Workflow notices are recomputed for the actual retried answer; they
+        # must not crowd out retained factual obligations or survive recovery.
+        restored['limitations'] = [gap for gap in restored['limitations'] if gap not in wire.workflow_gaps]
+        owners, slots = deepcopy(wire.point_requests), deepcopy(wire.response_slots)
+        for slot in slots.values():
+            if slot['remaining_gap'] in wire.workflow_gaps:
+                slot.update(disposition='answered', remaining_gap='')
+        for item in sorted(withheld_items(), key=lambda item: item['position']):
+            field = 'points' if item['kind'] == 'P' else 'limitations'
+            present = (any(point == item['value'] and (not wire.request_keys or owner == item['owner'])
+                for point, owner in zip(restored['points'], owners or [None] * len(restored['points']), strict=True))
+                if item['kind'] == 'P' else item['value'] in restored[field])
+            if present:
+                continue
+            position = min(item['position'], len(restored[field]))
+            restored[field].insert(position, deepcopy(item['value']))
+            if item['kind'] == 'P' and wire.request_keys:
+                owners.insert(position, item['owner'])
+            elif item['kind'] == 'L' and item['owner'] in slots:
+                slots[item['owner']].update(disposition='unresolved', remaining_gap=item['value'])
+        value['retry_state'] = {'answer': restored, 'point_requests': owners, 'response_slots': slots,
+            'workflow_gaps': [], 'repair_concerns': deepcopy(repaired_concerns),
+            'narrowing_attempts': deepcopy(checkpoints.get('narrowing_attempts', []))}
 
     def retain():
         wire.workflow_gaps.intersection_update(answer.limitations)
         checkpoints['workflow_gaps'] = sorted(wire.workflow_gaps)
+        if qualified:
+            retain_retry_state()
         if on_progress:
             on_progress()
 
@@ -533,10 +583,10 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
 
     def withhold_unavailable(checked):
         nonlocal qualified, deferred_checks
-        pending = checked.get('factual_review', {}).get('pending_checks', [])
-        if (qualified or not work.get('allow_checked_partial_delivery') or not pending
-                or not any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in pending)
-                or any(item['reason'] not in TRANSIENT_REVIEW_ERRORS | {'step_deadline'} for item in pending)):
+        pending = [item for item in checked.get('factual_review', {}).get('pending_checks', [])
+            if item['reason'] in TRANSIENT_REVIEW_ERRORS | {'step_deadline'}]
+        if (not work.get('allow_checked_partial_delivery') or not pending
+                or not any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in pending)):
             return False
         withheld = {int(item['item'][1:]) for item in pending if item['item'].startswith('P')}
         gaps = {answer.limitations[int(item['item'][1:])] for item in pending if item['item'].startswith('L')}
@@ -544,14 +594,37 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         if not any(index not in withheld | rejected and fingerprint(point.model_dump()) in checked.get('positive_witnesses', {})
                 for index, point in enumerate(answer.points)):
             return False  # No independently checked useful finding to publish.
-        checkpoints['deferred_final_review'] = {
+        previous_items = deepcopy(withheld_items()) if qualified else []
+        if not qualified:
+            checkpoints['deferred_final_review'] = {
             'contract': 'deferred-final-review/v1', 'status': 'pending', 'policy_fingerprint': POLICY,
             'source_binding': source_binding, 'answer': answer.model_dump(),
             'point_requests': deepcopy(wire.point_requests), 'response_slots': deepcopy(wire.response_slots),
             'workflow_gaps': sorted(wire.workflow_gaps), 'repair_concerns': deepcopy(repaired_concerns),
             'review_concerns': deepcopy(current_concerns), 'pending_checks': deepcopy(pending),
             'correction_round': deepcopy(checkpoints.get('final_correction_round')),
-            'narrowing_attempts': deepcopy(checkpoints.get('narrowing_attempts', []))}
+                'narrowing_attempts': deepcopy(checkpoints.get('narrowing_attempts', []))}
+        value = checkpoints['deferred_final_review']
+        if qualified:
+            for item in pending:
+                kind, index = item['item'][0], int(item['item'][1:])
+                target = answer.points[index].model_dump() if kind == 'P' else answer.limitations[index]
+                owner = (wire.point_requests[index] if wire.point_requests else None) if kind == 'P' else next(
+                    (owner for owner, slot in wire.response_slots.items() if slot['remaining_gap'] == target), None)
+                if any(saved['kind'] == kind and saved['value'] == target and saved['owner'] == owner for saved in previous_items):
+                    continue
+                position = index
+                for saved in sorted(previous_items, key=lambda entry: entry['position']):
+                    if saved['kind'] == kind and saved['position'] <= position:
+                        position += 1
+                used = {saved['item'] for saved in previous_items}
+                label = item['item']
+                if label in used:
+                    label = kind + str(max((int(key[1:]) for key in used if key.startswith(kind)), default=-1) + 1)
+                previous_items.append({**item, 'item': label, 'kind': kind, 'value': deepcopy(target),
+                    'position': position, 'owner': owner})
+            value['withheld_items'] = previous_items
+            value['pending_checks'] = [{key: item[key] for key in ('item', 'reason')} for item in previous_items]
         answer.points = [point for index, point in enumerate(answer.points) if index not in withheld]
         wire.point_requests = [owner for index, owner in enumerate(wire.point_requests) if index not in withheld]
         answer.limitations = [gap for gap in answer.limitations if gap not in gaps]
@@ -565,7 +638,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                     answer.limitations.append(DEFERRED_NOTICE)
             elif not slot['remaining_gap']:
                 slot['disposition'] = 'answered'
-        qualified, deferred_checks = True, deepcopy(pending)
+        qualified, deferred_checks = True, deepcopy(value['pending_checks'])
         retain()
         return True
 
@@ -578,7 +651,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     if plan is None:
         checked = await check()
         pending = checked.get('factual_review', {}).get('pending_checks', [])
-        if pending and withhold_unavailable(checked):
+        while pending and withhold_unavailable(checked):
             # Per-point reviewers never use siblings as evidence. Their exact
             # proofs remain valid; gaps and coverage now see the retained subset.
             checked = await check()
@@ -665,6 +738,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         allow_append = len(answer.points) < 8 and (not wire.request_keys or
             sum(owner == key for owner in wire.point_requests) < request_capacity(wire, key))
         capacity = 1 if correction or amendments else min(8 - len(answer.points), request_capacity(wire, key) - len(owner_siblings))
+        if qualified and correction is None:
+            capacity = 0  # Qualification checks retained findings, not new or deferred facts.
         if capacity > 0:
             fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
                 checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity, correction=correction,
@@ -766,7 +841,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
     if restored:
         retain()
         checked = await check()
-    if withhold_unavailable(checked):
+    while withhold_unavailable(checked):
         checked = await check()
     checked_answer = fingerprint(answer.model_dump())
     # Preserve known defects by identity after replacement/reordering/removal.
@@ -823,6 +898,11 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         narrowed = True
     if narrowed:
         retain()
+        checked = await check()
+
+    while withhold_unavailable(checked):
+        # Each pass removes at least one unavailable assertion. A changed
+        # subset may expose another outage, but never regenerates withheld facts.
         checked = await check()
 
     from .research_gateway import retain_answer_points
