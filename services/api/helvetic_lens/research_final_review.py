@@ -581,6 +581,22 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         code = code or ('research_review_yield' if all(item['reason'] == 'step_deadline' for item in pending) else 'research_review_incomplete')
         raise DomainError('Some final evidence checks are incomplete. Saved sources and completed checks are retained.', 503, code)
 
+    def incomplete_coverage(result):
+        decisions = deepcopy(result.get('decisions', []))
+        # Diagnostic state is not an accepted decision or completed progress.
+        checkpoints['coverage_interruption'] = {'answer_fingerprint': fingerprint(answer.model_dump()),
+            'source_binding': source_binding, 'decisions': decisions}
+        codes = {error.get('code') for item in decisions if item.get('choice') == 'unavailable'
+            for error in item.get('fallback_errors', [])} - {'earlier_coverage_unavailable'}
+        reason = 'qualified_coverage_unavailable'
+        if codes == {'step_deadline'}:
+            reason = 'step_deadline'
+        elif (codes & {'timeout', 'unavailable', 'quota'} and
+                codes <= {'timeout', 'unavailable', 'quota', 'step_deadline', 'not_configured', 'input_does_not_fit'}):
+            reason = 'model_rate_limited' if 'quota' in codes else 'model_temporarily_unavailable'
+        retain()
+        incomplete([{'reason': reason}])
+
     def withhold_unavailable(checked):
         nonlocal qualified, deferred_checks
         pending = [item for item in checked.get('factual_review', {}).get('pending_checks', [])
@@ -967,6 +983,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         coverage = await review.audit(service.settings, work, wire, answer,
             deadline-monotonic(), coverage_only=True, checkpoints=checkpoints, on_progress=retain)
         checked['question_coverage'] = coverage.get('question_coverage')
+        checked['decisions'] = deepcopy(coverage.get('decisions', []))
         checked['hints'] = [hint for hint in checked['hints'] if 'user_request' not in hint] + [
             hint for hint in coverage.get('hints', []) if 'user_request' in hint]
         if coverage.get('question_coverage') is None:
@@ -985,6 +1002,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         incomplete(pending)
     if qualified:
         if pending or not answer.points or checked.get('question_coverage') not in {'covered', 'missing'}:
+            if not pending and answer.points and checked.get('question_coverage') is None:
+                incomplete_coverage(checked)
             retain()
             incomplete(pending or [{'reason': 'qualified_coverage_unavailable'}])
         if DEFERRED_NOTICE not in answer.limitations and len(answer.limitations) < 8:
@@ -995,6 +1014,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             delivered_answer_fingerprint=fingerprint(answer.model_dump()))
     elif not pending:
         checkpoints.pop('deferred_final_review', None)
+    if checked.get('question_coverage') in {'covered', 'missing'}:
+        checkpoints.pop('coverage_interruption', None)
     from .research_answer_parts import reconcile_status
     reconcile_status(answer)
     retain()

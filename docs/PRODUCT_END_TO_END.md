@@ -2033,3 +2033,27 @@ wording retained, and the original deferred gap remains private. Replay stopped
 at an uncaptured provider response instead of inventing one. No provider calls or
 database writes were used for validation. Native completion and content acceptance
 remain separate next gates; the previous answer still has a PARTIAL verdict.
+
+Native67646 on committed98c6104 completed the correction-recovery boundary without
+repeating its writer. Three unavailable gap checks are privately retained, and
+three findings remain in the current candidate. After387.5 seconds and six new
+model requests, final coverage of that changed candidate remained incomplete:
+one of three literal requests has a new saved coverage receipt. The qualification
+gate classified unfinished coverage as terminal research_review_incomplete.
+Core98c6104 activated at06:56:20 UTC; public readiness passed at06:57:36 UTC.
+
+Follow-through scope: retain the actual final-coverage failure category when
+invoking existing progress-yield or transient-provider recovery. Do not accept
+missing coverage, change the answer, extend research quotas or repeat completed
+checks. Acceptance: interruption after a changed candidate's first coverage
+decision resumes only remaining decisions, while unavailable configuration stays
+an explicit failure. Existing source bindings and publication gate remain intact.
+
+Implemented narrow reason propagation and a private, answer/source-bound coverage
+interruption receipt. Earlier unavailable receipts were not stored, so native67646
+does not establish whether its final interruption was a deadline or provider fault.
+Seven focused cases pass using the real coverage implementation: a cutoff after
+the first decision resumes only the other two requests, without factual rechecks
+or inventing covered status. Timeout/unavailable/quota use existing native recovery;
+credentials, malformed responses and unknown errors remain terminal. Independent
+review and exact Ruff passed; no provider calls were used for validation.
