@@ -341,16 +341,22 @@ def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, 
     return question["id"]
 
 
-def schedule_questions(session, run):
+def schedule_questions(session, run, *, question_ids=None):
     data = deepcopy(run.research_state)
     from . import product_research_mission as mission
     from .product_research_admission import unmetered
 
+    selected = data.get("mission", {}).get("selected_question_ids") if mission.enabled(run) else None
+    allowed = set(question_ids) if question_ids is not None else None
+    if selected is not None:
+        allowed = set(selected) if allowed is None else allowed & set(selected)
     capacity = mission.branch_capacity(run) if mission.enabled(run) else float("inf") if unmetered(run) else data["limits"]["branches"]
     count = sum(bool(b.checkpoint.get("question_id")) for b in rows(session, InvestigationBranch, run))
     for question in sorted(data["questions"], key=lambda q: (-q["priority"], q["depth"], q["created_at"])):
         if question["branch_id"] or question["status"] != "open":
             continue
+        if allowed is not None and question["id"] not in allowed:
+            continue  # Retain proposals for the next mission decision, including later reflection gaps.
         if count >= capacity or (not unmetered(run) and question["depth"] > data["limits"]["depth"]):
             question["waiting_reason"] = "next_research_round" if unmetered(run) else "branch_budget" if count >= data["limits"]["branches"] else "depth_budget"
             continue

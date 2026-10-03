@@ -2778,7 +2778,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** IN PROGRESS, Core29bfea9/Sites91 live. Remove unrelated gap evidence dependency; content acceptance open. [Scope/acceptance](docs/PRODUCT_END_TO_END.md).
+**Current direction:** IN PROGRESS, Core2fd89a6/Sites91 live. Finish original requests before optional extensions; acceptance open. [Scope/acceptance](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

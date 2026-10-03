@@ -237,13 +237,34 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             work["publication_review_started"] = True
             return False
         from .product_research_mission import route_continuation
-        from .research_answer_review import original_check
+        from .research_answer_review import audit, original_check
 
         review = work["model_route"]["answer_review"]
-        if "original_reading" not in review:
+        checkpoint = parsed.mission_checkpoint
+
+        def retain_routing():
+            if resume:
+                resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, review)
+
+        if work.get("mission_continuation") and checkpoint.action == "continue":
+            # Coverage concerns the user's requests, not every proposed extension.
+            # Share these exact decisions with finalization; factual review still
+            # determines whether the existing answer can actually be published.
+            review["continuation_coverage"] = await audit(service.settings, work, wire,
+                checkpoint.answer, seconds - (monotonic() - started), coverage_only=True,
+                checkpoints=resume.parts if resume else None, on_progress=retain_routing)
+            if review["continuation_coverage"].get("question_coverage") == "covered":
+                checkpoint.action = "finish"
+                checkpoint.next_checks = []
+                checkpoint.deepen_branches = []
+                checkpoint.reason = "Review the existing answer before opening further research."
+                review.pop("original_reading", None)
+        previous_reading = review.get("original_reading")
+        if previous_reading is None or checkpoint.action == "continue" and (
+                previous_reading.get("contract") != "research-next-reading/v2"):
             review["original_reading"] = await original_check(service.settings, work, wire,
-                parsed.mission_checkpoint, seconds - (monotonic() - started))
-        routed = route_continuation(work, parsed.mission_checkpoint)
+                checkpoint, seconds - (monotonic() - started))
+        routed = route_continuation(work, checkpoint)
         if resume:
             # The host can bind a next reading to an original outside the
             # initial shortlist. Resume its canonical full-source contract;

@@ -1811,3 +1811,48 @@ guard pass, including three complete-page packing, citation identity and resume
 regressions. Exact API Ruff, diff checks and independent production review pass.
 No originals were cropped. Production activation and native content acceptance
 remain separate next gates.
+
+### Finish the user's question before optional research extensions
+
+MV2-020/023: native75041 on live2fd89a6 resumed successfully, but its next
+private continuation repeated largest-15-year rankings, annual values and exact
+attribution proportions. The user requested a reconciliation and honest limits,
+not these extra quantitative objectives. All 22 earlier documents were complete.
+Citation validity, changed wording and fresh evidence were sufficient to schedule
+more work; this did not establish that the work was needed for the original ask.
+
+Scope: reuse the existing request-coverage decision before private continuation.
+When existing points cover the original requests, enter ordinary factual final
+review. Reuse the existing next-original decision to choose only a consequential
+proposed check or frontier, considering attempted questions, purposes and observed
+outcomes. Missing coverage alone cannot authorize unrelated work. No extra review
+layer, new provider, research budget or factual approval by routing. Retain needed
+whole-document reading and allow source-established uncertainty to be an answer.
+
+Acceptance: adequately answered questions reach final review without optional
+search; genuinely necessary follow-up retains exact source/branch identity;
+semantic repeats and extra precision are nonblocking; unavailable routing remains
+retryable; original reading and factual checks still precede final publication.
+Exact coverage decisions are shared with finalization, and full prior attempt
+context remains fallible navigation history rather than evidence. Existing source
+access suffices. The current isolated native run continues on its immutable
+snapshot; do not duplicate or interrupt it.
+
+Implemented by moving existing original-request coverage ahead of private
+continuation and extending the existing next-original decision to proposed checks
+and saved frontiers. No additional factual review layer was added. Selected work
+is retained in a private mission scheduling allowlist; later reflection scheduling
+cannot release unselected questions. Current explicit reselection refreshes the
+exact per-question source receipt. Old questions and published recommendation
+dependencies retain their normal review and source-validation boundaries.
+
+Validation: 145 distinct affected component and complete-journey cases passed.
+This includes 420-page Legal and 25-page Pharma journeys (248.95 seconds), warm
+coverage reuse, optional-versus-necessary routing, transient retry, selected-only
+scheduling through later reflection, existing-ID/source-receipt reuse, and source
+withdrawal. The changed protected-recommendation and refreshed-receipt cases were
+rechecked after their respective edits. Exact API Ruff and diff checks pass.
+Independent review exposed the scheduling and stale-receipt issues; both were
+corrected. No providers were called for these checks. Actual public-source content
+acceptance remains open; native75041 continues on immutable2fd89a6 while this
+complete routing change is published and activated separately.

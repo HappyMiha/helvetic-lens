@@ -172,6 +172,106 @@ async def test_original_reading_requires_link_witness_and_retains_current_answer
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('choice', ['none', 'check:1', 'frontier:0', '0'])
+async def test_continuation_materiality_selects_only_needed_work_without_approving_answer(monkeypatch, choice):
+    from copy import deepcopy
+
+    from helvetic_lens.product_research_mission import Checkpoint
+
+    ref = {'source_id': 'a' * 36, 'locator': 'p1',
+        'quote': 'The Original Agency charter defines the registry authority and amendment procedure.'}
+    source = {'id': ref['source_id'], 'kind': 'public_source', 'url': 'https://example.org/report', 'title': 'Registry report',
+        'discovery_links': [{'url': 'https://example.org/charter', 'kind': 'document', 'title': 'Original charter', 'context': ref['quote']}]}
+    history = [{'question': 'How do registry counts compare across years?', 'query': 'registry annual comparison',
+        'purpose': 'Compare annual registry totals.', 'status': 'evidence_found', 'outcome': 'The annual report was read.'}]
+    frontier = {'branch_id': 'registry-charter-search', 'query': 'registry charter amendment authority', 'remaining_candidates': 2}
+    mission = {'attempted_queries': [history[0]['query']], 'attempted_questions': history, 'discovery_frontiers': [frontier]}
+    work = {'input': {'sources': [source], 'original_question': 'Who governs the registry, who can amend it, and what remains unknown?',
+        'research_mission': deepcopy(mission)}}
+    wire = SimpleNamespace(references={1: ref}, input={'sources': [source], 'research_mission': mission})
+    checkpoint = Checkpoint(answer={'status': 'partial', 'limitations': ['The amendment authority has not yet been established.'],
+        'points': [{'statement': 'The Agency governs the registry.', 'evidence': [{**ref, 'role': 'support'}]}]},
+        action='continue', reason='Further investigation could help.', deepen_branches=[frontier['branch_id']],
+        next_checks=[{'question': 'What is the year-by-year ranking of registry totals?', 'query': 'registry totals annual ranking',
+            'purpose': 'Obtain a more precise annual comparison.', 'priority': 2, 'kind': 'amount', **ref},
+            {'question': 'Who has authority to amend the registry?', 'query': 'registry charter amendment authority',
+                'purpose': 'Resolve the requested amendment authority.', 'priority': 4, 'kind': 'independent_verification', **ref}])
+    before = checkpoint.model_dump()
+    calls = []
+
+    class Engine:
+        async def choose(self, state, system, criteria):
+            calls.append(state)
+            assert set(criteria) == {'none', 'check:0', 'check:1', 'frontier:0', '0'}
+            assert state['question'] == work['input']['original_question']
+            assert state['uncertainties'] == before['answer']['limitations']
+            assert state['attempted_questions'] == history
+            assert state['proposed_checks']['check:1'] == before['next_checks'][1]
+            assert state['proposed_frontiers']['frontier:0'] == frontier
+            assert state['unread_links'][0]['witness'] == ref
+            assert 'A missing answer does not justify an unrelated proposed check' in system
+            assert 'reworded query is not new work' in system
+            assert 'fallible context, not evidence' in system
+            return Decision('jev', 'test', choice, {choice: 1}, 1, 1, 1, 1, 1)
+
+    monkeypatch.setattr(review.decision, 'engines', lambda settings: {'jev': Engine()})
+    receipt = await review.original_check(Settings(_env_file=None), work, wire, checkpoint, 60)
+    assert len(calls) == 1 and receipt['contract'] == 'research-next-reading/v2' and receipt['choice'] == choice
+    assert receipt['input_fingerprint'] and receipt['policy_fingerprint']
+    assert checkpoint.answer.model_dump()['points'] == before['answer']['points']
+    assert checkpoint.answer.status == 'partial'
+    if choice == 'none':
+        assert checkpoint.action == 'finish' and not checkpoint.next_checks and not checkpoint.deepen_branches
+        assert checkpoint.answer.model_dump() == before['answer'], 'No optional work is not proof that the answer or gaps are correct'
+    elif choice == 'check:1':
+        assert checkpoint.action == 'continue' and [check.model_dump() for check in checkpoint.next_checks] == before['next_checks'][1:]
+        assert not checkpoint.deepen_branches
+    elif choice == 'frontier:0':
+        assert checkpoint.action == 'continue' and checkpoint.deepen_branches == before['deepen_branches']
+        assert not checkpoint.next_checks
+    else:
+        assert checkpoint.action == 'continue' and not checkpoint.deepen_branches
+        assert len(checkpoint.next_checks) == 1 and checkpoint.next_checks[0].query == 'https://example.org/charter'
+        assert {key: getattr(checkpoint.next_checks[0], key) for key in ref} == ref
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('failure', ['unavailable', 'invalid', 'deadline', 'unbound_check', 'unbound_frontier'])
+async def test_continuation_materiality_never_approves_unavailable_or_unbound_work(monkeypatch, failure):
+    from helvetic_lens.config import DomainError
+    from helvetic_lens.product_research_mission import Checkpoint
+
+    ref = {'source_id': 'a' * 36, 'locator': 'p1', 'quote': 'The charter records the amendment authority.'}
+    source = {'id': ref['source_id'], 'kind': 'public_source'}
+    checkpoint = Checkpoint(answer={'status': 'partial', 'points': [], 'limitations': ['The amendment authority remains unresolved.']},
+        action='continue', reason='The relevant original could resolve the question.', next_checks=[{
+            'question': 'Who may amend the registry?', 'query': 'registry charter amendment authority',
+            'purpose': 'Resolve the requested authority.', 'priority': 4, 'kind': 'independent_verification', **ref}])
+    if failure == 'unbound_check':
+        checkpoint.next_checks[0].source_id = 'b' * 36
+    elif failure == 'unbound_frontier':
+        checkpoint.deepen_branches = ['not-supplied']
+    before = checkpoint.model_dump()
+    calls = []
+
+    class Engine:
+        async def choose(self, state, system, criteria):
+            calls.append(state)
+            if failure == 'unavailable':
+                raise DecisionUnavailable('not_configured')
+            return Decision('jev', 'test', 'invented-action', {}, 1, 1, 1, 1, 1)
+
+    monkeypatch.setattr(review.decision, 'engines', lambda settings: {'jev': Engine(), 'laya': Engine()})
+    work = {'input': {'sources': [source], 'original_question': 'Who may amend the registry?'}}
+    wire = SimpleNamespace(references={1: ref}, input={'sources': [source], 'research_mission': {}})
+    with pytest.raises(DomainError) as error:
+        await review.original_check(Settings(_env_file=None), work, wire, checkpoint, 0 if failure == 'deadline' else 60)
+    assert error.value.code == ('invalid_evidence' if failure.startswith('unbound') else 'model_temporarily_unavailable')
+    assert checkpoint.model_dump() == before
+    assert len(calls) == (2 if failure in {'unavailable', 'invalid'} else 0)
+
+
+@pytest.mark.asyncio
 async def test_two_rejected_assertions_in_one_question_cannot_share_a_cached_correction():
     import json
 

@@ -278,7 +278,9 @@ def test_answer_pack_excludes_old_generated_answers_and_preserves_canonical_inpu
         'sources': [canonical], 'synthesis_sources': [{**source, 'whole_document_review': {
             'findings': [{'quote': 'An earlier model claim is not original evidence.'}]}}],
         'research_mission': {'previous_checkpoint': {'answer': 'An old wrong answer.'},
-            'attempted_questions': [{'query': 'previous query', 'question': 'An invented user requirement.'}],
+            'attempted_questions': [{'query': 'previous query', 'question': 'An invented user requirement.',
+                'status': 'unresolved', 'purpose': 'An earlier tentative purpose.',
+                'open_check_context': {'private': 'Do not transport internal receipts.'}}],
             'documents': [{'read_complete': True, 'analysis_complete': True, 'reconciliation': {
                 'findings': [{'quote': 'An earlier model claim.'}], 'limitations': ['The datum is local.']}}]}}}
     before = deepcopy(work)
@@ -286,6 +288,10 @@ def test_answer_pack_excludes_old_generated_answers_and_preserves_canonical_inpu
     assert work == before and len(wire.references) == 1
     assert 'previous_checkpoint' not in wire.input['research_mission']
     assert wire.input['research_mission']['attempted_queries'] == ['previous query']
+    assert wire.input['research_mission']['attempted_questions'] == [
+        {'question': 'An invented user requirement.', 'status': 'unresolved'}]
+    assert 'not user requirements or evidence' in wire.system
+    assert 'Do not transport internal receipts' not in json.dumps(wire.input)
     assert 'An earlier model claim' not in json.dumps(wire.input)
     assert 'review_limitations' not in wire.input['research_mission']['documents'][0]
     assert wire.input['research_mission']['documents'][0]['analysis_complete']

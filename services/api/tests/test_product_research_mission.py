@@ -417,3 +417,97 @@ def test_private_reading_continuation_preserves_checked_answer_and_current_sourc
             old.sha256 = 'd' * 64
             session.flush()
             assert exploration.projection(session, run)['mission']['answer'] is None
+
+
+@pytest.mark.parametrize('selection', ['new', 'existing', 'frontier'])
+def test_mission_selection_releases_only_chosen_work_across_later_scheduling(signed, selection):
+    from helvetic_lens import product_exploration as exploration
+    from helvetic_lens import product_iterative_research as research
+    from helvetic_lens import product_research_mission as mission
+    from helvetic_lens.product_investigation_models import InvestigationBranch, InvestigationSource
+    from helvetic_lens.product_investigations import citation, rows, scope
+
+    client, service, _, _ = signed
+    _, started, _ = start(client)
+    with service.db.session() as session:
+        run = session.get(Investigation, started['id'])
+        run.status = 'running'
+        for branch in rows(session, InvestigationBranch, run):
+            branch.status = 'completed'
+        source = InvestigationSource(**scope(run), source_key='a' * 64, kind='public_source',
+            title='Current original', url='https://example.org/current', sha256='a' * 64,
+            snapshot={'excerpts': [{'passage': 'p1', 'text': GRANT}]})
+        session.add(source)
+        session.flush()
+        initial_id = research.add_question(session, run, research.BranchDraft(question='What do the primary records establish?',
+            query='primary registry records', purpose='Read the initial originals.', priority=2))
+        research.schedule_questions(session, run)
+        initial_question = next(q for q in run.research_state['questions'] if q['id'] == initial_id)
+        assert initial_question['branch_id'], 'Initial planning remains unrestricted before a mission selection'
+        initial_branch = session.get(InvestigationBranch, initial_question['branch_id'])
+        initial_branch.status = 'completed'
+        initial_branch.checkpoint = {**initial_branch.checkpoint, 'next_discovery_cursors': {'broad': {'page': 2}}}
+        research.finish_question(session, run, initial_branch)
+
+        optional_id = research.add_question(session, run, research.BranchDraft(question='What is every historical ranking?',
+            query='all historical registry rankings', purpose='Optional exhaustive background.', priority=5))
+        optional_before = deepcopy(next(q for q in run.research_state['questions'] if q['id'] == optional_id))
+        draft = research.Gap(source_id=source.id, locator='p1', quote=GRANT,
+            question='Does the current original resolve the requested discrepancy?', query='current original discrepancy',
+            purpose='Resolve the requested distinction.', priority=1, kind='contradiction')
+        pin = citation(source, draft)
+        existing_id = research.add_question(session, run, draft, trigger={**pin, 'sha256': 'b' * 64}) if selection == 'existing' else None
+        supplied = {**exploration.prepare(session, run), 'research_mission': mission.context(session, run)}
+        if existing_id:
+            from helvetic_lens import product_exploration_followups as followups
+            from helvetic_lens import product_informed_research as informed
+            informed.remember(session, run, supplied)
+            followups.remember_open_context(run, supplied, existing_id)
+            old_context = deepcopy(next(q for q in run.research_state['questions'] if q['id'] == existing_id)['open_check_context'])
+        checkpoint = mission.Checkpoint(answer={'status': 'partial', 'points': [], 'limitations': ['The discrepancy remains unresolved.']},
+            action='continue', reason='Read only the selected material distinction.',
+            next_checks=[] if selection == 'frontier' else [draft],
+            deepen_branches=[initial_branch.id] if selection == 'frontier' else [])
+        work = {'input': supplied, 'mission_continuation': mission.continuation_context(session, run)}
+        assert mission.route_continuation(work, checkpoint)
+        gaps, deeper = mission.next_work(session, run, supplied, checkpoint)
+        assert mission.schedule_next(session, run, supplied, gaps, deeper)
+        current_questions = run.research_state['questions']
+        assert next(q for q in current_questions if q['id'] == optional_id) == optional_before
+        selected_ids = run.research_state['mission']['selected_question_ids']
+        if selection == 'frontier':
+            assert selected_ids == [] and initial_branch.status == 'running'
+        else:
+            selected = next(q for q in current_questions if q['query'] == draft.query)
+            assert selected['branch_id'] and selected['status'] == 'investigating'
+            assert selected['trigger'] == pin
+            assert selected_ids == [selected['id']]
+            if existing_id:
+                from helvetic_lens.product_observed_queries import origin_current
+                assert selected['id'] == existing_id
+                assert sum(q['query'] == draft.query for q in current_questions) == 1
+                assert selected['open_check_context']['fingerprint'] != old_context['fingerprint']
+                assert followups.open_context_current(session, run, selected,
+                    run.research_state['exploration']['adaptive_dependencies'])
+                assert origin_current(session, run, selected), 'The explicitly selected search must retain a current query-journal origin'
+        assert 'selected_question_ids' not in mission.project(session, run)
+        session.commit()
+
+    with service.db.session() as session:
+        run = session.get(Investigation, started['id'])
+        before_branches = {branch.id for branch in rows(session, InvestigationBranch, run)}
+        # Reflection saves new proposals and invokes this same default scheduler.
+        # Neither fresh proposals nor earlier higher-priority optional work may
+        # bypass the durable mission decision after another worker transaction.
+        later_id = research.add_question(session, run, research.BranchDraft(question='What related statistics could also be collected?',
+            query='related statistics background', purpose='A new unselected reflection proposal.', priority=5))
+        research.schedule_questions(session, run)
+        assert {branch.id for branch in rows(session, InvestigationBranch, run)} == before_branches
+        assert next(q for q in run.research_state['questions'] if q['id'] == optional_id) == optional_before
+        later = next(q for q in run.research_state['questions'] if q['id'] == later_id)
+        assert later['status'] == 'open' and later['branch_id'] is None
+        empty = mission.Checkpoint(answer={'status': 'partial', 'points': [], 'limitations': ['The question remains unresolved.']},
+            action='continue', reason='Unselected open questions cannot authorize work.')
+        work = {'input': {'sources': [], 'research_mission': {}},
+            'mission_continuation': mission.continuation_context(session, run)}
+        assert not mission.route_continuation(work, empty) and empty.action == 'finish'

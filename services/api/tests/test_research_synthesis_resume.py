@@ -662,7 +662,7 @@ def test_completed_request_coverage_is_progress_but_unavailable_retry_is_not(cho
     'finish', 'finalizing_resume', 'published_frontier', 'published_open_question'])
 async def test_actionable_native_reading_precedes_answer_polishing_but_finalization_cannot_bypass_review(monkeypatch, route):
     from helvetic_lens import research_final_review
-    from helvetic_lens.product_iterative_research import Gap
+    from helvetic_lens.product_iterative_research import Gap, query_key
 
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
@@ -685,7 +685,8 @@ async def test_actionable_native_reading_precedes_answer_polishing_but_finalizat
     if route in {'published_frontier', 'published_open_question'}:
         work['mission_continuation'].update(published_question_ids=['published-question'], questions=[{
             'id': 'published-question', 'status': 'completed' if route == 'published_frontier' else 'open',
-            'branch_id': 'frontier' if route == 'published_frontier' else None}])
+            'branch_id': 'frontier' if route == 'published_frontier' else None,
+            'question': gap['question'], 'query': gap['query'], 'query_key': query_key(gap['query'])}])
     initial = deepcopy(work)
     calls = []
     actionable = route in {'check', 'frontier', 'original_link'}
@@ -698,7 +699,7 @@ async def test_actionable_native_reading_precedes_answer_polishing_but_finalizat
             'evidence': [{'citation_ref': 1, 'role': 'support'}]}]},
             'next_action': 'continue' if route in {'check', 'frontier', 'no_action', 'duplicate', 'same_evidence',
                 'published_frontier', 'published_open_question'} else 'finish',
-            'next_checks': [{**gap, 'citation_ref': 1}] if route in {'check', 'duplicate', 'same_evidence'} else [],
+            'next_checks': [{**gap, 'citation_ref': 1}] if route in {'check', 'duplicate', 'same_evidence', 'published_open_question'} else [],
             'deepen_branches': ['frontier'] if route in {'frontier', 'published_frontier'} else []})
 
     async def original(settings, routed_work, wire, checkpoint, seconds):
@@ -707,6 +708,11 @@ async def test_actionable_native_reading_precedes_answer_polishing_but_finalizat
             checkpoint.action = 'continue'
             checkpoint.next_checks = [Gap(**gap, **wire.references[1])]
         return {'choice': 'read' if route == 'original_link' else 'none'}
+
+    async def coverage(*args, coverage_only=False, **kwargs):
+        assert coverage_only, 'Intermediate routing must not perform point-level factual review'
+        calls.append('coverage')
+        return {'status': 'checked', 'question_coverage': 'missing', 'hints': [], 'decisions': []}
 
     def quantity(*args, **kwargs):
         assert not actionable, 'A private reading decision must precede numeric polishing'
@@ -733,6 +739,7 @@ async def test_actionable_native_reading_precedes_answer_polishing_but_finalizat
         raise FinalReviewReached
 
     monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(review, 'audit', coverage)
     monkeypatch.setattr(review, 'original_check', original)
     monkeypatch.setattr(gateway, 'answer_quantity_errors', quantity)
     monkeypatch.setattr(research_final_review, 'finalize', finalize)
@@ -756,3 +763,108 @@ async def test_actionable_native_reading_precedes_answer_polishing_but_finalizat
         with pytest.raises(FinalReviewReached):
             await gateway.complete(service, work, '', schema, 60)
         assert calls.index('reading_route') < calls.index('quantity') < calls.index('final_review')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('coverage', ['covered', 'missing', 'unavailable', 'reading_unavailable'])
+async def test_original_request_coverage_precedes_private_reading_and_reuses_exact_final_receipts(monkeypatch, coverage):
+    from helvetic_lens import decision_engines, research_final_review
+    from helvetic_lens.product_iterative_research import Gap
+
+    settings = Settings(_env_file=None, apertus_provider='swisscom')
+    model = ModelClient(settings)
+    service = SimpleNamespace(settings=settings, model_client=model)
+    requests = ['Who operates the registry?', 'Which district limits its authority?']
+    originals = ['North Reach operates the registry.', 'Its authority is limited to the northern district.']
+    statements = originals if coverage == 'covered' else originals[:1]
+    check = {'question': 'Which district does the underlying authority cover?',
+        'query': 'https://example.org/authority', 'purpose': 'Read the original district restriction.',
+        'priority': 1, 'kind': 'independent_verification', 'catalogues': []}
+    work = {'phase': 'brief', 'unmetered_research': True,
+        'mission_continuation': {'round': 1, 'signature': 'current', 'previous_signature': None,
+            'unfinished': False, 'questions': [], 'queries': [], 'frontiers': [], 'next_slots': 8},
+        'input': {'original_question': ' '.join(requests), 'research_mission': {},
+            'sources': [{'id': 'a' * 36, 'kind': 'public_source', 'url': 'https://example.org/register',
+                'excerpts': [{'passage': f'p{i + 1}', 'text': text} for i, text in enumerate(originals)]}]}}
+    events, decisions = [], []
+
+    class CoverageEngine:
+        async def choose(self, payload, system, criteria):
+            events.append('coverage')
+            decisions.append(deepcopy(payload))
+            assert set(criteria) == {'covered', 'missing'}
+            assert payload['specific_request'] in requests
+            assert payload['original_question'] == work['input']['original_question']
+            assert list(payload['answer_points'].values()) == statements
+            assert 'limitations' not in payload, 'Optional draft gaps must not become new user obligations'
+            if coverage == 'unavailable':
+                raise decision_engines.DecisionUnavailable('timeout')
+            choice = 'missing' if coverage in {'missing', 'reading_unavailable'} and payload['specific_request'] == requests[1] else 'covered'
+            return SimpleNamespace(choice=choice, model='scripted-local-decision', input_tokens=10, output_tokens=1)
+
+    async def complete(system, text, **options):
+        events.append('draft')
+        return json.dumps({'answer': {'status': 'partial',
+            'remaining_gaps': ['A year-by-year ranking was not established.'],
+            'points': [{'statement': statement, 'evidence': [{'citation_ref': i + 1, 'role': 'support'}]}
+                for i, statement in enumerate(statements)]},
+            'next_action': 'continue', 'next_checks': [{**check, 'citation_ref': 1}]})
+
+    async def original(settings, routed_work, wire, checkpoint, seconds):
+        events.append('reading_route')
+        assert decisions, 'Evaluate the original requests before deciding whether to continue reading'
+        if coverage == 'covered':
+            assert checkpoint.action == 'finish'
+            return {'choice': 'none'}
+        assert checkpoint.action == 'continue', 'Unknown or missing coverage must not be treated as covered'
+        if coverage == 'reading_unavailable':
+            raise DomainError('Next-reading decision is unavailable.', 503, 'model_temporarily_unavailable')
+        checkpoint.next_checks = [Gap(**check, **wire.references[1])]
+        return {'choice': 'check:0'}
+
+    def quantities(*args, **kwargs):
+        events.append('quantity')
+        assert coverage == 'covered', 'A necessary private read must precede numeric polishing'
+        return []
+
+    async def factual(service, wire, answer, seconds, **kwargs):
+        events.append('final_review')
+        assert coverage == 'covered', 'Incomplete private drafts must not buy factual polishing'
+        assert [point.statement for point in answer.points] == statements
+        return {'status': 'checked', 'hints': [], 'points_checked': len(answer.points)}
+
+    monkeypatch.setattr(decision_engines, 'engines', lambda settings: {'jev': CoverageEngine()})
+    monkeypatch.setattr(model, 'complete', complete)
+    monkeypatch.setattr(review, 'original_check', original)
+    monkeypatch.setattr(gateway, 'answer_quantity_errors', quantities)
+    monkeypatch.setattr(research_final_review, 'reasoned_review', factual)
+    schema = mission_schema(Briefing)
+    if coverage == 'reading_unavailable':
+        with pytest.raises(DomainError) as error:
+            await gateway.complete(service, work, '', schema, 90)
+        assert error.value.code == 'model_temporarily_unavailable'
+        assert not work.get('private_continuation') and not work.get('publication_review_started')
+        assert 'quantity' not in events and 'final_review' not in events
+        saved = work[KEY]
+        assert saved['stage'] == 'reviewed' and saved['parts']['delivered_coverage']
+        assert json.loads(saved['raw'])['next_action'] == 'continue'
+        assert statements[0] in saved['raw'], 'Keep the private draft for retry without publishing it'
+        assert events.count('draft') == 1
+        return
+    parsed = schema.model_validate_json(await gateway.complete(service, work, '', schema, 90))
+    receipts = list(work[KEY]['parts'].get('delivered_coverage', {}).values())
+    assert events.count('draft') == 1
+    assert events.index('coverage') < events.index('reading_route')
+    if coverage == 'covered':
+        assert parsed.mission_checkpoint.action == 'finish' and not work.get('private_continuation')
+        assert events.index('reading_route') < events.index('quantity') < events.index('final_review')
+        assert len(decisions) == len(requests), 'Finalization must reuse the same exact-input coverage receipts'
+        assert len(receipts) == len(requests) and all(receipt['choice'] == 'covered' for receipt in receipts)
+        assert all(receipt['reused'] for receipt in work['model_route']['answer_review']['final_coverage']['decisions'])
+        assert [point.statement for point in parsed.mission_checkpoint.answer.points] == statements
+    else:
+        assert parsed.mission_checkpoint.action == 'continue' and work['private_continuation']
+        assert parsed.mission_checkpoint.next_checks[0].query == check['query']
+        assert 'quantity' not in events and 'final_review' not in events
+        assert (not receipts) if coverage == 'unavailable' else {receipt['choice'] for receipt in receipts} == {'covered', 'missing'}
+    assert all(receipt['input_fingerprint'] and receipt['policy_fingerprint'] for receipt in receipts)
