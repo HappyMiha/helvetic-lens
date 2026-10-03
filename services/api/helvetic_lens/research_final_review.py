@@ -698,6 +698,12 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         retain()
         return True
 
+    def checked_input():
+        return fingerprint({'answer': answer.model_dump(), 'owners': wire.point_requests,
+            'slots': wire.response_slots, 'concerns': repaired_concerns,
+            'workflow_gaps': sorted(wire.workflow_gaps)})
+
+    checked, reviewed_input = None, None
     plan = checkpoints.get('final_correction_round')
     if plan is not None and plan.get('contract') != 'literal-request-repair/v1':
         # Re-plan the current retained answer, not the original rejected draft.
@@ -712,10 +718,15 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             # proofs remain valid; gaps and coverage now see the retained subset.
             checked = await check()
             pending = checked.get('factual_review', {}).get('pending_checks', [])
-        if pending and (defer_pending or any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in pending)):
-            # Never freeze a partial plan that omits as-yet unchecked assertions.
+        unfinished = [item for item in pending if not (
+            item['reason'] == 'unresolved_concern' and item['item'].startswith('P'))]
+        if unfinished and (defer_pending or any(item['reason'] in TRANSIENT_REVIEW_ERRORS for item in unfinished)):
+            # A completed but unresolved objection can be withheld below; it
+            # must not block every independently checked finding. Unperformed,
+            # malformed and interrupted checks still retain their retry gate.
             retain()
-            incomplete(pending)
+            incomplete(unfinished)
+        reviewed_input = checked_input()
         factual = [hint for hint in checked['hints'] if hint.get('review_signal') not in {'review_unavailable', 'not_a_gap'} and hint.get('path', [])[:2] in (
             ['answer', 'points'], ['answer', 'limitations'])]
         tasks, gap_tasks = {}, {}
@@ -869,7 +880,10 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         plan['receipts'].append({**receipt, 'request_key': key})
         plan['completed'] += 1
         retain()
-    checked = await check()  # Every changed assertion and gap is checked again.
+    if checked is None or reviewed_input != checked_input():
+        checked = await check()  # Every changed assertion and gap is checked again.
+    # If planning made no change, use the current review, including unresolved
+    # objections. Repeating it cannot be a prerequisite for withholding them.
     restored = False
     current_originals = {(ref['source_id'], ref['locator'], ref['quote']) for ref in wire.references.values()}
     pending_reasons = {item['item']: item['reason'] for item in checked.get('factual_review', {}).get('pending_checks', [])}

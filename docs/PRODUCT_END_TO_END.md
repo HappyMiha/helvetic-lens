@@ -2394,3 +2394,91 @@ API Ruff, diff and backlog checks pass; independent review found no material
 blocker. This establishes capture reuse and rights behavior, not semantic answer
 quality or an end-to-end speedup. The four-file qualification candidate remains
 unpublished; native6691 does not contain this later capture change.
+
+### Compose findings from their selected evidence
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Native6691
+delivered useful coverage but content acceptance remains PARTIAL. Its reviewer
+approved two introductory fragments while borrowing a third fragment's CCl4
+explanation; a separate iodine assertion had no supporting passage in that
+review. The publication copier did not lose an approved witness. The unsuccessful
+qualification-only candidate is archived and removed, not awaiting publication.
+
+Select independent intended findings and their original evidence in a private
+plan before composing publishable prose. A shared composer writes only each
+finding's explanation or declines it; the host attaches that finding's immutable
+selected citations. Complete surrounding originals remain context, separately
+from support. Initial synthesis and targeted corrections share this contract;
+neither may bypass it with an independently authored final paragraph. Existing
+factual review, question coverage, source rights and private recovery remain in
+force. A failed composition retains completed work and cannot publish its plan.
+No new critic, domain-specific truth rules, total research budget or forced state.
+
+Dependencies are the existing evidence wire, retained full originals, synthesis
+checkpoints and configured inference. No new credentials or source access are
+required. Acceptance covers immutable citations through initial writing, repair,
+retry and publication; missing evidence differs from a provider failure; source
+changes invalidate affected work. Recorded originals supply compound-proof,
+conditional/time and measurement controls. Actual generated dossier content must
+preserve qualifications and attach the decisive supporting passages (or narrow
+the conclusion). Binding tests alone do not prove semantic entailment. A new
+native run is justified only after the complete implementation and offline checks.
+
+Implemented one shared composer for initial publication, requested amendments and
+numeric corrections. Planner selections are private and immutable during writing;
+only composed statements enter the existing final factual and coverage checks.
+Complete context remains separate from selected support. Interrupted batches reuse
+completed work; malformed selections never become a saved final draft. An explicit
+retry can replace wholly rejected prose without discarding its evidence plan.
+
+Validation: 247 distinct affected integration cases plus the backlog guard pass;
+exact API Ruff and diff checks pass. Independent review found and resolved a
+malformed-plan cache trap and invalid-prose retry regression. Six recorded-source
+structural scenarios and four lifecycle controls preserve exact references and
+roles through the canonical decoder with no providers or database writes. These
+use explicitly simulated prose and do not establish semantic acceptance. The old
+native planner packet exceeds the new envelope, so the normal gateway must select
+and size it afresh; complete composition contexts fit. The implementation is
+locally verified, but the frozen native27109 evaluation failed without delivering
+a new answer. Exact evidence attachment alone did not establish content quality.
+
+### Complete a dossier when one finding remains disputed
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Native27109
+retained eight completed checks but one optional finding's earlier concern could
+not be assessed. The initial finalization barrier stopped the entire answer before
+existing correction and withholding could run. Sources and the private checkpoint
+survived; the user received no new dossier after 44.5 minutes. Successful provider
+responses did not resolve the objection, so another transport retry is not the fix.
+
+Complete independent findings through the existing correction, withholding and
+question-coverage path. Unresolved factual concerns must never become approval or
+block every supported sibling. Provider outages and unfinished time-sliced checks
+retain their resumable behavior. Assess requested coverage again after removals;
+name unresolved requested parts without presenting them as missing world knowledge.
+Keep source rights, exact proofs and previously delivered answers intact. This
+uses current contracts and configured sources, with no new reviewer or model.
+
+Acceptance covers useful supported delivery with one disputed optional finding,
+honest remaining scope when a required finding is withheld, preserved transient
+checkpoints, and the actual public mission projection. Validate affected behavior
+once and reuse frozen evidence for offline reproduction; do not repeat unchanged
+suites or start another live research merely to seek a favorable model response.
+The full content-acceptance gate remains open until an actual useful dossier is
+confirmed; this scope does not claim perfect semantic verification.
+
+The completion correction is implemented with no prompt, schema or policy change.
+Fifteen focused cases pass, including flat and legacy request ownership, genuine
+gaps, all-disputed answers, transient/malformed interruption and saved sibling
+proofs. Exact API Ruff, backlog guard and diff checks pass; independent review found
+no material blocker. A frozen native27109 replay used only exact recorded replies,
+withheld the disputed point, and retained five siblings. It stopped at genuinely
+new coverage of that subset rather than fabricating approval. This verifies the
+completion path, not publication or semantic correctness. Ordinary saved-work
+retry79306 then completed in three native steps, delivering five cited findings
+after withholding the unresolved finding. The two new recorded Apertus requests
+were one timeout and one successful reply; source reading and drafting were reused.
+The delivered text still contains a conditional/time overclaim, so its content
+verdict remains PARTIAL. Publish the independent finalizer completion fix only;
+the broader evidence-first generation candidate remains unpublished. This release
+repairs whole-answer blocking without claiming the complete product is accepted.
