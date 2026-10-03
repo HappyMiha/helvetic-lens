@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
@@ -41,6 +42,7 @@ async def test_final_coverage_interruption_retains_flat_final_order_and_citation
         {'statement': statement, 'evidence': [{'citation_ref': i + 1, 'role': 'support'}]}
         for i, statement in enumerate(original)]}, 'next_action': 'finish'})
     calls, interrupted = [], [False]
+    @atomic_pack_model
     async def complete(system, text, **options):
         data = json.loads(text)
         assert 'requested_part' not in data, 'A complete shared draft needs no request-pack rewrite'
@@ -107,6 +109,7 @@ async def test_multipart_narrowed_draft_survives_gateway_retry_with_same_citatio
         'points': [point(bad, 1), point(sibling, 2)]}, 'next_action': 'finish'})
     calls, interrupted = [], [False]
 
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'final_claims_and_gaps' in value:
@@ -184,6 +187,7 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
     calls, interrupted = [], [False]
     def point(index, statement):
         return {'statement': statement, 'evidence': [{'citation_ref': index+1, 'role': 'support'}]}
+    @atomic_pack_model
     async def complete(system, user, **kwargs):
         value = json.loads(user)
         if 'final_claims_and_gaps' in value:

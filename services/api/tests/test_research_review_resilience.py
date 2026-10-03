@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import witnessed_review
 
 from helvetic_lens import research_answer_review as audit
 from helvetic_lens import research_final_review as review
@@ -22,7 +23,7 @@ def response(payload):
     if payload.get('prior_review_concerns'):
         value['concern_checks'] = [{'id': key, 'outcome': 'resolved', 'reason': '',
             'citation_refs': verdict['citation_refs']} for key in payload['prior_review_concerns']['concerns']]
-    return json.dumps(value)
+    return json.dumps(witnessed_review(value, payload))
 
 
 def fixture(*, slots=False):

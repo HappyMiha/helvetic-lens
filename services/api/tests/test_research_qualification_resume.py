@@ -5,6 +5,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 from test_research_review_resilience import fixture, response
 
 from helvetic_lens import research_answer_review as audit
@@ -44,6 +45,7 @@ async def test_pending_qualification_retains_completed_repair_and_narrowed_candi
         return [], '', {'status': 'invalid_answer'}
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             payload = json.loads(text)
             item = next(iter(payload['final_claims_and_gaps'].values()))
@@ -118,6 +120,7 @@ async def test_later_gap_outage_joins_deferred_obligations_and_explicit_restore_
     audits(monkeypatch)
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             payload = json.loads(text)
             item = next(iter(payload['final_claims_and_gaps'].values()))
