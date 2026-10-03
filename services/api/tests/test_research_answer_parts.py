@@ -387,3 +387,68 @@ async def test_amendment_target_is_bound_to_retained_answer_and_resumes_without_
             checkpoints=json.loads(json.dumps(state)), amendments={'P0': original.model_dump()})
         assert resumed == result and repeat['replace_point'] == target
     assert calls == ['select', 'amend']
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('target,empty', [('P7', False), ('new', False), ('P0', True), (None, True)])
+async def test_full_answer_amendment_can_replace_or_leave_a_gap_but_cannot_append(target, empty):
+    wire, parsed, _ = fixture(8)
+    amendments = {f'P{i}': point.model_dump() for i, point in enumerate(parsed.mission_checkpoint.answer.points)}
+    if target is None:
+        amendments = {}  # No point belonging to this request is eligible for replacement.
+    before = json.loads(json.dumps(amendments))
+    gap_text = 'The earlier edition date is not established by these originals.'
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return selection_json([1], options)
+            payload, props = json.loads(text), options['response_schema']['properties']
+            assert payload['retained_answer'] == {key: point['statement'] for key, point in amendments.items()}
+            if amendments:
+                assert props['replace_point']['enum'] == [f'P{i}' for i in range(8)]
+            else:
+                assert 'replace_point' not in props and props['points']['maxItems'] == 0
+            return json.dumps({'points': [] if empty else [{'statement': wire.references[1]['quote'],
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
+                'remaining_gap': gap_text if empty else '',
+                **({'replace_point': target} if target is not None else {})})
+
+    points, gap, receipt = await answer_request(SimpleNamespace(model_client=Model()), wire,
+        'Clarify the publication event.', 60, amendments=amendments, allow_append=False)
+    assert amendments == before, 'Capacity handling must not mutate retained answer points'
+    if target == 'new':
+        assert not points and not gap and receipt['status'] == 'invalid_answer'
+    elif empty:
+        assert not points and gap == gap_text and receipt['status'] == 'unresolved'
+        assert ('replace_point' in receipt) is (target is not None)
+    else:
+        assert len(points) == 1 and receipt['replace_point'] == 'P7' and not gap
+        assert points[0].evidence[0].model_dump(exclude={'role'}) == wire.references[1]
+
+
+@pytest.mark.asyncio
+async def test_lost_append_capacity_cannot_reuse_an_earlier_append_proposal():
+    wire, parsed, _ = fixture(8)
+    amendments = {f'P{i}': point.model_dump() for i, point in enumerate(parsed.mission_checkpoint.answer.points)}
+    state, targets = {}, []
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                return selection_json([1], options)
+            allowed = options['response_schema']['properties']['replace_point']['enum']
+            target = 'new' if 'new' in allowed else 'P7'
+            targets.append(target)
+            return json.dumps({'points': [{'statement': wire.references[1]['quote'],
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}], 'remaining_gap': '', 'replace_point': target})
+
+    service = SimpleNamespace(model_client=Model())
+    _, _, append = await answer_request(service, wire, 'Clarify the publication event.', 60,
+        checkpoints=state, amendments=amendments)
+    fixed, _, replace = await answer_request(service, wire, 'Clarify the publication event.', 60,
+        checkpoints=state, amendments=amendments, allow_append=False)
+    assert append['replace_point'] == 'new' and replace['replace_point'] == 'P7'
+    assert append['input_fingerprint'] != replace['input_fingerprint']
+    resumed, _, cached = await answer_request(service, wire, 'Clarify the publication event.', 0,
+        checkpoints=json.loads(json.dumps(state)), amendments=amendments, allow_append=False)
+    assert resumed == fixed and cached['replace_point'] == 'P7'
+    assert cached['input_fingerprint'] == replace['input_fingerprint'] and targets == ['new', 'P7']

@@ -107,8 +107,11 @@ async def test_correction_retains_good_owned_siblings_and_checks_each_replacemen
             'review_signal': 'not_established', 'instruction': 'Use the original operators.'}], 'pending_checks': []}
     async def correct(*args, **kwargs):
         calls.append(kwargs)
-        replacements = [point('New North'), point('New South')] if gap_only else [point('New North')]
-        return replacements, '', {'status': 'proposed'}
+        replacement = point('New North')
+        if gap_only:
+            replacement = AssessmentPoint(statement='New North and New South operate the registry.',
+                evidence=[*replacement.evidence, *point('New South').evidence])
+        return [replacement], '', {'status': 'proposed', **({'replace_point': 'new'} if gap_only else {})}
     monkeypatch.setattr(review, 'audit', audit)
     monkeypatch.setattr(final, 'reasoned_review', reasoned)
     monkeypatch.setattr(final, 'answer_request', correct)
@@ -118,11 +121,16 @@ async def test_correction_retains_good_owned_siblings_and_checks_each_replacemen
         await final.finalize(*args, checkpoints=cache, on_progress=lambda: None, defer_pending=True)
     assert cache['final_correction_round']['completed'] == 1
     await final.finalize(*args, checkpoints=json.loads(json.dumps(cache)), on_progress=lambda: None, defer_pending=True)
-    assert len(calls) == 1 and calls[0]['max_points'] == (3 if gap_only else 1)
+    assert len(calls) == 1 and calls[0]['max_points'] == 1
     assert calls[0]['feedback']['already_answered'] == [good.model_dump()]
-    assert good in answer.points and sibling in answer.points and len(answer.points) == (4 if gap_only else 3)
+    assert good in answer.points and sibling in answer.points and len(answer.points) == 3
     assert wire.point_requests[answer.points.index(sibling)] == 'r2'
     assert not answer.limitations
+    if gap_only:
+        replacement = next(p for p in answer.points if p.statement.startswith('New'))
+        assert replacement.statement == 'New North and New South operate the registry.'
+        assert {ref.quote for ref in replacement.evidence} == {
+            'New North operates the registry.', 'New South operates the registry.'}
     if not gap_only:
         for replacement in (p for p in answer.points if p.statement.startswith('New')):
             binding = fingerprint({'request_key': 'r1', 'point': replacement.model_dump()})
@@ -237,7 +245,8 @@ async def test_inconclusive_completed_correction_does_not_block_valid_siblings(m
                     if reason == 'nongap' else [])}
     monkeypatch.setattr(review, 'audit', audit)
     monkeypatch.setattr(final, 'reasoned_review', reasoned)
-    state = {'final_correction_round': {'tasks': [], 'completed': 0, 'receipts': [], 'observations': []}}
+    state = {'final_correction_round': {'contract': 'literal-request-repair/v1',
+        'tasks': [], 'completed': 0, 'receipts': [], 'observations': []}}
     result = await final.finalize(SimpleNamespace(settings=Settings(_env_file=None)), {'input': wire.input},
         wire, parsed, 60, checkpoints=state, on_progress=lambda: None, defer_pending=True)
     if pending_reason == 'unresolved_concern':

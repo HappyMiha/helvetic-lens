@@ -1888,3 +1888,54 @@ cache insertion. Exact API Ruff, diff and the backlog guard passed. Independent
 review confirmed valid sibling proofs remain reusable. No provider calls were
 needed for these checks. Publication, activation and a changed actual answer remain
 separate verification steps.
+
+### Give requested answers priority in the final correction
+
+MV2-020/023: native22138 completed on a795d27 after four model calls and
+397.1 seconds. Both readers render the actual eight points, fifteen citations
+and two limitations. Independent content acceptance is PARTIAL: the central
+reconciliation is useful, but a requested uncertainty is unanswered, one compound
+point cites the wrong geographic scope, and one workflow limitation contradicts
+the already delivered explanation. All citations match saved originals; all 27
+documents report complete reading and analysis. These facts do not establish
+semantic correctness.
+
+The frozen correction plan reveals a deterministic loss: generated quantitative
+gap tasks append recovery paraphrases before literal missing-request tasks run.
+Those tasks then return new points after all eight presentation slots are used;
+all three requested repairs are recorded as unrepresented. The account's dossier
+capacity and research execution are unrelated to this answer representation.
+
+Scope: prioritize missing literal requests in the existing correction plan. Do
+not promote rejected unowned model gaps into new user tasks; keep their existing
+review/removal and retain supported source-established uncertainties. An owned
+legacy gap can repair its actual request without duplicating a coverage task.
+When the existing answer is full, the amendment schema must choose an existing
+point or decline, not offer a new point that cannot be represented. Keep earlier
+qualifications and evidence as mandatory amendment context, exact-input recovery,
+source rights, whole-answer coverage and factual final review. Existing providers
+and authorized originals suffice; no new layer, source access or research budget.
+
+Acceptance: optional gaps cannot consume the space needed by an unanswered user
+request; a full answer can be amended without losing an independent supported
+point or silently discarding a generated repair. Source-established gaps survive;
+changed amendment capacity/evidence cannot reuse an incompatible writer result.
+Verify these existing boundaries, then continue the same dossier through native
+controls and independently review the actual output. No manually replaced answer.
+
+Implemented literal-request-first correction and capacity-bound amendments in the
+existing finalizer/writer. Unsupported unowned gaps cannot become extra user
+questions; supported uncertainty remains. A rejected or terminally unassessed
+amendment restores its exact owner/source-bound prior candidate and re-enters
+normal factual review. Repeated amendments retain the earliest candidate; actual
+provider/deadline deferrals retain their existing retry behavior. An older plan
+is replanned against current retained wording without discarding exact proofs.
+
+Validation: 130 distinct affected cases passed (30 writer, 71 final review,
+4 final-stage resume, 19 atomic delivery, 6 literal-priority cases), plus the
+backlog guard. Existing simulated responses were updated for truthful empty-answer
+coverage, the amendment transport, and explicitly current plan fixtures. Exact API
+Ruff and diff checks passed. Independent review found the amendment-loss issue;
+rejected and unresolved-concern paths are corrected and verified. No providers
+were called for these checks. The previous native content verdict remains PARTIAL;
+publication, activation and ordinary same-dossier continuation are separate gates.

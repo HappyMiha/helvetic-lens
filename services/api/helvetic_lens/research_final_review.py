@@ -420,6 +420,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             checkpoints.pop('deferred_final_review')
     cache = checkpoints.setdefault('final_reviews', {})
     repaired_concerns = checkpoints.setdefault('repair_concerns', {})
+    amendment_fallbacks = checkpoints.setdefault('amendment_fallbacks', {})
     # These values come only from the exact-input private DraftCheckpoint, not
     # from answer wording. Obsolete or combined notices receive no exemption.
     wire.workflow_gaps = (set(checkpoints.get('workflow_gaps', [])) |
@@ -568,6 +569,11 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         return True
 
     plan = checkpoints.get('final_correction_round')
+    if plan is not None and plan.get('contract') != 'literal-request-repair/v1':
+        # Re-plan the current retained answer, not the original rejected draft.
+        # Exact factual-review receipts remain reusable across this ordering fix.
+        checkpoints['previous_final_correction_round'] = plan
+        plan = None
     if plan is None:
         checked = await check()
         pending = checked.get('factual_review', {}).get('pending_checks', [])
@@ -582,7 +588,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             incomplete(pending)
         factual = [hint for hint in checked['hints'] if hint.get('review_signal') not in {'review_unavailable', 'not_a_gap'} and hint.get('path', [])[:2] in (
             ['answer', 'points'], ['answer', 'limitations'])]
-        tasks = {}
+        tasks, gap_tasks = {}, {}
         observations = []
         for hint in factual:
             kind, index = hint['path'][1:3]
@@ -593,12 +599,18 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             else:
                 identity = answer.limitations[index]
                 key = next((key for key, slot in wire.response_slots.items() if slot['remaining_gap'].strip() == identity), None)
-                focus = wire.request_keys.get(key) or ('Resolve this stated limitation using the originals: ' + identity)
+                focus = wire.request_keys.get(key)
             observations.append({'hint': deepcopy(hint), 'identity': defect_identity(index) if kind == 'points' else identity})
+            if kind == 'limitations' and not focus:
+                # Generated absence claims are not new user requests. Existing
+                # gap review still retains supported uncertainty and rejects or
+                # qualifies this unsupported gap; literal coverage owns repairs.
+                continue
             # A legacy request slot may own several points. Each rejected point
             # needs its own correction; shared ownership is not a rewrite scope.
-            task_key = (kind, identity) if kind == 'points' else key or (kind, index)
-            task = tasks.setdefault(task_key, {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
+            task_key = (kind, identity) if kind == 'points' else ('request', focus)
+            collection = tasks if kind == 'points' else gap_tasks
+            task = collection.setdefault(task_key, {'key': key, 'focus': focus, 'points': [], 'gaps': [], 'issues': []})
             task[kind if kind == 'points' else 'gaps'].append(identity)
             # Citation numbers belong to this review, not the correction pack.
             task['issues'].append({'target': kind, 'signal': hint['review_signal'], 'instruction': hint['instruction'],
@@ -616,10 +628,17 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             tasks.setdefault(('request', request), {'key': owner, 'focus': request,
                 'points': [], 'gaps': [], 'issues': [{'target': 'coverage',
                     'signal': 'requested_part_missing', 'instruction': hint.get('instruction', 'Answer only this omitted request from the original evidence.'), 'original_text': []}]})
+        for identity, task in gap_tasks.items():
+            if identity in tasks:
+                tasks[identity]['gaps'].extend(task['gaps'])
+                tasks[identity]['issues'].extend(task['issues'])
+            else:
+                tasks[identity] = task
         for task in tasks.values():
             task['points'] = list(dict.fromkeys(task['points']))
         # Ordered JSON data survives canonical slot regrouping; indices do not.
-        plan = {'tasks': list(tasks.values()), 'observations': observations, 'completed': 0, 'receipts': []}
+        plan = {'contract': 'literal-request-repair/v1', 'tasks': list(tasks.values()),
+            'observations': observations, 'completed': 0, 'receipts': []}
         checkpoints['final_correction_round'] = plan
         retain()
     while plan['completed'] < len(plan['tasks']):
@@ -641,12 +660,14 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             raise ValueError('A point correction must have exactly one retained target')
         missing_request = any(issue['target'] == 'coverage' for issue in task['issues'])
         amendments = ({f'P{i}': answer.points[i].model_dump() for i in owner_siblings}
-            if missing_request else None)
+            if missing_request or old_gaps else None)
+        allow_append = len(answer.points) < 8 and (not wire.request_keys or
+            sum(owner == key for owner in wire.point_requests) < request_capacity(wire, key))
         capacity = 1 if correction or amendments else min(8 - len(answer.points), request_capacity(wire, key) - len(owner_siblings))
         if capacity > 0:
             fixed, gap, receipt = await answer_request(service, wire, task['focus'], deadline-monotonic(),
                 checkpoints=checkpoints, on_progress=retain, feedback=feedback, max_points=capacity, correction=correction,
-                **({'amendments': amendments} if amendments is not None else {}))
+                **({'amendments': amendments, 'allow_append': allow_append} if amendments is not None else {}))
         else:
             fixed, gap, receipt = [], '', {'status': 'unrepresented'}
         if receipt.get('status') == 'unavailable' and defer_pending:
@@ -654,6 +675,7 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             incomplete([{'reason': 'step_deadline'}])
         if fixed:
             replacement = receipt.get('replace_point', 'new')
+            fallback = None
             if amendments is not None and replacement != 'new':
                 if replacement not in amendments or len(fixed) != 1:
                     raise ValueError('The coverage amendment does not match a retained answer point')
@@ -662,6 +684,14 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
                     raise ValueError('The retained coverage amendment target changed')
                 indices = [index]
                 feedback['previous_statements'] = [answer.points[index].statement]
+                fallback = {'source_binding': source_binding, 'request_key': key,
+                    'point': answer.points[index].model_dump()}
+                previous_fallback = amendment_fallbacks.get(point_identity(index))
+                if previous_fallback and previous_fallback.get('source_binding') == source_binding:
+                    # Several missing parts can amend the same point in one
+                    # plan; keep the pre-amendment candidate, not another
+                    # unreviewed intermediate proposal, as the fallback.
+                    fallback = deepcopy(previous_fallback)
             inherited = {}
             for index in indices:
                 prior = repaired_concerns.get(point_identity(index), {})
@@ -677,6 +707,8 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
             if not represented:
                 receipt = {**receipt, 'status': 'unrepresented'}
             if represented:
+                if fallback is not None:
+                    amendment_fallbacks[fingerprint({'request_key': key, 'point': fixed[0].model_dump()})] = fallback
                 point_issues = [issue for issue in task['issues'] if issue['target'] == 'points']
                 if amendments is not None and indices:
                     point_issues.append({'target': 'points', 'signal': 'coverage_amendment',
@@ -706,6 +738,33 @@ async def finalize(service, work, wire, parsed, seconds, *, checkpoints=None, on
         plan['completed'] += 1
         retain()
     checked = await check()  # Every changed assertion and gap is checked again.
+    restored = False
+    current_originals = {(ref['source_id'], ref['locator'], ref['quote']) for ref in wire.references.values()}
+    pending_reasons = {item['item']: item['reason'] for item in checked.get('factual_review', {}).get('pending_checks', [])}
+    for hint in checked['hints']:
+        if hint.get('path', [])[:2] != ['answer', 'points']:
+            continue
+        index = hint['path'][2]
+        if hint.get('review_signal') == 'review_unavailable' and pending_reasons.get(f'P{index}', 'not_completed') in (
+                TRANSIENT_REVIEW_ERRORS | {'step_deadline', 'not_completed'}):
+            continue  # Actual provider/deadline deferrals retain their retry path.
+        fallback = amendment_fallbacks.get(point_identity(index))
+        if not fallback or fallback.get('source_binding') != source_binding:
+            continue
+        owner = wire.point_requests[index] if index < len(wire.point_requests) else None
+        if fallback.get('request_key') != owner:
+            continue
+        prior = type(answer.points[index]).model_validate(fallback['point'])
+        if not all((ref.source_id, ref.locator, ref.quote) in current_originals for ref in prior.evidence):
+            continue
+        # Roll back a failed amendment as a proposal, never as automatic approval.
+        # The same exact-source checks below reuse valid prior proofs or withhold
+        # this point too; literal coverage is judged on the restored answer.
+        if splice_points(wire, answer, [index], [prior], owner):
+            restored = True
+    if restored:
+        retain()
+        checked = await check()
     if withhold_unavailable(checked):
         checked = await check()
     checked_answer = fingerprint(answer.model_dump())

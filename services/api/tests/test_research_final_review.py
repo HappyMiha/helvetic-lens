@@ -246,7 +246,7 @@ async def test_final_counterexample_corrects_its_own_gap_and_unavailable_review_
         async def choose(self, state, instructions, criteria):
             if corrected[0]:
                 raise DecisionUnavailable('quota')
-            choice = 'covered' if 'specific_request' in state else 'supported' if 'statement' in state else 'L0'
+            choice = ('covered' if state['answer_points'] else 'missing') if 'specific_request' in state else 'supported' if 'statement' in state else 'L0'
             return Decision('jev', 'test', choice, {choice: 1}, 1, 1, 1, 1, 1)
     class Model:
         @atomic_pack_model
@@ -264,7 +264,7 @@ async def test_final_counterexample_corrects_its_own_gap_and_unavailable_review_
                 return selection_json([1], options)
             corrected[0] = True
             return json.dumps({'statement': ref['quote'], 'remaining_gap': '',
-                'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+                'evidence': [{'citation_ref': 1, 'role': 'support'}], 'replace_point': 'new'})
     monkeypatch.setattr(review.decision, 'engines', lambda settings: {'jev': Engine(), 'laya': Engine()})
     result = await finalize(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()), work, wire, parsed, 90)
     assert result['status'] == 'partial'
@@ -651,7 +651,7 @@ async def test_only_real_requested_gaps_remain_without_rewriting_completed_answe
                 if 'citation_refs' in kwargs['response_schema']['properties']:
                     return selection_json([1], kwargs)
                 return json.dumps({'statement': ref['quote'], 'remaining_gap': '',
-                    'evidence': [{'citation_ref': 1, 'role': 'support'}]})
+                    'evidence': [{'citation_ref': 1, 'role': 'support'}], 'replace_point': 'new'})
             assert 'final_claims_and_gaps' in value, 'Do not regenerate a completed independent finding'
             key, item = next(iter(value['final_claims_and_gaps'].items()))
             calls.append(key)
