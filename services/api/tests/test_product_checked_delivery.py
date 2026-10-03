@@ -15,6 +15,8 @@ from helvetic_lens.config import DomainError
 from helvetic_lens.db import utcnow
 from helvetic_lens.models import Job
 from helvetic_lens.product_investigation_models import Investigation, InvestigationBranch
+from helvetic_lens.product_iterative_research import Gap
+from helvetic_lens.product_operations import fingerprint
 from helvetic_lens.research_final_review import DEFERRED_NOTICE
 from helvetic_lens.research_synthesis_resume import (
     EXHAUSTED_REVIEW,
@@ -37,8 +39,9 @@ def finish(client, service, root, run):
     pytest.fail('The ordinary native workflow did not stop')
 
 
-@pytest.mark.parametrize('withdraw,refresh_policy', [(False, False), (True, False), (False, True)])
-def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_private_obligation(signed, monkeypatch, withdraw, refresh_policy):
+@pytest.mark.parametrize('withdraw,refresh_policy,reject_delivery', [
+    (False, False, False), (True, False, False), (False, True, False), (False, False, True)])
+def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_private_obligation(signed, monkeypatch, withdraw, refresh_policy, reject_delivery):
     client, service, identity, model = signed
     adapters(monkeypatch, service, model)
     model_complete = model.complete
@@ -80,6 +83,9 @@ def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_privat
             raise DomainError('Synthetic upstream timeout', 504, 'model_upstream_timeout')
         assert work[EXHAUSTED_REVIEW]['input_fingerprint'] == 'same-current-originals'
         assert work[KEY]['raw'] == private
+        if reject_delivery and len(calls) == exhaustion_attempts + 2:
+            assert work['retry_deferred_review'] is False
+            assert work[KEY]['parts']['deferred_final_review']['status'] == 'pending'
         saved = deepcopy(work[KEY])
         result = await original(service, work, seconds)
         if len(calls) == exhaustion_attempts + 1:
@@ -90,6 +96,17 @@ def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_privat
                 'pending_checks': [{'item': 'P1', 'reason': 'model_upstream_timeout'}]}
             work[KEY] = saved
             work['deferred_review_verification'] = deferred_verification(saved)
+            # These are private proposals, not prerequisites for publishing a
+            # checked subset. Neither malformed clarification nor an unbound
+            # optional future query may launch more work or discard the answer.
+            result.mission_checkpoint.action = 'clarify'
+            result.mission_checkpoint.reason = private
+            result.mission_checkpoint.next_checks = [Gap(source_id='0' * 36,
+                quote=private, locator='not-a-current-original', question='Optional future precision?',
+                query='Optional future precision', purpose=private, priority=5, kind='missing_evidence')]
+            result.mission_checkpoint.deepen_branches = ['not-a-current-frontier']
+            if reject_delivery:
+                result.mission_checkpoint.answer.points[0].evidence[0].quote = 'An unsupplied factual quotation.'
             if withdraw:
                 exclude(service, identity, work['input']['sources'][0]['id'])
         return result
@@ -110,10 +127,27 @@ def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_privat
             state = session.get(InvestigationBranch, calls[0]).checkpoint
             assert KEY not in state and EXHAUSTED_REVIEW not in state
         return
+    if reject_delivery:
+        assert delivered['status'] == 'failed' and delivered['retry']['available']
+        assert delivered['exploration']['mission']['answer'] is None
+        with service.db.session() as session:
+            state = session.get(InvestigationBranch, calls[0]).checkpoint
+            assert state[KEY]['raw'] == private
+            assert state[KEY]['parts']['deferred_final_review']['status'] == 'pending'
+            assert state[KEY]['fingerprint'] == fingerprint({k: v for k, v in state[KEY].items() if k != 'fingerprint'})
+            assert state['steps'][-1]['error_code'] == 'invalid_evidence'
+        retry = post(client, url + '/control', {'action': 'retry', 'expected_revision': delivered['revision']})
+        assert retry.status_code == 200, retry.text
+        recovered = finish(client, service, root, retry.json())
+        assert recovered['status'] == 'completed' and recovered['exploration']['mission']['answer']['points']
+        return
     assert delivered['status'] == 'completed' and delivered['retry']['available'] is True
     mission = delivered['exploration']['mission']
     assert mission['stop'] == 'review_unavailable' and mission['stage'] == 'incomplete'
     assert mission['answer']['points'] and mission['answer']['status'] == 'partial'
+    assert mission['checkpoints'][-1]['gaps'] == [] and mission['checkpoints'][-1]['deepen_branches'] == []
+    assert delivered['exploration']['briefing']['clarification'] == ''
+    assert delivered['exploration']['briefing']['directions'] == []
     assert mission['verification'] == {'status': 'partial', 'pending_checks': 1,
         'reasons': ['model_upstream_timeout'], 'basis': DEFERRED_NOTICE}
     with service.db.session() as session:
@@ -147,3 +181,41 @@ def test_qualification_intent_requires_exhausted_exact_final_review(change):
     else:
         state['steps'][0]['status'] = 'completed'
     assert exhausted_review(state) is None
+
+
+@pytest.mark.parametrize('selected_question', [False, True])
+def test_checked_delivery_copies_future_controls_without_changing_checked_assessments(selected_question):
+    from helvetic_lens import product_research_mission as mission
+    from helvetic_lens.product_direction_assessment import RenewedSuggestedDirectionBriefing
+    from helvetic_lens.product_question_renewal import RenewalAssessedBriefing
+
+    ref = {'source_id': 's' * 36, 'locator': 'paragraph-1', 'quote': 'An exact retained source passage.'}
+    answer = {'status': 'partial', 'points': [{'statement': 'The retained finding has a stated limit.',
+        'evidence': [{**ref, 'role': 'support'}]}], 'limitations': ['A genuine evidence gap remains.']}
+    value = {'understanding': 'The original question has this checked partial answer.',
+        'findings': [{**ref, 'statement': answer['points'][0]['statement'], 'basis': 'direct'}],
+        'uncertainties': answer['limitations'], 'clarification': 'Which later direction should be explored?',
+        'directions': [{**ref, 'question': 'An optional later question?', 'why': 'Optional work is not the checked answer.'}],
+        'question_renewals': [{**answer, 'question_id': 'old-question'}],
+        'mission_checkpoint': {'answer': answer, 'action': 'clarify', 'reason': 'An optional draft-control reason.',
+            'next_checks': [], 'deepen_branches': ['draft-frontier']}}
+    if selected_question:
+        value['assessment'] = {**answer, 'question_id': 'selected-question'}
+        base = RenewalAssessedBriefing
+    else:
+        value.update(direction_assessment={**answer, 'selection': None},
+            next_check_choice={'question_id': 'old-question', 'query': 'Optional future query', 'limitation_index': 0})
+        base = RenewedSuggestedDirectionBriefing
+    original = mission.schema(base).model_validate(value)
+    original._renewal_unavailable = True
+    before = original.model_dump()
+    delivered = mission.checked_delivery(original, {'basis': DEFERRED_NOTICE})
+    assert original.model_dump() == before and original._renewal_unavailable
+    for field in ('findings', 'uncertainties', 'understanding', 'assessment' if selected_question else 'direction_assessment'):
+        assert delivered.model_dump()[field] == before[field]
+    assert delivered.mission_checkpoint.answer.model_dump() == answer
+    assert delivered.clarification == '' and delivered.directions == [] and delivered.question_renewals == []
+    assert not delivered._renewal_unavailable
+    assert getattr(delivered, 'next_check_choice', None) is None
+    assert delivered.mission_checkpoint.action == 'finish' and delivered.mission_checkpoint.reason == DEFERRED_NOTICE
+    assert delivered.mission_checkpoint.next_checks == [] and delivered.mission_checkpoint.deepen_branches == []

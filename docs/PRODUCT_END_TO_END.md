@@ -2057,3 +2057,40 @@ the first decision resumes only the other two requests, without factual rechecks
 or inventing covered status. Timeout/unavailable/quota use existing native recovery;
 credentials, malformed responses and unknown errors remain terminal. Independent
 review and exact Ruff passed; no provider calls were used for validation.
+
+### Publish checked findings while deferred actions remain private
+
+Native64247 completed final factual/coverage checks on0896912 with no new reasoning
+requests, but the ordinary result-application transaction rejected it. An offline
+reconstruction with the exact380-reference source binding reproduced
+invalid_evidence: "A consequential choice needs cited alternatives." The private
+draft retained action clarify without a question or directions. Source and citation
+checks passed; the later clarification gate ran before the verified-partial stop.
+The worker then discarded its private synthesis checkpoint. No answer was published.
+Core0896912 activated at07:10:19 UTC and public readiness passed at07:12:17 UTC.
+
+Scope: deliver a separate copy of the already checked partial answer on the existing
+host-validated deferred-verification route. Preserve its findings/assessments and
+exact citations; keep non-executed next actions and clarification proposals private.
+Use the existing unavailable optional-control paths and review-unavailable stop,
+while ordinary source, permission and current-input validation remain mandatory.
+Preserve private qualified preparation if a later application validation rejects
+delivery. Never turn an arbitrary invalid-evidence error into successful publication.
+
+Acceptance: ordinary worker publication saves the checked partial dossier without
+asking an empty clarification or executing deferred actions. Exact answer content
+remains unchanged; private controls stay out of the public result. Withdrawn source
+or membership still blocks delivery and cannot retain unauthorized reuse. The
+explicit later retry retains private obligations. Dependencies remain native
+checkpoints, existing authorized originals/providers and both unchanged readers.
+
+Implemented the checked-delivery copy and private checkpoint retention. Failed
+publication marks the retained candidate pending and recomputes its fingerprint;
+ordinary retry continues that candidate instead of restoring an unpublished old
+answer. The original answer, assessments and source bindings remain unchanged.
+The exact offline380-reference replay now passes ordinary result application.
+All ten focused checked-delivery cases pass; after the lifecycle refinement only
+the changed rejection/recovery variant was repeated and passed. Independent review,
+exact API Ruff, diff and backlog guard passed. No provider calls were used for
+these checks. A faithful isolated copy of frozen native67646 will exercise ordinary
+Retry next; delivery and actual content acceptance are still unproven.

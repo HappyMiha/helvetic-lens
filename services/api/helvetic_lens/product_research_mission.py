@@ -243,6 +243,23 @@ def apply_continuation(session, run, supplied, result, work):
     event(session, run, "research_continued", round=state["round"], next_checks=len(gaps), frontiers=len(deeper))
 
 
+def checked_delivery(result, verification):
+    """Publish the checked subset without executing its private draft controls."""
+    delivered = result.model_copy(deep=True)
+    delivered.clarification, delivered.directions = "", []
+    checkpoint = delivered.mission_checkpoint
+    checkpoint.action, checkpoint.reason = "finish", verification["basis"]
+    checkpoint.next_checks, checkpoint.deepen_branches = [], []
+    if hasattr(delivered, "question_renewals"):
+        delivered.question_renewals = []
+        # Omission is deliberate here; stale optional-output parse failures do
+        # not describe these empty updates. Current input validation still runs.
+        delivered._renewal_unavailable = False
+    if hasattr(delivered, "next_check_choice"):
+        delivered.next_check_choice = None
+    return delivered
+
+
 def apply(session, run, supplied, result, *, verification=None):
     if not enabled(run):
         return

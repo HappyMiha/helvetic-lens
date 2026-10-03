@@ -47,6 +47,7 @@ from .product_investigations import (
     worker_access,
 )
 from .product_models import DossierEntry, ProductDossier
+from .product_operations import fingerprint
 from .product_research import research_sources
 from .product_research_admission import unmetered
 from .product_search_budget import reserve_paid_or_skip
@@ -476,7 +477,7 @@ async def execute(service, job_id, worker):
     # Every paid/network operation has a committed receipt before it begins.
     # The hard deadline is shorter than the lease even for small operator leases.
     result, failed, transient = None, False, None
-    packing_failure = False
+    packing_failure, validation_failure = False, None
     started = perf_counter()
     try:
         seconds = work["deadline_seconds"]
@@ -632,8 +633,9 @@ async def execute(service, job_id, worker):
                 try:
                     with session.begin_nested():
                         research_steps.apply(session, run, branch, state, work, result)
-                except DomainError:
+                except DomainError as exc:
                     failed = True
+                    validation_failure = exc.code
             elif work["phase"] == "search":
                 state["items"] = [v for v in result.get("items", []) if v["url"] not in blocked][:MAX_SOURCES]
                 state["coverage"] = {"retrieval": result.get("retrieval"), "scope": result.get("coverage"),
@@ -753,7 +755,13 @@ async def execute(service, job_id, worker):
                     state["analysed"] = state.get("analysed", 0) + 1
         if failed and qualified_delivery:
             qualified_delivery = False
-            state.pop(synthesis_checkpoint, None)
+            # The private candidate passed the fresh input/access fences above.
+            # A failed publication must not discard its completed review work;
+            # ordinary retry still validates the full candidate before delivery.
+            retained = state.get(synthesis_checkpoint)
+            if retained:
+                retained["parts"]["deferred_final_review"]["status"] = "pending"
+                retained["fingerprint"] = fingerprint({key: value for key, value in retained.items() if key != "fingerprint"})
         if not failed:
             progress.remember(run, work.get("capture_progress"), work.get("capture_dependencies", []))
             queries.remember(run, journal)
@@ -778,6 +786,8 @@ async def execute(service, job_id, worker):
             state["steps"][-1]["error_code"] = transient
         elif packing_failure:
             state["steps"][-1]["error_code"] = "research_evidence_group_too_large"
+        elif validation_failure:
+            state["steps"][-1]["error_code"] = validation_failure
         if qualified_delivery:
             state["steps"][-1]["verification"] = deepcopy(work["deferred_review_verification"])
         if failed and work["phase"] == "brief" and transient in PROVIDER_INTERRUPTION:

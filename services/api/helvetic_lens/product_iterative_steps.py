@@ -294,9 +294,11 @@ def apply(session, run, branch, state, work, result):
             mission.apply_continuation(session, run, work["input"], result, work)
             branch.status = "completed"
         else:
+            verification = work.get("deferred_review_verification")
+            if verification:
+                result = mission.checked_delivery(result, verification)
             exploration.apply(session, run, work["input"], result)
             branch.status = "completed"
-            verification = work.get("deferred_review_verification")
             mission.apply(session, run, work["input"], result, verification=verification)
             if verification:
                 branch.status = "failed"
