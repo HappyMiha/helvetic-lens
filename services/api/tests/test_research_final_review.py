@@ -514,18 +514,19 @@ async def test_compact_review_grammar_cannot_accept_or_cache_a_missing_witness(t
             payload = json.loads(text)
             calls.append(payload)
             good = {'verdict': 'supported', 'reason': '', 'citation_refs': [1]}
-            data = {'overall': deepcopy(good), 'clauses': {'S0': {**good, 'witnesses': [
-                {'citation_ref': 1, 'quote': ref['quote'], 'scope_relation': 'compatible'}]}},
+            from helvetic_lens.research_review_witnesses import normalize_clause_witnesses, witness_choices
+            data = {'overall': deepcopy(good), 'clauses': {'S0': {'verdict': good['verdict'], 'reason': '', 'witnesses': [
+                {'key': next(iter(witness_choices(wire.references))), 'scope_relation': 'compatible'}]}},
                 'concern_checks': [{'id': 'C0', 'outcome': 'resolved', 'reason': '', 'citation_refs': [1]}]}
             item = data['overall'] if target == 'overall' else data['clauses']['S0'] if target == 'clause' else data['concern_checks'][0]
             item['verdict' if target != 'concern' else 'outcome'] = verdict
-            item['citation_refs'] = []
+            item['witnesses' if target == 'clause' else 'citation_refs'] = []
             # Concern witnesses are now enforced in the provider grammar too;
             # the unchanged host fence independently rejects missing witnesses.
             from helvetic_lens.research_model_transport import shape_errors
             from helvetic_lens.research_review_witnesses import invalid_review
             assert bool(shape_errors(data, options['response_schema'], {})) == (target == 'concern')
-            assert invalid_review(data, ref['quote'], {'C0': {}}, point=True) == (
+            assert invalid_review(normalize_clause_witnesses(data, wire.references), ref['quote'], {'C0': {}}, point=True) == (
                 'missing_concern_witness' if target == 'concern' else 'missing_original_witness')
             return json.dumps(data)
 
@@ -550,7 +551,7 @@ def test_compact_review_grammar_cannot_offer_impossible_empty_context_verdicts(p
     verdicts = schema['properties']['overall']['properties']['verdict']['enum']
     assert verdicts == (['not_established'] if point else ['supported', 'not_established'])
     judgment = {'verdict': 'contradicted', 'reason': '', 'citation_refs': []}
-    data = {'overall': judgment, 'clauses': {'S0': {**judgment, 'witnesses': []}},
+    data = {'overall': judgment, 'clauses': {'S0': {**{key: value for key, value in judgment.items() if key != 'citation_refs'}, 'witnesses': []}},
         'concern_checks': [{'id': 'C0', 'outcome': 'resolved', 'reason': '', 'citation_refs': []}],
         **({} if point else {'gap_status': 'unresolved'})}
     assert shape_errors(data, schema, {})
@@ -559,16 +560,20 @@ def test_compact_review_grammar_cannot_offer_impossible_empty_context_verdicts(p
 @pytest.mark.parametrize('point,verdict', [(False, 'supported'), (False, 'not_established'), (True, 'not_established')])
 def test_compact_review_preserves_valid_witness_free_gap_and_unresolved_concern(point, verdict):
     from helvetic_lens.research_model_transport import shape_errors
-    from helvetic_lens.research_review_witnesses import invalid_review, review_schema
+    from helvetic_lens.research_review_witnesses import (
+        invalid_review,
+        normalize_clause_witnesses,
+        review_schema,
+    )
 
     assertion = 'A remains unknown.'
     concerns = {'C0': {}}
     judgment = {'verdict': verdict, 'reason': '', 'citation_refs': []}
-    data = {'overall': judgment, 'clauses': {'S0': {**judgment, 'witnesses': []}},
+    data = {'overall': judgment, 'clauses': {'S0': {**{key: value for key, value in judgment.items() if key != 'citation_refs'}, 'witnesses': []}},
         'concern_checks': [{'id': 'C0', 'outcome': 'cannot_assess', 'reason': '', 'citation_refs': []}],
         **({} if point else {'gap_status': 'unresolved'})}
     assert not shape_errors(data, review_schema(assertion, {}, concerns, point=point), {})
-    assert invalid_review(data, assertion, concerns, point=point) is None
+    assert invalid_review(normalize_clause_witnesses(data, {}), assertion, concerns, point=point) is None
 
 
 @pytest.mark.parametrize('metadata', [False, True])
@@ -578,7 +583,7 @@ def test_compact_review_preserves_valid_witness_free_gap_and_unresolved_concern(
 def test_conditional_concern_grammar_matches_existing_host_witness_contract(metadata, outcome, witnesses, accepted):
     from helvetic_lens.research_final_review import scoped_review_schema
     from helvetic_lens.research_model_transport import shape_errors
-    from helvetic_lens.research_review_witnesses import invalid_review
+    from helvetic_lens.research_review_witnesses import invalid_review, normalize_clause_witnesses
 
     assertion = 'The current scope needs verification.'
     refs = {1: {'source_id': 'report', 'locator': 'p1', 'quote': 'The report identifies the current scope.'}}
@@ -593,9 +598,9 @@ def test_conditional_concern_grammar_matches_existing_host_witness_contract(meta
         **({'assertion_scope': 'reference_metadata'} if metadata else {})}
     item = {'id': 'C0', 'outcome': outcome, 'reason': '', 'citation_refs': witnesses,
         **({'assertion_scope': 'reference_metadata'} if metadata else {})}
-    data = {'overall': deepcopy(judgment), 'clauses': {'S0': {**judgment, 'witnesses': []}}, 'concern_checks': [item]}
+    data = {'overall': deepcopy(judgment), 'clauses': {'S0': {**{key: value for key, value in judgment.items() if key != 'citation_refs'}, 'witnesses': []}}, 'concern_checks': [item]}
     assert (not shape_errors(data, schema, {})) == accepted
-    assert (invalid_review(data, assertion, concerns, point=True) is None) == accepted
+    assert (invalid_review(normalize_clause_witnesses(data, refs), assertion, concerns, point=True) is None) == accepted
     if metadata:
         del item['assertion_scope']
         assert shape_errors(data, schema, {}), 'Every alternative must retain the source-use boundary'

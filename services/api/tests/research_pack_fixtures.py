@@ -4,17 +4,18 @@ from functools import wraps
 
 
 def witnessed_review(value, payload):
-    """Express old scripted verdicts with exact supplied clause witnesses.
+    """Express old scripted verdicts using the supplied canonical choices.
 
     Explicit witness lists are never repaired: boundary tests supply their own
     malformed, mismatched or out-of-scope witnesses to exercise host rejection.
     """
-    originals = {passage['citation_ref']: passage['text']
+    choices = {passage['citation_ref']: passage['witness_key']
         for field in ('sources', 'source_context') for source in payload.get(field, [])
-        for passage in source.get('passages', []) if 'citation_ref' in passage}
-    value['clauses'] = {key: {**clause, 'witnesses': clause.get('witnesses', [{'citation_ref': ref,
-        'quote': originals.get(ref, 'This test citation is not a supplied original.')[:200],
-        'scope_relation': 'compatible'} for ref in clause.get('citation_refs', [])])}
+        for passage in source.get('passages', []) if 'witness_key' in passage}
+    value['clauses'] = {key: dict(clause) if 'witnesses' in clause else {
+        **{name: item for name, item in clause.items() if name != 'citation_refs'},
+        'witnesses': [{'key': choices.get(ref, 'This test reference is not a supplied choice.'),
+            'scope_relation': 'compatible'} for ref in clause.get('citation_refs', [])]}
         for key, clause in value.get('clauses', {}).items()}
     return value
 

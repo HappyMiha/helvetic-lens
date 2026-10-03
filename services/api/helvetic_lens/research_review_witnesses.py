@@ -1,7 +1,8 @@
 """Shape and literal/evidence fences for a fallible final-answer reviewer."""
 import re
+from copy import deepcopy
 
-WITNESS_POLICY = 'clause-bound-quotation-and-scope/v2-boundary-omission'
+WITNESS_POLICY = 'clause-bound-host-excerpts-and-scope/v3'
 
 
 def assertion_clauses(assertion):
@@ -10,6 +11,12 @@ def assertion_clauses(assertion):
     # overall judgment also checks relationships across these sentence spans.
     spans = re.split(r'(?<=[.!?])(?=\s+[A-Z])', assertion, maxsplit=7)
     return {f'S{i}': span for i, span in enumerate(spans)}
+
+
+def witness_choices(references):
+    """Short descriptive choices; the full unchanged original is host-owned."""
+    return {f'{key}: {" ".join(ref["quote"].split())[:24]}': key
+        for key, ref in references.items()}
 
 
 def review_schema(assertion, references, concerns, *, point=True):
@@ -23,14 +30,14 @@ def review_schema(assertion, references, concerns, *, point=True):
             if references or not (verdict == 'contradicted' or point and verdict == 'supported')]
         props = {}
         if clause:
-            witness = {'citation_ref': refs['items'],
-                'quote': {'type': 'string', 'minLength': 1, 'maxLength': 600},
+            witness = {'key': {'type': 'string', **({'enum': list(witness_choices(references))} if references else {})},
                 'scope_relation': {'type': 'string', 'enum': ['compatible', 'different', 'not_established']}}
             props['witnesses'] = {'type': 'array', 'maxItems': min(8, len(references)),
                 'items': {'type': 'object', 'properties': witness,
                     'required': list(witness), 'additionalProperties': False}}
-        props.update(citation_refs={**refs, 'minItems': 0},
-            reason={'type': 'string', 'maxLength': 600}, verdict={'type': 'string', 'enum': verdicts})
+        else:
+            props['citation_refs'] = {**refs, 'minItems': 0}
+        props.update(reason={'type': 'string', 'maxLength': 600}, verdict={'type': 'string', 'enum': verdicts})
         return {'type': 'object', 'properties': props,
             'required': list(props), 'additionalProperties': False}
     schema = {'type': 'object', 'properties': {
@@ -60,53 +67,32 @@ def review_schema(assertion, references, concerns, *, point=True):
     return schema
 
 
-def _quotation(text, *, unwrap=False):
-    # Soft hyphens and whitespace are PDF layout, not semantic equivalence.
-    # Keep ordinary hyphens, punctuation, casing and negation unchanged.
-    text = text.replace('\u00ad', '')
-    if unwrap:
-        # An alternative match permits a word split at an actual PDF newline.
-        # Inline compound hyphens are never removed, nor are stored originals.
-        text = re.sub(r'(?<=[A-Za-z])-[ \t]*\r?\n[ \t]*(?=[a-z])', '-' if unwrap == 'hyphen' else '', text)
-    return re.sub(r'\s+', ' ', text).strip()
-
-
-def _witness_excerpt(text):
-    # Conventional edge omissions describe where a contiguous excerpt ends.
-    # Remove at most one marker at each edge of the MODEL quotation only;
-    # internal omissions and all original source text remain unchanged.
-    text = text.strip()
-    for marker in ('...', '…'):
-        if text.startswith(marker):
-            text = text[len(marker):].lstrip()
-            break
-    for marker in ('...', '…'):
-        if text.endswith(marker):
-            text = text[:-len(marker)].rstrip()
-            break
-    return text
-
-
 def invalid_clause_witnesses(data, references):
-    """A quote must belong to its named original; failure is unavailable review."""
+    """Only supplied choices can name evidence; failure is unavailable review."""
+    choices = witness_choices(references)
     for clause in data['clauses'].values():
         witnesses = clause['witnesses']
-        ids = [witness['citation_ref'] for witness in witnesses]
-        if len(ids) != len(set(ids)):
+        keys = [witness['key'] for witness in witnesses]
+        if any(key not in choices for key in keys):
+            return 'unbound_clause_witness'
+        if len(keys) != len(set(keys)):
             return 'duplicate_clause_witness'
-        if set(ids) != set(clause['citation_refs']):
-            return 'missing_clause_witness'
-        for witness in witnesses:
-            original = references.get(witness['citation_ref'])
-            excerpt = _witness_excerpt(witness['quote'])
-            quote = _quotation(excerpt)
-            if original is None or not quote:
-                return 'unbound_clause_witness'
-            if (quote not in _quotation(original['quote'])
-                    and not any(_quotation(excerpt, unwrap=layout) in _quotation(original['quote'], unwrap=layout)
-                        for layout in ('hyphen', 'word'))):
-                return 'unbound_clause_witness'
     return None
+
+
+def normalize_clause_witnesses(data, references):
+    """Derive citations and literal text; model prose never becomes a quote."""
+    invalid = invalid_clause_witnesses(data, references)
+    if invalid:
+        raise ValueError(invalid)
+    choices = witness_choices(references)
+    result = deepcopy(data)
+    for clause in result['clauses'].values():
+        clause['witnesses'] = [{'citation_ref': choices[witness['key']],
+            'quote': references[choices[witness['key']]]['quote'],
+            'scope_relation': witness['scope_relation']} for witness in clause['witnesses']]
+        clause['citation_refs'] = [witness['citation_ref'] for witness in clause['witnesses']]
+    return result
 
 
 def enforce_clause_scope(data):

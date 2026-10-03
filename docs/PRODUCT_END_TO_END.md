@@ -2176,3 +2176,38 @@ pass, as do exact API Ruff, diff and independent review. The exact saved call937
 now binds all six witnesses with no provider calls or database edits. This proves
 the recorded transport boundary, not semantic correctness of the final dossier.
 Core0ae74c6 activated at08:04:11UTC; exact public readiness passed at08:05:44UTC.
+
+### Canonical evidence selection instead of model quotation copying
+
+Live52663 exposed a broader representation problem: the model joins adjacent
+paragraphs or table cells under one fragment ID while copying quotations. Calls
+942/948 repeat identical P0 requests because copied text crosses ref192/193;
+943 joins separate current-year metrics under ref25;945 joins heading/row labels
+and values under individual cells. The host properly refuses these mismatched
+quotes, but this makes faithful text copying a prerequisite for semantic review.
+The accepted P2 review remains retained; this is not a lost-cache regression.
+
+Scope: the existing clause reviewer selects constrained host-owned witness keys
+with descriptive original-text labels, and compares material scope. The platform
+resolves each selected key to its canonical reference and unchanged original text.
+Remove free model quotation copying and redundant model clause citation IDs.
+Preserve literal assertions, scope compatibility, exact source/access bindings,
+context-based citation repair, negative clauses and private recovery. Raw selected
+keys remain bound to the response schema and source fingerprint; decoded canonical
+witnesses feed existing correction consumers. No fuzzy quotation matching, added
+reviewer or extra provider call. Full coherent source context remains supplied.
+
+Acceptance: invalid keys cannot enter a proof; selection cannot alter quoted
+content or source identity; incompatible scope still cannot support or contradict
+a claim. Cached choices decode only against their bound originals, and surrounding
+evidence still requires ordinary citation repair. Validate actual request size
+without discarding required context. A real new dossier, not schema conformance,
+remains the content acceptance gate. Live52663 uses its immutable468f327 snapshot
+and is not changed by development work.
+
+Validation:101 affected witness/final-review/resilience/final-stage/qualification
+cases pass. Exact API Ruff, backlog guard, diff and independent review pass.
+Captured942/943/945 envelopes are11,035/19,401/17,236 characters within24k,
+preserving all66 canonical reference/full-text identities and surrounding context.
+Invalid selections are rejected; fixtures do not repair malformed explicit
+witnesses. These checks prove attachment and transport, not semantic acceptance.

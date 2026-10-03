@@ -1,4 +1,4 @@
-"""A structured review must bind its quoted evidence to the same exact original.
+"""A reviewer selects evidence; the host binds each choice to the exact original.
 
 Scripted verdicts exercise host contracts, not a model's semantic accuracy.
 """
@@ -11,6 +11,7 @@ import pytest
 from helvetic_lens.config import Settings
 from helvetic_lens.product_exploration import AssessmentOutcome
 from helvetic_lens.research_final_review import reasoned_review
+from helvetic_lens.research_review_witnesses import normalize_clause_witnesses, witness_choices
 
 
 def fixture(*, statement='The coastal zone measurement rose.', cited=1):
@@ -25,11 +26,12 @@ def fixture(*, statement='The coastal zone measurement rose.', cited=1):
     return SimpleNamespace(input={'original_question': 'How did the measurements change?'}, references=refs), answer
 
 
-def response(payload, refs, *, quote=None, relation='compatible', verdict='supported', cited=1):
+def response(payload, refs, *, relation='compatible', verdict='supported', cited=1):
     judgment = {'verdict': verdict, 'reason': 'The judgment retains the original population and comparison.',
         'citation_refs': [cited] if cited is not None else []}
-    clause = {**judgment, 'witnesses': [] if cited is None else [
-        {'citation_ref': cited, 'quote': refs[cited]['quote'] if quote is None else quote, 'scope_relation': relation}]}
+    choices = {ref: key for key, ref in witness_choices(refs).items()}
+    clause = {name: value for name, value in judgment.items() if name != 'citation_refs'}
+    clause['witnesses'] = [] if cited is None else [{'key': choices[cited], 'scope_relation': relation}]
     value = {'overall': judgment, 'clauses': {key: deepcopy(clause) for key in payload['assertion_clauses']}}
     if 'gap' in next(iter(payload['final_claims_and_gaps'].values())):
         value['gap_status'] = 'unresolved'
@@ -40,8 +42,8 @@ def response(payload, refs, *, quote=None, relation='compatible', verdict='suppo
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('defect', ['mispaired_original', 'changed_words', 'ref_set_mismatch', 'missing_witness'])
-async def test_unbound_clause_quote_is_unavailable_not_a_negative_factual_verdict_and_cannot_be_cached(defect):
+@pytest.mark.parametrize('defect', ['forged_key', 'duplicate_key', 'missing_witness', 'copied_quote', 'foreign_citation'])
+async def test_invalid_choice_is_unavailable_not_a_negative_factual_verdict_and_cannot_be_cached(defect):
     wire, answer = fixture()
     calls, cache = [], {}
 
@@ -52,12 +54,14 @@ async def test_unbound_clause_quote_is_unavailable_not_a_negative_factual_verdic
             value = response(payload, wire.references)
             clause = value['clauses']['S0']
             if len(calls) == 1:
-                if defect == 'mispaired_original':
+                if defect == 'forged_key':
+                    clause['witnesses'][0]['key'] = 'forged-original-choice'
+                elif defect == 'duplicate_key':
+                    clause['witnesses'] *= 2
+                elif defect == 'copied_quote':
                     clause['witnesses'][0]['quote'] = wire.references[2]['quote']
-                elif defect == 'changed_words':
-                    clause['witnesses'][0]['quote'] = wire.references[1]['quote'].replace('increased', 'decreased')
-                elif defect == 'ref_set_mismatch':
-                    clause['witnesses'][0] = {'citation_ref': 2, 'quote': wire.references[2]['quote'], 'scope_relation': 'compatible'}
+                elif defect == 'foreign_citation':
+                    clause['witnesses'][0]['citation_ref'] = 2
                 else:
                     clause['witnesses'] = []
             return json.dumps(value)
@@ -68,7 +72,7 @@ async def test_unbound_clause_quote_is_unavailable_not_a_negative_factual_verdic
     assert first['status'] == 'partial' and len(first['pending_checks']) == 1
     assert all(hint['review_signal'] == 'review_unavailable' for hint in first['hints'])
     assert first['positive_witnesses'] == {} and first['candidates'] == {}
-    assert not any(key.startswith('clauses:') for key in cache), 'Unbound quotes are not accepted negative evidence either'
+    assert not any(key.startswith('clauses:') for key in cache), 'Invalid choices are not negative evidence either'
     second = await reasoned_review(service, wire, answer, 60, checkpoints=cache, concerns=concerns)
     assert second['status'] == 'checked' and second['pending_checks'] == [] and second['hints'] == []
     assert len(calls) == 2 and second['positive_witnesses']
@@ -97,12 +101,11 @@ async def test_supported_overall_and_resolved_concern_cannot_override_declared_c
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('wrapped', ['in\u00adcreased', 'in-\ncreased'])
-async def test_supported_paraphrase_keeps_exact_original_layout_normalization_and_cached_witness(wrapped):
+async def test_supported_paraphrase_selects_exact_host_original_and_revalidates_cached_choice():
     wire, answer = fixture()
-    wire.references[1]['quote'] = f'In the coastal zone,\n the measurement {wrapped}\u00a0over the recorded period.'
-    answer.points[0].evidence[0].quote = wire.references[1]['quote']
-    quote = 'In the coastal zone, the measurement increased over the recorded period.'
+    original = 'In the coastal zone,\n the non-recovery comparison in-\ncreased\u00a0over the recorded period; inland scope does not apply.'
+    wire.references[1]['quote'] = original
+    answer.points[0].evidence[0].quote = original
     calls, cache = [], {}
 
     class Model:
@@ -110,9 +113,15 @@ async def test_supported_paraphrase_keeps_exact_original_layout_normalization_an
             payload = json.loads(text)
             calls.append(payload)
             clause_schema = kwargs['response_schema']['properties']['clauses']['properties']['S0']
-            assert 'witnesses' in clause_schema['required']
+            assert 'witnesses' in clause_schema['required'] and 'citation_refs' not in clause_schema['properties']
             assert clause_schema['properties']['reason']['maxLength'] >= 600
-            return json.dumps(response(payload, wire.references, quote=quote))
+            witness_schema = clause_schema['properties']['witnesses']['items']['properties']
+            assert set(witness_schema) == {'key', 'scope_relation'}
+            assert set(witness_schema['key']['enum']) == set(witness_choices(wire.references))
+            passage = next(p for g in payload['source_context'] for p in g['passages'] if p.get('citation_ref') == 1)
+            assert passage['text'] == original
+            assert witness_choices(wire.references)[passage['witness_key']] == 1
+            return json.dumps(response(payload, wire.references))
 
     service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
     result = await reasoned_review(service, wire, answer, 60, checkpoints=cache)
@@ -120,60 +129,60 @@ async def test_supported_paraphrase_keeps_exact_original_layout_normalization_an
     await reasoned_review(service, wire, answer, 60, checkpoints=json.loads(json.dumps(cache)))
     assert len(calls) == 1
     proof = next(value for key, value in cache.items() if key.startswith('clauses:'))
-    assert proof['clauses']['S0']['witnesses'][0]['quote'] == quote
+    assert set(proof['clauses']['S0']['witnesses'][0]) == {'key', 'scope_relation'}
+    normalized = normalize_clause_witnesses(proof, wire.references)
+    assert normalized['clauses']['S0']['citation_refs'] == [1]
+    assert normalized['clauses']['S0']['witnesses'] == [
+        {'citation_ref': 1, 'quote': original, 'scope_relation': 'compatible'}]
+    assert 'citation_refs' not in proof['clauses']['S0'], 'Cache stays in the constrained raw contract'
     corrupted = json.loads(json.dumps(cache))
     key = next(key for key in corrupted if key.startswith('clauses:'))
-    corrupted[key]['clauses']['S0']['witnesses'][0]['quote'] = wire.references[2]['quote']
+    corrupted[key]['clauses']['S0']['witnesses'][0]['key'] = 'not-a-current-original'
     invalid = await reasoned_review(service, wire, answer, 60, checkpoints=corrupted)
     assert invalid['status'] == 'partial' and not invalid['positive_witnesses']
-    assert key not in corrupted and len(calls) == 1, 'A stored result must still satisfy the current witness contract'
+    assert key not in corrupted and len(calls) == 1, 'Stored choices must satisfy the current original registry'
     retried = await reasoned_review(service, wire, answer, 60, checkpoints=corrupted)
     assert retried['status'] == 'checked' and len(calls) == 2
 
 
-@pytest.mark.parametrize('changed', [
-    'The nonrecovery finding does not establish a global effect.',
-    'The non-recovery finding does establish a global effect.'])
-def test_layout_normalization_cannot_erase_inline_hyphens_or_negation(changed):
-    from helvetic_lens.research_review_witnesses import invalid_clause_witnesses
-
-    refs = {1: {'quote': 'The non-recovery finding does not establish a global effect.'}}
-    data = {'clauses': {'S0': {'citation_refs': [1], 'witnesses': [
-        {'citation_ref': 1, 'quote': changed, 'scope_relation': 'compatible'}]}}}
-    assert invalid_clause_witnesses(data, refs) == 'unbound_clause_witness'
-
-
-@pytest.mark.parametrize('quote,valid', [
-    ('The coastal zone is recovering...', True),
-    ('The coastal zone is recovering…', True),
-    ('...is recovering as stated in the report.', True),
-    ('… is recovering as stated in the report.', True),
-    ('... is recovering …', True),
-    ('The coastal zone ... as stated in the report.', False),
-    ('The coastal zone … as stated in the report.', False),
-    ('The inland zone is recovering...', False),
-    ('The coastal zone is not recovering...', False),
-    ('...', False),
-    ('…', False),
-])
-def test_witness_omission_marker_only_delimits_an_exact_contiguous_excerpt(quote, valid):
-    from helvetic_lens.research_review_witnesses import invalid_clause_witnesses
-
-    original = 'The coastal zone is recovering as stated in the report.'
-    refs = {1: {'quote': original}}
-    data = {'clauses': {'S0': {'citation_refs': [1], 'witnesses': [
-        {'citation_ref': 1, 'quote': quote, 'scope_relation': 'compatible'}]}}}
-    assert invalid_clause_witnesses(data, refs) == (None if valid else 'unbound_clause_witness')
-    assert refs[1]['quote'] == original and data['clauses']['S0']['witnesses'][0]['quote'] == quote
+def test_canonical_choice_does_not_copy_or_rewrite_source_text_or_trust_forged_keys():
+    refs = {
+        17: {'source_id': 'source-a', 'locator': 'p4', 'quote': 'The non-polar result is not a polar finding. Strato-\nspheric variation … remains.'},
+        18: {'source_id': 'source-b', 'locator': 'p4', 'quote': 'The non-polar result is not a polar finding. Strato-\nspheric variation … remains.'},
+    }
+    choices = witness_choices(refs)
+    assert len(choices) == 2 and set(choices.values()) == {17, 18}
+    assert choices == witness_choices(deepcopy(refs))
+    raw = {'clauses': {'S0': {'verdict': 'supported', 'reason': 'Scripted scope comparison.', 'witnesses': [
+        {'key': next(key for key, ref in choices.items() if ref == 18), 'scope_relation': 'compatible'}]}}}
+    before = deepcopy(raw)
+    normalized = normalize_clause_witnesses(raw, refs)
+    assert raw == before
+    assert normalized['clauses']['S0']['citation_refs'] == [18]
+    assert normalized['clauses']['S0']['witnesses'][0]['quote'] == refs[18]['quote']
+    raw['clauses']['S0']['witnesses'][0]['key'] = 'invented-source-key'
+    with pytest.raises(ValueError):
+        normalize_clause_witnesses(raw, refs)
 
 
-def test_witness_edge_omission_does_not_strip_internal_omissions_from_source():
-    from helvetic_lens.research_review_witnesses import invalid_clause_witnesses
+@pytest.mark.asyncio
+async def test_changed_original_cannot_reuse_cached_canonical_choice():
+    wire, answer = fixture()
+    calls, cache = [], {}
 
-    refs = {1: {'quote': 'The coastal zone is ... recovering as stated in the report.'}}
-    data = {'clauses': {'S0': {'citation_refs': [1], 'witnesses': [
-        {'citation_ref': 1, 'quote': 'The coastal zone is recovering...', 'scope_relation': 'compatible'}]}}}
-    assert invalid_clause_witnesses(data, refs) == 'unbound_clause_witness'
+    class Model:
+        async def complete(self, system, text, **kwargs):
+            payload = json.loads(text)
+            calls.append(payload)
+            return json.dumps(response(payload, wire.references))
+
+    service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
+    await reasoned_review(service, wire, answer, 60, checkpoints=cache)
+    wire.references[1]['quote'] += ' This comparison excludes the later survey.'
+    answer.points[0].evidence[0].quote = wire.references[1]['quote']
+    result = await reasoned_review(service, wire, answer, 60, checkpoints=cache)
+    assert len(calls) == 2 and result['status'] == 'checked'
+    assert calls[0]['source_context'] != calls[1]['source_context']
 
 
 @pytest.mark.asyncio
