@@ -244,10 +244,12 @@ def finish_or_yield(session, run, job):
                     run.stop_reason = "Checked findings are available; some verification remains unavailable. Retry continues the retained checks."
             from .product_document_reading import incomplete
             unfinished_documents = incomplete(branches)
-            if (unmetered(run) and run.research_state.get("mission", {}).get("stop") == "answer_unavailable"
-                    and not run.research_state.get("exploration", {}).get("briefing")):
+            if unmetered(run) and run.research_state.get("mission", {}).get("stop") == "answer_unavailable":
                 run.status = "failed"
-                run.stop_reason = "The sources were retained, but the final answer could not be validated. Retry to continue from the saved research."
+                run.stop_reason = (
+                    "The latest answer could not be validated. The previous saved answer remains available. Retry to continue from the saved research."
+                    if run.research_state.get("exploration", {}).get("briefing") else
+                    "The sources were retained, but the final answer could not be validated. Retry to continue from the saved research.")
             if unfinished_documents:
                 run.status = "failed"
                 unread = sum(not doc.get("read_complete") for doc in unfinished_documents)

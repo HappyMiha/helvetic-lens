@@ -1,7 +1,7 @@
 """Shape and literal/evidence fences for a fallible final-answer reviewer."""
 import re
 
-WITNESS_POLICY = 'clause-bound-quotation-and-scope/v1'
+WITNESS_POLICY = 'clause-bound-quotation-and-scope/v2-boundary-omission'
 
 
 def assertion_clauses(assertion):
@@ -71,6 +71,22 @@ def _quotation(text, *, unwrap=False):
     return re.sub(r'\s+', ' ', text).strip()
 
 
+def _witness_excerpt(text):
+    # Conventional edge omissions describe where a contiguous excerpt ends.
+    # Remove at most one marker at each edge of the MODEL quotation only;
+    # internal omissions and all original source text remain unchanged.
+    text = text.strip()
+    for marker in ('...', '…'):
+        if text.startswith(marker):
+            text = text[len(marker):].lstrip()
+            break
+    for marker in ('...', '…'):
+        if text.endswith(marker):
+            text = text[:-len(marker)].rstrip()
+            break
+    return text
+
+
 def invalid_clause_witnesses(data, references):
     """A quote must belong to its named original; failure is unavailable review."""
     for clause in data['clauses'].values():
@@ -82,11 +98,12 @@ def invalid_clause_witnesses(data, references):
             return 'missing_clause_witness'
         for witness in witnesses:
             original = references.get(witness['citation_ref'])
-            quote = _quotation(witness['quote'])
+            excerpt = _witness_excerpt(witness['quote'])
+            quote = _quotation(excerpt)
             if original is None or not quote:
                 return 'unbound_clause_witness'
             if (quote not in _quotation(original['quote'])
-                    and not any(_quotation(witness['quote'], unwrap=layout) in _quotation(original['quote'], unwrap=layout)
+                    and not any(_quotation(excerpt, unwrap=layout) in _quotation(original['quote'], unwrap=layout)
                         for layout in ('hyphen', 'word'))):
                 return 'unbound_clause_witness'
     return None

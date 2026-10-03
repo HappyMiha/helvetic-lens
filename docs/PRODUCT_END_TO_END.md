@@ -2147,3 +2147,32 @@ review policy changes invalidate old approval receipts; the legacy synthesis
 binding also requires one regeneration, without losing captured source reading.
 Scope compatibility remains a fallible model judgment. New native content
 acceptance has not yet been established.
+
+Native60482 completed its run in248.7s with five new Apertus calls, but published
+no replacement answer. Its final brief branch failed research_review_incomplete.
+Five of six clause witnesses bind exactly; the remaining quote at ref192 adds a
+trailing omission marker. The new host fence correctly left that review unavailable.
+The earlier17340 answer remains unchanged and explicitly labelled last saved
+answer in both readers. Source authenticity remains valid; content acceptance
+remains PARTIAL. Cored26000a activated at07:58:20UTC.
+
+Follow-through scope: permit conventional omission markers only at the boundary
+of a model's quoted excerpt, then require the remaining nonempty contiguous text
+to bind exactly to its stated original. Do not remove internal omissions, change
+source content or use fuzzy similarity. The existing short-excerpt contract already
+permits that same prefix without the presentation marker. Separately, a failed
+new brief must yield a failed/retryable update even when older source branches
+completed or an earlier answer exists. Do not reuse a previous answer's success
+reason. Preserve its readable saved answer, private candidate and ordinary retry.
+Acceptance uses the observed quote boundary and prior-answer failed-update path;
+no new research or reviewer layer is needed. Dependencies remain existing review,
+mission, worker and saved originals; no production fixtures or manual state edits.
+
+Implemented the bounded excerpt presentation rule and failed-update outcome.
+The native lifecycle case passes: publish a partial answer, retain it during a
+failed later review, keep the new private checkpoint, then resume and publish
+through the same ordinary retry. All28 clause-witness cases and the backlog guard
+pass, as do exact API Ruff, diff and independent review. The exact saved call937
+now binds all six witnesses with no provider calls or database edits. This proves
+the recorded transport boundary, not semantic correctness of the final dossier.
+Core0ae74c6 activated at08:04:11UTC; exact public readiness passed at08:05:44UTC.

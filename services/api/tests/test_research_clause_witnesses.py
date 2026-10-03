@@ -143,6 +143,39 @@ def test_layout_normalization_cannot_erase_inline_hyphens_or_negation(changed):
     assert invalid_clause_witnesses(data, refs) == 'unbound_clause_witness'
 
 
+@pytest.mark.parametrize('quote,valid', [
+    ('The coastal zone is recovering...', True),
+    ('The coastal zone is recovering…', True),
+    ('...is recovering as stated in the report.', True),
+    ('… is recovering as stated in the report.', True),
+    ('... is recovering …', True),
+    ('The coastal zone ... as stated in the report.', False),
+    ('The coastal zone … as stated in the report.', False),
+    ('The inland zone is recovering...', False),
+    ('The coastal zone is not recovering...', False),
+    ('...', False),
+    ('…', False),
+])
+def test_witness_omission_marker_only_delimits_an_exact_contiguous_excerpt(quote, valid):
+    from helvetic_lens.research_review_witnesses import invalid_clause_witnesses
+
+    original = 'The coastal zone is recovering as stated in the report.'
+    refs = {1: {'quote': original}}
+    data = {'clauses': {'S0': {'citation_refs': [1], 'witnesses': [
+        {'citation_ref': 1, 'quote': quote, 'scope_relation': 'compatible'}]}}}
+    assert invalid_clause_witnesses(data, refs) == (None if valid else 'unbound_clause_witness')
+    assert refs[1]['quote'] == original and data['clauses']['S0']['witnesses'][0]['quote'] == quote
+
+
+def test_witness_edge_omission_does_not_strip_internal_omissions_from_source():
+    from helvetic_lens.research_review_witnesses import invalid_clause_witnesses
+
+    refs = {1: {'quote': 'The coastal zone is ... recovering as stated in the report.'}}
+    data = {'clauses': {'S0': {'citation_refs': [1], 'witnesses': [
+        {'citation_ref': 1, 'quote': 'The coastal zone is recovering...', 'scope_relation': 'compatible'}]}}}
+    assert invalid_clause_witnesses(data, refs) == 'unbound_clause_witness'
+
+
 @pytest.mark.asyncio
 async def test_context_witness_requires_explicit_citation_repair_instead_of_lending_support_to_selected_original():
     wire, answer = fixture(statement='The inland zone measurement fell.')
