@@ -518,10 +518,13 @@ async def test_compact_review_grammar_cannot_accept_or_cache_a_missing_witness(t
             item = data['overall'] if target == 'overall' else data['clauses']['S0'] if target == 'clause' else data['concern_checks'][0]
             item['verdict' if target != 'concern' else 'outcome'] = verdict
             item['citation_refs'] = []
-            # The compact transport grammar permits the shape, while the
-            # existing host fence must still reject the unsupported verdict.
+            # Concern witnesses are now enforced in the provider grammar too;
+            # the unchanged host fence independently rejects missing witnesses.
             from helvetic_lens.research_model_transport import shape_errors
-            assert shape_errors(data, options['response_schema'], {}) == []
+            from helvetic_lens.research_review_witnesses import invalid_review
+            assert bool(shape_errors(data, options['response_schema'], {})) == (target == 'concern')
+            assert invalid_review(data, ref['quote'], {'C0': {}}, point=True) == (
+                'missing_concern_witness' if target == 'concern' else 'missing_original_witness')
             return json.dumps(data)
 
     checkpoints = {}
@@ -532,7 +535,7 @@ async def test_compact_review_grammar_cannot_accept_or_cache_a_missing_witness(t
     assert result['status'] == 'partial' and not result['positive_witnesses']
     assert [hint['review_signal'] for hint in result['hints']] == ['review_unavailable']
     assert result['pending_checks'] == [{'item': 'P0',
-        'reason': 'missing_concern_witness' if target == 'concern' else 'missing_original_witness'}]
+        'reason': 'invalid_response' if target == 'concern' else 'missing_original_witness'}]
     assert not checkpoints
 
 
@@ -564,6 +567,36 @@ def test_compact_review_preserves_valid_witness_free_gap_and_unresolved_concern(
         **({} if point else {'gap_status': 'unresolved'})}
     assert not shape_errors(data, review_schema(assertion, {}, concerns, point=point), {})
     assert invalid_review(data, assertion, concerns, point=point) is None
+
+
+@pytest.mark.parametrize('metadata', [False, True])
+@pytest.mark.parametrize('outcome,witnesses,accepted', [
+    ('resolved', [], False), ('resolved', [1], True), ('remains', [], False),
+    ('remains', [1], True), ('cannot_assess', [], True), ('cannot_assess', [1], True)])
+def test_conditional_concern_grammar_matches_existing_host_witness_contract(metadata, outcome, witnesses, accepted):
+    from helvetic_lens.research_final_review import scoped_review_schema
+    from helvetic_lens.research_model_transport import shape_errors
+    from helvetic_lens.research_review_witnesses import invalid_review
+
+    assertion = 'The current scope needs verification.'
+    refs = {1: {'source_id': 'report', 'locator': 'p1', 'quote': 'The report identifies the current scope.'}}
+    wire = SimpleNamespace(references=refs, reference_uses={1: 'reference_metadata'} if metadata else {})
+    concerns = {'C0': {}}
+    schema = scoped_review_schema(wire, assertion, refs, concerns, point=True)
+    variants = schema['properties']['concern_checks']['items']['anyOf']
+    assert len(variants) == 2
+    assert [variant['properties']['citation_refs']['minItems'] for variant in variants] == [1, 0]
+    assert all(('assertion_scope' in variant['required']) == metadata for variant in variants)
+    judgment = {'verdict': 'not_established', 'reason': '', 'citation_refs': [],
+        **({'assertion_scope': 'reference_metadata'} if metadata else {})}
+    item = {'id': 'C0', 'outcome': outcome, 'reason': '', 'citation_refs': witnesses,
+        **({'assertion_scope': 'reference_metadata'} if metadata else {})}
+    data = {'overall': deepcopy(judgment), 'clauses': {'S0': deepcopy(judgment)}, 'concern_checks': [item]}
+    assert (not shape_errors(data, schema, {})) == accepted
+    assert (invalid_review(data, assertion, concerns, point=True) is None) == accepted
+    if metadata:
+        del item['assertion_scope']
+        assert shape_errors(data, schema, {}), 'Every alternative must retain the source-use boundary'
 
 
 @pytest.mark.asyncio

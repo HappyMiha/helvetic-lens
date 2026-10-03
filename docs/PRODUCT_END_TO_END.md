@@ -1856,3 +1856,35 @@ Independent review exposed the scheduling and stale-receipt issues; both were
 corrected. No providers were called for these checks. Actual public-source content
 acceptance remains open; native75041 continues on immutable2fd89a6 while this
 complete routing change is published and activated separately.
+
+### Carry final review witnesses through the provider contract
+
+MV2-020/023: native19576 on live da4d696 selected finish, preserved completed
+checks across actual upstream 429/504 responses, then failed after 1,053.6 seconds.
+The terminal reason is missing_concern_witness for two corrected points: the
+reviewer returned resolved with an empty citation list. Six other point checks
+completed. The host correctly refused the malformed judgments; no new answer
+was delivered, and the previous unaccepted answer remains unchanged.
+
+Scope: express the existing conditional concern-witness requirement in the
+provider grammar. Resolved/remains require an original reference; cannot_assess
+may have none. Keep canonical validation and cache acceptance unchanged. Branch
+only concern judgments, avoiding the former duplication of every assertion's
+schema. The measured actual envelopes remain below the existing allowance with
+complete originals. No new model, review layer, context allowance or source access
+is required. Existing authorized originals and the same native retry are available.
+
+Acceptance: the dispatched schema excludes the observed malformed responses,
+supports honest inability to assess, and preserves source-use checks through both
+schema alternatives. Exact approved sibling checks remain reusable. Test the
+changed grammar and review path, then run the ordinary same-dossier retry and
+independently review any new delivered answer. Schema acceptance is not content
+acceptance; coherent coverage of the original question remains required.
+
+Implemented the conditional grammar without changing accepted judgments, review
+policy or provider allowance. Twenty-three affected compact-review and conditional
+grammar cases passed, including both source-use alternatives and rejection before
+cache insertion. Exact API Ruff, diff and the backlog guard passed. Independent
+review confirmed valid sibling proofs remain reusable. No provider calls were
+needed for these checks. Publication, activation and a changed actual answer remain
+separate verification steps.

@@ -32,12 +32,19 @@ def review_schema(assertion, references, concerns, *, point=True):
         schema['properties']['gap_status'] = {'type': 'string', 'enum': ['unresolved', 'answered', 'answer_available', 'outside_request']}
         schema['required'].append('gap_status')
     if concerns:
-        props = {'id': {'type': 'string', 'enum': list(concerns)},
-            'outcome': {'type': 'string', 'enum': ['resolved', 'remains', 'cannot_assess'] if references else ['cannot_assess']},
-            'reason': {'type': 'string', 'maxLength': 200},
-            'citation_refs': {**refs, 'minItems': 0}}
+        def concern(outcomes, minimum):
+            props = {'id': {'type': 'string', 'enum': list(concerns)},
+                'outcome': {'type': 'string', 'enum': outcomes},
+                'reason': {'type': 'string', 'maxLength': 200},
+                'citation_refs': {**refs, 'minItems': minimum}}
+            return {'type': 'object', 'properties': props, 'required': list(props), 'additionalProperties': False}
+        # Match the existing host conditional witness rule in the serving
+        # grammar. Only concern judgments need these two compact alternatives;
+        # uncertainty can still be returned honestly without inventing evidence.
+        unavailable = concern(['cannot_assess'], 0)
+        item = {'anyOf': [concern(['resolved', 'remains'], 1), unavailable]} if references else unavailable
         schema['properties']['concern_checks'] = {'type': 'array', 'minItems': len(concerns), 'maxItems': len(concerns),
-            'items': {'type': 'object', 'properties': props, 'required': list(props), 'additionalProperties': False}}
+            'items': item}
         schema['required'].append('concern_checks')
     return schema
 
