@@ -194,6 +194,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
     from .research_evidence_pack import request_characters, select_evidence
 
     allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
+    provider = getattr(getattr(service, 'settings', None), 'apertus_provider', None)
 
     def writer_input(references):
         local = {i+1: ref for i, ref in enumerate(references.values())}
@@ -215,7 +216,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
     def request_size(references):
         local, payload = writer_input(references)
         _, schema = requested_schema(local, max_points, correction, amendments, allow_append=allow_append)
-        return request_characters((POINT_REPAIR if correction else WRITE) + focus, payload, schema)
+        return request_characters((POINT_REPAIR if correction else WRITE) + focus, payload, schema, provider=provider)
 
     def fits(references):
         return request_size(references) <= allowance
@@ -261,7 +262,7 @@ async def answer_request(service, wire, request, seconds, *, checkpoints=None, o
                 'maxItems': min(12, len(refs))} for key, refs in source_refs.items()},
             'required': list(source_refs), 'additionalProperties': False}},
             'required': ['citation_refs'], 'additionalProperties': False}
-        if not fits(wire.references) or request_characters(SELECT + focus, context, selection_schema) > allowance:
+        if not fits(wire.references) or request_characters(SELECT + focus, context, selection_schema, provider=provider) > allowance:
             task = json.dumps({key: value for key, value in context.items() if key != 'sources'}, ensure_ascii=False)
             selected = await select_evidence(service, wire, task, deadline-monotonic(),
                 checkpoints=checkpoints, on_progress=retain, fits=fits, request_size=request_size)
@@ -396,7 +397,8 @@ async def _validate_point(service, payload, local, data, schema, focus, deadline
         from .config import DomainError
         from .research_evidence_pack import request_characters
         allowance = getattr(getattr(service, 'settings', None), 'apertus_context_chars', 24000)
-        if request_characters(NUMERIC_REPAIR, repair_input, repair_schema) > allowance:
+        if request_characters(NUMERIC_REPAIR, repair_input, repair_schema,
+                provider=getattr(getattr(service, 'settings', None), 'apertus_provider', None)) > allowance:
             raise DomainError('The focused correction exceeds the configured request allowance; originals and progress remain retained.',
                 422, 'research_evidence_group_too_large')
         raw = await service.model_client.complete(NUMERIC_REPAIR,

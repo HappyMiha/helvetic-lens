@@ -1939,3 +1939,56 @@ Ruff and diff checks passed. Independent review found the amendment-loss issue;
 rejected and unresolved-concern paths are corrected and verified. No providers
 were called for these checks. The previous native content verdict remains PARTIAL;
 publication, activation and ordinary same-dossier continuation are separate gates.
+
+### Complete review without losing the previous dossier
+
+MV2-020/023: native7175 ordinary continuation on live76f9b68 failed after
+1,578.64 seconds and27 model calls before deep final review. The mandatory
+original-context envelope exceeded24,000 characters. No new answer was published.
+The parent eight-point answer remains exact in storage, but the child retained
+projection contains only its older briefing, not the typed answer. The failed
+briefing branch also discarded its private prepared draft and precision repairs.
+
+Scope: make the existing final review transport preserve complete mandatory
+original context without redundant transport overhead; retain exact-input private
+progress on recoverable packing failure; preserve the previously delivered typed
+answer during a pending or failed continuation, clearly identified as the earlier
+result. Do not approve oversized or unchecked assertions, crop originals, expose
+private drafts, or silently attribute a previous result to the new investigation.
+Use existing authorized sources/providers and current production configuration.
+
+Acceptance: replay the recorded failing envelope offline and verify all original
+witnesses, scope and provenance survive. A packing interruption keeps reusable
+private work through ordinary retry and still invalidates stale source/input
+bindings. Both product readers retain the previous answer with an explicit
+continuation state. Verify the affected behavior, publish and verify activation,
+then use native retry on the same retained investigation and assess actual content.
+No repeated broad benchmarks, provider probes or manually authored answer.
+
+Implemented: Swisscom now receives the complete strict JSON schema once in its
+existing structured-output field. Provider-aware sizing counts the real escaped
+chat envelope; unknown/unconstrained providers retain the conservative estimate.
+No original, witness, grammar requirement, source policy or semantic proof cache
+was removed. The recorded worst request measures23,053/24,000 characters
+(actual serialized adapter body22,171), preserving48 canonical references and
+23 short context fragments containing10,562 original characters. All seven
+recorded assertions fit with either possible fast-review concern.
+
+Packing faults now retain exact-input private synthesis work after the existing
+lease, permission and source/input fences; they do not create automatic retry
+loops or qualify unchecked output for publication. Authenticated retained reading
+includes the source-validated earlier typed answer. Both readers label it as an
+earlier saved answer and keep it open until a replacement is delivered. Actual
+read-only projection of frozen native7175 preserves the exact parent answer, and
+both production reader components render its8 points,15 citations and2 gaps.
+The child remains failed; this is continuity, not new content acceptance.
+
+Validation so far:183 affected transport/provider cases and61 checkpoint recovery
+cases passed, including explicit retry, privacy, source withdrawal and exact-input
+invalidation. Independent transport/worker review passed. Both client full test,
+lint, typecheck and build gates passed; exact sources were pushed to GitHub and
+published as Sites92 (Legal0de4acd, Pharma3186339). The earlier content verdict
+remains PARTIAL. All five server retained-reading cases also passed, including pending/failed
+continuations, cleared legacy briefings, private-state isolation and permission/SHA
+withdrawal. Exact API Ruff, diff and the backlog guard passed. Server publication,
+activation and the ordinary failed-investigation retry remain separate final gates.

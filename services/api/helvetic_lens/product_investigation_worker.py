@@ -476,6 +476,7 @@ async def execute(service, job_id, worker):
     # Every paid/network operation has a committed receipt before it begins.
     # The hard deadline is shorter than the lease even for small operator leases.
     result, failed, transient = None, False, None
+    packing_failure = False
     started = perf_counter()
     try:
         seconds = work["deadline_seconds"]
@@ -489,6 +490,7 @@ async def execute(service, job_id, worker):
         # integration-log messages or publicly observable reasoning.
         failed = True
         code = getattr(exc, "code", None) or ("model_timeout" if isinstance(exc, TimeoutError) else None)
+        packing_failure = code == "research_evidence_group_too_large"
         if code in {"model_rate_limited", "model_temporarily_unavailable", "model_upstream_timeout", "model_timeout", "model_unreachable", "model_transport_error", "research_review_incomplete", "research_review_yield", "research_evidence_pack_incomplete"}:
             transient = code
 
@@ -582,7 +584,7 @@ async def execute(service, job_id, worker):
             if ((previous or {}).get("parts", {}).get("deferred_final_review")
                     and (previous or {}).get("binding") != (current or {}).get("binding")):
                 state[DEFERRED_ARCHIVE] = previous  # Private history, never migrated into another approval cache.
-            if (transient or qualified_delivery) and unmetered(run) and run.status in ACTIVE and current:
+            if (transient or packing_failure or qualified_delivery) and unmetered(run) and run.status in ACTIVE and current:
                 # This remains a private proposal. All post-provider fences above
                 # must pass before retaining it, and every later answer is validated.
                 state[synthesis_checkpoint] = deepcopy(current)
@@ -764,6 +766,8 @@ async def execute(service, job_id, worker):
                 state["error"] = "Final evidence checks are incomplete. Retry resumes the missing checks; completed sources and checks are saved."
             elif transient == "research_evidence_pack_incomplete":
                 state["error"] = "Evidence selection is incomplete. Retry resumes the missing batches; captured originals and finished selections are saved."
+            elif packing_failure:
+                state["error"] = "The final answer could not be completed. Saved sources and preparation are retained for retry."
             if work.get("file") and isinstance(result, dict) and result.get("error"):
                 state["error"] = result["error"]
         research_gateway.finish(state, work, result, failed=failed, elapsed=perf_counter() - started)
@@ -772,6 +776,8 @@ async def execute(service, job_id, worker):
         state["steps"][-1].update(status="unavailable" if failed or qualified_delivery else "completed", finished_at=iso(utcnow()))
         if transient:
             state["steps"][-1]["error_code"] = transient
+        elif packing_failure:
+            state["steps"][-1]["error_code"] = "research_evidence_group_too_large"
         if qualified_delivery:
             state["steps"][-1]["verification"] = deepcopy(work["deferred_review_verification"])
         if failed and work["phase"] == "brief" and transient in PROVIDER_INTERRUPTION:

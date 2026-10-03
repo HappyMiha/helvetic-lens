@@ -244,13 +244,14 @@ async def reasoned_review(service, wire, answer, seconds, *, checkpoints=None, o
 
         focus = FOCUS + json.dumps(assertion, ensure_ascii=False)
         allowance = getattr(service.settings, 'apertus_context_chars', 24000)
-        if request_characters(REVIEW + focus, payload, item_schema) > allowance:
+        provider = getattr(service.settings, 'apertus_provider', None)
+        if request_characters(REVIEW + focus, payload, item_schema, provider=provider) > allowance:
             field = 'sources' if key.startswith('L') else 'source_context'
 
             def request_size(references):
                 candidate = {**payload, field: source_groups(wire, references)}
                 schema = scoped_review_schema(wire, assertion, references, concern_ids, point=key.startswith('P'))
-                return request_characters(REVIEW + focus, candidate, schema)
+                return request_characters(REVIEW + focus, candidate, schema, provider=provider)
 
             def fits(references):
                 return request_size(references) <= allowance

@@ -464,7 +464,8 @@ async def test_preliminary_research_uses_selected_originals_and_repairs_unshown_
 
     async def complete(system, content, **kwargs):
         data = json.loads(content)
-        assert request_characters(system, data, kwargs['response_schema']) <= settings.apertus_context_chars
+        assert request_characters(system, data, kwargs['response_schema'],
+            provider=settings.apertus_provider) <= settings.apertus_context_chars
         assert 'sources' in data, 'Oversized format feedback must retry the bounded original request'
         refs = [p['citation_ref'] for source in data['sources'] for p in source['excerpts']]
         assert refs and len(refs) < 50 and 50 not in refs

@@ -198,7 +198,8 @@ def test_linked_source_leads_do_not_invalidate_unchanged_canonical_evidence(sign
 
 
 @pytest.mark.parametrize('withdraw', [False, True])
-def test_incomplete_final_review_requires_explicit_retry_and_retains_private_checkpoint(signed, monkeypatch, withdraw):
+@pytest.mark.parametrize('failure', ['research_review_incomplete', 'research_evidence_group_too_large'])
+def test_incomplete_final_review_requires_explicit_retry_and_retains_private_checkpoint(signed, monkeypatch, withdraw, failure):
     import json
 
     from test_product_early_orientation import exclude
@@ -223,7 +224,7 @@ def test_incomplete_final_review_requires_explicit_retry_and_retains_private_che
             work[KEY] = {'raw': marker, 'stage': 'reviewed'}
             if withdraw:
                 exclude(service, identity, sources[0])
-            raise DomainError('Fictional incomplete evidence review', 503, 'research_review_incomplete')
+            raise DomainError('Fictional incomplete evidence review', 422 if failure == 'research_evidence_group_too_large' else 503, failure)
         assert work[KEY]['raw'] == marker
         assert [s['id'] for s in work['input']['sources']] == sources
         return await original(service, work, seconds)
@@ -238,6 +239,7 @@ def test_incomplete_final_review_requires_explicit_retry_and_retains_private_che
             assert result['status'] == 'paused'
             return
         assert branch.checkpoint[KEY]['raw'] == marker
+        assert branch.checkpoint['steps'][-1]['error_code'] == failure
         assert not branch.checkpoint.get('provider_retries'), 'Invalid review is not automatically repurchased'
     assert result['status'] == 'failed' and result['retry']['available'] is True and len(calls) == 1
     tick(service, run['id'])

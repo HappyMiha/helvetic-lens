@@ -703,10 +703,12 @@ class ModelClient:
                 503,
                 "model_not_configured",
             )
-        if response_schema is not None and self.settings.apertus_provider != "docker":
+        if response_schema is not None and self.settings.apertus_provider not in {"docker", "swisscom"}:
             # Remote JSON mode only promises valid JSON, not our field contract.
             # Providers without schema-constrained decoding still need the schema
-            # in their prompt, including when JSON mode is disabled.
+            # in their prompt, including when JSON mode is disabled. Swisscom
+            # and Docker already receive the complete grammar in response_format;
+            # repeating it in the system prompt wastes original-evidence capacity.
             system += "\nReturn only JSON conforming to this schema:\n" + json.dumps(response_schema)
         if self.settings.apertus_provider == "anthropic":
             # Messages has a top-level system prompt, no system message, n,

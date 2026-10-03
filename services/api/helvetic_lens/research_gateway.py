@@ -338,12 +338,14 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 repair_input = {"original_evidence": provider_input, "previous_invalid_response": wire_raw[:30000],
                     **({"review_hints": review_hints} if review_hints else {})}
                 work["model_route"]["format_repair_mode"] = "validation_feedback"
-                if resume and evidence_pack.request_characters(repair_system, repair_input, response_schema) > service.settings.apertus_context_chars:
+                if resume and evidence_pack.request_characters(repair_system, repair_input, response_schema,
+                        provider=service.settings.apertus_provider) > service.settings.apertus_context_chars:
                     # The malformed proposal is disposable; the chosen originals
                     # and the dispatched citation contract must remain complete.
                     repair_system, repair_input = system, provider_input
                     work["model_route"]["format_repair_mode"] = "fresh_bounded_draft"
-                    if evidence_pack.request_characters(repair_system, repair_input, response_schema) > service.settings.apertus_context_chars:
+                    if evidence_pack.request_characters(repair_system, repair_input, response_schema,
+                            provider=service.settings.apertus_provider) > service.settings.apertus_context_chars:
                         raise DomainError("The selected evidence exceeds the configured synthesis allowance; the originals remain retained.",
                             422, "research_evidence_group_too_large")
                 raw = await service.model_client.complete(repair_system, json.dumps(repair_input, ensure_ascii=False),

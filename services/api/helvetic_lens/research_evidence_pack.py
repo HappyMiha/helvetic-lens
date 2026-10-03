@@ -103,16 +103,24 @@ def bounded_schema(schema, references):
     return result
 
 
-def request_characters(system, payload, schema):
+def request_characters(system, payload, schema, *, provider=None):
+    if provider == 'swisscom':
+        # Match ModelClient's strict-schema transport, including the escaping
+        # of the serialized user JSON inside the outer chat request. The margin
+        # covers model/sampling/output settings; no evidence or grammar is lost.
+        body = {'messages': [{'role': 'system', 'content': system}, {'role': 'user', 'content': _json(payload)}],
+            'response_format': {'type': 'json_schema', 'json_schema': {
+                'name': schema.get('title', 'structured_response'), 'strict': True, 'schema': schema}}}
+        return len(json.dumps(body)) + 1024
     # Hosted adapters may include the schema both in the prompt and protocol.
     # This conservative envelope is a transport allowance, not a token count.
     return len(system) + len(_json(payload)) + 2 * len(json.dumps(schema)) + 1024
 
 
-def _final_size(wire, references):
+def _final_size(wire, references, *, provider=None):
     payload = provider_input(wire, references)
     return request_characters(getattr(wire, 'system', ''), payload,
-        bounded_schema(getattr(wire, 'schema', {}), references))
+        bounded_schema(getattr(wire, 'schema', {}), references), provider=provider)
 
 
 def _units(wire, _question=None):
@@ -157,7 +165,8 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
     started = monotonic()
     settings = getattr(service, 'settings', None)
     allowance = getattr(settings, 'apertus_context_chars', 24000)
-    measure = request_size if request_size is not None else lambda references: _final_size(wire, references)
+    measure = request_size if request_size is not None else lambda references: _final_size(wire, references,
+        provider=getattr(settings, 'apertus_provider', None))
     sizes = {}
 
     def request_size(references):

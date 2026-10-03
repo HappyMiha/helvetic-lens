@@ -144,7 +144,10 @@ async def test_remote_generation_receives_the_output_contract(tmp_path, monkeypa
         payload = json.loads(request.content)
         calls.append(payload)
         system = payload["system"] if provider == "anthropic" else payload["messages"][0]["content"]
-        assert json.loads(system.split("Return only JSON conforming to this schema:\n", 1)[1]) == schema
+        if provider == "swisscom":
+            assert system == "Use the supplied context."
+        else:
+            assert json.loads(system.split("Return only JSON conforming to this schema:\n", 1)[1]) == schema
         assert system.startswith("Use the supplied context.")
         if provider == "anthropic":
             return httpx.Response(200, json={"stop_reason": "end_turn", "content": [

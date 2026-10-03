@@ -480,6 +480,7 @@ def validate_reconsiderations(session, run, supplied, result):
 def retained_reading(session, run, current):
     """Read-only continuity, separate from model inputs and publication payloads."""
     from . import product_exploration_progress as progress
+    from . import product_research_mission as mission
 
     if not current or current.get("status") == "evidence_changed" or not progress.linked(run, early=True):
         return None
@@ -491,7 +492,8 @@ def retained_reading(session, run, current):
         if not parent.external_discovery or not enabled(parent):
             return None
         saved = parent.research_state["exploration"]
-        if saved.get("briefing"):
+        checkpoints = parent.research_state.get("mission", {}).get("checkpoints") or []
+        if saved.get("briefing") or (mission.enabled(parent) and checkpoints and checkpoints[-1].get("answer")):
             selected = parent
             break
         if fallback is None and ((saved.get("orientation") or {}).get("briefing") or any(
@@ -503,13 +505,13 @@ def retained_reading(session, run, current):
     previous = projection(session, selected)
     if not previous or previous["status"] == "evidence_changed" or not previous["sources"]:
         return None
-    if not (previous.get("briefing") or (previous.get("orientation") or {}).get("briefing")
+    if not ((previous.get("mission") or {}).get("answer") or previous.get("briefing") or (previous.get("orientation") or {}).get("briefing")
             or (previous.get("question_assessments") or {}).get("assessments")):
         return None
     # Keep only the established reader's content. No controls, inferred answer to
     # the new question, recursive history or new citation authority.
     content = {key: previous[key] for key in (
-        "status", "revision", "briefing", "sources", "orientation", "changes",
+        "status", "revision", "briefing", "mission", "sources", "orientation", "changes",
         "question_assessments", "research_update") if key in previous}
     return {"investigation_id": selected.id, "question": selected.question,
         "updated_at": iso(selected.updated_at), "exploration": content}
