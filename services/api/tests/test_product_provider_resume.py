@@ -387,6 +387,20 @@ def test_evidence_preparation_retains_batches_privately_and_only_new_work_contin
 
     client, service, identity, model = signed
     adapters(monkeypatch, service, model)
+    scripted = model.complete
+
+    async def completed_mission(*args, **kwargs):
+        value = json.loads(await scripted(*args, **kwargs))
+        if 'mission_checkpoint' in kwargs['response_schema'].get('properties', {}):
+            first = value['findings'][0]
+            value['mission_checkpoint'] = {'action': 'finish',
+                'reason': 'The retained source supports this finding; remaining uncertainty is explicit.',
+                'answer': {'status': 'partial', 'limitations': value['uncertainties'],
+                    'points': [{'statement': first['statement'], 'evidence': [
+                        {**{key: first[key] for key in ('source_id', 'locator', 'quote')}, 'role': 'support'}]}]}}
+        return json.dumps(value)
+
+    monkeypatch.setattr(model, 'complete', completed_mission)
     root, run, _ = explore(client)
     execute, calls, sources = research_gateway.execute, [], []
     marker = 'PRIVATE COMPLETED SOURCE SELECTION'
@@ -416,7 +430,9 @@ def test_evidence_preparation_retains_batches_privately_and_only_new_work_contin
     # A failed reflection remains retryable even when other branches produced
     # a final briefing; only an unavailable final briefing fails the whole run.
     expected = {'continue': 'completed', 'stall': 'failed' if phase == 'brief' else 'completed', 'withdraw': 'paused'}
-    assert result['status'] == expected[outcome]
+    assert result['status'] == expected[outcome], result['stop_reason']
+    if outcome == 'continue' or outcome == 'stall' and phase == 'reflect':
+        assert result['exploration']['mission']['answer']['points']
     assert len(calls) == (1 if outcome == 'withdraw' else 2)
     assert marker not in json.dumps(result) and marker not in client.get(root + '/export').text
     with service.db.session() as session:
@@ -440,6 +456,7 @@ def test_evidence_preparation_retains_batches_privately_and_only_new_work_contin
         assert reply.status_code == 200, reply.text
         finished = complete(client, service, root + '/investigations', reply.json())
         assert finished['status'] == 'completed' and len(calls) == 3
+        assert finished['exploration']['mission']['answer']['points']
 
 
 @pytest.mark.parametrize('brief_status', [None, 'failed', 'completed'])

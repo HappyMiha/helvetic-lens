@@ -91,13 +91,17 @@ def _document_status(session, run, branch, key, doc, available):
             or any(identifier not in available or available[identifier].sha256 != doc.get("sha256")
                 for identifier in ids)):
         return None
+    # Independently completed portions retain their own exact reading receipt,
+    # even when capture deduplication marks some portions as non-independent.
+    # Reusing another document's analysis remains a separate fallback below.
+    if (doc.get("read_complete") and not doc.get("next_cursor") and not doc.get("error")
+            and not doc.get("warnings") and current_document_reading(session, run, branch, key, doc, available)):
+        return "matched_read"
     if any("duplicate_of" in available[identifier].snapshot for identifier in ids):
         proof = duplicate_analysis(session, run, doc)
         return "matched_read" if proof and all(identifier in available for identifier in proof["source_ids"]) else None
     if not doc.get("read_complete") or doc.get("next_cursor") or doc.get("error") or doc.get("warnings"):
         return "reading_incomplete"
-    if current_document_reading(session, run, branch, key, doc, available):
-        return "matched_read"
     return "analysis_incomplete"
 
 

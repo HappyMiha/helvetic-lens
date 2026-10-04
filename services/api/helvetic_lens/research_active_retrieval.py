@@ -153,7 +153,11 @@ async def rank_evidence(service, wire, question, seconds, *, checkpoints=None, o
     """Rank every current window locally; return priorities, never factual verdicts."""
     items, queries = _records(wire), _queries(wire, question)
     checkpoints = checkpoints if checkpoints is not None else {}
-    deadline = monotonic() + max(0, seconds)
+    # Return a completed-batch checkpoint before the enclosing worker deadline;
+    # cancellation at that same instant otherwise looks like a model timeout.
+    # This is persistence headroom within the existing allowance, not a new cap
+    # on the number of originals or batches prepared across native dispatches.
+    deadline = monotonic() + max(0, seconds - min(5, max(0, seconds) / 2))
     native = getattr(service, 'db', None) is not None
     if native and not getattr(wire, 'work', {}).get('run_id'):
         raise DomainError('Native retrieval requires its active investigation scope.', 422, 'research_evidence_scope_invalid')

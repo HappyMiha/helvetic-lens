@@ -302,17 +302,23 @@ def authorize_or_pause(session, run, parent):
 async def execute(service, job_id, worker):
     lease = f"investigation-{uuid4()}"
     work = None
+    reserved_resources = {}
     with service.write_guard, service.db.session() as session:
         lock_organization(session, service.organization_id)
         job = jobs.claim(session, job_id, lease)
         if not job:
             session.commit()
             return {"id": job_id, "state": "not_claimed"}
+        # Preparation and its commit consume this same lease. An operation
+        # timeout starting later must not extend beyond the claimed deadline.
+        lease_deadline = perf_counter() + max(0, (job.heartbeat_at.replace(tzinfo=UTC)
+            + timedelta(seconds=service.settings.job_lease_seconds) - utcnow()).total_seconds())
         run = session.get(Investigation, job.target_id)
         if not run or run.job_id != job.id:
             jobs.cancel(session, job.id)
             session.commit()
             return {"id": job_id, "state": "cancelled"}
+        lease_bound = unmetered(run)
         parent = session.get(ProductDossier, run.dossier_id)
         if run.status not in ACTIVE or not authorize_or_pause(session, run, parent):
             finish_or_yield(session, run, job)
@@ -485,6 +491,7 @@ async def execute(service, job_id, worker):
                                 > run.research_state["limits"]["search_requests"]):
                             work["skipped_paid_search"] = "Episode paid-search allowance reached; free sources continue."
                             search_requests = 0
+                        used_before = deepcopy(run.research_state.get("used", {}))
                         if not skipped_read and not research.reserve_step(session, run, branch, state, branch.phase, parent.product,
                                 search_requests=search_requests, local_read=bool(work.get("retained_document") or work.get("retained_capture") or work.get("file"))):
                             work = None
@@ -495,6 +502,9 @@ async def execute(service, job_id, worker):
                                 adjusted = deepcopy(run.research_state)
                                 adjusted["used"]["search_requests"] -= search_requests
                                 run.research_state = adjusted
+                        reserved_resources = {key: amount - used_before.get(key, 0)
+                            for key, amount in run.research_state.get("used", {}).items()
+                            if amount > used_before.get(key, 0)}
                     if work:
                         operation_seconds = pacing.operation_seconds(run, work["phase"], service.settings)
                         if research.enabled(run):
@@ -505,7 +515,9 @@ async def execute(service, job_id, worker):
                         branch.status = run.status = "running"
                         state["inflight"] = str(uuid4())
                         work["token"] = state["inflight"]
-                        work["deadline_seconds"] = min(operation_seconds, service.settings.job_lease_seconds - 5,
+                        lease_seconds = (max(0, lease_deadline - perf_counter() - 5) if lease_bound
+                            else service.settings.job_lease_seconds - 5)
+                        work["deadline_seconds"] = min(operation_seconds, lease_seconds,
                             work.get("remaining_seconds", operation_seconds), work.get("timeout_seconds", operation_seconds))
                         state.setdefault("steps", []).append({"id": state["inflight"], "phase": branch.phase,
                             "status": "running", "started_at": iso(utcnow()),
@@ -524,15 +536,22 @@ async def execute(service, job_id, worker):
     # Every paid/network operation has a committed receipt before it begins.
     # The hard deadline is shorter than the lease even for small operator leases.
     result, failed, transient = None, False, None
+    dispatch_deferred = False
     packing_failure, incomplete_output, validation_failure = False, False, None
     started = perf_counter()
     try:
-        seconds = work["deadline_seconds"]
-        async with asyncio.timeout(seconds):
-            if work.get("skip"):
-                failed = True
-            else:
-                result = await research_gateway.execute(service, work, seconds)
+        seconds = (min(work["deadline_seconds"], max(0, lease_deadline - perf_counter() - 5))
+            if lease_bound else work["deadline_seconds"])
+        if seconds <= 0:
+            # Commit may have used the last dispatch time. No external request
+            # began, so this is neither a provider failure nor an interrupted call.
+            dispatch_deferred = failed = True
+        else:
+            async with asyncio.timeout(seconds):
+                if work.get("skip"):
+                    failed = True
+                else:
+                    result = await research_gateway.execute(service, work, seconds)
     except Exception as exc:
         # Provider bodies and untrusted source strings never become job errors,
         # integration-log messages or publicly observable reasoning.
@@ -549,7 +568,8 @@ async def execute(service, job_id, worker):
         run = session.get(Investigation, work["run_id"])
         if (not job or not run or run.job_id != job.id or job.state != "running" or job.lease_owner != lease
                 or job.cancel_requested or run.status not in ACTIVE or run.generation != work["generation"]
-                or job.heartbeat_at.replace(tzinfo=UTC) < utcnow() - timedelta(seconds=service.settings.job_lease_seconds)):
+                or (not dispatch_deferred and job.heartbeat_at.replace(tzinfo=UTC)
+                    < utcnow() - timedelta(seconds=service.settings.job_lease_seconds))):
             return {"id": job_id, "state": "stale_result_discarded"}
         parent = session.get(ProductDossier, run.dossier_id)
         if not authorize_or_pause(session, run, parent):
@@ -606,6 +626,27 @@ async def execute(service, job_id, worker):
             research.elapsed(run, perf_counter() - started)
             if work.get("model_route") and (work["phase"] == "extract" or failed):
                 state.setdefault("model_routes", []).append({"step_id": work["token"], "phase": work["phase"], **work["model_route"]})
+        if dispatch_deferred and run.status in ACTIVE:
+            # Only release our unchanged token; no result or proof is accepted
+            # under an expired lease. The next dispatch re-prepares current data.
+            research_gateway.finish(state, work, None, failed=True, elapsed=perf_counter() - started)
+            state.pop("inflight", None)
+            if work["phase"] == "read" and state.get("attempted_urls", [])[-1:] == [work["item"]["url"]]:
+                state["attempted_urls"].pop()
+            state["steps"][-1].update(status="pending", finished_at=iso(utcnow()))
+            state["steps"][-1]["execution"].update(outcome="not_started", model_requests=0)
+            if reserved_resources:
+                data = deepcopy(run.research_state)
+                for key, amount in reserved_resources.items():
+                    data["used"][key] = max(0, data["used"].get(key, 0) - amount)
+                run.research_state = data
+            checkpoint(session, run, branch, "preparation_yield", state)
+            # No completed batch exists here: retain the existing durable-job
+            # attempt limit instead of renewing it for unchanged preparation.
+            jobs.fail(session, job.id, code="research_preparation_deadline",
+                detail="Local preparation used this work step before any external request began. Saved research is retained.")
+            session.commit()
+            return {"id": job_id, "state": job.state}
         # A temporary provider outage is not a source finding. Preserve this
         # exact phase and its saved reading, then resume via the native job.
         # Retry the actual provider input. Accounting/history updates in the
@@ -883,7 +924,10 @@ async def execute(service, job_id, worker):
                 advance(branch, state)
         if not failed and not qualified_delivery:
             for previous in state["steps"][:-1]:
-                if (previous.get("status") == "unavailable" and previous.get("phase") == work["phase"]
+                recoverable = (previous.get("status") == "unavailable"
+                    or (previous.get("status") == "pending"
+                        and previous.get("execution", {}).get("outcome") == "not_started"))
+                if (recoverable and previous.get("phase") == work["phase"]
                         and previous.get("source_id") == work.get("source_id")
                         and previous.get("document_index") == work.get("document_index")
                         and previous.get("source_url") == work.get("item", {}).get("url")):

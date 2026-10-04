@@ -3861,3 +3861,56 @@ Core 3162ad9 / Sites 92 remain unchanged; candidate publication is pending.
 Migration to an official API remains a later step. See the parent workspace's
 `local-codex-monitor/activation.json`, `astra-public-case.review.json` in that
 folder, and `end-to-end-checkpoint.json`.
+
+
+## Resume local retrieval preparation after complete reading
+
+Scope recorded 4 October, MV2-020/023. A real owner-authorized continuation
+finished reading and analysing its originals, then spent the reflection step on
+local embedding preparation until the job lease expired. The next delivery
+classified the still-live preparation as an interrupted model request and left
+a failed branch. The supported answer remained available. A separate receipt
+defect marked a fully analysed original incomplete when some of its portions
+were also captured through another branch: duplicate reuse was consulted before
+the document's own current, question-bound full-reading receipt. Both defects
+are general research lifecycle failures, independent of the source topic.
+
+For the current admitted, unmetered research path, use the existing local semantic
+index, durable worker checkpoints, source hashes and current access checks to make
+preparation resume safely across deliveries. Legacy metered scheduling is unchanged.
+Preparation must not discard complete reading or repeat an uncertain external
+model request. Do not increase the whole-research budget, truncate a document,
+change models, create fixture dossiers in production or rewrite the user's
+question. No new source access is required; the existing index and local embedding
+endpoint are available.
+
+Acceptance: a large retained evidence set can require more than one preparation
+delivery, preserves committed preparation, and reaches the actual reflection
+without losing completed reads. Cancellation, changed evidence and stale leases
+remain fenced. A search that never started cannot count as an attempted fetch
+or prevent ordinary query refinement after its actual replacement completes.
+A document with mixed original/duplicate portions must keep its
+own exact current receipt; changed hashes, snapshots, reading context or source
+permissions must still invalidate it. Duplicate sources do not become generally
+visible merely because they have an own reading receipt. Run focused affected
+regressions, API lint and the backlog check;
+then publish and verify the exact Core release before resuming the existing
+failed production branch through the normal retry action. Keep the other completed
+real dossier and the previously accepted isolated case unchanged.
+
+Implemented remaining-lease dispatch deadlines, completed local batch retention
+and a no-request receipt when preparation or its commit uses the dispatch window.
+The native attempt limit still applies to preparation that makes no progress.
+A successful retry links that receipt without representing it as a performed
+search, preserving ordinary query refinement. Exact own-reading receipts now
+take precedence over cross-document duplicate reuse without changing source
+visibility or current evidence checks.
+
+Validation: 33 affected worker/retrieval cases and 12 own-reading/duplicate cases
+pass, including saved 80-of-96-window preparation, actual no-dispatch search
+recovery, changed evidence and source permissions. Five older continuation
+fixtures were updated to the current cited mission-checkpoint contract; their
+previous failure was also reproduced against the pre-change worker. Exact API
+Ruff, the backlog structure guard and diff checks pass. These checks used local
+fixtures, with no new production dossiers or provider requests. Publication and
+the guarded same-run production retry are recorded in the parent checkpoint.

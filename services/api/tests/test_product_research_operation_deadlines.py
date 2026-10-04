@@ -56,7 +56,8 @@ def test_real_dispatch_records_operator_model_deadline_with_lease_and_phase_fenc
                 receipt = branch.checkpoint['steps'][-1]
                 assert receipt['status'] == 'running'
                 assert receipt['id'] == work['token']
-                assert receipt['deadline_seconds'] == work['deadline_seconds'] == seconds == expected
+                assert seconds <= work['deadline_seconds'] == receipt['deadline_seconds'] <= expected
+                assert seconds > expected - 5
             dispatch.append(seconds)
         return await original_execute(service, work, seconds)
 
@@ -74,7 +75,7 @@ def test_real_dispatch_records_operator_model_deadline_with_lease_and_phase_fenc
         tick(service, run['id'])
         if budgets:
             break
-    assert dispatch == [expected] and len(budgets) == 1
+    assert len(dispatch) == len(budgets) == 1 and expected - 5 < dispatch[0] <= expected
     assert expected - 5 < budgets[0] <= expected
     assert service.settings.apertus_timeout_seconds == provider_timeout
     with service.db.session() as session:
