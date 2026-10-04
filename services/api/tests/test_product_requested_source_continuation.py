@@ -147,6 +147,9 @@ def test_source_work_limits_are_named_current_and_owned_without_replacing_checke
     session, run, branch, source, _ = frontier
     own(frontier)
     current = requested_originals.outcomes(session, run)
+    current.append({'id': 'optional-target', 'question_id': current[0]['question_id'],
+        'requested_source': 'Additional publication catalogue', 'origin': 'planner_interpretation',
+        'status': 'not_identified', 'reason': 'The planned source target has not been identified.'})
     monkeypatch.setattr(requested_originals, 'outcomes', lambda *args, **kwargs: deepcopy(current))
     passage = source.snapshot['excerpts'][0]
     supplied = {'sources': [{'id': source.id, 'kind': source.kind, 'sha256': source.sha256,
@@ -162,6 +165,8 @@ def test_source_work_limits_are_named_current_and_owned_without_replacing_checke
     assert view['answer']['status'] == 'partial'
     assert view['requested_sources'] == current
     assert view['answer']['limitations'] == [answer['limitations'][0], *mission.source_work_limits(current)]
+    assert len(view['answer']['limitations']) == 2, 'Only the actual request adds a completion limit'
+    assert mission.context(session, run)['previous_checkpoint']['answer'] == view['answer']
     assert 'source_work' not in json.dumps(view)
     assert 'source_work' not in mission.context(session, run)['previous_checkpoint']
     assert requirements.FIELD not in json.dumps(mission.context(session, run)['attempted_questions'])
@@ -171,12 +176,57 @@ def test_source_work_limits_are_named_current_and_owned_without_replacing_checke
     assert resolved['answer']['status'] == 'possible_answer'
     assert resolved['answer']['limitations'] == answer['limitations']
     assert resolved['answer']['points'] == view['answer']['points']
+    assert mission.context(session, run)['previous_checkpoint']['answer'] == resolved['answer']
+    assert resolved['requested_sources'][1] == current[1], 'The unresolved discovery target remains visible'
     current[0].update(status='reading_incomplete', reason=requested_originals.REASONS['reading_incomplete'])
     changed = mission.project(session, run)
     assert changed['answer']['status'] == 'partial'
     assert changed['answer']['limitations'] == [answer['limitations'][0], *mission.source_work_limits(current)]
+    assert mission.context(session, run)['previous_checkpoint']['answer'] == changed['answer']
     assert run.research_state['mission']['checkpoints'] == saved
     assert 'identity' not in changed['requested_sources'][0] and 'sha256' not in changed['requested_sources'][0]
+
+
+@pytest.mark.parametrize('base_status,has_receipt', [('possible_answer', True), ('partial', True), ('partial', False)])
+def test_saved_planner_penalty_is_removed_only_with_its_exact_host_receipt(frontier, monkeypatch, base_status, has_receipt):
+    session, run, _, source, _ = frontier
+    current = [{'id': 'optional-target', 'question_id': 'owner', 'origin': 'planner_interpretation',
+        'requested_source': 'Additional publication catalogue', 'status': 'not_identified',
+        'reason': 'The planned source target has not been identified.'}]
+    monkeypatch.setattr(requested_originals, 'outcomes', lambda *args, **kwargs: deepcopy(current))
+    passage = source.snapshot['excerpts'][0]
+    supplied = {'sources': [{'id': source.id, 'kind': source.kind, 'sha256': source.sha256,
+        'url': source.url, 'title': source.title, 'excerpts': deepcopy(source.snapshot['excerpts'])}]}
+    answer = {'status': base_status, 'points': [{'statement': passage['text'], 'evidence': [{
+        'source_id': source.id, 'locator': passage['passage'], 'quote': passage['text'], 'role': 'support'}]}],
+        'limitations': ['An independently assessed qualification remains.']}
+    result = SimpleNamespace(mission_checkpoint=mission.Checkpoint(answer=answer, action='finish',
+        reason='The checked answer is retained.'), clarification='', directions=[])
+    mission.apply(session, run, supplied, result)
+    assert run.research_state['mission']['checkpoints'][-1]['answer']['status'] == base_status
+    assert run.research_state['mission']['checkpoints'][-1]['answer']['limitations'] == answer['limitations']
+    # An immutable old delivery may contain the former automatic planner limit.
+    state = deepcopy(run.research_state)
+    record = state['mission']['checkpoints'][-1]
+    notice = 'Planned source target “Additional publication catalogue”: The planned source target has not been identified.'
+    record['answer']['status'] = 'partial'
+    record['answer']['limitations'].append(notice)
+    if has_receipt:
+        record['source_work'] = {'status': base_status, 'limitations': [notice]}
+    else:
+        record.pop('source_work', None)
+    run.research_state = state
+    saved = deepcopy(run.research_state)
+    public = mission.project(session, run)
+    context = mission.context(session, run)
+    assert public['answer'] == context['previous_checkpoint']['answer']
+    assert public['answer']['status'] == (base_status if has_receipt else 'partial')
+    assert public['answer']['limitations'] == answer['limitations'] + ([] if has_receipt else [notice])
+    assert public['answer']['points'] == record['answer']['points']
+    assert public['requested_sources'] == context['requested_sources'] == current
+    assert 'source_work' not in context['previous_checkpoint']
+    assert 'source_work' not in public['checkpoints'][-1]
+    assert run.research_state == saved, 'Read-only projection must not rewrite the stored delivery or proofs'
 
 
 def test_legacy_mission_has_no_fabricated_requested_source_status(frontier):

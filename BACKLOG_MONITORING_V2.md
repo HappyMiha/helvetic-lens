@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: published Astra journey and readers verified; repair resumable local retrieval preparation after a confirmed large-document lease interruption. [Evidence](docs/PRODUCT_END_TO_END.md).
+Question-to-dossier IN PROGRESS: separate source checks from answer gaps; old Codex/Astra dossier reruns accepted. [Evidence](docs/PRODUCT_END_TO_END.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -2778,7 +2778,7 @@ above supersedes the River-only count limitation for readable Today queues.
 
 ### MV2-020 — Investigate: states, diffs, evidence and history
 
-**Current direction:** IN PROGRESS: retain completed reading when long local semantic preparation spans worker leases; published Astra journey remains verified within its scenario. [Scope/acceptance](docs/PRODUCT_END_TO_END.md#resume-local-retrieval-preparation-after-complete-reading).
+**Current direction:** IN PROGRESS: source-check history distinct from answer gaps; preserve full-reading requirements. [Scope/acceptance](docs/PRODUCT_END_TO_END.md#separate-source-checks-from-answer-gaps).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 
 Independent source access / local SearXNG: activated as e97043209b7a. Evidence in

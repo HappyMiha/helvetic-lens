@@ -3959,3 +3959,59 @@ its stub omitted the required mission answer; only that local fixture was brough
 to the current cited-answer contract, preserving completion and privacy assertions.
 Both continuation/privacy variants now pass: 27 unique affected cases verified
 in total, with independent review, exact API Ruff and diff checks passing.
+
+## Separate source checks from answer gaps
+
+Scope recorded 5 October, MV2-020/023. Both owner-authorized old dossiers have
+completed their Codex/Astra reruns, with original-document and citation acceptance.
+One delivered answer was automatically labelled partial solely because an
+auxiliary catalogue page proposed by the planner was not found. The requested
+full report was read and analysed and the actual question was answered. Keep
+these completed investigations unchanged; use their retained receipts for
+read-only acceptance, without another research or inference run.
+
+The source-target ledger records provenance, not semantic necessity. A
+planner-interpreted target can name either a genuinely requested original or
+an auxiliary lead. Do not automatically convert every unresolved planner target
+into an answer limitation. Preserve independently assessed question gaps, explicit
+literal requests and submitted URLs, incomplete full-document reading, source
+identity checks and all current acquisition/continuation behavior. Reconcile only
+host-owned source notices using their existing receipts, both in the public
+projection and in the previous checkpoint supplied to later synthesis. Do not
+rewrite immutable checkpoints or remove text based on a prefix.
+
+Dependencies and readiness: existing question/source ledgers, validated answer
+and reading receipts, mission API and Legal/Pharma readers; no new providers,
+credentials or source access. Both readers must retain source checks in a
+collapsed, separately labelled history area, outside substantive answer gaps.
+An interpreted source name must not be presented as an exact user requirement
+or proof that its contents were found.
+
+Acceptance: unresolved planner acquisition alone does not downgrade an otherwise
+answered question; independently authored partial answers and missing requested
+originals remain incomplete. Explicit literal/URL requirements still produce
+named source limitations, including unread or unanalysed material. Legacy records
+without a host receipt remain conservative. Current source/access changes still
+withdraw stale answers. Public projection and subsequent model context agree;
+checked points, citations, stored history and acquisition behavior are unchanged.
+Verify focused Core regressions, exact API lint and the backlog guard, and both
+reader contracts/renders with normal client checks. Publish normally and verify
+the exact releases; do not rerun accepted dossiers or unchanged native evaluations.
+
+Implemented with the existing source-work receipt. Only literal requests and
+submitted URLs impose an automatic completion limitation; absent-origin legacy
+callers retain their prior conservative treatment. Current planner target outcomes
+remain available, while independently authored answer gaps and incomplete document
+analysis are unchanged. The previous checkpoint supplied to synthesis uses the
+same reconciliation as the reader, preventing stale host notices from returning.
+
+Validation: 41 focused Core cases, exact API Ruff and the backlog guard pass.
+The actual retained completed answer restores its recorded possible-answer status
+and removes only the one host-owned ancillary notice, preserving both points,
+all 15 exact citation bindings, both source outcomes and immutable history. This
+acceptance used no inference or production writes. Both clients pass 474 tests,
+lint, type checking and production builds. Their collapsed Source checks section
+keeps provenance and all five acquisition/reading states separate from substantive
+answer gaps. Independent Core and reader reviews found no blocker. Exact-release
+activation and the final read-only production projection check are recorded in
+the parent release checkpoint; broader architecture acceptance remains open.

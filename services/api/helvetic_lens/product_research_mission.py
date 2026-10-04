@@ -202,10 +202,12 @@ def continue_required_sources(session, run, branch, outcomes):
 
 
 def source_work_limits(outcomes):
-    """Finite host workflow notices, not scientific/legal evidence gaps."""
-    return [("Planned source target" if item.get("origin") == "planner_interpretation" else "Requested source")
-        + f" “{item['requested_source']}”: {item['reason']}"
-        for item in outcomes if item["status"] != "matched_read"]
+    """Only requested originals impose an automatic answer-completion limit."""
+    # Current outcomes always name their origin. Older callers without that
+    # distinction retain the original requested-source behavior conservatively.
+    return [f"Requested source “{item['requested_source']}”: {item['reason']}"
+        for item in outcomes if item["status"] != "matched_read"
+        and item.get("origin", "literal_request") in {"literal_request", "submitted_url"}]
 
 
 def with_source_work(answer, outcomes, previous=None):
@@ -233,7 +235,7 @@ def context(session, run):
     requested = outcomes(session, run)
     previous = deepcopy(state["checkpoints"][-1]) if state["checkpoints"] else None
     if previous:
-        previous.pop("source_work", None)
+        previous["answer"], _ = with_source_work(previous["answer"], requested, previous.pop("source_work", None))
     return {"contract": CONTRACT, "round": state["round"], "question": run.question,
         "previous_checkpoint": previous,
         "completion_policy": "Answer the original question with honest limits after needed whole-document reading; optional extensions do not block delivery. No internal execution budget.",

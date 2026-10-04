@@ -193,10 +193,21 @@ def test_planned_notice_is_workflow_information_not_a_user_requirement_or_answer
         'reason': 'The planned source target has not been identified in current completed acquisition work.'}
     delivered, _ = mission.with_source_work(answer, [outcome])
     assert delivered['points'] == points and answer['status'] == 'possible_answer'
+    assert delivered == answer
+    assert outcome['status'] == 'not_identified'
+
+
+@pytest.mark.parametrize('origin', ['literal_request', 'submitted_url', None])
+def test_real_or_legacy_missing_requested_original_still_limits_completion(origin):
+    answer = {'status': 'possible_answer', 'points': [], 'limitations': []}
+    outcome = {'id': 'required', 'question_id': 'owner', 'requested_source': NAMES[0],
+        'status': 'not_identified', 'reason': originals.REASONS['not_identified'],
+        **({'origin': origin} if origin is not None else {})}
+    delivered, receipt = mission.with_source_work(answer, [outcome])
     assert delivered['status'] == 'partial'
-    assert delivered['limitations'][0] == answer['limitations'][0]
-    assert delivered['limitations'][1].startswith('Planned source target “Archive Board official terms”')
-    assert 'Requested source' not in delivered['limitations'][1]
+    assert delivered['limitations'] == [f'Requested source “{NAMES[0]}”: {outcome["reason"]}']
+    assert receipt == {'status': 'possible_answer', 'limitations': delivered['limitations']}
+    assert answer == {'status': 'possible_answer', 'points': [], 'limitations': []}
 
 
 def test_new_plan_wire_binding_does_not_reuse_previous_word_reference_preparation():
