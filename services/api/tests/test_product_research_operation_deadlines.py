@@ -102,7 +102,7 @@ def test_model_extension_preserves_capture_and_orientation_caps_through_real_res
     assert result['exploration']['status'] == 'ready', result['stop_reason']
     assert trace['reads'] and trace['briefings']
     for phase in ('plan', 'extract', 'reflect', 'brief'):
-        assert any(kind == phase and seconds == 180 for kind, seconds in dispatch), phase
-    assert any(kind == 'orient' and seconds == 45 for kind, seconds in dispatch)
+        assert any(kind == phase and 175 < seconds <= 180 for kind, seconds in dispatch), phase
+    assert any(kind == 'orient' and 40 < seconds <= 45 for kind, seconds in dispatch)
     assert all(seconds <= 90 for kind, seconds in dispatch if kind in {'recall', 'search', 'gate', 'read'})
     assert all(seconds <= service.settings.job_lease_seconds - 5 for _, seconds in dispatch)

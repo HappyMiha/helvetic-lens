@@ -299,6 +299,77 @@ def authorize_or_pause(session, run, parent):
         return False
 
 
+class _LeaseLost(Exception):
+    pass
+
+
+class _DispatchDeferred(Exception):
+    pass
+
+
+def _renew_active_lease(service, job_id, lease, work):
+    """Renew a live owner only; this is not evidence or result authorization."""
+    with service.write_guard, service.db.session() as session:
+        lock_organization(session, service.organization_id)
+        job = session.scalar(select(Job).where(Job.id == job_id).with_for_update())
+        run = session.get(Investigation, work["run_id"])
+        branch = session.get(InvestigationBranch, work["branch_id"])
+        if (not job or not run or not branch or run.job_id != job.id or job.state != "running"
+                or job.lease_owner != lease or job.cancel_requested or run.status not in ACTIVE
+                or run.generation != work["generation"] or branch.investigation_id != run.id
+                or branch.checkpoint.get("inflight") != work["token"]
+                or not job.heartbeat_at or job.heartbeat_at.replace(tzinfo=UTC)
+                    < utcnow() - timedelta(seconds=service.settings.job_lease_seconds)):
+            raise _LeaseLost()
+        if not jobs.heartbeat(session, job.id, lease):
+            raise _LeaseLost()
+        session.commit()
+
+
+async def _execute_owned(service, job_id, lease, work, seconds):
+    # Lease liveness is separate from the unchanged, absolute operation limit.
+    # Renew before dispatch: preparation may have consumed most of the lease.
+    deadline = perf_counter() + seconds
+
+    def renew():
+        try:
+            _renew_active_lease(service, job_id, lease, work)
+        except Exception as exc:
+            raise _LeaseLost() from exc
+
+    renew()
+    remaining = deadline - perf_counter()
+    if remaining <= 0:
+        raise _DispatchDeferred()
+
+    async def operation():
+        remaining = deadline - perf_counter()
+        if remaining <= 0:
+            raise _DispatchDeferred()
+        async with asyncio.timeout(remaining):
+            return await research_gateway.execute(service, work, remaining)
+
+    async def heartbeat():
+        while True:
+            await asyncio.sleep(min(service.settings.job_lease_seconds / 3, max(0, deadline - perf_counter())))
+            if perf_counter() >= deadline:
+                return  # Cleanup cannot keep renewing an expired operation.
+            renew()
+
+    task = asyncio.create_task(operation())
+    pulse = asyncio.create_task(heartbeat())
+    try:
+        done, _ = await asyncio.wait({task, pulse}, return_when=asyncio.FIRST_COMPLETED)
+        if pulse in done:
+            pulse.result()  # A lost owner cancels the operation before any result is used.
+        return await task
+    finally:
+        for pending in (task, pulse):
+            if not pending.done():
+                pending.cancel()
+        await asyncio.gather(task, pulse, return_exceptions=True)
+
+
 async def execute(service, job_id, worker):
     lease = f"investigation-{uuid4()}"
     work = None
@@ -546,12 +617,17 @@ async def execute(service, job_id, worker):
             # Commit may have used the last dispatch time. No external request
             # began, so this is neither a provider failure nor an interrupted call.
             dispatch_deferred = failed = True
+        elif work.get("skip"):
+            failed = True
+        elif lease_bound:
+            result = await _execute_owned(service, job_id, lease, work, seconds)
         else:
             async with asyncio.timeout(seconds):
-                if work.get("skip"):
-                    failed = True
-                else:
-                    result = await research_gateway.execute(service, work, seconds)
+                result = await research_gateway.execute(service, work, seconds)
+    except _DispatchDeferred:
+        dispatch_deferred = failed = True
+    except _LeaseLost:
+        return {"id": job_id, "state": "stale_result_discarded"}
     except Exception as exc:
         # Provider bodies and untrusted source strings never become job errors,
         # integration-log messages or publicly observable reasoning.

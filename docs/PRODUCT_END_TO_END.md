@@ -3926,3 +3926,36 @@ model and single-line credential. Docker defaults and the Swisscom endpoint
 restriction are unchanged. The actual 62-field production configuration passes
 without displaying values; the 32-case deployment validation module and exact
 API/script lint pass.
+
+The deployed recovery correctly retained complete originals and completed the
+previously interrupted reflection. It also acquired and fully analysed a distinct
+updated original and its short archive page. A later finalization step exposed a
+second lease boundary: two successful model responses were followed by an expired
+lease rejection after 303 seconds, leaving no durable private synthesis receipt.
+The fixed five-second persistence margin cannot guarantee safe completion of
+synchronous packing or database work around an asynchronous operation timeout.
+All eight completed documents and the prior public answer remain retained.
+
+Follow-up scope: preserve an actively owned admitted research job's lease during
+its existing bounded operation and persistence, using ownership-checked renewal.
+Do not renew an expired or replaced owner, cancelled job, changed generation or
+invalid run; keep the absolute operation deadline and final access/input fences.
+No larger research budget or additional model calls are authorized for validation.
+Verify meaningful live-renewal, lost-owner/expiry and cancellation cases, then
+publish normally before retrying only the interrupted finalization in the same
+real investigation. Do not fabricate a saved answer from transport success.
+
+The admitted-operation worker now renews only its live, current job owner, with
+matching run generation and in-flight token. Renewal begins before dispatch;
+its own cost and task scheduling consume the original absolute operation window.
+The pulse stops at that deadline, and both child tasks are cancelled and joined
+on every exit. Existing result, current-source and access fences remain intact.
+Twelve focused cases pass, including completed private work retained across the
+original lease boundary and resumed without another read or inference, refusal
+of expired/replaced/cancelled ownership, startup cost and child-task cleanup.
+Thirteen existing preparation and operation-deadline cases also pass. A separate
+legacy continuation fixture failed identically against the prior worker because
+its stub omitted the required mission answer; only that local fixture was brought
+to the current cited-answer contract, preserving completion and privacy assertions.
+Both continuation/privacy variants now pass: 27 unique affected cases verified
+in total, with independent review, exact API Ruff and diff checks passing.

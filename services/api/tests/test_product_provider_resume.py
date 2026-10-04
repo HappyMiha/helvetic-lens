@@ -294,6 +294,20 @@ def test_completed_review_work_continues_automatically_with_source_and_privacy_f
 
     client, service, identity, model = signed
     adapters(monkeypatch, service, model)
+    scripted = model.complete
+
+    async def completed_mission(*args, **kwargs):
+        value = json.loads(await scripted(*args, **kwargs))
+        if 'mission_checkpoint' in kwargs['response_schema'].get('properties', {}):
+            first = value['findings'][0]
+            value['mission_checkpoint'] = {'action': 'finish',
+                'reason': 'The retained source supports this finding; remaining uncertainty is explicit.',
+                'answer': {'status': 'partial', 'limitations': value['uncertainties'],
+                    'points': [{'statement': first['statement'], 'evidence': [
+                        {**{key: first[key] for key in ('source_id', 'locator', 'quote')}, 'role': 'support'}]}]}}
+        return json.dumps(value)
+
+    monkeypatch.setattr(model, 'complete', completed_mission)
     root, run, _ = explore(client)
     execute, calls, sources = research_gateway.execute, [], []
     marker = 'PRIVATE REVIEW CHECKPOINT'
@@ -313,7 +327,9 @@ def test_completed_review_work_continues_automatically_with_source_and_privacy_f
         return await execute(service, work, seconds)
     monkeypatch.setattr(research_gateway, 'execute', yielded)
     result = complete(client, service, root + '/investigations', run)
-    assert result['status'] == ('paused' if withdraw else 'completed')
+    assert result['status'] == ('paused' if withdraw else 'completed'), result['stop_reason']
+    if not withdraw:
+        assert result['exploration']['mission']['answer']['points']
     assert len(calls) == (1 if withdraw else 2)
     assert marker not in json.dumps(result) and marker not in client.get(root + '/export').text
     with service.db.session() as session:
