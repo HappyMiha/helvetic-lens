@@ -14,9 +14,11 @@ from helvetic_lens import research_gateway
 from helvetic_lens.config import DomainError
 from helvetic_lens.db import utcnow
 from helvetic_lens.models import Job
+from helvetic_lens.product_exploration import Briefing
 from helvetic_lens.product_investigation_models import Investigation, InvestigationBranch
 from helvetic_lens.product_iterative_research import Gap
 from helvetic_lens.product_operations import fingerprint
+from helvetic_lens.product_research_mission import schema as mission_schema
 from helvetic_lens.research_final_review import DEFERRED_NOTICE
 from helvetic_lens.research_synthesis_resume import (
     EXHAUSTED_REVIEW,
@@ -39,14 +41,16 @@ def finish(client, service, root, run):
     pytest.fail('The ordinary native workflow did not stop')
 
 
-@pytest.mark.parametrize('withdraw,refresh_policy,reject_delivery', [
-    (False, False, False), (True, False, False), (False, True, False), (False, False, True)])
-def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_private_obligation(signed, monkeypatch, withdraw, refresh_policy, reject_delivery):
+@pytest.mark.parametrize('withdraw,refresh_policy,reject_delivery,handoff_outage', [
+    (False, False, False, False), (True, False, False, False), (False, True, False, False),
+    (False, False, True, False), (False, False, False, True)])
+def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_private_obligation(
+        signed, monkeypatch, withdraw, refresh_policy, reject_delivery, handoff_outage):
     client, service, identity, model = signed
     adapters(monkeypatch, service, model)
     model_complete = model.complete
 
-    async def mission(system, user, **kwargs):
+    async def mission_response(system, user, **kwargs):
         raw = await model_complete(system, user, **kwargs)
         if kwargs.get('response_schema', {}).get('title') != 'Briefing':
             return raw
@@ -59,7 +63,7 @@ def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_privat
             'next_checks': [], 'deepen_branches': []})
         return json.dumps(value)
 
-    monkeypatch.setattr(model, 'complete', mission)
+    monkeypatch.setattr(model, 'complete', mission_response)
     original, calls = research_gateway.execute, []
     private = 'PRIVATE UNREVIEWED ASSERTION MUST NOT BE DISPLAYED'
     checkpoint = {'stage': 'finalizing', 'binding': 'exact-draft-binding', 'raw': private,
@@ -83,11 +87,21 @@ def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_privat
             raise DomainError('Synthetic upstream timeout', 504, 'model_upstream_timeout')
         assert work[EXHAUSTED_REVIEW]['input_fingerprint'] == 'same-current-originals'
         assert work[KEY]['raw'] == private
+        assert work['automatic_review_handoff'] is (len(calls) == exhaustion_attempts + 1)
+        if handoff_outage:
+            work[KEY]['parts']['final_reviews']['clauses:new-checked-progress'] = {'overall': {'verdict': 'supported'}}
+            work['model_route'] = {'evidence_transport': {'input_fingerprint': 'same-current-originals'}}
+            raise DomainError('Subset coverage is still unavailable after new checked progress', 504, 'model_upstream_timeout')
         if reject_delivery and len(calls) == exhaustion_attempts + 2:
             assert work['retry_deferred_review'] is False
             assert work[KEY]['parts']['deferred_final_review']['status'] == 'pending'
         saved = deepcopy(work[KEY])
-        result = await original(service, work, seconds)
+        # This test owns the worker/publication boundary. Its checkpoint and
+        # reviewer are scripted; real hosted binding and no-redraft behavior are
+        # exercised separately in test_research_checked_delivery_gateway.py.
+        delivered_schema = mission_schema(Briefing)
+        result = delivered_schema.model_validate_json(await mission_response('', json.dumps(work['input']),
+            response_schema=delivered_schema.model_json_schema()))
         if len(calls) == exhaustion_attempts + 1:
             result.mission_checkpoint.answer.status = 'partial'
             result.mission_checkpoint.answer.limitations.append(DEFERRED_NOTICE)
@@ -113,14 +127,22 @@ def test_exhausted_review_delivers_checked_subset_and_same_id_retry_keeps_privat
 
     monkeypatch.setattr(research_gateway, 'execute', execute)
     root, run, _ = start(client)
-    initial = finish(client, service, root, run)
-    assert initial['status'] == 'failed' and initial['retry']['available'] and len(calls) == exhaustion_attempts
-    assert initial['exploration']['mission']['answer'] is None
+    delivered = finish(client, service, root, run)
+    assert len(calls) == exhaustion_attempts + 1, 'Exhaustion hands off once without repurchasing the pending review'
     url = root + '/investigations/' + run['id']
-    retry = post(client, url + '/control', {'action': 'retry', 'expected_revision': initial['revision']})
-    assert retry.status_code == 200, retry.text
-    delivered = finish(client, service, root, retry.json())
     assert private not in json.dumps(delivered) and private not in client.get(root + '/export').text
+    if handoff_outage:
+        assert delivered['status'] == 'failed' and delivered['retry']['available']
+        assert delivered['exploration']['mission']['answer'] is None
+        with service.db.session() as session:
+            state = session.get(InvestigationBranch, calls[0]).checkpoint
+            assert state['provider_retries'] == {'same-current-originals': 3}
+            assert 'clauses:new-checked-progress' in state[KEY]['parts']['final_reviews']
+            assert state['steps'][-1]['error_code'] == 'model_upstream_timeout'
+            assert 'retry_at' not in state['steps'][-1]
+        tick(service, run['id'])
+        assert len(calls) == exhaustion_attempts + 1, 'New progress must not renew the exhausted automatic allowance'
+        return
     if withdraw:
         assert delivered['status'] == 'paused'
         with service.db.session() as session:

@@ -9,6 +9,7 @@ from . import product_exploration as exploration
 from . import product_exploration_progress as progress
 from . import product_read_relevance as relevance
 from .product_api import fail
+from .product_investigation_models import InvestigationSource
 from .product_investigations import Citation, citation
 from .product_models import ProductDossier
 from .product_operations import fingerprint
@@ -112,6 +113,13 @@ def current(session, run):
     questions = {q["id"]: q["question"] for q in run.research_state.get("questions", [])}
     for record in saved:
         source = available.get(record.get("source_id"))
+        dependency = record.get("duplicate_reading_dependency")
+        if not source or dependency is not None:
+            from .product_document_analysis import current_duplicate_reading
+
+            source = source or session.get(InvestigationSource, record.get("source_id"))
+            if not source or not current_duplicate_reading(session, run, source, dependency):
+                return False
         if (not source or record.get("fingerprint") != fingerprint({k: v for k, v in record.items() if k != "fingerprint"})
                 or record.get("source_pin") != source_pin(source)
                 or record.get("original_question") != run.question
@@ -123,7 +131,8 @@ def current(session, run):
 
 def context(run, supplied):
     ids = {s["id"] for s in supplied.get("sources", [])}
-    readings = [{k: deepcopy(v) for k, v in r.items() if k not in {"fingerprint", "source_pin", "policy_fingerprint"}}
+    readings = [{k: deepcopy(v) for k, v in r.items() if k not in {
+        "fingerprint", "source_pin", "policy_fingerprint", "duplicate_reading_dependency"}}
         for r in state(run).get("applicability_readings", []) if r["source_id"] in ids]
     assessed = {r["source_id"] for r in readings if r["status"] == "assessed"}
     policy = state(run)["applicability_policy"]
@@ -186,6 +195,11 @@ def validate(session, run, source, work, result):
     value = {"contract": CONTRACT, "source_id": source.id, "question_id": target["question_id"],
         "question": target["question"], "original_question": run.question, "status": status, "checks": checks,
         "source_pin": source_pin(source), "policy_fingerprint": state(run)["applicability_policy"]["fingerprint"]}
+    if work.get("duplicate_analysis_fallback"):
+        from .product_document_analysis import duplicate_reading_dependency
+
+        value["duplicate_reading_dependency"] = duplicate_reading_dependency(
+            work["duplicate_analysis_fallback"], work["branch_id"])
     return {**value, "fingerprint": fingerprint(value)}
 
 

@@ -135,8 +135,8 @@ class AssessmentEvidence(Citation):
 
 
 class AssessmentPoint(legal_profiles.Input):
-    statement: str = Field(min_length=5, max_length=700)
-    evidence: list[AssessmentEvidence] = Field(min_length=1, max_length=8)
+    statement: str = Field(min_length=5)
+    evidence: list[AssessmentEvidence] = Field(min_length=1)
 
 
 class AssessmentOutcome(legal_profiles.Input):
@@ -223,9 +223,10 @@ def sources(session, run):
 @read_view
 def prepare(session, run, *, early=False):
     from .product_document_analysis import compact_sources
+    from .product_research_admission import unmetered
 
     value = {"original_question": run.question,
-        "sources": compact_sources(session, run, sources(session, run).values()),
+        "sources": compact_sources(session, run, sources(session, run).values(), retain_originals=unmetered(run)),
         "open_questions": [{"question": q["question"], "status": q["status"]}
             for q in run.research_state["questions"]]}
     synthesis_sources = deepcopy(value["sources"])
@@ -268,6 +269,8 @@ def update(run, **values):
 
 
 def schedule(session, run, branches):
+    from .product_research_admission import unmetered
+
     if not enabled(run):
         return False
     early = next((b for b in branches if b.phase == "orient"), None)
@@ -278,12 +281,13 @@ def schedule(session, run, branches):
         return False
     if any(b.status in ACTIVE for b in branches):
         data = run.research_state
-        # One optional checkpoint, from read evidence only. Retain a request for
-        # further work AND the existing final-brief reserve. Never enqueue twice.
+        # One optional checkpoint, from read evidence only. Legacy metered runs
+        # retain their final-brief reserve; admitted research has no total cap.
         if (not early and data["exploration"]["status"] == "exploring"
                 and any(b.status in ACTIVE and b.checkpoint.get("question_id") for b in branches)
-                and data["used"].get("model_calls", 0) + 3 <= data["limits"]["model_calls"]
-                and data["limits"]["active_seconds"] - data["used"].get("active_seconds", 0) >= 45
+                and (unmetered(run) or (
+                    data["used"].get("model_calls", 0) + 3 <= data["limits"]["model_calls"]
+                    and data["limits"]["active_seconds"] - data["used"].get("active_seconds", 0) >= 45))
                 and len(sources(session, run)) >= 2):
             session.add(InvestigationBranch(**scope(run), query=f"Early orientation {run.id}", phase="orient",
                 reason="Show a tentative source-backed understanding while research continues.",

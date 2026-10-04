@@ -109,14 +109,25 @@ def failed_analysis(state):
         for doc in state.get("document_reads", {}).values()))
 
 
-def projection(state):
+def projection(state, session=None, run=None):
     # Parser buffers and storage keys are internal, never model or reader input.
-    return [{k: v for k, v in reading.items() if k not in {"retained_document", "retained_capture_origins", "buffer", "source_ids", "review_tree"}}
-        for reading in state.get("document_reads", {}).values()]
+    from .product_document_analysis import refresh_duplicate_analysis
+
+    projected = {"document_reads": deepcopy(state.get("document_reads", {}))}
+    if session is not None and run is not None:
+        refresh_duplicate_analysis(session, run, projected)
+    else:
+        for reading in projected["document_reads"].values():
+            if reading.get("duplicate_analysis"):
+                reading.update(analysis_complete=False, complete=False,
+                    unread_reason="Current analysis of the identical original has not been checked.")
+                reading.pop("reconciliation", None)
+    return [{k: v for k, v in reading.items() if k not in {"retained_document", "retained_capture_origins", "buffer", "source_ids", "review_tree", "duplicate_analysis"}}
+        for reading in projected["document_reads"].values()]
 
 
-def incomplete(branches):
-    return [r for b in branches for r in projection(b.checkpoint) if not r.get("complete")]
+def incomplete(branches, session=None, run=None):
+    return [r for b in branches for r in projection(b.checkpoint, session, run) if not r.get("complete")]
 
 
 def model_projection(doc):

@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 
 from helvetic_lens import research_answer_review as review
 from helvetic_lens.config import Settings
@@ -70,6 +71,7 @@ class Model:
         self.unassessed = unassessed
         self.writers, self.checked = [], []
 
+    @atomic_pack_model
     async def complete(self, system, text, **options):
         value = json.loads(text)
         if 'final_claims_and_gaps' in value:
@@ -96,6 +98,13 @@ class Model:
         if 'citation_refs' in schema['properties']:
             return json.dumps({'citation_refs': {key: node['items']['enum']
                 for key, node in schema['properties']['citation_refs']['properties'].items()}})
+        if 'new_point_capacity' in value:
+            assert value['requested_part'] == value['original_question']
+            assert self.full and value['new_point_capacity'] == 0
+            self.writers.append(value['requested_part'])
+            # A still-missing answer gets one aggregate opportunity after the
+            # literal attempt. This fixture declines it, preserving its siblings.
+            return json.dumps({'points': [], 'remaining_gap': ''})
         assert value['requested_part'] in self.answers, 'A generated optional gap must not become a new writing task'
         choices = schema['properties']['replace_point']['enum']
         assert ('new' in choices) != self.full
@@ -144,7 +153,8 @@ async def test_full_answer_amends_or_keeps_request_missing_without_discarding_ne
     cache = {}
     result = await finalize(service, work, wire, parsed, 90, checkpoints=cache)
     answer = parsed.mission_checkpoint.answer
-    assert model.writers == [REQUESTS[0]] and len(answer.points) == 8
+    expected_writers = [REQUESTS[0]] + ([] if outcome == 'amend' else [work['input']['original_question']])
+    assert model.writers == expected_writers and len(answer.points) == 8
     assert answer.points[:3] == original[:3] and answer.points[4:] == original[4:]
     receipt = cache['final_correction_round']['receipts'][0]
     assert receipt['status'] != 'unrepresented'

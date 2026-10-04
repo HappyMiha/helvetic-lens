@@ -70,6 +70,12 @@ async def test_all_originals_rank_and_warm_cache_only_encodes_queries_without_so
     assert all(text.startswith('query:') for call in calls[warm_start:] for text in call)
     assert wire.__dict__ == original
     assert all(row['status'] == 'complete' and row['selected'] for row in checkpoints['evidence_selection'].values())
+    monkeypatch.setattr(retrieval, 'POLICY', 'revised-query-roles')
+    revised_start = len(calls)
+    revised = await retrieval.rank_evidence(service, wire, wire.input['original_question'], 60, checkpoints=checkpoints)
+    assert revised['rankings'] == result['rankings']
+    assert all(text.startswith('query:') for call in calls[revised_start:] for text in call)
+    assert revised['coverage']['prepared_batches'] == 0, 'Query policy changes do not invalidate unchanged original vectors'
 
 
 @pytest.mark.asyncio
@@ -138,10 +144,38 @@ async def test_correction_ranks_meaningful_questions_not_serialized_candidate_pa
                 'candidate_windows': [{'text': 'Must not become an embedding query.'}]}]}})
     result = await retrieval.rank_evidence(service, wire, task, 60)
     queries = [text for call in calls for text in call if text.startswith('query:')]
+    assert queries[0] == 'query: It can remain outside the refrigerator.'
     assert any('How should it be stored?' in text for text in queries)
     assert any('does not support ambient storage' in text for text in queries)
     assert all('candidate_windows' not in text and 'Must not become' not in text for text in queries)
     assert len(result['rankings']) == len(queries)
+
+
+def test_focused_correction_keeps_composite_context_without_sibling_request_votes():
+    question = 'Who may operate the equipment? When does the permit end? Which records must be retained?'
+    assertion = 'The permit never ends. Its operator can surrender it.'
+    reason = 'The surrender condition limits this claim. Check which operator it covers.'
+    requested = 'Explain the termination condition. Identify the responsible operator.'
+    task = json.dumps({'original_question': question, 'requested_part': requested,
+        'correction_target': {'previous_statement': assertion, 'validation_errors': [{'reason': reason}]}})
+    queries = retrieval._queries(wire_fixture(), task)
+    assert queries == [assertion, 'The permit never ends.', 'Its operator can surrender it.',
+        reason, 'The surrender condition limits this claim.', 'Check which operator it covers.', question,
+        requested, 'Explain the termination condition.', 'Identify the responsible operator.']
+
+
+@pytest.mark.parametrize('form', ['plain', 'structured', 'blank_correction'])
+def test_broad_initial_queries_still_expand_original_requests_and_explicit_requested_part(form):
+    question = 'Who may operate the equipment? When does the permit end?'
+    requested = 'Explain the termination condition. Identify the responsible operator.'
+    task = {'original_question': question, 'requested_part': requested}
+    if form == 'blank_correction':
+        task['correction_target'] = {'previous_statement': ' \n '}
+    queries = retrieval._queries(wire_fixture(), question if form == 'plain' else json.dumps(task))
+    expected = [question, 'Who may operate the equipment?', 'When does the permit end?']
+    if form != 'plain':
+        expected.extend([requested, 'Explain the termination condition.', 'Identify the responsible operator.'])
+    assert queries == expected
 
 
 def native_wire(signed):

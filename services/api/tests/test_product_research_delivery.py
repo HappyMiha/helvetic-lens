@@ -67,7 +67,11 @@ def test_final_time_is_retained_after_a_slow_capture_and_old_runs_keep_original_
 
     with service.db.session() as session:
         saved = session.get(Investigation, run["id"])
-        saved.research_state = {**saved.research_state, "used": {"active_seconds": 300, "model_calls": 1}}
+        # Current admission intentionally has no legacy episode allowance.
+        # Exercise the old metered contract explicitly, not a new mission.
+        legacy = {key: value for key, value in saved.research_state.items() if key not in {"admission", "mission"}}
+        saved.research_state = {**legacy, "limits": {**legacy["limits"], "active_seconds": 360},
+            "used": {"active_seconds": 300, "model_calls": 1}}
         assert pacing.remaining_seconds(saved, "read") == 0
         assert pacing.remaining_seconds(saved, "brief") == 60
         old = {**saved.research_state["exploration"]}

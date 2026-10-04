@@ -20,6 +20,104 @@ from .research_contracts import SKILLS
 CONTRACT = "research-execution/v1"
 SEARCH_ORDER = ["saved_evidence", "reviewed_claims", "source_apis", "public_web", "evidence_synthesis"]
 ANSWER_WORKFLOW = "selected-evidence-one-cited-draft/v3"
+REPAIR_CONTRACT = "bound-format-repair/v1"
+
+
+def _repair_request(wire, system, references, repair):
+    from . import research_evidence_pack as pack
+
+    system += "\nThe previous response failed validation. Correct these validation errors using the original evidence. Omit unsupported optional fields. Do not invent a quote or locator.\n" + json.dumps(repair["errors"])
+    payload = pack.provider_input(wire, references)
+    if repair["mode"] == "validation_feedback":
+        payload = {"original_evidence": payload, "previous_invalid_response": repair["invalid_response"],
+            **({"review_hints": repair["hints"]} if repair["hints"] else {})}
+    return system, payload, pack.bounded_schema(wire.schema, references)
+
+
+async def restore_format_repair(service, wire, system, resume, seconds):
+    """Restore the actual repair envelope before binding any ordinary draft."""
+    from . import research_active_retrieval as retrieval
+    from . import research_evidence_pack as pack
+    from .research_original_context import reference_units
+
+    repair = resume.parts["format_repair"]
+    if (not isinstance(repair, dict) or repair.get("contract") != REPAIR_CONTRACT
+            or repair.get("mode") not in {"validation_feedback", "error_only", "repacked_error_only"}
+            or not isinstance(repair.get("errors"), list) or not repair["errors"]
+            or any(not isinstance(error, dict) for error in repair["errors"])
+            or repair.get("base_system") != fingerprint(system)):
+        raise ValueError("Saved format-repair instructions changed")
+    if repair["mode"] == "validation_feedback" and (
+            not isinstance(repair.get("invalid_response"), str) or not isinstance(repair.get("hints"), list)):
+        raise ValueError("Saved format-repair feedback changed")
+
+    def request_size(references):
+        prompt, payload, schema = _repair_request(wire, system, references, repair)
+        return pack.request_characters(prompt, payload, schema, provider=service.settings.apertus_provider)
+
+    keys = repair.get("selected_refs")
+    if keys is None:
+        if repair["mode"] != "repacked_error_only" or resume.value["stage"] != "preparing":
+            raise ValueError("Saved format-repair selection is incomplete")
+        selected = await pack.select_evidence(service, wire, wire.input["original_question"], seconds,
+            checkpoints=resume.parts,
+            on_progress=lambda: resume.save("preparing", "", [], resume.value.get("review", {})),
+            request_size=request_size,
+            envelope_binding={"projection": REPAIR_CONTRACT, "system": system, "errors": repair["errors"],
+                "payload": {key: value for key, value in wire.input.items() if key != "sources"},
+                "schema": wire.schema, "provider": service.settings.apertus_provider})
+        repair["selected_refs"] = list(selected)
+    else:
+        if (not isinstance(keys, list) or any(type(key) is not int or key not in wire.references for key in keys)
+                or len(set(keys)) != len(keys)):
+            raise ValueError("Saved format-repair originals changed")
+        selected = {key: value for key, value in wire.references.items() if key in keys}
+        # The saved selection must still be a union of complete current units.
+        complete = {key for unit in reference_units(wire) if set(unit["references"]) <= set(keys)
+            for key in unit["references"]}
+        if complete != set(keys):
+            raise ValueError("Saved format-repair original context changed")
+        await retrieval.ensure_current(service, wire)
+    if request_size(selected) > service.settings.apertus_context_chars:
+        raise DomainError("Original context and validation feedback exceed the synthesis allowance.",
+            422, "research_evidence_group_too_large")
+    prompt, payload, schema = _repair_request(wire, system, selected, repair)
+    content = json.dumps(payload, ensure_ascii=False)
+    binding = fingerprint({"schema": schema, "content": content, "system": prompt})
+    if repair.get("request_binding") not in (None, binding):
+        raise ValueError("Saved format-repair request changed")
+    if resume.value["stage"] != "preparing" and resume.value["request_binding"] != binding:
+        raise ValueError("Saved repaired draft belongs to another request")
+    repair["request_binding"] = binding
+    resume.bind_request(schema, content, system=prompt)
+    resume.save(resume.value["stage"], resume.value["raw"], resume.value["hints"], resume.value["review"])
+    return prompt, payload, schema, selected
+
+
+async def prepare_format_repair(service, wire, system, selected, errors, invalid_response, hints, seconds, resume):
+    """Use the one existing repair call with actionable, bounded feedback."""
+    from . import research_evidence_pack as pack
+
+    repair = {"contract": REPAIR_CONTRACT, "base_system": fingerprint(system),
+        "mode": "validation_feedback", "errors": deepcopy(errors[:16]),
+        "invalid_response": invalid_response[:30000], "hints": deepcopy(hints),
+        "selected_refs": list(selected)}
+    prompt, payload, schema = _repair_request(wire, system, selected, repair)
+    if pack.request_characters(prompt, payload, schema, provider=service.settings.apertus_provider) > service.settings.apertus_context_chars:
+        repair.update(mode="error_only")
+        repair.pop("invalid_response")
+        repair.pop("hints")
+        prompt, payload, schema = _repair_request(wire, system, selected, repair)
+        if pack.request_characters(prompt, payload, schema, provider=service.settings.apertus_provider) > service.settings.apertus_context_chars:
+            repair.update(mode="repacked_error_only", selected_refs=None)
+    # Never stamp the invalid draft or its answer-dependent plans with a new
+    # request identity. Whole-original preparation remains reusable private work.
+    review = {"contract": "cited-answer-review/v2", "workflow": ANSWER_WORKFLOW} if wire.answer else {}
+    resume.parts = {key: value for key, value in resume.parts.items()
+        if key in {"evidence_selection", "retrieval_coverage", "active_retrieval_vectors"}}
+    resume.parts["format_repair"] = repair
+    resume.save("preparing", "", [], review)
+    return await restore_format_repair(service, wire, system, resume, seconds)
 
 
 def route(settings, work):
@@ -118,6 +216,7 @@ async def complete(service, work, system, schema, seconds):
 
 
 async def _complete(service, work, system, schema, seconds):
+    started = monotonic()
     if SKILLS[work["phase"]].provider != "synthesis":
         raise ValueError("This registered task must not call the synthesis model")
     system += """\nReturn one compact JSON object, with schema properties at the root, never
@@ -132,7 +231,12 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     if (work.get("unmetered_research") and isinstance(service.model_client, ModelClient)
             and work["phase"] in {"plan", "extract", "brief", "reflect", "orient", "document_review"}):
         from .research_model_transport import EvidenceWire
-        wire = EvidenceWire(work, schema, system)
+        wire = EvidenceWire(work, schema, system, retrieve_originals=(
+            service.settings.apertus_provider != 'docker' and (work['phase'] in {'reflect', 'orient'}
+                or work['phase'] == 'brief' and 'mission_checkpoint' in schema.model_fields)))
+        if service.settings.apertus_provider != 'docker' and (wire.answer or work['phase'] in {'reflect', 'orient'}):
+            from .research_html_structure import enrich
+            await enrich(service, wire)
         system = wire.system
     response_schema = wire.schema if wire else schema.model_json_schema()
     provider_input = wire.input if wire else work["input"]
@@ -143,16 +247,20 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         "output_allowance": options.get("max_output_tokens", service.settings.apertus_max_tokens),
         "prompt_fingerprint": fingerprint(system), "response_schema_fingerprint": fingerprint(response_schema),
         "basis": "Configured model for this request; not an independently verified serving identity."}
-    started = monotonic()
     if wire:
         work["model_route"]["evidence_transport"] = wire.receipt
     from .research_synthesis_resume import EXHAUSTED_REVIEW, PROVIDER_INTERRUPTION
 
     exhausted = work.get(EXHAUSTED_REVIEW, {})
     work["allow_checked_partial_delivery"] = False
+    automatic_handoff = work.get("automatic_review_handoff", False)
+    if automatic_handoff and (not wire or not wire.answer or service.settings.apertus_provider == "docker"):
+        raise DomainError("Saved final review is no longer eligible for automatic checked delivery.",
+            503, "research_review_incomplete")
     content = json.dumps(provider_input, ensure_ascii=False)
     resume = None
     selected = None
+    dispatch_system, restored_repair = system, False
     if wire and (wire.answer or work["phase"] in {"reflect", "orient"}) and service.settings.apertus_provider != "docker":
         from . import research_evidence_pack as evidence_pack
         from .research_synthesis_resume import KEY, DraftCheckpoint
@@ -165,6 +273,14 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             preparation_policy=evidence_pack.POLICY)
         if previous_checkpoint and resume.value is None:
             work["synthesis_checkpoint_invalidated"] = True
+        if automatic_handoff and not (wire.answer and resume.value and resume.value.get("stage") == "finalizing"
+                and exhausted.get("reason") in PROVIDER_INTERRUPTION
+                and exhausted.get("input_fingerprint") == wire.receipt["input_fingerprint"]
+                and exhausted.get("checkpoint_binding") == resume.binding):
+            work.pop(EXHAUSTED_REVIEW, None)
+            work["exhausted_review_invalidated"] = True
+            raise DomainError("Saved final review changed before automatic checked delivery.",
+                503, "research_review_incomplete")
         if resume.value:
             work["model_route"]["resumed_stage"] = resume.value["stage"]
         if wire.answer:
@@ -177,18 +293,28 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 state.get("hints", []), work["model_route"].get("answer_review", {}))
 
         retain_selection()
-        selected = await evidence_pack.select_evidence(service, wire, wire.input["original_question"],
-            seconds - (monotonic() - started), checkpoints=resume.parts, on_progress=retain_selection)
+        if "format_repair" in resume.parts:
+            dispatch_system, provider_input, response_schema, selected = await restore_format_repair(
+                service, wire, system, resume, seconds - (monotonic() - started))
+            restored_repair = True
+            work["model_route"].update(format_repair=True,
+                format_repair_mode=resume.parts["format_repair"]["mode"])
+        else:
+            selected = await evidence_pack.select_evidence(service, wire, wire.input["original_question"],
+                seconds - (monotonic() - started), checkpoints=resume.parts, on_progress=retain_selection,
+                envelope_binding={'projection': 'provider_input', 'system': wire.system,
+                    'payload': {key: value for key, value in wire.input.items() if key != 'sources'},
+                    'schema': wire.schema, 'provider': service.settings.apertus_provider})
+            provider_input = evidence_pack.provider_input(wire, selected)
+            response_schema = evidence_pack.bounded_schema(wire.schema, selected)
         if work["phase"] == "orient" and not selected:
             raise DomainError("Early orientation needs a retained original passage; research remains unfinished.",
                 503, "research_evidence_pack_incomplete")
         # Native reading, access checks and later corrections retain the entire
         # authorized wire. Only this provider request uses the selected originals.
-        provider_input = evidence_pack.provider_input(wire, selected)
-        response_schema = evidence_pack.bounded_schema(wire.schema, selected)
         content = json.dumps(provider_input, ensure_ascii=False)
         previous_value = resume.value
-        resume.bind_request(response_schema, content)
+        resume.bind_request(response_schema, content, system=dispatch_system if restored_repair else None)
         if previous_value and resume.value is None:
             work["synthesis_checkpoint_invalidated"] = True
         work["allow_checked_partial_delivery"] = bool(wire.answer and resume.value
@@ -199,12 +325,16 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         if exhausted and not work["allow_checked_partial_delivery"]:
             work.pop(EXHAUSTED_REVIEW, None)
             work["exhausted_review_invalidated"] = True
+        if automatic_handoff and not work["allow_checked_partial_delivery"]:
+            raise DomainError("Saved answer evidence changed before automatic checked delivery.",
+                503, "research_review_incomplete")
         if resume.value is None:
             work["model_route"].pop("resumed_stage", None)
             if wire.answer:
                 work["model_route"]["answer_review"] = {"contract": "cited-answer-review/v2", "workflow": ANSWER_WORKFLOW}
         retain_selection()
-        work["model_route"].update(response_schema_fingerprint=fingerprint(response_schema),
+        work["model_route"].update(prompt_fingerprint=fingerprint(dispatch_system),
+            response_schema_fingerprint=fingerprint(response_schema),
             provider_input_fingerprint=fingerprint(provider_input))
         work["model_route"]["evidence_transport"].update(selected_references=len(selected),
             provider_input_characters=len(content))
@@ -220,9 +350,10 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
         if resume and remaining < 8:
             raise DomainError("The selected evidence is retained; analysis will continue in the next work step.",
                 503, "research_evidence_pack_incomplete")
-        raw = await service.model_client.complete(system, content,
+        raw = await service.model_client.complete(dispatch_system, content,
             response_schema=response_schema,
             budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
+    bound_section_response(wire, raw)
     if wire and wire.answer:
         work["model_route"].setdefault("answer_review", {}).update(
             contract="cited-answer-review/v2", workflow=ANSWER_WORKFLOW)
@@ -233,20 +364,34 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
     wire_raw = raw
 
     async def reading_before_publication(parsed):
-        if not wire or not wire.answer or saved and saved["stage"] == "finalizing":
+        if not wire or not wire.answer:
             work["publication_review_started"] = True
             return False
         from .product_research_mission import route_continuation
-        from .research_answer_review import audit, original_check
+        from .research_answer_review import (
+            CLARIFICATION_READING,
+            audit,
+            clarification_reading_eligible,
+            original_check,
+            reading_controls_fingerprint,
+            reading_result_fingerprint,
+        )
 
         review = work["model_route"]["answer_review"]
         checkpoint = parsed.mission_checkpoint
+        previous_reading = review.get("original_reading")
+        clarify = clarification_reading_eligible(service.settings, work) and (checkpoint.action == "clarify"
+            or isinstance(previous_reading, dict) and previous_reading.get("contract") == CLARIFICATION_READING)
+        finalizing = saved and saved["stage"] == "finalizing"
+        if finalizing and not clarify:
+            work["publication_review_started"] = True
+            return False
 
         def retain_routing():
             if resume:
-                resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, review)
+                resume.save("finalizing" if finalizing else "reviewed", wire.encode_checkpoint(parsed), review_hints, review)
 
-        if work.get("mission_continuation") and checkpoint.action == "continue":
+        if not clarify and work.get("mission_continuation") and checkpoint.action == "continue":
             # Coverage concerns the user's requests, not every proposed extension.
             # Share these exact decisions with finalization; factual review still
             # determines whether the existing answer can actually be published.
@@ -260,16 +405,35 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 checkpoint.reason = "Review the existing answer before opening further research."
                 review.pop("original_reading", None)
         previous_reading = review.get("original_reading")
-        if previous_reading is None or checkpoint.action == "continue" and (
+        if clarify:
+            receipt = await original_check(service.settings, work, wire, checkpoint,
+                seconds - (monotonic() - started), clarification=parsed.clarification,
+                directions=parsed.directions, previous=previous_reading)
+            if not isinstance(receipt, dict) or receipt.get("contract") != CLARIFICATION_READING:
+                raise DomainError("The clarification decision is unavailable; the proposed choice remains unapproved.",
+                    503, "model_temporarily_unavailable")
+            review["original_reading"] = receipt
+            if receipt["choice"] == "user_choice":
+                from .product_exploration import Direction
+                parsed.clarification = receipt["proposal"]["clarification"]
+                parsed.directions = [Direction.model_validate(value) for value in receipt["proposal"]["directions"]]
+            else:
+                parsed.clarification, parsed.directions = "", []
+        elif previous_reading is None or checkpoint.action == "continue" and (
                 previous_reading.get("contract") != "research-next-reading/v2"):
             review["original_reading"] = await original_check(service.settings, work, wire,
                 checkpoint, seconds - (monotonic() - started))
         routed = route_continuation(work, checkpoint)
+        if clarify:
+            review["original_reading"]["result_fingerprint"] = reading_result_fingerprint(
+                checkpoint, parsed.clarification, parsed.directions)
+            review["original_reading"]["result_controls_fingerprint"] = reading_controls_fingerprint(
+                checkpoint, parsed.clarification, parsed.directions)
         if resume:
             # The host can bind a next reading to an original outside the
             # initial shortlist. Resume its canonical full-source contract;
             # numeric/factual checks are still required before publication.
-            resume.save("reviewed", wire.encode_checkpoint(parsed), review_hints, review)
+            retain_routing()
         if not routed:
             work["publication_review_started"] = True
         return routed
@@ -287,7 +451,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
             if work["phase"] == "extract":
                 from .product_question_renewal import parse_recoverable
                 parsed = parse_recoverable(schema, raw, {key: "_" + key + "_unavailable" for key in
-                    ("applicability_checks", "entities", "relationships", "source_class", "read_relevance", "professional_facts")})
+                    ("applicability_checks", "entities", "relationships", "source_class", "read_relevance", "professional_facts", "requested_source_matches")})
                 errors = extraction_citation_errors(parsed, work)
             else:
                 parsed = schema.model_validate_json(raw)
@@ -329,6 +493,11 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 raw = wire.decode(wire.encode_checkpoint(parsed))
                 errors = []
         if errors:
+            if restored_repair and not saved:
+                # This dispatch already consumed the existing repair attempt.
+                # An automatic preparation resume must not create another one.
+                from .research_model_transport import WireError
+                raise WireError(errors)
             remaining = seconds - (monotonic() - started)
             if remaining <= 5:
                 raise ValueError("Provider response failed validation and no repair time remains")
@@ -338,18 +507,25 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 repair_input = {"original_evidence": provider_input, "previous_invalid_response": wire_raw[:30000],
                     **({"review_hints": review_hints} if review_hints else {})}
                 work["model_route"]["format_repair_mode"] = "validation_feedback"
-                if resume and evidence_pack.request_characters(repair_system, repair_input, response_schema,
-                        provider=service.settings.apertus_provider) > service.settings.apertus_context_chars:
-                    # The malformed proposal is disposable; the chosen originals
-                    # and the dispatched citation contract must remain complete.
-                    repair_system, repair_input = system, provider_input
-                    work["model_route"]["format_repair_mode"] = "fresh_bounded_draft"
-                    if evidence_pack.request_characters(repair_system, repair_input, response_schema,
-                            provider=service.settings.apertus_provider) > service.settings.apertus_context_chars:
-                        raise DomainError("The selected evidence exceeds the configured synthesis allowance; the originals remain retained.",
-                            422, "research_evidence_group_too_large")
+                if resume:
+                    repair_system, repair_input, response_schema, selected = await prepare_format_repair(
+                        service, wire, system, selected, errors, wire_raw, review_hints, remaining, resume)
+                    work["model_route"].update(format_repair_mode=resume.parts["format_repair"]["mode"],
+                        prompt_fingerprint=fingerprint(repair_system),
+                        response_schema_fingerprint=fingerprint(response_schema),
+                        provider_input_fingerprint=fingerprint(repair_input))
+                    if wire.answer:
+                        work["model_route"]["answer_review"] = deepcopy(resume.value["review"])
+                    review_hints = []
+                    work["model_route"]["evidence_transport"].update(selected_references=len(selected),
+                        provider_input_characters=len(json.dumps(repair_input, ensure_ascii=False)))
+                    remaining = seconds - (monotonic() - started)
+                    if remaining <= 5:
+                        raise DomainError("The repair evidence is retained; validation will continue in the next work step.",
+                            503, "research_evidence_pack_incomplete")
                 raw = await service.model_client.complete(repair_system, json.dumps(repair_input, ensure_ascii=False),
                     response_schema=response_schema, budget=InferenceBudget(max_requests=1, max_seconds=remaining), **options)
+                bound_section_response(wire, raw)
                 raw = response_object(raw, schema)
                 if resume and wire.answer:
                     resume.save("draft", raw, review_hints, work["model_route"]["answer_review"])
@@ -394,7 +570,10 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 review_hints = [hint for hint in review_hints if hint.get("review_signal") != "requested_part_missing"] + [
                     {**hint, "review_signal": "requested_part_missing"} for hint in missing]
             work["model_route"]["answer_review"]["final_coverage"] = final_coverage
-            for hint in missing:
+            # Flat coverage is a judgment about the complete answer, not an
+            # authored list of specific absent facts. Only legacy slots own
+            # per-request notices; reviewed model limitations remain intact.
+            for hint in missing if wire.request_keys else ():
                 request = hint["user_request"]
                 gap = "This answer has not resolved the requested part: " + request
                 key = next((key for key, value in wire.request_keys.items() if value == request), None)
@@ -422,7 +601,7 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 raise DomainError("Some final evidence checks are incomplete. Saved sources and completed checks are retained.",
                     503, code)
             raw = wire.decode(wire.encode_checkpoint(parsed))
-            from .research_final_coverage import reconcile, synchronize_projections
+            from .research_final_coverage import interrupt_coverage, reconcile, synchronize_projections
             delivered = schema.model_validate_json(raw)
             # decode regroups points by slot and updates wire.point_requests.
             # Any coverage checkpoint must retain that same canonical ordering.
@@ -431,7 +610,18 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 seconds - (monotonic() - started), checkpoints=resume.parts if resume else None,
                 on_progress=retain_final if resume else None)
             work["model_route"]["answer_review"]["delivered_coverage"] = coverage
+            if (not wire.request_keys and coverage.get("status") != "not_applicable"
+                    and coverage.get("question_coverage", final_coverage.get("question_coverage")) is None):
+                interrupt_coverage(coverage, delivered.mission_checkpoint.answer,
+                    fingerprint({"input": wire.input, "references": wire.references}),
+                    checkpoints=resume.parts if resume else {}, on_progress=retain_final if resume else None)
             synchronize_projections(delivered)
+            if not wire.request_keys:
+                complete = coverage.get("question_coverage", final_coverage.get("question_coverage"))
+                if complete in {None, "missing"}:
+                    delivered.mission_checkpoint.reason = (
+                        "The cited findings are retained; the coverage check was unavailable." if complete is None else
+                        "The cited findings are retained; coverage of the complete request has not been established.")
             if resume:
                 retain_final()
             if (not pending and final_coverage.get("factual_review", {}).get("status") == "checked"
@@ -439,7 +629,18 @@ repeating the same fact in claims, entities and observations. Finish the JSON.
                 from .product_research_mission import remember_delivery
                 remember_delivery(work, delivered)
             raw = delivered.model_dump_json()
+        if resume and not wire.answer and "format_repair" in resume.parts:
+            # Orientation/reflection retain selection work, never a prior
+            # accepted response or its repair instructions as the next result.
+            resume.parts.pop("format_repair")
+            resume.save("preparing", "", [], {})
     return response_object(raw, schema)
+
+
+def bound_section_response(wire, raw):
+    """Bound compact section output before host-owned original quotes expand it."""
+    if wire and wire.section and (not isinstance(raw, str) or len(raw) > 30000):
+        raise ValueError("Unbounded research response")
 
 
 def decode_provider_response(wire, raw, response_schema):
@@ -487,9 +688,36 @@ def retain_answer_points(parsed, wire, errors, *, allow_empty=False):
     return sorted(rejected)
 
 
+def _without_inline_list_markers(text):
+    """Ignore only complete colon-led, consecutive parenthesized prose lists.
+
+    This is a tokenization view, never a rewrite of an assertion or quotation.
+    Isolated references, nonconsecutive labels and lists of bare numbers remain
+    ambiguous and keep their digits. Quantities inside an item are untouched.
+    """
+    omitted = set()
+    for opening in re.finditer(r':\s*\((1)\)(?=\s+\S)', text):
+        ending = re.search(r'\n\s*\n|:\s*\(1\)(?=\s+\S)', text[opening.end():])
+        end = opening.end() + ending.start() if ending else len(text)
+        following = list(re.finditer(r'[,;]\s*(?:(?:and|or)\s+)?\((\d+)\)(?=\s+\S)',
+            text[opening.end():end], flags=re.I))
+        if not following or [match[1] for match in following] != [str(n) for n in range(2, len(following) + 2)]:
+            continue
+        spans = [opening.span(1), *[(opening.end() + match.start(1), opening.end() + match.end(1))
+            for match in following]]
+        starts = [opening.end(), *(opening.end() + match.end() for match in following)]
+        stops = [*(opening.end() + match.start() for match in following), end]
+        if not all(any(character.isalpha() for character in text[start:stop])
+                for start, stop in zip(starts, stops, strict=True)):
+            continue
+        omitted.update(index for start, stop in spans for index in range(start, stop))
+    return ''.join(' ' if index in omitted else character for index, character in enumerate(text)) if omitted else text
+
+
 def answer_quantity_errors(answer, references=None):
     """Reported precision must occur in the selected evidence; this is not a truth score."""
     def quantities(text):
+        text = _without_inline_list_markers(text)
         # Canonicalise digit grouping only, never guess a decimal separator or
         # validate conversions by pooling digits from unrelated quantities.
         # Bibliographic page labels attach directly to a number (p103, pp41–45).

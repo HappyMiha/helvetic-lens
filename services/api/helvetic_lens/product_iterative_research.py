@@ -5,8 +5,9 @@ original execution contract. Public planning never receives private dossier text
 """
 import hashlib
 import re
+from contextlib import nullcontext
 from copy import deepcopy
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import uuid4
 
 from pydantic import Field, field_validator
@@ -66,10 +67,27 @@ class BranchDraft(legal_profiles.Input):
         return value.strip()
 
 
+class PlannedBranch(BranchDraft):
+    requested_sources: list[Annotated[str, Field(min_length=3, max_length=700)]] = Field(default_factory=list)
+    source_targets: list[Annotated[str, Field(min_length=3, max_length=700)]] = Field(default_factory=list)
+
+    @field_validator("source_targets")
+    @classmethod
+    def named_targets(cls, values):
+        if any(len(value.strip()) < 3 for value in values):
+            raise ValueError("Use nonblank source names for planned source targets.")
+        return list(dict.fromkeys(value.strip() for value in values))
+
+
 class ResearchPlan(legal_profiles.Input):
     objective: str = Field(min_length=5, max_length=700)
     completion_criteria: list[str] = Field(min_length=1, max_length=6)
-    branches: list[BranchDraft] = Field(min_length=2, max_length=6)
+    branches: list[PlannedBranch] = Field(min_length=2, max_length=6)
+
+    @field_validator("branches", mode="before")
+    @classmethod
+    def legacy_branches(cls, values):
+        return [value.model_dump(exclude_unset=True) if isinstance(value, BranchDraft) else value for value in values] if isinstance(values, list) else values
 
     @field_validator("branches")
     @classmethod
@@ -100,12 +118,19 @@ class TypedRelationship(Relationship):
 
 class SourceClass(Citation):
     category: Literal["primary", "official_secondary", "independent_secondary", "commentary", "unknown"]
+    requested_source: str = Field(default="", max_length=700)
+
+
+class RequestedSourceMatch(Citation):
+    source_id: str = Field(min_length=36, max_length=36)
+    requirement_id: str = Field(min_length=1, max_length=64)
 
 
 class ResearchExtraction(Extraction):
     entities: list[ResolvedEntity] = Field(default_factory=list, max_length=5)
     relationships: list[TypedRelationship] = Field(default_factory=list, max_length=5)
     source_class: SourceClass | None = None
+    requested_source_matches: list[RequestedSourceMatch] = Field(default_factory=list)
 
 
 class Reconsideration(legal_profiles.Input):
@@ -312,12 +337,28 @@ def question_duplicate(draft, questions, queries, *, trigger=None):
         or any(key == query_key(query) for query in queries) or any(duplicate_question(q) for q in questions))
 
 
-def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None):
+def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, reconsideration=None, requested_sources=None, source_targets=None):
+    from .product_source_requirements import attach, attach_targets
+
     data = deepcopy(run.research_state)
     key = query_key(draft.query)
-    queries = [query for branch in rows(session, InvestigationBranch, run)
+    branches = rows(session, InvestigationBranch, run)
+    queries = [query for branch in branches
         for query in (branch.query, branch.checkpoint.get("query_recovery", {}).get("query") or branch.query)]
     if question_duplicate(draft, data["questions"], queries, trigger=trigger):
+        if requested_sources or source_targets:
+            owner = next((q for q in data["questions"] if question_duplicate(draft, [q], [], trigger=trigger)), None)
+            if owner is None:
+                matching = {branch.checkpoint.get("question_id") for branch in branches
+                    if any(query_key(query) == key for query in (branch.query,
+                        branch.checkpoint.get("query_recovery", {}).get("query") or branch.query))}
+                owner = next((q for q in data["questions"] if q["id"] in matching), None)
+            if owner is None:
+                fail("A duplicate query has no admitted owner for its requested originals.", 422, "invalid_source_requirement")
+            if requested_sources:
+                attach(run, owner["id"], requested_sources)
+            if source_targets:
+                attach_targets(run, owner["id"], source_targets)
         event(session, run, "follow_up_duplicate", parent_branch_id=parent.id if parent else None)
         return None
     # No hidden truncation of the saved question/criteria; all response fields
@@ -336,6 +377,10 @@ def add_question(session, run, draft, *, parent=None, trigger=None, claim=None, 
         question["reconsideration"] = reconsideration
     data["questions"].append(question)
     run.research_state = data
+    if requested_sources:
+        attach(run, question["id"], requested_sources)
+    if source_targets:
+        attach_targets(run, question["id"], source_targets)
     event(session, run, "evidence_gap_created" if parent else "research_question_created", question_id=question["id"],
         parent_branch_id=question["parent_branch_id"], source_id=trigger["source_id"] if trigger else None)
     return question["id"]
@@ -376,18 +421,45 @@ def schedule_questions(session, run, *, question_ids=None):
 
 
 def apply_plan(session, run, result):
+    from . import product_research_mission as mission
+    from .product_source_requirements import (
+        attach,
+        attach_targets,
+        submitted_spans,
+        validate_spans,
+        validate_targets,
+    )
+
     if any(len(v) > 600 for v in result.completion_criteria):
         fail("Unbounded completion criterion.")
-    data = deepcopy(run.research_state)
-    data.update(objective=result.objective, completion_criteria=result.completion_criteria)
-    run.research_state = data
-    from . import product_research_mission as mission
-
-    slots = 2 if mission.enabled(run) else min(6, max(2, data["limits"]["branches"] // 2))
-    for draft in result.branches[:slots]:
-        add_question(session, run, draft)
-    schedule_questions(session, run)
-    plan(session, run, "Research question decomposed into independent directions; capacity retained for follow-up evidence.")
+    spans = [validate_spans(run.question, draft.requested_sources) for draft in result.branches]
+    targets = [validate_targets(draft.source_targets) for draft in result.branches]
+    # Canonical legacy plans omit this new field. Do not infer obligations for
+    # those historical plans from source titles, generated gaps or URL text.
+    interpreted = all("source_targets" in draft.model_fields_set for draft in result.branches)
+    submitted = submitted_spans(run.question) if interpreted or all("requested_sources" in draft.model_fields_set for draft in result.branches) else []
+    slots = 2 if mission.enabled(run) else min(6, max(2, run.research_state["limits"]["branches"] // 2))
+    if any(spans[slots:]) or any(targets[slots:]):
+        fail("Every requested original must belong to an admitted plan branch.", 422, "invalid_source_requirement")
+    # Owner admission, deduplication and events are one write. A failed owner
+    # cannot leave a half-applied plan when the worker records a model error.
+    with session.begin_nested() if any(spans) or any(targets) or submitted else nullcontext():
+        data = deepcopy(run.research_state)
+        data.update(objective=result.objective, completion_criteria=result.completion_criteria)
+        run.research_state = data
+        for draft, required, names in zip(result.branches[:slots], spans[:slots], targets[:slots], strict=True):
+            add_question(session, run, draft, requested_sources=required, source_targets=names)
+        if submitted:
+            owners = [q for q in run.research_state["questions"] if any(
+                question_duplicate(draft, [q], []) for draft in result.branches[:slots])]
+            if not owners:
+                fail("Submitted originals need an admitted research question.", 422, "invalid_source_requirement")
+            if interpreted:
+                attach_targets(run, owners[0]["id"], submitted, origin="submitted_url")
+            else:
+                attach(run, owners[0]["id"], submitted)
+        schedule_questions(session, run)
+        plan(session, run, "Research question decomposed into independent directions; capacity retained for follow-up evidence.")
 
 
 def prepare_reflection(session, run, branch):
@@ -403,9 +475,10 @@ def prepare_reflection(session, run, branch):
     evidence = [e for e in rows(session, ClaimEvidence, run) if e.source_id in public_ids]
     claim_ids = {e.claim_id for e in evidence}
     from .product_document_analysis import compact_sources
+    from .product_research_admission import unmetered
 
     value = {"question": run.question, "branch": branch.query,
-        "sources": compact_sources(session, run, public),
+        "sources": compact_sources(session, run, public, retain_originals=unmetered(run)),
         "claims": [{"id": c.id, "statement": c.statement, "status": c.status}
             for c in rows(session, DossierClaim, run) if c.id in claim_ids],
         "previous_questions": [{"question": q["question"], "query": q["query"]} for q in run.research_state["questions"]]}
@@ -450,7 +523,12 @@ def apply_reflection(session, run, branch, supplied, result):
 def finish_question(session, run, branch):
     question_id = branch.checkpoint.get("question_id")
     if not question_id:
-        return
+        return True
+    from . import product_research_mission as mission
+    from .product_requested_originals import outcomes
+
+    if mission.continue_required_sources(session, run, branch, outcomes(session, run, question_id)):
+        return False
     data = deepcopy(run.research_state)
     question = next(q for q in data["questions"] if q["id"] == question_id)
     source_ids = set(branch.checkpoint.get("source_ids", []))
@@ -462,6 +540,7 @@ def finish_question(session, run, branch):
     run.research_state = data
     event(session, run, "research_branch_completed", branch_id=branch.id, question_id=question_id,
         status=question["status"], evidence_ids=question["answer_evidence_ids"])
+    return True
 
 
 def continue_research(session, run, limits):
@@ -557,10 +636,26 @@ def extract(session, run, source, data):
     # Keep the established claim mutation and contradiction rules, but replace
     # legacy name-appending discovery with the evidence-grounded reflection step.
     apply_extraction(session, run, source, Extraction(claims=data.claims))
+    from .product_source_requirements import retain_matches
+
+    retain_matches(run, source, data.requested_source_matches)
     if data.source_class:
-        source.snapshot = {**source.snapshot, "source_class": {"category": data.source_class.category,
+        from .research_requested_sources import match
+
+        previous = source.snapshot.get("source_class")
+        value = {"category": data.source_class.category,
             "basis": "Machine classification of the cited source passage; not a truth rating.",
-            **citation(source, data.source_class)}}
+            **citation(source, data.source_class)}
+        proposed = {**value, "requested_source": data.source_class.requested_source,
+            "original_question": run.question}
+        view = {"id": source.id, "sha256": source.sha256, "url": source.url,
+            "excerpts": source.snapshot["excerpts"]}
+        if match(proposed, view, run.question):
+            value = proposed
+        elif match(previous, view, run.question):
+            # A later section's unknown role must not erase an exact still-current match.
+            value = previous
+        source.snapshot = {**source.snapshot, "source_class": value}
     found = {}
     for value in data.entities:
         identifier = {"value": value.identifier, "issuer": value.identifier_issuer,
@@ -598,7 +693,7 @@ def public_existing_claims(session, run):
 
 
 def public_questions(questions):
-    return [{k: deepcopy(v) for k, v in q.items() if k not in {"open_check_context", "branch_assessment", "branch_assessment_history"}} for q in questions]
+    return [{k: deepcopy(v) for k, v in q.items() if k not in {"open_check_context", "branch_assessment", "branch_assessment_history", "source_requirements", "source_targets"}} for q in questions]
 
 
 def projection(run):

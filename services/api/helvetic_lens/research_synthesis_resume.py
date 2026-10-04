@@ -42,7 +42,7 @@ def deferred_verification(checkpoint):
     if deferred.get("status") != "qualified_delivery" or not pending:
         return None
     reasons = sorted({item.get("reason") for item in pending
-        if isinstance(item, dict) and item.get("reason") in PROVIDER_INTERRUPTION | {"step_deadline", "not_completed"}})
+        if isinstance(item, dict) and item.get("reason") in PROVIDER_INTERRUPTION | {"step_deadline", "not_completed", "model_incomplete"}})
     return {"status": "partial", "pending_checks": len(pending), "reasons": reasons,
         "basis": DEFERRED_NOTICE}
 
@@ -66,7 +66,9 @@ def completed_work(checkpoint):
         "review_evidence_selection:": parts.get("final_reviews", {}).get("original_selection", {}).get("evidence_selection", {}),
     }
     for prefix, nodes in selections.items():
-        progress.update({prefix + key: value for key, value in nodes.items()
+        # Learning a faster lookup identity is cache bookkeeping, not new work.
+        progress.update({prefix + key: {field: item for field, item in value.items() if field != 'envelope_fingerprint'}
+            for key, value in nodes.items()
             if isinstance(value, dict) and value.get("status") == "complete"
             and value.get("input_fingerprint") and value.get("policy_fingerprint")
             and isinstance(value.get("selected"), list)
@@ -107,9 +109,10 @@ class DraftCheckpoint:
             work[KEY] = self.value
         self.parts = deepcopy(self.value.get("parts", {})) if self.value else {}
 
-    def bind_request(self, schema, content):
+    def bind_request(self, schema, content, *, system=None):
         """A saved answer belongs to the exact selected evidence shown to its author."""
-        self.request_binding = fingerprint({"schema": schema, "content": content})
+        self.request_binding = fingerprint({"schema": schema, "content": content,
+            **({"system": system} if system is not None else {})})
         if (self.value and self.value["stage"] != "preparing"
                 and self.value.get("request_binding") != self.request_binding):
             # Keep reusable selection work, never checks of a different draft.

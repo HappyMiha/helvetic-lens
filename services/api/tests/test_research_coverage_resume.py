@@ -43,10 +43,12 @@ async def test_actual_subset_coverage_preserves_failure_and_resumes_only_missing
             requests.append((phase[0], request, point_count))
             if point_count == 2 and phase[0] == 'first':
                 if failure == 'step_deadline':
-                    clock[0] = 79.0  # The next literal request cannot safely start in this step.
+                    clock[0] = 79.0  # The aggregate subset check cannot finish in this step.
+                    raise DecisionUnavailable('step_deadline')
                 else:
                     raise DecisionUnavailable(failure)
-            missing = point_count == 2 and request == 'Who maintains the archive?'
+            assert request == work['input']['original_question']
+            missing = point_count == 2
             return Decision('jev', 'fixture', 'missing' if missing else 'covered', {}, 1, 1, 0, 1, 1)
 
     class Model:
@@ -80,14 +82,15 @@ async def test_actual_subset_coverage_preserves_failure_and_resumes_only_missing
         return  # Configuration/invalid responses stay fail-closed; transient classification is explicit.
 
     # Resume the actual reduced candidate and its private checkpoint. The first
-    # completed coverage choice is a reusable proof; the interrupted receipt is not.
+    # complete-draft coverage stays bound to that draft; the interrupted actual
+    # subset receipt is not reused as a successful coverage check.
     saved = json.loads(json.dumps(atomic['parts']))
     parsed.mission_checkpoint.answer = AssessmentOutcome.model_validate(atomic['answer'])
     clock[0], phase[0] = 0.0, 'resume'
     result = await final.finalize(service, work, wire, parsed, 90, checkpoints=saved, on_progress=retain, defer_pending=True)
     assert model_calls == texts[:3], 'No completed factual review or deferred assertion is purchased again'
     resumed = [request for stage, request, size in requests if stage == 'resume']
-    assert resumed == ['Who maintains the archive?', 'Is the registry public?']
+    assert resumed == [work['input']['original_question']]
     assert result['question_coverage'] == 'missing'
     assert saved['deferred_final_review']['status'] == 'qualified_delivery'
     assert 'coverage_interruption' not in saved

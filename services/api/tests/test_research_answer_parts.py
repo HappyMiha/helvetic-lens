@@ -47,7 +47,7 @@ async def test_point_correction_cannot_expand_into_more_answers_or_a_gap(extra):
             assert options['response_schema']['properties']['points']['maxItems'] == 1
             point = {'statement': 'Published in 2001.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}
             return json.dumps({'points': [point] * (2 if extra == 'point' else 1),
-                'remaining_gap': 'An unrelated issue remains.' if extra == 'gap' else ''})
+                **({'remaining_gap': 'An unrelated issue remains.'} if extra == 'gap' else {})})
     points, gap, receipt = await answer_request(SimpleNamespace(model_client=Model()), wire,
         wire.input['original_question'], 60, max_points=8,
         correction={'previous_statement': 'Published in 2009.', 'validation_errors': []})
@@ -69,7 +69,7 @@ async def test_precision_scope_has_separate_exact_binding_and_resumes_without_re
                 return selection_json([1], options)
             calls.append('write')
             return json.dumps({'points': [{'statement': 'Published in 2001.',
-                'evidence': [{'citation_ref': 1, 'role': 'support'}]}], 'remaining_gap': ''})
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}]})
 
     service = SimpleNamespace(model_client=Model())
     _, _, broad = await answer_request(service, wire, 'When was this published?', 60,
@@ -93,6 +93,86 @@ async def test_precision_scope_has_separate_exact_binding_and_resumes_without_re
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('empty', [False, True])
+async def test_complete_correction_has_host_gap_and_reuses_only_current_raw_contract(empty):
+    from copy import deepcopy
+
+    wire, _, _ = fixture()
+    calls, saved = [], {}
+    correction = {'previous_statement': 'Published in 2009.', 'validation_errors': []}
+
+    class Model:
+        async def complete(self, system, text, **options):
+            calls.append(json.loads(text))
+            schema = options['response_schema']
+            assert list(schema['properties']) == schema['required'] == ['points']
+            return json.dumps({'points': [] if empty else [{'statement': 'Published in 2001.',
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}]})
+
+    service = SimpleNamespace(model_client=Model())
+    points, gap, receipt = await answer_request(service, wire, 'When was it published?', 60,
+        correction=correction, preselected_references=wire.references, checkpoints=saved)
+    assert bool(points) is not empty and gap == ''
+    assert receipt['status'] == ('unresolved' if empty else 'proposed')
+    assert saved[receipt['input_fingerprint']]['draft'].keys() == {'points'}
+    resumed, resumed_gap, _ = await answer_request(service, wire, 'When was it published?', 0,
+        correction=correction, preselected_references=wire.references,
+        checkpoints=json.loads(json.dumps(saved)))
+    assert resumed == points and resumed_gap == '' and len(calls) == 1
+    # Even an empty old model-owned gap is outside the new raw contract; cached
+    # proposals do not bypass the same schema validation as new responses.
+    legacy = deepcopy(saved)
+    legacy[receipt['input_fingerprint']]['draft']['remaining_gap'] = ''
+    rejected, rejected_gap, rejected_receipt = await answer_request(service, wire, 'When was it published?', 0,
+        correction=correction, preselected_references=wire.references, checkpoints=legacy)
+    assert rejected == [] and rejected_gap == '' and rejected_receipt['status'] == 'invalid_answer'
+    assert len(calls) == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('failure', ['truncated', 'model_incomplete', 'forged_gap'])
+async def test_interrupted_correction_retains_selection_without_accepting_partial_json(failure):
+    from helvetic_lens.config import DomainError
+
+    wire, _, _ = fixture()
+    saved, calls = {}, []
+    correction = {'previous_statement': 'Published in 2009.', 'validation_errors': []}
+
+    class Model:
+        async def complete(self, system, text, **options):
+            if 'citation_refs' in options['response_schema']['properties']:
+                calls.append('select')
+                return selection_json([1], options)
+            calls.append('write')
+            data = {'points': [{'statement': 'Published in 2001.',
+                'evidence': [{'citation_ref': 1, 'role': 'support'}]}]}
+            if calls.count('write') == 1:
+                if failure == 'model_incomplete':
+                    raise DomainError('Synthetic incomplete response.', 502, 'model_incomplete')
+                if failure == 'forged_gap':
+                    data['remaining_gap'] = ''
+                else:
+                    return json.dumps(data)[:-1] + ' \n' * 100
+            return json.dumps(data)
+
+    service = SimpleNamespace(model_client=Model())
+    if failure == 'model_incomplete':
+        with pytest.raises(DomainError) as caught:
+            await answer_request(service, wire, 'When was it published?', 60,
+                correction=correction, checkpoints=saved)
+        assert caught.value.code == 'model_incomplete'
+    else:
+        points, gap, receipt = await answer_request(service, wire, 'When was it published?', 60,
+            correction=correction, checkpoints=saved)
+        assert points == [] and gap == '' and receipt['status'] == 'invalid_answer'
+    assert all('draft' not in value and 'proposal' not in value for value in saved.values())
+    points, gap, receipt = await answer_request(service, wire, 'When was it published?', 60,
+        correction=correction, checkpoints=json.loads(json.dumps(saved)))
+    assert points[0].statement == 'Published in 2001.' and gap == '' and receipt['status'] == 'proposed'
+    assert calls == ['select', 'write', 'write']
+
+
+@pytest.mark.asyncio
 async def test_point_repair_with_eight_requests_preserves_an_existing_gap_and_round_trips():
     wire, parsed, schema = fixture(8)
     answer = parsed.mission_checkpoint.answer
@@ -104,10 +184,11 @@ async def test_point_repair_with_eight_requests_preserves_an_existing_gap_and_ro
         async def complete(self, system, text, **options):
             if 'citation_refs' in options['response_schema']['properties']:
                 return selection_json([1], options)
-            assert options['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            assert 'remaining_gap' not in options['response_schema']['properties']
             return json.dumps({'statement': 'Published in 2001.', 'remaining_gap': '',
                 'evidence': [{'citation_ref': 1, 'role': 'support'}]})
-    await repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60)
+    await repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60,
+        issues=[{'path': ['answer', 'points', 7, 'statement'], 'reason': 'The original establishes a different year.'}])
     encoded = wire.encode_checkpoint(parsed)
     assert json.loads(encoded)['answer']['remaining_gaps'] == []
     decoded = schema.model_validate_json(wire.decode(encoded)).mission_checkpoint.answer
@@ -209,7 +290,7 @@ async def test_citation_correction_preserves_needed_prior_context_only_within_th
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize('order', [[1, 2, 3], [3, 2, 1]])
-async def test_last_citation_slot_retains_context_covering_the_missing_comparison(order):
+async def test_numeric_repair_cannot_remove_unsupported_precision_to_fill_citation_capacity(order):
     quotes = ['The record was adopted in 2001.', 'Adopted in 2001; published in 2003.',
         'The earlier record was published in 1999.', 'The current record belongs to the registry.',
         'The adopted record was subsequently published.', 'The proceedings retain the decision.',
@@ -228,9 +309,8 @@ async def test_last_citation_slot_retains_context_covering_the_missing_compariso
             return json.dumps({'statement': statement + (' Another copy was published in 2099.' if self.writes == 1 else ''),
                 'remaining_gap': '', 'evidence': [{'citation_ref': key, 'role': 'support'}
                     for key in (order if self.writes == 1 else range(4, 11))]})
-    point, gap, _ = await answer_request(SimpleNamespace(model_client=Model()), wire, 'Compare adoption and publication.', 60)
-    assert bool(point) and gap == '' and len(point[0].evidence) == 8
-    assert point[0].evidence[-1].quote == quotes[1] and point[0].evidence[-1].role == 'context'
+    point, _gap, receipt = await answer_request(SimpleNamespace(model_client=Model()), wire, 'Compare adoption and publication.', 60)
+    assert not point and receipt['status'] == 'unsupported_precision'
 
 
 @pytest.mark.asyncio

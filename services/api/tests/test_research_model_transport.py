@@ -31,9 +31,8 @@ def test_new_plan_explicitly_chooses_catalogues_and_general_search_skips_unrelat
 
     wire = EvidenceWire({'phase': 'plan', 'input': {'question': 'Compare two definitions.', 'branch_slots': 2,
         'available_catalogues': {'finma_news': 'FINMA current news feed'}}}, ResearchPlan, '')
-    data = {'objective': 'Compare the original definitions.', 'completion_criteria': ['Both definitions compared.'],
-        'branches': [{'question': f'What does definition {n} mean?', 'query': f'Original definition {n}',
-            'purpose': 'Find the original source.', 'priority': 5, 'catalogues': []} for n in (1, 2)]}
+    data = {'branches': [{'question': f'What does definition {n} mean?', 'query': f'Original definition {n}',
+            'purpose': 'Find the original source.', 'priority': 5, 'catalogues': [], 'source_targets': []} for n in (1, 2)]}
     for missing in (None, 'omitted'):
         bad = deepcopy(data)
         if missing is None:
@@ -43,6 +42,9 @@ def test_new_plan_explicitly_chooses_catalogues_and_general_search_skips_unrelat
         with pytest.raises(ValueError):
             wire.decode(json.dumps(bad))
     plan = ResearchPlan.model_validate_json(wire.decode(json.dumps(data)))
+    assert set(wire.schema['properties']) == {'branches'} and wire.schema['required'] == ['branches']
+    assert plan.objective == wire.input['question']
+    assert len(plan.completion_criteria) == 1
     calls = []
     async def broad(*args, **kwargs):
         calls.append('web')
@@ -63,7 +65,7 @@ def test_section_contract_keeps_exact_quotes_and_does_not_mutate_previous_claims
     wire = EvidenceWire(work, schema, 'Complex original contract', shared_answer=False)
     assert work == before
     assert 'existing_claims' not in wire.input
-    assert set(wire.schema['properties']) == {'section_review', 'read_relevance'}
+    assert set(wire.schema['properties']) == {'section_review', 'read_relevance', 'source_class'}
     assert 'Assertion' not in wire.schema['$defs']
     raw = json.dumps({'section_review': {'summary': 'This section uses a local datum.',
         'observations': [{'role': 'support', 'citation_ref': 1, 'reason': 'Why this quote is relevant.',
@@ -78,6 +80,44 @@ def test_section_contract_keeps_exact_quotes_and_does_not_mutate_previous_claims
     assert not research_gateway.extraction_citation_errors(parsed, work)
     parsed.section_review.observations[0].statement = 'The fictional mountain measures 999 metres.'
     assert research_gateway.extraction_citation_errors(parsed, work)
+
+
+def test_section_context_anchor_copies_its_original_without_becoming_a_claim():
+    work = section()
+    anchor = {'passage': 'p00037', 'text': 'The comparison concerns only the historical survey period.'}
+    work['input']['source']['excerpts'].append(anchor)
+    before = deepcopy(work)
+    schema = documents.schema(ScopedExtraction)
+    wire = EvidenceWire(work, schema, '')
+    raw = {'section_review': {'summary': 'The comparison retains its source period.',
+        'observations': [{'role': 'support', 'citation_ref': 1,
+            'context_anchors': [{'kind': 'time', 'citation_ref': 2}]}]}}
+    parsed = schema.model_validate_json(wire.decode(json.dumps(raw)))
+    assert parsed.section_review.observations[0].context_anchors[0].model_dump() == {
+        'kind': 'time', 'quote': anchor['text'], 'locator': anchor['passage']}
+    assert len(parsed.claims) == 1 and parsed.claims[0].quote == wire.references[1]['quote']
+    assert work == before and len(wire.references) == 2
+    for invalid in (True, '2', 999):
+        wrong = deepcopy(raw)
+        wrong['section_review']['observations'][0]['context_anchors'][0]['citation_ref'] = invalid
+        with pytest.raises(ValueError):
+            wire.decode(json.dumps(wrong))
+
+
+def test_review_anchor_has_exact_reference_but_is_not_promoted_to_finding():
+    wire = EvidenceWire(section(), documents.schema(ScopedExtraction), '')
+    original = {'statement': 'A fallible old note.', 'role': 'support',
+        'quote': 'The measurement uses the original reference datum.', 'locator': 'p00028',
+        'context_anchors': [{'kind': 'scope',
+            'quote': 'This does not compare elevation above sea level.', 'locator': 'p00029'}]}
+    before = deepcopy(original)
+    note = wire._review_quote(original, 'a' * 36, wire.finding_refs)
+    assert wire.finding_refs == {2}
+    assert note['context_anchors'] == [{'kind': 'scope', 'citation_ref': 3,
+        'text': original['context_anchors'][0]['quote'], 'passage': 'p00029'}]
+    assert wire.references[3] == {'source_id': 'a' * 36,
+        'quote': original['context_anchors'][0]['quote'], 'locator': 'p00029'}
+    assert original == before
 
 
 @pytest.mark.parametrize('reference', [True, '1', 0, -1, 2, None])
@@ -156,7 +196,7 @@ def test_single_final_answer_materializes_consistent_dossier_fields():
         'direction_assessment_target': {'selection': None, 'question': 'Compare the measurement definitions.'}}}
     schema = mission_schema(RenewedSuggestedDirectionBriefing)
     wire = EvidenceWire(work, schema, '', shared_answer=False)
-    assert set(wire.schema['properties']) == {'answer', 'next_action', 'next_checks', 'deepen_branches', 'clarification', 'directions'}
+    assert set(wire.schema['properties']) == {'answer', 'next_action', 'next_checks', 'deepen_branches'}
     raw = {'mission_checkpoint': {'answer': {'status': 'possible_answer',
         'points': [{'statement': 'The measurement uses a local datum.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
         'limitations': ['The available record does not compare sea-level measurements.']},
@@ -396,14 +436,15 @@ async def test_missing_dated_context_is_recovered_without_regenerating_the_whole
             {'statement': 'The committee adopted the revised unit in 2005.', 'evidence': [{'citation_ref': 1, 'role': 'support'}]}],
             'remaining_gaps': []}, 'next_action': 'finish', 'reason': 'The original records the decision.'})
     monkeypatch.setattr(client, 'complete', complete)
-    async def audit(*args, **kwargs):
-        return {'hints': [], 'status': 'checked'}
     async def original(*args):
         return None
     class Engine:
-        async def choose(self, *args):
+        async def choose(self, payload, instructions, criteria):
+            if 'covered' in criteria:
+                assert payload['specific_request'] == 'When was the revised unit adopted?'
+                assert list(payload['answer_points'].values()) == ['The committee adopted the revised unit in 2005.']
+                return Decision('jev', 'test', 'covered', {'covered': 1}, 1, 1, 1, 1, 1)
             return Decision('jev', 'test', 'supported', {'supported': 1}, 1, 1, 1, 1, 1)
-    monkeypatch.setattr(review, 'audit', audit)
     monkeypatch.setattr(review, 'original_check', original)
     monkeypatch.setattr(review.decision, 'engines', lambda settings: {'jev': Engine()})
     source = {'id': 'a' * 36, 'kind': 'public_source', 'excerpts': [
@@ -466,7 +507,9 @@ async def test_preliminary_research_uses_selected_originals_and_repairs_unshown_
         data = json.loads(content)
         assert request_characters(system, data, kwargs['response_schema'],
             provider=settings.apertus_provider) <= settings.apertus_context_chars
-        assert 'sources' in data, 'Oversized format feedback must retry the bounded original request'
+        assert 'sources' in data, 'Oversized feedback keeps errors and selects complete original groups'
+        if len(calls) == 1:
+            assert 'The previous response failed validation.' in system
         refs = [p['citation_ref'] for source in data['sources'] for p in source['excerpts']]
         assert refs and len(refs) < 50 and 50 not in refs
         assert all('section_review' not in source and 'discovery_links' not in source for source in data['sources'])
@@ -506,15 +549,17 @@ async def test_preliminary_research_uses_selected_originals_and_repairs_unshown_
     if phase == 'orient':
         assert result.clarification and len(result.directions) == 2
         assert all(direction.source_id == sources[0]['id'] for direction in result.directions)
-    assert len(ranked) == 1 and len(calls) == 2
+    assert len(ranked) in {1, 2} and len(calls) == 2
+    prepared = len(ranked)
     assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
     assert 'answer_review' not in work['model_route']
-    assert work['model_route']['format_repair_mode'] == 'fresh_bounded_draft'
+    assert work['model_route']['format_repair_mode'] in {'error_only', 'repacked_error_only'}
+    assert 'format_repair' not in work[KEY]['parts']
     assert work['input'] == original
     # Only validated preparation is reusable; a prior orientation/reflection is
     # never restored as a final-answer draft or an already accepted new decision.
     await research_gateway._complete(service, work, '', schema, 60)
-    assert len(calls) == 3 and len(ranked) == 1
+    assert len(calls) == 3 and len(ranked) == prepared
     assert work[KEY]['stage'] == 'preparing' and work[KEY]['raw'] == ''
 
 

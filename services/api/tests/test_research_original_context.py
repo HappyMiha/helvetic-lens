@@ -12,7 +12,7 @@ from helvetic_lens.product_research_mission import schema as mission_schema
 from helvetic_lens.research_answer_parts import answer_request, contextual_references, source_groups
 from helvetic_lens.research_evidence_pack import _units, provider_sources, select_evidence
 from helvetic_lens.research_model_transport import EvidenceWire
-from helvetic_lens.research_original_context import expand_sources
+from helvetic_lens.research_original_context import expand_sources, provider_excerpts
 
 
 def source(identifier, passages, *, sha='a' * 64, url='https://example.test/report.pdf'):
@@ -166,3 +166,78 @@ async def test_answer_request_keeps_page_heading_without_inventing_a_citation(se
     resumed, _, resumed_receipt = await answer_request(service, wire, wire.input['original_question'], 0,
         checkpoints=json.loads(json.dumps(cache)))
     assert resumed == points and resumed_receipt['status'] == 'proposed' and calls == ['select', 'write']
+
+
+def linked_originals():
+    observed = source('observation', [('page-2-text-1-char-1',
+        'The permit may be extended when the annual inspection has been completed.')])
+    qualifier = source('qualifier', [('page-8-text-1-char-1', '2014'),
+        ('page-8-text-2-char-1', 'This report describes the rules applicable to the earlier observation period.'),
+        ('page-8-text-3-char-1', 'Later changes to the inspection requirements are outside this report.')])
+    def binding(item, index):
+        passage = item['excerpts'][index]
+        return {'source_id': item['id'], 'sha256': item['sha256'],
+            'locator': passage['passage'], 'quote': passage['text']}
+    observed['source_context'] = [{'observation': binding(observed, 0),
+        'anchors': [{'kind': 'time', **binding(qualifier, 1)}]}]
+    return [observed, qualifier]
+
+
+def test_linked_qualifier_preserves_full_page_and_remaps_local_writer_ids():
+    originals = linked_originals()
+    before = deepcopy(originals)
+    wire = wire_for(originals)
+    context = contextual_references(wire, [1])
+    assert context == wire.references and len(context) == 3
+    assert _units(wire)[0]['references'] == context
+    # Targeted writers renumber refs. Associations must follow exact originals,
+    # not accidentally point at the previous request's same integer.
+    local = {index: ref for index, ref in enumerate(reversed(context.values()), 21)}
+    passages = provider_excerpts(wire, local)
+    assert passages['observation'][0]['citation_ref'] == 23
+    assert passages['observation'][0]['context_anchors'] == [{'kind': 'time', 'citation_refs': [22]}]
+    assert passages['qualifier'][0] == {'text': '2014', 'passage': 'page-8-text-1-char-1'}
+    assert len([item for item in passages['qualifier'] if 'citation_ref' in item]) == 2
+    assert all('role' not in item for group in passages.values() for item in group)
+    assert originals == before and wire.references[2]['quote'] == originals[1]['excerpts'][1]['text']
+    with pytest.raises(ValueError, match='missing a bound original anchor'):
+        provider_excerpts(wire, {23: wire.references[1]})
+
+
+def test_partial_primary_aliases_still_require_their_complete_anchor():
+    wire = wire_for(linked_originals())
+    # A review's bounded candidate wire can omit another alias of a primary
+    # observation. Its supplied primary must still retain the entire qualifier.
+    wire.source_context[0]['observation_refs'].append(999)
+    assert provider_excerpts(wire, wire.references)['observation'][0]['context_anchors'] == [
+        {'kind': 'time', 'citation_refs': [2]}]
+    wire.references.pop(2)
+    with pytest.raises(ValueError, match='missing a bound original anchor'):
+        provider_excerpts(wire, wire.references)
+
+
+@pytest.mark.parametrize('change', ['quotation', 'sha', 'withdrawal', 'different_original'])
+def test_changed_or_foreign_context_cannot_be_rebound(change):
+    originals = linked_originals()
+    if change == 'quotation':
+        originals[0]['source_context'][0]['anchors'][0]['quote'] = 'The authority says the permit has already been extended.'
+    elif change == 'sha':
+        originals[1]['sha256'] = 'b' * 64
+    elif change == 'withdrawal':
+        originals.pop()
+    else:
+        originals[1]['url'] = 'https://example.test/different-original.pdf'
+    with pytest.raises(ValueError):
+        wire_for(originals)
+
+
+@pytest.mark.asyncio
+async def test_required_linked_qualifier_cannot_be_clipped_to_fit():
+    wire = wire_for(linked_originals())
+    before = deepcopy(wire.__dict__)
+    service = SimpleNamespace(settings=SimpleNamespace(apertus_context_chars=24000))
+    with pytest.raises(DomainError) as caught:
+        await select_evidence(service, wire, 'When may the permit be extended?', 0,
+            required_refs=[1], fits=lambda refs: len(refs) <= 1)
+    assert caught.value.code == 'research_evidence_group_too_large'
+    assert wire.__dict__ == before

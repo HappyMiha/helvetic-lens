@@ -130,6 +130,65 @@ def test_brief_selected_packet_is_not_evidence_of_absence():
     assert wire.__dict__ == before
 
 
+@pytest.mark.parametrize('phase', ['brief', 'reflect'])
+def test_only_brief_projects_history_counts_without_losing_live_obligations(phase):
+    wire = corpus(2)
+    document = {'title': 'Unread annex', 'read_complete': False, 'analysis_complete': False,
+        'unread_reason': 'The remaining pages must be read.', 'unresolved_references': ['Annex B']}
+    frontier = {'branch_id': 'saved-branch', 'query': 'Current original annex', 'remaining_candidates': 2}
+    wire.input['research_mission'] = {
+        'attempted_queries': ['Repeated prior search', 'Repeated prior search'],
+        'attempted_questions': [{'question': 'An obsolete model premise?', 'status': 'evidence_found'},
+            {'question': 'An optional historical extension?', 'status': 'open'},
+            {'question': 'A completed verification?', 'status': 'evidence_found'}],
+        'documents': [document], 'discovery_frontiers': [frontier]}
+    wire.work = {'phase': phase, 'input': wire.input}
+    before = deepcopy(wire.__dict__)
+    result = provider_input(wire, wire.references)
+    mission = result['research_mission']
+    assert result['original_question'] == before['input']['original_question']
+    assert mission['documents'] == [document]
+    assert mission['discovery_frontiers'] == [frontier]
+    if phase == 'brief':
+        assert not {'attempted_queries', 'attempted_questions'} & mission.keys()
+        assert mission['attempted_query_count'] == 2 and mission['attempted_question_count'] == 3
+        assert 'An obsolete model premise?' not in json.dumps(result)
+    else:
+        assert mission['attempted_queries'] == before['input']['research_mission']['attempted_queries']
+        assert mission['attempted_questions'] == before['input']['research_mission']['attempted_questions']
+        assert not {'attempted_query_count', 'attempted_question_count'} & mission.keys()
+    mission['documents'][0]['unresolved_references'].append('Provider-only mutation')
+    mission['discovery_frontiers'][0]['query'] = 'Provider-only mutation'
+    assert wire.__dict__ == before  # Host routing/deduplication still sees the full history.
+
+
+@pytest.mark.asyncio
+async def test_brief_history_projection_frees_space_for_complete_originals():
+    wire, model = corpus(3), Selector(None)
+    wire.input['research_mission'] = {
+        'attempted_queries': ['An obsolete search premise. ' * 100] * 3,
+        'attempted_questions': [{'question': 'Optional historical extension. ' * 100,
+            'status': 'evidence_found'}] * 3,
+        'documents': [{'title': 'Pending original', 'read_complete': False,
+            'analysis_complete': False, 'unread_reason': 'Remaining annex'}],
+        'discovery_frontiers': [{'branch_id': 'saved-branch', 'query': 'Read annex', 'remaining_candidates': 1}]}
+    wire.work = {'phase': 'brief', 'input': wire.input}
+    before = deepcopy(wire.__dict__)
+    projected = provider_input(wire, wire.references)
+    old_payload = deepcopy(projected)
+    old_payload['research_mission'].update({key: deepcopy(value) for key, value in
+        wire.input['research_mission'].items() if key in {'attempted_queries', 'attempted_questions'}})
+    old_payload['research_mission'].pop('attempted_query_count')
+    old_payload['research_mission'].pop('attempted_question_count')
+    assert request_characters(wire.system, old_payload, bounded_schema(wire.schema, wire.references)) > 9000
+    assert request_characters(wire.system, projected, bounded_schema(wire.schema, wire.references)) <= 9000
+    saved = {}
+    selected = await select_evidence(service(model), wire, wire.input['original_question'], 60, checkpoints=saved)
+    assert selected == wire.references and not model.calls
+    assert saved['retrieval_coverage']['all_originals_supplied'] is True
+    assert wire.__dict__ == before
+
+
 @pytest.mark.asyncio
 async def test_completed_document_metadata_does_not_displace_a_whole_short_original():
     wire, model = corpus(1, 'An exact qualified observation. ' * 40), Selector(lambda *_: True)
@@ -204,6 +263,64 @@ async def test_question_parts_and_source_diversity_share_the_pack(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_literal_query_seed_prevents_crowded_topics_and_composite_vote_from_displacing_a_rare_group(monkeypatch):
+    wire, checkpoints = corpus(6), {}
+    before = deepcopy(wire.__dict__)
+    ranking(monkeypatch, [
+        {'query': wire.input['original_question'], 'references': [1, 2, 3, 4, 5, 6],
+            'scores': {1: 1, 2: .99, 3: .98, 4: .97, 5: .96, 6: .05}},
+        {'query': 'A zero-score query', 'references': [6], 'scores': {6: 0}},
+        {'query': 'What capacity is available?', 'references': [2, 3, 1, 4, 5, 6],
+            'scores': {2: 1, 3: .99, 1: .98, 4: .97, 5: .96, 6: .05}},
+        {'query': 'An empty query', 'references': []},
+        {'query': 'Which exception limits operation?', 'references': [6, 2, 3, 1, 4, 5],
+            'scores': {6: 1, 2: .95, 3: .95, 1: .95, 4: .95, 5: .95}},
+    ])
+    attempted = []
+
+    def fits(refs):
+        attempted.append(tuple(refs))
+        return len(refs) <= 2
+
+    result = await select_evidence(service(Selector(None)), wire, wire.input['original_question'], 60,
+        fits=fits, checkpoints=checkpoints)
+    assert result == {key: wire.references[key] for key in (2, 6)}
+    assert len(attempted) == len(set(attempted)), 'A rejected group is not yielded again for another query or refinement'
+    assert wire.__dict__ == before
+    assert checkpoints['retrieval_coverage']['all_originals_supplied'] is False
+    assert checkpoints['retrieval_coverage']['absence_established'] is False
+
+
+@pytest.mark.asyncio
+async def test_query_seed_tries_next_whole_feasible_group_and_preserves_mandatory_context(monkeypatch):
+    wire, checkpoints = corpus(5), {}
+    wire.references[6] = {'source_id': 's1', 'locator': 'p2', 'quote': 'A mandatory qualification to the first observation.'}
+    wire.references[2]['locator'] = 'page-2-text-1'
+    wire.references[7] = {'source_id': 's2', 'locator': 'page-2-text-2', 'quote': 'The middle of this indivisible original page.'}
+    wire.references[8] = {'source_id': 's2', 'locator': 'page-2-text-3', 'quote': 'The final qualification on the same original page.'}
+    ranking(monkeypatch, [
+        {'query': 'The main observation?', 'references': [1, 4, 2, 3, 5],
+            'scores': {1: 1, 4: .8, 2: .1, 3: .1, 5: .01}},
+        {'query': 'The independent exception?', 'references': [2, 3, 1, 4, 5],
+            'scores': {2: 1, 3: .9, 1: .1, 4: .1, 5: .01}},
+    ])
+    attempts = []
+
+    def fits(refs):
+        attempts.append(set(refs))
+        return len(refs) <= 4
+
+    result = await select_evidence(service(Selector(None)), wire, wire.input['original_question'], 60,
+        fits=fits, required_refs=(1,), checkpoints=checkpoints)
+    assert result == {key: wire.references[key] for key in (1, 3, 4, 6)}
+    assert {1, 2, 6, 7, 8} in attempts, 'The highest-ranked complete page is attempted without clipping'
+    assert {1, 3, 6} in attempts, 'The next strongest feasible original can seed the unanswered query'
+    assert not {2, 7, 8} & result.keys()
+    assert checkpoints['retrieval_coverage']['required_references'] == 1
+    assert checkpoints['retrieval_coverage']['absence_established'] is False
+
+
+@pytest.mark.asyncio
 async def test_single_query_keeps_a_second_relevant_opposing_original(monkeypatch):
     wire = corpus(3)
     wire.references[1]['quote'] = 'The reported effect increased in the first observation.'
@@ -255,6 +372,109 @@ async def test_a_second_relevant_passage_beats_unrelated_source_diversity(monkey
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize('fragments', [1, 8])
+async def test_a_long_general_guide_does_not_displace_distinct_requested_evidence(monkeypatch, fragments):
+    wire = corpus(4)
+    guide = 'General operating background. ' * 100
+    offsets = [len(guide) * index // fragments for index in range(fragments + 1)]
+    wire.references = {index + 1: {'source_id': 's1', 'locator': 'page-1-text-1-char-1',
+        'quote': guide[offsets[index]:offsets[index + 1]]} for index in range(fragments)}
+    for key, text in ((101, 'The permitted operating mode.'), (102, 'The notice required when equipment is changed.'),
+            (103, 'The exception to the operating permission.')):
+        wire.references[key] = {'source_id': f's{key - 99}', 'locator': 'p1', 'quote': text}
+    rankings = [{'query': question, 'references': [key, *range(1, fragments + 1),
+        *[other for other in (101, 102, 103) if other != key]],
+        'scores': {ref: 1 if ref == key else .35 if ref < 100 else 0 for ref in wire.references}}
+        for key, question in ((101, 'What operation is permitted?'), (102, 'Which notice is required?'),
+            (103, 'When does the permission not apply?'))]
+    ranking(monkeypatch, rankings)
+
+    def measured(refs):
+        # The guide and each requested clause are complete originals. Either
+        # the guide or all three clauses fit; adding volume must not win a
+        # larger share of the user's independently requested distinctions.
+        return 100 + sum(700 / fragments if key < 100 else 250 for key in refs)
+
+    before = deepcopy(wire.__dict__)
+    checkpoints = {}
+    selected = await select_evidence(service(Selector(None), 1000), wire, 'Explain the permission, notice and exception.',
+        60, request_size=measured, checkpoints=checkpoints)
+    assert set(selected) == {101, 102, 103}
+    assert selected == {key: wire.references[key] for key in selected} and wire.__dict__ == before
+    assert checkpoints['retrieval_coverage']['absence_established'] is False
+    assert not checkpoints['retrieval_coverage']['all_originals_supplied']
+
+
+@pytest.mark.asyncio
+async def test_navigation_relevance_retrieves_the_bound_original_body(monkeypatch):
+    from helvetic_lens import research_evidence_pack
+    wire = corpus(3)
+    wire.references[1]['quote'] = 'When does the authorization end?'
+    wire.references[2].update(source_id='s1', locator='p2',
+        quote='The authorization ends only if the listed triggering event occurs.')
+    wire.references[3]['quote'] = 'An independently relevant background paragraph.'
+    units = [
+        {'primary': [1], 'ranking_refs': [], 'references': {1: wire.references[1]}, 'source_id': 's1'},
+        {'primary': [2], 'ranking_refs': [1, 2], 'references': {key: wire.references[key] for key in (1, 2)}, 'source_id': 's1'},
+        {'primary': [3], 'references': {3: wire.references[3]}, 'source_id': 's3'}]
+    monkeypatch.setattr(research_evidence_pack, '_units', lambda current: units)
+    ranking(monkeypatch, [{'query': 'When does the authorization end?', 'references': [1, 3],
+        'scores': {1: 1, 3: .2}}])
+    result = await select_evidence(service(Selector(None)), wire, wire.input['original_question'], 60,
+        fits=lambda refs: len(refs) <= 2)
+    assert result == {key: wire.references[key] for key in (1, 2)}
+    assert result[2]['quote'].startswith('The authorization ends only if')
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('required', [(), (1,)])
+async def test_unrankable_navigation_is_only_retained_when_explicitly_required(monkeypatch, required):
+    from helvetic_lens import research_evidence_pack
+    wire = corpus(2)
+    units = [{'primary': [1], 'ranking_refs': [], 'references': {1: wire.references[1]}, 'source_id': 's1'},
+        {'primary': [2], 'references': {2: wire.references[2]}, 'source_id': 's2'}]
+    monkeypatch.setattr(research_evidence_pack, '_units', lambda current: units)
+    ranking(monkeypatch, [{'query': 'The requested distinction', 'references': [1, 2], 'scores': {1: 1, 2: .2}}])
+    result = await select_evidence(service(Selector(None)), wire, wire.input['original_question'], 60,
+        fits=lambda refs: len(refs) <= 1, required_refs=required)
+    expected = 1 if required else 2
+    assert result == {expected: wire.references[expected]}
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize('require_navigation', [False, True])
+async def test_small_structured_wire_preserves_body_without_ordinary_navigation_citations(monkeypatch, require_navigation):
+    from helvetic_lens.extraction import extract
+    from helvetic_lens.product_exploration import Briefing
+    from helvetic_lens.product_research_mission import schema as mission_schema
+    from helvetic_lens.research_model_transport import EvidenceWire
+
+    html = b'<main><p><a href="#conditions">See operating conditions</a></p><h2 id="conditions">Operating conditions</h2><p>Operation is permitted only after inspection.</p></main>'
+    source = {'id': 's1', 'sha256': 'a' * 64, 'url': 'https://example.test/manual', 'title': 'Manual',
+        'excerpts': [{'passage': p['id'], 'text': p['text'], 'html_structure': p['html_structure']}
+            for p in extract(html, 'text/html').passages]}
+    wire = EvidenceWire({'phase': 'brief', 'input': {'original_question': 'When is operation permitted?',
+        'sources': [source], 'research_mission': {}}}, mission_schema(Briefing), '')
+    nav = next(key for key, ref in wire.references.items() if ref['quote'] == 'See operating conditions')
+    original = deepcopy(wire.references)
+
+    async def unexpected(*args, **kwargs):
+        pytest.fail('A complete eligible structural packet needs no ranking or encoder call')
+    monkeypatch.setattr('helvetic_lens.research_active_retrieval.rank_evidence', unexpected)
+    checkpoints = {}
+    selected = await select_evidence(service(Selector(None), 24000), wire, wire.input['original_question'], 0,
+        required_refs=[nav] if require_navigation else [], checkpoints=checkpoints)
+    expected = original if require_navigation else {key: ref for key, ref in original.items() if key != nav}
+    assert selected == expected and wire.references == original
+    projected = provider_input(wire, selected)
+    supplied_ids = {p['citation_ref'] for source in projected['sources'] for p in source['excerpts'] if 'citation_ref' in p}
+    assert (nav in supplied_ids) is require_navigation
+    assert any(ref['quote'] == 'Operation is permitted only after inspection.' for ref in selected.values())
+    assert checkpoints['retrieval_coverage']['all_originals_supplied'] is require_navigation
+    assert checkpoints['retrieval_coverage']['absence_established'] is False
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize('required', [(), (1,)])
 async def test_actual_envelope_cost_preserves_complementary_question_evidence_and_mandatory_units(monkeypatch, required):
     wire = corpus(3)
@@ -293,9 +513,9 @@ async def test_completed_pack_resumes_after_pause_without_reranking(monkeypatch)
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize('changed', ['question', 'quote', 'hash', 'retrieval_policy', 'required', 'cost'])
+@pytest.mark.parametrize('changed', ['question', 'quote', 'hash', 'retrieval_policy', 'packing_policy', 'required', 'cost'])
 async def test_cache_binds_current_originals_scope_policy_and_actual_cost(monkeypatch, changed):
-    from helvetic_lens import research_active_retrieval
+    from helvetic_lens import research_active_retrieval, research_evidence_pack
     wire, checkpoints = corpus(), {}
     seen = ranking(monkeypatch)
     question, required, overhead = wire.input['original_question'], (), 5000
@@ -310,6 +530,8 @@ async def test_cache_binds_current_originals_scope_policy_and_actual_cost(monkey
         wire.input['sources'][0]['sha256'] = 'new-original-capture'
     elif changed == 'retrieval_policy':
         monkeypatch.setattr(research_active_retrieval, 'POLICY', 'changed-local-retrieval-policy')
+    elif changed == 'packing_policy':
+        monkeypatch.setattr(research_evidence_pack, 'POLICY', 'changed-structural-packing-policy')
     elif changed == 'required':
         required = (10,)
     else:

@@ -168,7 +168,7 @@ def prepare_capture(session, run, state, work):
         work["skip"] = True
         return
     value = {k: deepcopy(v) for k, v in selected.snapshot.items() if k not in {
-        "branch_id", "research_question", "relevance_gate", "section_review", "professional_facts", "source_class",
+        "branch_id", "research_question", "relevance_gate", "section_review", "professional_facts", "source_class", "requested_source_matches",
         "analysis_completed", "analysis_completed_at", "analysis_gaps"}}
     pin = next(pin for pin in pins if pin["source_id"] == selected.id)
     value.update(title=selected.title, url=selected.url, sha256=selected.sha256,

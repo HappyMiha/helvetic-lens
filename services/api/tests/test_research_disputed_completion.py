@@ -57,7 +57,7 @@ async def test_native_dispute_reaches_existing_correction_or_withholding_without
             if assertion == texts[1]:
                 data = cannot_assess(payload)
                 if correctable:
-                    data['overall'].update(verdict='not_established', citation_refs=[])
+                    data['overall'].update(verdict='not_established')
                     for clause in data['clauses'].values():
                         clause.update(verdict='not_established', witnesses=[])
                 return json.dumps(data)
@@ -152,7 +152,7 @@ async def test_dispute_does_not_erase_an_unfinished_check_and_resume_reuses_boun
     result = await review.finalize(service, work, wire, parsed, 90,
         checkpoints=json.loads(json.dumps(saved)), defer_pending=True)
     assert calls.count(texts[0]) == 1, 'Saved valid sibling proof remains bound and reusable'
-    assert calls.count(texts[1]) == 2, 'Each native attempt assesses the dispute at most once'
+    assert calls.count(texts[1]) == 1, 'A valid unresolved judgment is reused without approving the disputed point'
     assert [point.statement for point in parsed.mission_checkpoint.answer.points] == [texts[0], texts[2]]
     assert result['factual_review']['pending_checks'] == []
     assert coverage[-1] == [texts[0], texts[2]]

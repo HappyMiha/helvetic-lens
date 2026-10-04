@@ -13,6 +13,7 @@ from test_product_investigations import tick
 from test_product_iterative_research import complete
 
 from helvetic_lens import decision_sources, jobs
+from helvetic_lens import product_exploration as exploration
 from helvetic_lens.db import utcnow
 from helvetic_lens.product_investigation_models import (
     Investigation,
@@ -21,6 +22,7 @@ from helvetic_lens.product_investigation_models import (
     WebResearchPolicy,
 )
 from helvetic_lens.product_models import DossierEntry
+from helvetic_lens.product_research_admission import unmetered
 
 
 def until(client, service, root, run, status="ready"):
@@ -134,7 +136,7 @@ def test_all_inputs_not_just_quoted_inputs_remain_source_contained(signed, monke
         assert "early_orientation" not in trace["briefings"][0]
 
 
-@pytest.mark.parametrize("constraint", ["one_source", "time"])
+@pytest.mark.parametrize("constraint", ["one_source", "active_seconds", "model_calls"])
 def test_early_checkpoint_needs_evidence_but_unmetered_research_has_no_elapsed_budget(signed, monkeypatch, constraint):
     client, service, _, model = signed
     trace = adapters(monkeypatch, service, model)
@@ -146,15 +148,51 @@ def test_early_checkpoint_needs_evidence_but_unmetered_research_has_no_elapsed_b
             return await original(settings, query, item, mode, **kwargs)
         monkeypatch.setattr(decision_sources, "safe_inspect", inspect)
     root, run, _ = start(client)
-    if constraint == "time":
+    if constraint != "one_source":
         with service.db.session() as session:
             saved = session.get(Investigation, run["id"])
+            assert unmetered(saved)
             saved.research_state = {**saved.research_state,
-                "used": {"active_seconds": 320}}
+                "used": {**saved.research_state["used"], constraint: saved.research_state["limits"][constraint] + 1}}
             session.commit()
     final = complete(client, service, root + "/investigations", run)
-    assert bool(trace.get("orientations")) == (constraint == "time")
+    assert len(trace.get("orientations", [])) == (0 if constraint == "one_source" else 1)
+    assert len([b for b in final["branches"] if b["phase"] == "orient"]) == (0 if constraint == "one_source" else 1)
     assert final["exploration"]["status"] == "ready"
+
+
+@pytest.mark.parametrize("reserve", ["available", "model_calls", "active_seconds"])
+def test_legacy_orientation_keeps_total_reserves_and_schedules_at_most_once(signed, monkeypatch, reserve):
+    client, service, _, model = signed
+    adapters(monkeypatch, service, model)
+    _, run, _ = start(client)
+    # The first worker turn schedules planning; the next admits its questions.
+    tick(service, run["id"])
+    tick(service, run["id"])
+    with service.db.session() as session:
+        saved = session.get(Investigation, run["id"])
+        data = deepcopy(saved.research_state)
+        data.pop("admission", None)
+        data.pop("mission", None)
+        if reserve == "model_calls":
+            data["used"][reserve] = data["limits"][reserve] - 2
+        elif reserve == "active_seconds":
+            data["used"][reserve] = data["limits"][reserve] - 44
+        saved.research_state = data
+        assert not unmetered(saved)
+        for index in range(2):
+            session.add(InvestigationSource(dossier_id=saved.dossier_id, organization_id=saved.organization_id,
+                investigation_id=saved.id, source_key=f"legacy-{index}", kind="public_source",
+                title=f"Public original {index}", url=f"https://example.org/legacy-{index}",
+                sha256=str(index) * 64, snapshot={"excerpts": [{"passage": "p1", "text": f"Public record {index}."}]}))
+        session.flush()
+        def branches():
+            return list(session.scalars(select(InvestigationBranch).where(InvestigationBranch.investigation_id == saved.id)))
+        assert any(b.checkpoint.get("question_id") for b in branches())
+        assert exploration.schedule(session, saved, branches()) is (reserve == "available")
+        session.flush()
+        assert exploration.schedule(session, saved, branches()) is False
+        assert len([b for b in branches() if b.phase == "orient"]) == (1 if reserve == "available" else 0)
 
 
 @pytest.mark.parametrize("early", [False, True])

@@ -497,7 +497,11 @@ async def test_shared_inference_budget_caps_transport_retries(harness, monkeypat
     with pytest.raises(DomainError) as error:
         await ModelClient(settings).complete("system", "user", budget=budget)
 
-    assert error.value.code == "model_budget_exhausted"
+    assert error.value.code == "model_temporarily_unavailable"
+    assert budget.used == len(requests) == 2
+    with pytest.raises(DomainError) as exhausted:
+        await ModelClient(settings).complete("system", "user", budget=budget)
+    assert exhausted.value.code == "model_budget_exhausted"
     assert budget.used == len(requests) == 2
 
 

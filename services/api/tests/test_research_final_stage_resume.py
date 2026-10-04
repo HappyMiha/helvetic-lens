@@ -8,6 +8,7 @@ from research_pack_fixtures import atomic_pack_model
 from test_research_answer_parts import selection_json
 
 from helvetic_lens import research_answer_review as review
+from helvetic_lens import research_final_coverage
 from helvetic_lens import research_gateway as gateway
 from helvetic_lens.analysis import ModelClient
 from helvetic_lens.config import DomainError, Settings
@@ -23,9 +24,20 @@ def isolated_advisory_points(monkeypatch):
         return {'status': 'checked', 'hints': [], 'decisions': [], 'points_checked': len(answer.points)}
     monkeypatch.setattr(review, 'audit_points', advisory)
 
+    async def coverage(settings, work, wire, answer, requests, seconds, **kwargs):
+        # Each case scripts the current answer's coverage in audit(). Use the
+        # same decision at final delivery, without an unconfigured live engine.
+        result = await review.audit(settings, work, wire, answer, seconds)
+        return [{'user_request': request, 'choice': result['question_coverage'],
+            'point_ids': [f'P{i}' for i in range(len(answer.points))]
+                if result['question_coverage'] == 'covered' else []}
+            for request in requests]
+    monkeypatch.setattr(research_final_coverage, 'assess_requests', coverage)
+
 
 @pytest.mark.asyncio
-async def test_final_coverage_interruption_retains_flat_final_order_and_citations(monkeypatch):
+@pytest.mark.parametrize('interruption', ['exception', 'unavailable'])
+async def test_final_coverage_interruption_retains_flat_final_order_and_citations(monkeypatch, interruption):
     from helvetic_lens import research_final_coverage, research_final_review
 
     original = ['Published in 2001.', 'An earlier edition was published in 1999.']
@@ -67,6 +79,9 @@ async def test_final_coverage_interruption_retains_flat_final_order_and_citation
         kwargs['on_progress']()
         if not interrupted[0]:
             interrupted[0] = True
+            if interruption == 'unavailable':
+                return {'status': 'partial', 'question_coverage': None, 'decisions': [
+                    {'choice': 'unavailable', 'fallback_errors': [{'code': 'step_deadline'}]}]}
             raise DomainError('Interrupted during complete-answer coverage', 503, 'model_upstream_timeout')
         return {'status': 'checked', 'removed_notices': 0}
     async def no_original(*args, **kwargs):
@@ -206,9 +221,19 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
             repair = bool(value.get('review_feedback'))
             assert repair, 'A complete shared draft needs no unconditional request packs'
             assert value['requested_part'] == value['original_question'] == work['input']['original_question']
+            selection = 'citation_refs' in kwargs['response_schema']['properties']
+            if 'correction_target' not in value:
+                # Withholding the unresolved operator exposes missing coverage.
+                # The one late whole-question attempt proposes nothing; it must
+                # not repeat either completed point correction or undo siblings.
+                assert first_result == 'unresolved'
+                calls.append(('aggregate_select' if selection else 'aggregate_write',))
+                if selection:
+                    return selection_json([1], kwargs)
+                assert set(value['retained_answer'].values()) == set(source[1:])
+                return json.dumps({'points': [], 'remaining_gap': ''})
             index = wrong.index(value['correction_target']['previous_statement'])
             assert index < 2, 'The valid sibling must never be rewritten'
-            selection = 'citation_refs' in kwargs['response_schema']['properties']
             calls.append(('select' if selection else 'write', index, repair))
             if selection:
                 return selection_json([index+1], kwargs)
@@ -216,8 +241,9 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
                 interrupted[0] = True
                 raise DomainError('Synthetic writer interruption', 503, 'model_rate_limited')
             if repair and index == 0 and first_result == 'unresolved':
-                return json.dumps({'points': [], 'remaining_gap': ''})
-            return json.dumps({'points': [point(index, source[index])], 'remaining_gap': ''})
+                return json.dumps({'points': []})
+            assert 'remaining_gap' not in kwargs['response_schema']['properties']
+            return json.dumps({'points': [point(index, source[index])]})
         calls.append(('draft',))
         return json.dumps({'answer': {'status': 'possible_answer', 'remaining_gaps': [],
             'points': [point(i, wrong[i]) for i in range(3)]}, 'next_action': 'finish'})
@@ -254,6 +280,8 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
     assert later[0] == ('write', 1, True), 'Resume the saved selection before any new review or correction'
     assert not any(call[:1] in [('select',), ('draft',)] for call in later)
     assert [call for call in later if call[0] == 'write'] == [('write', 1, True)]
+    assert [call for call in later if call[0].startswith('aggregate_')] == (
+        [('aggregate_select',), ('aggregate_write',)] if first_result == 'unresolved' else [])
     assert result.mission_checkpoint.answer.points[-1].statement == source[2]
     assert [p.statement for p in result.mission_checkpoint.answer.points] == (source if first_result == 'corrected' else source[1:])
     assert [p.evidence[0].quote for p in result.mission_checkpoint.answer.points] == (source if first_result == 'corrected' else source[1:])
@@ -262,6 +290,7 @@ async def test_later_correction_resumes_writer_without_repeating_completed_reque
         assert answer.status == 'possible_answer' and not answer.limitations
     else:
         assert answer.status == 'partial'
-        assert answer.limitations == ['This answer has not resolved the requested part: Who operates the registry?']
+        assert not answer.limitations, 'Missing coverage is not an invented factual knowledge gap'
+        assert resumed['model_route']['answer_review']['delivered_coverage']['question_coverage'] == 'missing'
     assert 'final_correction_round' not in json.dumps(resumed['model_route'])
     assert all('review_feedback' not in json.dumps(ref.model_dump()) for p in result.mission_checkpoint.answer.points for ref in p.evidence)

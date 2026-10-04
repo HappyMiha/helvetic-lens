@@ -36,7 +36,7 @@ def parse(body, filename, content_type, *, nested=False, cursor=None):
     media = content_type.split(";")[0].strip().lower()
     if suffix not in FORMATS or media not in FORMATS[suffix] | {"", "application/octet-stream"}:
         return {"error": "Original retained. Automatic extraction supports TXT, Markdown, CSV, HTML, PDF, DOCX, XLSX, PPTX and EML with matching content types."}
-    warnings, attachments, methods = [], [], []
+    warnings, attachments, methods, structures = [], [], [], {}
     if suffix == ".pdf":
         if not body.startswith(b"%PDF"):
             return {"error": "Original retained. The file does not contain a PDF document."}
@@ -82,6 +82,8 @@ def parse(body, filename, content_type, *, nested=False, cursor=None):
     elif suffix in {".html", ".htm"}:
         result = extract(body, "text/html", filename)
         sections = [(passage["id"], passage["text"]) for passage in result.passages]
+        structures = {passage['id']: passage['html_structure'] for passage in result.passages
+            if passage.get('html_structure')}
         methods = ["html-text"]
         truncated, page_count = False, None
     else:
@@ -109,7 +111,8 @@ def parse(body, filename, content_type, *, nested=False, cursor=None):
             part = value[part_start:part_start + 1200]
             if part.strip():
                 locator = location if progressive and suffix == ".pdf" else f"{location}-block-{position}"
-                excerpts.append({"passage": f"{locator}-char-{begin + part_start + 1}", "text": part})
+                excerpts.append({"passage": f"{locator}-char-{begin + part_start + 1}", "text": part,
+                    **({'html_structure': structures[location]} if location in structures else {})})
         remaining -= len(value)
         consumed += len(value)
     next_cursor = ({"page": start, "offset": offset + consumed} if offset + consumed < extracted else

@@ -6,11 +6,21 @@ def enabled(run):
     return (run.research_state or {}).get("exploration", {}).get("pacing_version") == 1
 
 
-def remaining_seconds(run, phase):
+def operation_seconds(run, phase, settings):
+    from .product_research_admission import unmetered
+    from .research_contracts import SKILLS
+
+    skill = SKILLS.get(phase)
+    if unmetered(run) and skill is not None and skill.provider == "synthesis":
+        return settings.apertus_timeout_seconds
+    return 90
+
+
+def remaining_seconds(run, phase, *, operation_seconds=90):
     from .product_research_admission import unmetered
 
     if unmetered(run):
-        return 90
+        return operation_seconds
     data = run.research_state
     remaining = data["limits"]["active_seconds"] - data["used"].get("active_seconds", 0)
     if enabled(run) and phase != "brief":

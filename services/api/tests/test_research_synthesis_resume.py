@@ -168,8 +168,11 @@ async def test_selection_interruption_resumes_before_one_draft_and_preserves_ful
     calls, checked_batches, inspected_originals = [], [], []
     interrupted, final_interrupted = [False], [False]
 
-    async def select(service, wire, question, seconds, *, checkpoints, on_progress):
+    async def select(service, wire, question, seconds, *, checkpoints, on_progress, envelope_binding):
         assert question == initial['input']['original_question'] and len(wire.references) == 3
+        assert envelope_binding['system'] == wire.system and envelope_binding['schema'] == wire.schema
+        assert envelope_binding['payload'] == {key: value for key, value in wire.input.items() if key != 'sources'}
+        assert envelope_binding['provider'] == settings.apertus_provider
         nodes = checkpoints.setdefault('evidence_selection', {})
         for batch, refs in [('early', [1]), ('later', [2])]:
             if batch not in nodes:
@@ -250,7 +253,7 @@ async def test_unsupplied_draft_reference_is_rejected_again_after_failed_format_
     work = {'phase': 'brief', 'unmetered_research': True, 'input': {
         'original_question': 'Who operates the registry?', 'research_mission': {},
         'sources': [{'id': 'a' * 36, 'kind': 'public_source', 'excerpts': [
-            {'passage': 'p1', 'text': 'North Reach owns the registry.'},
+            {'passage': 'ownership-record', 'text': 'North Reach owns the registry.'},
             {'passage': 'p2', 'text': 'South Reach operates the registry.'}]}]}}
     initial, calls = deepcopy(work), []
 
@@ -266,6 +269,7 @@ async def test_unsupplied_draft_reference_is_rejected_again_after_failed_format_
         if len(calls) > 1:
             if oversized_feedback:
                 assert data == calls[0], 'The bounded retry preserves all selected originals and omits the malformed draft'
+                assert 'The previous response failed validation.' in system
             else:
                 assert 'previous_invalid_response' in data
         ref = 1 if len(calls) <= 2 else 2
@@ -298,7 +302,7 @@ async def test_unsupplied_draft_reference_is_rejected_again_after_failed_format_
     result = schema.model_validate_json(await gateway.complete(service, resumed, '', schema, 90))
     assert len(calls) == 3, 'Resume must repair the saved invalid draft, never accept its unsupplied reference'
     assert result.mission_checkpoint.answer.points[0].evidence[0].quote == 'South Reach operates the registry.'
-    assert resumed['model_route']['format_repair_mode'] == ('fresh_bounded_draft' if oversized_feedback else 'validation_feedback')
+    assert resumed['model_route']['format_repair_mode'] == ('error_only' if oversized_feedback else 'validation_feedback')
 
 
 @pytest.mark.parametrize('page', ['p103', 'p.103', 'pp103–105', 'page 103'])
@@ -316,7 +320,8 @@ def test_bibliographic_page_numbers_ground_page_references_without_authorizing_o
 
 
 @pytest.mark.asyncio
-async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draft_or_review(monkeypatch):
+@pytest.mark.parametrize('failure', ['model_rate_limited', 'model_incomplete'])
+async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draft_or_review(monkeypatch, failure):
     settings = Settings(_env_file=None, apertus_provider='swisscom')
     model = ModelClient(settings)
     service = SimpleNamespace(settings=settings, model_client=model)
@@ -346,7 +351,7 @@ async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draf
         calls.append(number)
         if number == 3 and fail[0]:
             fail[0] = False
-            raise DomainError('Temporary synthetic rate limit', 503, 'model_rate_limited')
+            raise DomainError('Synthetic interrupted helper generation', 502 if failure == 'model_incomplete' else 503, failure)
         return json.dumps({'statement': ref['text'], 'remaining_gap': '',
             'evidence': [{'citation_ref': ref['citation_ref'], 'role': 'support'}]})
     async def audit(*args, **kwargs):
@@ -359,8 +364,9 @@ async def test_rate_limit_after_two_repairs_resumes_third_without_repeating_draf
     monkeypatch.setattr(review, 'audit', audit)
     monkeypatch.setattr(review, 'complete_citation_context', context)
     monkeypatch.setattr(review, 'original_check', original)
-    with pytest.raises(DomainError, match='Temporary synthetic rate limit'):
+    with pytest.raises(DomainError) as interruption:
         await gateway.complete(service, work, '', schema, 90)
+    assert interruption.value.code == failure
     # Round-trip through the actual private JSON representation between workers.
     retained = json.loads(json.dumps(work[KEY]))
     assert retained['stage'] == 'reviewed'
@@ -462,7 +468,7 @@ async def test_one_invalid_point_cannot_rewrite_or_shift_valid_siblings(monkeypa
         if 'previous_proposal' in value:
             assert value['previous_proposal']['statement'] == invalid['statement']
             assert not {'points', 'requested_part', 'remaining_gap'} & value.keys()
-            assert kwargs['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            assert 'remaining_gap' not in kwargs['response_schema']['properties']
             return json.dumps(value['previous_proposal'])
         if 'requested_part' in value:
             assert value['requested_part'] == work['input']['original_question']

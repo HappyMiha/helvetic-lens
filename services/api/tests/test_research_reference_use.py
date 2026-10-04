@@ -4,6 +4,7 @@ from copy import deepcopy
 from types import SimpleNamespace
 
 import pytest
+from research_pack_fixtures import atomic_pack_model
 
 from helvetic_lens import research_active_retrieval as retrieval
 from helvetic_lens import research_synthesis_resume as resume
@@ -44,8 +45,13 @@ def test_original_classification_survives_windowing_and_local_citation_renumberi
     local = {1: wire.references[4], 2: wire.references[1], 3: wire.references[3]}
     for field, groups in [('excerpts', provider_sources(wire, local)), ('passages', source_groups(wire, local))]:
         passages = groups[0][field]
-        assert [p.get('source_use') for p in passages] == ['reference_metadata', None, 'reference_metadata']
-        assert [p['text'] for p in passages] == [local[key]['quote'] for key in local]
+        # Provider context follows original document order. Local citation IDs
+        # must still identify exactly the same quotations and source-use roles.
+        by_id = {p['citation_ref']: p for p in passages}
+        assert len(passages) == len(by_id) == len(local)
+        assert {key: p.get('source_use') for key, p in by_id.items()} == {
+            1: 'reference_metadata', 2: None, 3: 'reference_metadata'}
+        assert {key: p['text'] for key, p in by_id.items()} == {key: ref['quote'] for key, ref in local.items()}
     assert wire.references == before
 
 
@@ -111,6 +117,7 @@ async def test_existing_semantic_review_distinguishes_metadata_from_unread_resul
     calls = []
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             payload = json.loads(text)
             calls.append(payload)
@@ -138,12 +145,15 @@ async def test_existing_semantic_review_distinguishes_metadata_from_unread_resul
 @pytest.mark.asyncio
 async def test_metadata_witness_does_not_clear_an_existing_content_objection():
     wire = answer_wire()
+    calls = []
     answer = AssessmentOutcome(status='possible_answer', points=[{
         'statement': 'The atmosphere fully recovered.', 'evidence': [{**wire.references[3], 'role': 'context'}]}], limitations=[])
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             payload = json.loads(text)
+            calls.append(payload)
             judgment = {'verdict': 'supported', 'reason': '', 'citation_refs': [3], 'assertion_scope': 'original_content'}
             return json.dumps({'overall': judgment, 'clauses': {key: judgment for key in payload['assertion_clauses']},
                 'concern_checks': [{'id': key, 'outcome': 'resolved', 'reason': 'The title was cited.',
@@ -152,10 +162,19 @@ async def test_metadata_witness_does_not_clear_an_existing_content_objection():
 
     service = SimpleNamespace(settings=Settings(_env_file=None), model_client=Model())
     checkpoints = {}
+    concerns = {'P0': {'previous_statements': [], 'issues': [{'instruction': 'The paper itself remains unread.'}]}}
     result = await reasoned_review(service, wire, answer, 60, checkpoints=checkpoints,
-        concerns={'P0': {'previous_statements': [], 'issues': [{'instruction': 'The paper itself remains unread.'}]}})
+        concerns=concerns)
     assert result['pending_checks'] == [{'item': 'P0', 'reason': 'unresolved_concern'}]
-    assert not result['positive_witnesses'] and not checkpoints
+    assert not result['positive_witnesses'] and not result['candidates']
+    assert len(calls) == 1 and any(key.startswith('clauses:') for key in checkpoints)
+    # Completed raw inference is retained privately, but source-use validation
+    # must still reject the bibliography as evidence on a resumed review.
+    result = await reasoned_review(service, wire, answer, 60,
+        checkpoints=json.loads(json.dumps(checkpoints)), concerns=concerns)
+    assert len(calls) == 1, 'A retained raw judgment is reused without purchasing another inference'
+    assert result['pending_checks'] == [{'item': 'P0', 'reason': 'unresolved_concern'}]
+    assert not result['positive_witnesses'] and not result['candidates']
 
 
 @pytest.mark.asyncio
@@ -167,6 +186,7 @@ async def test_bibliography_does_not_close_a_content_gap_because_another_point_e
         limitations=['The empirical recovery result remains unknown.'])
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             payload = json.loads(text)
             gap = 'L0' in payload['final_claims_and_gaps']
@@ -225,6 +245,7 @@ async def test_bounded_review_preserves_native_run_scope_for_local_retrieval(mon
         checked.append('current')
 
     class Model:
+        @atomic_pack_model
         async def complete(self, system, text, **kwargs):
             payload = json.loads(text)
             judgment = {'verdict': 'supported', 'reason': '', 'citation_refs': []}

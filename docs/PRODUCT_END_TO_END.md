@@ -2482,3 +2482,1382 @@ The delivered text still contains a conditional/time overclaim, so its content
 verdict remains PARTIAL. Publish the independent finalizer completion fix only;
 the broader evidence-first generation candidate remains unpublished. This release
 repairs whole-answer blocking without claiming the complete product is accepted.
+
+### Preserve source qualifications from reading to the answer
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. The optional
+evidence-plan/composer candidate repeated mistaken plan assertions with unchanged
+citations. Its sixteen changed files are archived with hashes outside the checkout;
+the active implementation returns to the single writer in release3162ad9. Do not
+add another reviewer or use citation identity as a substitute for source meaning.
+
+During existing section reading, allow an observation to select literal context
+anchors for subject/scope, condition/exception, time and category distinctions.
+Store them with the existing section review, bound to exact source SHA and original
+passages. Carry the associations through source compaction, canonical references,
+initial writing and targeted correction. Preserve full originals and contextual
+paragraphs. A label is fallible interpretation; the linked quotation is source
+text, never an automatic approval or substitute for decisive support citations.
+Legacy observations without anchors remain usable and explicitly unannotated.
+
+Dependencies are existing sequential reading, source snapshots, EvidenceWire and
+source rights checks; no new model, table, reviewer or credentials. Acceptance:
+literal bindings reject fabrication and changed sources; complete linked passages
+survive packing or the operation pauses without clipping them; initial and repair
+inputs carry the same meaning context; denied sources never leak through anchors.
+Use focused integration and actual source examples, then one materially changed
+end-to-end case. Preserve conditions and temporal/category distinctions in the
+delivered answer before claiming semantic success. Source-context transport alone
+is not proof that every generated paraphrase is correct.
+
+The complete source-context path is implemented. One hundred distinct affected
+cases pass across document storage, exact bindings, full-context transport,
+initial writing, targeted correction and inherited final-review concerns. Exact
+API Ruff, backlog guard and diff checks pass. Independent review found and fixed
+one inherited-reference closure omission; no remaining scoped blocker was found.
+These checks establish preservation and failure handling, not semantic acceptance.
+Fresh isolated Apache-2.0 investigation58996 used the unchanged public journey and
+a frozen API candidate. It failed after57.1seconds during planning, before any
+source read: both structured provider replies emitted two branches, then repeated
+whitespace without required objective/completion criteria or a closed JSON object.
+The source-context change was not exercised. Its content acceptance is NOT REACHED,
+not a semantic pass or an established regression. No production records or emails
+were created; this candidate remains unpublished pending a useful complete result.
+
+### Start research with a complete operational plan
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. The fresh
+Apache-2.0 journey stopped before retrieval because both strict planning replies
+stalled after branches and ended with provider finish_reason=length. Do not infer
+that more output tokens would solve this or close invalid JSON on the host.
+
+Make hosted research planning generate only the operational branches. Retain the
+complete original user question as the objective and clearly host-owned descriptive
+planning metadata; these existing fields are history/display, not completion gates.
+Branch questions never replace requested coverage. Preserve catalogue validation,
+current native retry, and the legacy canonical plan contract. Reject overlong
+canonical inputs explicitly rather than silently clipping the user's question.
+
+For OpenAI-compatible transports, explicitly interrupted/refused outputs must not
+be accepted as successful text or sent into identical-schema format repair. Match
+the existing typed incomplete-response behavior and retain interruption receipts.
+Do not fabricate missing fields, discard prior evidence, add a critic, change the
+research-wide allowance, or alter source permissions. Acceptance uses captured
+interrupted envelopes and focused planner/public-retry coverage, then one ordinary
+retry of the retained failed investigation after this coherent contract change.
+No new question, fixtures in production, or unchanged provider experiment.
+
+Implemented and independently reviewed: provider planning requires only valid
+operational branches; exact original-question bounds are checked before dispatch.
+Twenty-one transport cases and twelve focused planning/context cases pass, including
+explicit ordinary retry without source rereading or partial-output exposure.
+Exact API Ruff, backlog and diff gates pass. Source-context section reading uses
+the reading-specific anchor instructions; answer consumers retain interpretation
+instructions only. Actual retained-investigation retry remains the acceptance gate.
+
+Retained retry11085 passed planning in one5.02second response and read twelve
+document captures. It stopped after546.7seconds at point correction with an explicit
+incomplete provider response; no public answer was delivered. Its private draft
+omitted essential conditions and used applying-license guidance as universal
+redistribution obligations. The writer's twelve selected windows omitted already
+read patent/trademark clauses and the licensing FAQ. Context associations were
+generated, stored and supplied downstream, but this did not establish answer quality.
+
+### Retrieve complete originals and retain interrupted synthesis
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Reading notes
+must not decide which passages from an accessible captured original can ever reach
+answer retrieval. Preserve the complete authorized original corpus for local
+ranking and retrieval, while bounding only the actual model request. Carry complete
+structural passages and recorded qualifiers, keep metadata separate from evidence,
+and assess each requested aspect without treating a shortlist as proof of coverage.
+Use the frozen Apache captures to demonstrate that material patent, trademark and
+conditional-notice clauses remain addressable and can reach the existing writer.
+Do not add another reviewer, generic web benchmark or domain-specific answer rules.
+
+Preserve an existing private synthesis checkpoint on explicit model_incomplete
+after the same source/access/generation fences as other retained work. Keep the
+failure terminal and explicitly retryable; no automatic identical retries or
+acceptance of partial model text. Simplify correction-only output to complete
+points: its empty gap is already a host constant. Ordinary requested-answer gap
+writing, exact citations and coverage remain unchanged. Validate captured failure
+and source-withdrawal behavior without restoring a discarded draft from call logs.
+Then judge the complete coherent change using retained evidence; a new provider run
+requires a material implemented change, never just a new prompt or wider token cap.
+
+The coherent candidate now retains every current authorized captured passage for
+local ranking, uses complete structural groups and per-request diminishing
+representation instead of rewarding text volume, and fixes HTML question/answer
+adjacency by original paragraph ordinal. The private full corpus is removed before
+provider serialization; hosted brief expansion exactly matches the bounded mission
+path. Legacy and Docker requests keep their compact view. Independent source/phase
+review found and fixed the legacy Briefing bypass; no remaining scoped blocker.
+
+Explicit model interruption retains valid private synthesis after existing access,
+source and generation checks, with ordinary explicit retry only. Correction-only
+provider schemas request points instead of a forced empty gap field; incomplete or
+malformed text is still rejected before host metadata is applied. Focused original
+retrieval/context checks, interruption/withdrawal checks, correction boundaries and
+37 packing cases pass, as do exact API Ruff, backlog and diff gates. These establish
+transport and recovery, not answer accuracy. The frozen Apache lexical diagnostic
+examines 488 references and no longer lets a long general guide monopolize the
+packet, but still misses decisive direct clauses. Actual local-encoder selection
+and the resulting delivered answer must be assessed before semantic acceptance.
+
+Actual local E5 dense+BM25 diagnostic completed in21.99seconds over all488
+references without truncation, hosted calls or native database writes. Its32
+selected windows fit23,894/24,000characters and retain exact source bindings,
+but the packet is INSUFFICIENT: headings/TOC/questions displace operative patent
+and redistribution clauses; substantive answers chiefly come from secondary
+summaries despite the request for official originals. No native retry was started
+and no semantic or product-completion claim is made. Independent code review
+approves the packing boundary only. Production remains3162ad9/Sites92.
+
+### Preserve document structure from originals into answer retrieval
+
+Next coherent scope recorded before implementation, 3 October 2026, MV2-020/023.
+The captured FAQ contains a question, short answer label and full answer in the
+same source/SHA; adjacency among citable windows drops the short label and cannot
+connect the answer. HTML extraction also flattens TOC fragment links and heading
+containers into ordinary paragraphs. The original HTML bytes are retained and
+hash-verified, so this can be repaired through a derived deterministic structural
+view without refetching or changing immutable capture receipts.
+
+Preserve native HTML block/container/heading boundaries and same-document fragment
+relationships through extraction, excerpt projection and retrieval units. Resolve
+navigation to its original body and retain complete body context; headings alone
+are not substantive answers. Keep exact source SHA/access checks and literal
+quotes/locators. Avoid domain-specific rules, a short-label skipping patch, a new
+reviewer, total research quotas or another unchanged provider run. Validate the
+whole data path on retained originals and generic HTML structure, then assess the
+actual resulting packet before retrying the saved investigation.
+
+Implemented the complete structural path: additive deterministic DOM metadata
+retains native heading regions, semantic containers and same-document fragment
+targets. Leading emphasized, addressable labels also establish clause regions
+without classifying their mixed operative prose as a heading. Existing text,
+ordering and original passage IDs are unchanged. HTML extraction and canonical
+windowing retain the metadata; existing captures can derive it from hash-verified
+local original bytes, matched to every saved passage/offset, without changing any
+capture, quote, native reading status or frozen receipt. Native source/access
+checks still precede provider dispatch.
+
+Retrieval routes heading/TOC relevance to complete body groups. Ordinary evidence
+contains the body and its headings/short labels, while an explicitly required
+navigation reference remains addressable without taking a normal retrieval slot.
+The actual license's redistribution region now includes all list conditions and
+its continuation; the FAQ question retains its short answer label and full answer.
+Independent integration review confirmed source identity/immutability boundaries
+and identified a complete-pack navigation bypass, assigned for correction before
+acceptance. Prior transport checks remain valid; this scope adds focused extraction,
+structural context, saved-byte integrity and ranking-alias checks. Actual changed
+packet and delivered answer acceptance remain open; no production update yet.
+
+The small complete-pack shortcut is corrected and independently approved: only
+eligible body/context plus explicitly required original metadata is supplied.
+Exact API Ruff, actual-backlog smoke and diff checks pass. A read-only actual-local
+dense+BM25 diagnostic derives structure for ten retained HTML captures, preserves
+all488 canonical references and fits22 selected windows into23,901characters.
+Official FAQ answers are now paired correctly; important primary clauses are still
+absent from that initial packet. This is material progress, not semantic acceptance.
+
+One ordinary retained native retry96323 now tests the existing entire staged
+workflow against the frozen coherent candidate. The acceptance question and saved
+originals are unchanged; discarded drafts are not reconstructed. Judge whether
+subsequent retrieval/correction stages resolve missing evidence and whether the
+actual delivered answer preserves required conditions. A single initial packet
+is not the entire research process. No additional model/reviewer, unchanged run,
+new test question, total research quota or production record was introduced.
+
+### Native96323 terminal acceptance, 3 October 2026
+
+The ordinary retained retry ended after848.6seconds with no public answer or
+mission checkpoint. Identical L3 gap-review requests received provider HTTP504
+after about55.3seconds; other requests with the same strict schema succeeded.
+No returned completion establishes decoder stalling. The48-call legacy counter
+did not stop this unmetered run. The private finalizing draft, correction receipts
+and eight completed clause reviews survive. The existing checked-subset path
+becomes eligible only after the terminal exhaustion token has been saved.
+
+A separate source-bound content audit rejects the retained candidate: it
+overstated patent protection despite receiving the full limiting and termination
+clauses, omitted requested change notices, overgeneralized trademark restrictions,
+and labelled already supplied evidence as missing. Conditional NOTICE wording
+and structural original context improved, but neither proves semantic completion.
+Automatically publishing this candidate would not close acceptance. Evidence:
+parent end-to-end-native96323-content-review.json and frozen native96323 artifacts.
+No new provider call, retry, release or production fixture followed this audit.
+Whole-path correctness and actual delivered-reader acceptance remain open.
+
+### Focus review retrieval and complete an exhausted final review
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. The final
+review sends its literal assertion under fields that active retrieval ignores;
+oversized gap checks consequently search the broad original question again.
+Project the exact assertion and retained concerns through the existing retrieval
+contract, retaining the original question as context and all mandatory witnesses.
+A generated gap must not become a new user requirement. Bind cached selections to
+the corrected focus, and test materially different assertions over one corpus.
+
+After the existing provider retry allowance is exhausted, continue once through
+the existing checked-subset finalization path. Preserve the spent retry counter,
+exact checkpoint/input binding, rights and generation fences. Withhold pending
+assertions, require independently checked useful findings and actual-subset
+coverage, and never renew the automatic allowance after partial progress. A new
+outage or stale checkpoint stays failed and explicitly retryable. No new model,
+reviewer, research quota, table, source access or publication authority is added.
+
+A gap labelled answered must identify actual delivered statements that address it;
+the existence of any point is insufficient. Invalid or missing bindings must not
+remove that gap. These changes fix data-flow and completion contracts, not the
+observed model false approval of broader claims. Preserve that separate semantic
+acceptance blocker and do not publish the old private candidate as a completed
+answer. Focused contract/lifecycle checks precede a materially changed native run.
+
+The focused retrieval and gap-binding contracts are implemented and independently
+reviewed. Oversized final checks now query their exact assertion and retained
+objections, with the original question kept as context. A generated gap never
+becomes a new user request. Answered gaps require unique current point IDs;
+malformed bindings are uncached and optional gaps do not require answer IDs.
+The updated final/retrieval policies invalidate prior incompatible decisions.
+Five focused retrieval cases pass. The affected117-case run passed105 immediately;
+its12 failures were legacy scripted response fixtures, now resolved by passing
+two clause cases and21 metadata cases without relaxing production validation.
+The native handoff preserves exact input, access and generation fences and
+spent counters. Independent root review found no scoped production blocker.
+API Ruff, backlog guard and diff checks pass. Parent receipt:
+end-to-end-focused-completion-review.json. Actual semantic acceptance and release
+remain open; the previously observed model false approval is not dismissed.
+
+### Keep citation repair from rewriting a finding
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Native95455
+ended after781seconds with no public answer. Focused gap retrieval now reaches
+distinct relevant originals, but nine returned gap judgments combined answered
+with an empty delivered-point list. Both final replies had that invalid pairing.
+Keep host rejection; express the existing alternatives directly in the serving
+grammar as one gap_resolution: a nonempty current-point-ID list, or unresolved,
+answer_available or outside_request. Normalize only a complete valid response;
+preserve the separate source-availability and delivered-answer meanings. This
+adds no reviewer or forced positive answer, and is not a semantic truth proof.
+
+The same run exposed a more fundamental correction defect. A missing2.0 token
+in a license reference routed a patent finding through free-form numeric repair;
+the model replaced it with an unrelated duplicate about source publication.
+Original patent clauses were available. A citation/precision failure must not
+authorize replacing the finding's subject. Make these repairs select supporting
+original references only, with the host retaining the exact prior statement.
+If no citation set establishes its precision, leave it unresolved for the existing
+factual correction/withholding path. General factual correction remains allowed
+to correct meaning; numeric-only validation cannot silently rewrite conclusions.
+Apply the restriction both to initial point repair and nested numeric validation.
+Keep exact source rights, quantity checks, private checkpoints and source context.
+
+Acceptance: attempted unrelated statement replacement is structurally rejected;
+valid citation-only repair preserves exact wording and adds real original
+context; unsupported quantities remain unapproved; semantic correction still
+works. Gap grammar cannot represent answered without point IDs, and honest
+nonanswers remain representable. No new model, table, reviewer, topic-specific
+rule or total research budget. Use focused regression checks before any further
+materially changed native, and preserve full content acceptance as an open gate.
+
+Implementation acceptance, 3 October 2026: the frozen v26/v19 candidate passes
+124 focused gap/witness/final-review/source-use cases and 53 unique citation-only
+repair cases. These verify valid gap alternatives, rejection and cache handling
+for malformed bindings, exact statement preservation during citation repair,
+and the existing semantic-correction path. Root and the independent public
+acceptance reviewer found no scoped implementation blocker. Exact API Ruff,
+the actual-backlog guard and diff checks passed at 20:20 UTC. These are contract
+and integration results, not proof of model judgment quality. The candidate is
+unpublished; semantic acceptance and the materially changed retained native's
+delivered-answer acceptance remain open.
+
+
+### Give synthesis original evidence rather than obsolete search history
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Native80470
+failed after231.5seconds without a public answer. Its citation-only repair retained
+the patent finding's subject, but the initial writer lacked the operative original
+clauses: its source payload was5,531characters while research_mission metadata
+was6,299, including5,050characters of attempted queries/questions. Some historical
+questions contained mistaken premises that also reappeared as unsupported gaps.
+The immutable originals and full history remain retained for host routing.
+
+For phase=brief, project historical query/question counts instead of their prose
+into the provider request. Keep the original user question, unresolved document
+obligations, actionable frontiers and exact selected originals. Reflection and
+next-reading decisions retain complete history and duplicate-work checks. This
+is an evidence-allocation change, not a larger context limit or research quota.
+Verify the actual saved native writer packet locally after this projection,
+without a hosted provider call, and verify current rights/original identities.
+
+The immediate terminal blocker was also redundant witness selection: all clause
+witnesses were bound, but an overall contradiction verdict repeated an empty
+citation list. Remove independently generated overall citation_refs and derive
+the deduplicated union of validated clause-selected witnesses on the host. Keep
+the independent overall verdict and reason, every clause/scope gate, explicit
+overall assertion_scope for bibliographic metadata, and raw-cache validation.
+No inferred verdict, new reviewer, truncation of the witness union or concern-only
+references may create positive support. Empty unions still fail required support.
+
+Acceptance requires useful original passages to fit the writer packet while
+historical host data remains untouched, and overall relationships to remain
+independently rejectable with provenance-exact witnesses. The actual wrong patent
+approval and inconsistent gap disposition remain semantic acceptance concerns;
+these changes must not turn that prior private draft into a successful result.
+After focused checks and local source-packet inspection, one materially changed
+native may evaluate the whole outcome. No unchanged retry, topic rule, added
+model/reviewer, table, production fixture or new total research budget.
+
+
+Local80470packet inspection after history projection:36 exact references fit at
+23,920/24,000characters, with full redistribution section4 now included. Patent
+grant/termination and primary trademark provisions still did not fit. Saved
+local E5/BM25 ranks place the relevant patent FAQ group first for its literal
+question, yet summed gains across the broad composite and related questions
+displace it with warranty/background. This warrants a general ordering fix
+before a further hosted run; it does not warrant forced topic-specific clauses.
+
+Extend the same packing scope: after mandatory original closure, give each
+literal query an opportunity to contribute its strongest feasible whole group,
+starting with the least represented query measured by its best retained group
+score. The composite original question supplies context/refinement rather than
+an extra seed vote when distinct literal requests exist. Then apply existing
+diversity/refinement and exact envelope checks. Source scores guide retrieval
+opportunity only, never establish answer coverage or factual support. Preserve
+whole context, source permissions, cache invalidation and all original identities.
+Check crowded queries, oversized groups, mandatory context and saved-rank actual
+material. A packet cannot contain every long original; actual subsequent reading
+and the final delivered answer must still meet the acceptance rubric.
+
+The combined synthesis projection, fair query seeding and overall witness union
+are implemented and independently reviewed.130 affected witness/final-review
+cases and47 packing cases pass; exact API Ruff and diff gates pass, and the
+backlog guard passed after the index change. The source-context and prior
+meaning-preserving checks remain recorded above, not re-run without a change.
+
+Actual saved-rank replay of the frozen80470writer uses35 original references
+within23,982/24,000characters. It now supplies official patent-scope FAQ189–197
+and official naming FAQ172–176. Exact citation/source hashes and host history
+are unchanged. The final cost-tie fix preserves the same packet byte-for-byte.
+Patent termination and complete redistribution qualifications still require the
+existing focused follow-through over retained originals; this first packet is
+not treated as a complete answer. No hosted inference, native admission or
+production write was performed by this diagnostic. Parent receipts:
+end-to-end-synthesis-allocation-review.json and
+end-to-end-native80470-final-fair-pack-review.json. Whole-path content acceptance
+and publication remain open pending the materially changed native journey.
+
+
+### Close analysed exact-duplicate originals without inventing a new reading
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Native25076
+delivered one actual public mission checkpoint after360.2seconds, with4points,
+16citation occurrences and one incomplete-document limitation. Both unchanged
+Legal and Pharma readers render every actual point, citation and limitation.
+The run still ends failed/documents_incomplete: a query-variant license capture
+has the same SHA as an already fully analysed original and records duplicate_of,
+but its document_reads entry remains analysis_complete=false. Capture reuse
+omitted it from branch.source_ids; analysis preparation therefore has no section
+for that duplicate and skips it deterministically on each ordinary retry.
+
+Resolve an exact duplicate to its already complete canonical analysis only via
+current host-owned source identity, same investigation/organization/dossier, exact
+content hash and current source access. Preserve actual source/locator provenance;
+do not relabel copied findings as independently analysed duplicate evidence.
+Cycles, missing/stale targets, mismatched hashes, withdrawn originals, incomplete
+analysis or a different question must not fabricate completion. Prefer an existing
+eligibility/resolution path and retain honest resumable work when reuse is not valid.
+No new table, model, reviewer, provider probe, forced state or production fixture.
+
+Acceptance: ordinary source/dossier workflow reuses genuinely completed exact
+original analysis and closes its duplicate bookkeeping; different, incomplete or
+inaccessible originals remain unapproved. Preserve all original captures and
+references. The native25076 public answer is separately PARTIAL: contributor and
+recipient roles are confused, patent termination is missing, and redistribution
+qualifications are incomplete. Fixing the lifecycle must not relabel that answer
+as full semantic acceptance. Receipts are
+end-to-end-native25076-content-review.json and
+end-to-end-native25076-lifecycle-review.json.
+
+
+### Check delivered assertions against the retained corpus
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Actual
+native25076 point review140 received complete contributor patent FAQ193–195
+but no operative license section3; review130 received only the secondary blog,
+not the retained source-form qualifications in section4. The literal question
+and assertion were intact. The model also falsely approved actor compatibility
+and omitted NOTICE coverage; these remain independent semantic risks.
+
+Existing point review restricts context to draft-selected citation groups and
+only performs retrieval if that subset exceeds the envelope. As a result it can
+certify a secondary interpretation without consulting other retained originals.
+Use the existing retrieval path over the full current authorized original corpus
+for this same review stage. Preserve selected witnesses, structural closure and
+prior contradiction references as mandatory; use the literal assertion, retained
+objections and original question as retrieval context. Do not add a model call,
+reviewer, source-specific rule, unbounded provider payload or new research budget.
+
+Acceptance: an uncited retained governing passage can enter the point review;
+selected support and prior contrary witnesses cannot disappear. Invalid/currently
+unavailable originals stay excluded. Verify exact saved review packets locally
+without hosted inference before considering another materially changed native.
+Retrieval improvement does not prove the contributor-role false approval fixed.
+Whole-path content acceptance remains open and no production deployment is implied.
+
+
+Implementation evidence for duplicate completion and full-corpus point review:
+21 unique duplicate/recovery cases and20 point-review cases pass; the latter
+include5 new behavior checks. Independent duplicate review approved identity,
+rights, question binding and provenance. Exact API Ruff, backlog guard and diff
+checks pass. A read-only replay of frozen25076 resolves the exact duplicate to
+its complete canonical original with all5 findings; no model call or ORM write.
+
+The real P4 local-encoder review packet now contains38 references within
+23,931/24,000characters, including previously uncited originals. Canonical source
+identity and the frozen candidate code hashes were checked. It STILL lacks the
+operative patent grant/termination passage. This confirms broader retrieval, not
+content acceptance. A diagnostic result formatter encountered a short non-citable
+heading after saving the full request, schema and ranks; the receipt was recovered
+from those artifacts without repeating the encoder. No hosted inference, native
+retry or production write followed. Receipt: end-to-end-duplicate-and-corpus-review.json.
+Whole-path content remains PARTIAL; these changes are uncommitted and unpublished.
+
+Independent full-corpus review also approved current access, mandatory structural
+closure, exact envelope and source-sensitive cache reuse. Approval concerns the
+implementation boundary only; the actual source-selection/content gap above remains.
+
+
+### Keep focused evidence queries separate from review-control prose
+
+Scope recorded before implementation, 3 October 2026, MV2-020/023. Saved actual
+P4 local ranks exposed a concrete query-projection error: generic host advisory
+instructions were split into independent search queries, alongside every unrelated
+sibling question. They competed with the literal assertion for the review envelope.
+A network-disabled replay using the same saved ranks but only assertion/clauses
+and the original composite question retains operative patent provisions at
+23,904characters, without altering originals, increasing the envelope or invoking
+a model. This is a retrieval observation, not acceptance of the resulting answer.
+
+For the existing correction/review task contract, treat original_question as
+context, keeping its complete composite query but not expanding it into unrelated
+request votes when a concrete correction target exists. Keep literal correction
+clauses and substantive retained objections. Do not turn known host-generated
+advisory control instructions into semantic searches; they remain in the reviewer
+context. Actual source-grounded reviewer comments and substantive correction
+instructions remain searchable. Normal broad initial research and explicit
+requested-part retrieval keep their existing behavior. Invalidate changed query
+selection/approval policies while retaining reusable vectors and source identities.
+
+Acceptance: requested point/clauses and material objections lead focused retrieval;
+other user-request clauses and known generic control prose do not consume its
+query allocation. The complete original question remains available for meaning.
+Use saved-rank packet replay, focused context/correction tests, current rights and
+exact gates; no topic rules, new reviewer/model/table or total research budget.
+After these material query changes, one ordinary retained native may evaluate
+actual answer quality, which remains PARTIAL until its content supports otherwise.
+
+
+Focused-query correction is implemented and independently reviewed:16 unique
+affected query/review/vector-reuse cases pass, with owned Ruff clean. The actual
+production query projection (not a hand-filtered prototype) reproduces the same
+32-reference packet byte-for-byte at23,904characters. It includes complete official
+grant/termination windows22–23 and equivalent operative OSI windows278–280.
+The replay uses only previously recorded local hybrid ranks with network blocked;
+no new encoder, hosted model, native admission or database writes. Governing
+evidence now reaches the existing review, but factual interpretation remains to
+be judged on one materially changed ordinary retained native. Receipt:
+end-to-end-focused-query-role-review.json. No production update is implied.
+
+
+### Retain performed unresolved review work without approving it
+
+Scope recorded before implementation, 3 October 2026 UTC, MV2-020/023. Native67371
+completed in1,564.1seconds after62 new recorded calls; all21 captured documents
+are read/analysed and3 aliases reuse current canonical analyses. It issued a new
+partial answer with3 points and5 gaps. Actual content is NOT accepted: it imports
+ASF release-management rules as general recipient duties, omits material requested
+obligations and patent terms, and displays an unresolved notice for an answered
+publication question. Both unchanged product readers render its actual content.
+
+Frozen calls prove83.08seconds of avoidable repetition: the same corrected P2
+request repeated five times and P4 four times. Each returned valid, bound review
+data with unresolved cannot_assess concerns. Current code discards these raw
+receipts instead of retaining them as performed but unresolved work. Completed
+siblings remain cached; slow interrupted gap work competes with these repeats.
+
+Cache valid exact-input cannot_assess receipts privately under the existing raw
+binding. Revalidate schema, original witnesses, scope, current source rights and
+policy on every reuse. Preserve unresolved_concern/pending and withholding; never
+turn a returned judgment into positive approval or copy prose over typed status.
+Malformed, unperformed and interrupted responses stay uncached. Changed inputs or
+source/policy bindings require new checks. No new schema, model, reviewer, table,
+time/round quota or mutation of the frozen completed run.
+
+Acceptance: identical interrupted resumes do not repurchase a valid unresolved
+judgment; remaining work can proceed, and unresolved findings stay unapproved.
+Changed source/assertion and invalid raw cache are rejected normally. This removes
+repeated work only; the factual source-scope/coverage defects remain separate.
+No further native is justified by this cache correction alone.
+
+Implementation verified locally: 34 unique affected cases pass, including nine
+new interruption/resume, changed-binding, malformed receipt, scope and current
+access cases. Independent code and assertion review found no blocker. Valid
+unresolved raw receipts survive checkpoint serialization; they never enter
+checked findings, positive witnesses or correction candidates. Invalid responses
+remain evicted, and changed source/assertion/concern/policy inputs require a new
+check. Existing stale fixtures were migrated to the current raw witness schema
+and retrieval metadata contract without weakening their negative assertions.
+
+Native67371 content review is complete and PARTIAL, so the user outcome remains
+NOT ACCEPTED. All 21 captured documents completed reading and analysis; three
+duplicate aliases revalidated canonical analyses. All 12 delivered citations
+match exact retained originals, and both unchanged product readers render the
+three points and five gaps (server rendering only). Those mechanical successes
+do not repair missing patent terms, changed-file notices, conditional NOTICE,
+the overbroad trademark claim or incorrect universal root-LICENSE requirement.
+
+The exact delivered root-LICENSE assertion was approved at zero-based call179.
+Its selected release-policy context omitted the document's ASF release-manager
+audience introduction and the source-versus-additional-package placement clause.
+A later selected paragraph still said "For software developed at the ASF" and
+used "should", but review approved a universal "must". Later private amendment
+packets cannot be counted as context for that delivered assertion. This proves
+both a lost applicability dependency and false interpretation of retained
+qualifications; the cache correction does not solve either. Next work must address
+this whole source-to-answer relationship and honest request coverage, not add
+another reviewer or repeat the completed native unchanged. Frozen evidence:
+end-to-end-native67371-content-review.json,
+end-to-end-native67371-lifecycle-review.json and
+end-to-end-native67371-unresolved-review-audit.json. Core3162ad9 and client Sites92
+remain live; these candidate changes are uncommitted and unpublished.
+
+### Preserve source applicability and reconcile the delivered answer
+
+Scope recorded before implementation, 3 October 2026 UTC, MV2-020/023.
+Native67371 supplies the concrete failures: a nested LICENSE subsection lost its
+parent placement distinction and document audience preamble; final coverage also
+reported an answered question and user background as unresolved. Treat the full
+source-to-answer relationship as the outcome. Existing source reading, retrieval,
+writing and review stages remain; no additional reviewer, model or research quota.
+
+Retain deterministic HTML ancestor context separately from local content groups:
+a selected child section includes its ancestor heading/direct introductory text
+and the applicable explicit-boundary preamble. Do not merge sibling sections or
+infer legal/scientific applicability from keywords. Preserve exact source bytes,
+quotes, current rights, complete selected units and the existing request envelope.
+Re-derive new structure from retained matching originals without changing capture
+history; old structure remains compatible until an exact derived view is available.
+
+Trace and correct final coverage against the actual delivered statements. A
+sentence used as background or an instruction is not automatically an unanswered
+research question. A retained answer must not acquire a contradictory workflow
+gap because it moved or another point was withheld. Separate deterministic
+citation-attachment checks from substantive objections where the frozen trace
+proves the same obligation is redundantly delegated; do not treat cannot_assess,
+reviewer prose or an overall verdict as authority to erase an unresolved objection.
+
+Acceptance: original governing introduction/parent qualifications accompany a
+selected descendant without flooding it with unrelated siblings; invalid source
+bindings stay excluded. Existing final coverage must refer to actual surviving
+statements and genuine unanswered requests. Validate the changed behavior and exact
+saved packet first, then one materially changed whole native path can assess real
+content. The completed frozen67371 run is evidence, never a draft to republish or
+a database to reset. Content acceptance, main publication and activation remain
+separate gates.
+
+Implementation is frozen for local acceptance. HTML structure v2 uses directional
+context dependencies, leaving sibling content and relevance votes separate.
+Matching retained originals can upgrade v1 privately without modifying captures.
+The exact native67371 call179 mandatory packet now includes the audience and
+parent placement qualification at 20,518/24,000 characters (43 original references).
+Unavailable ancestor portions are not exposed or declared complete; legacy
+structure remains usable when matching original bytes are unavailable. The 35
+directly affected HTML cases pass and independent review approved the boundary.
+
+Final review v30 distinguishes host citation attachment from semantic objections.
+Current positive witnesses still require explicit answer citations. Attachment-only
+repair uses the existing evidence-only writer, preserving the literal assertion;
+fast objections, negative judgments and cannot_assess remain authoritative review
+states. The 41 affected attachment/witness/resume/dispute cases pass. Independent
+review found no blocker. The combined final-review/corpus gate has 76 distinct
+passing cases after narrowly migrating stale context, raw-cache and aggregate
+coverage fixtures; no unchanged passed cases were repeated for that migration.
+
+Shared-answer coverage now retains the complete question as its unit. Scenario
+text and source instructions remain in the question instead of becoming separate
+host-authored obligations. Aggregate missing coverage can request the existing
+answer amendment, but it cannot fabricate specific knowledge-gap sentences.
+The public result retains partial status and a neutral coverage explanation;
+reviewed substantive gaps and legacy explicit request slots remain intact. Both
+code reviews passed; focused aggregate/gateway/legacy verification is recorded
+with the continuation checkpoint. These are local behavior checks, not proof of
+factual content acceptance. Receipts: end-to-end-native67371-html-applicability-review.json,
+end-to-end-native67371-attachment-concerns-review.json and
+end-to-end-native67371-coverage-audit.json. No release is implied.
+
+The aggregate lane verified 92 affected cases, including the three overlapping
+final-review fixture variants, a real-finalizer amendment with sibling reuse, and
+the model-transport compatibility module. Exact API Ruff, backlog guard and diff
+checks pass. One missing test completion receipt was recovered by repeating only
+that unverified command and saving its output; verified passed checks were not
+repeated. Combined implementation receipt:
+end-to-end-source-applicability-coverage-review.json. Ordinary same-dossier
+continuation native5168 now evaluates the frozen candidate against the unchanged
+question and acceptance rubric; completed67371 artifacts remain immutable. No
+additional native or release should be started while it is active.
+
+Follow-through scope recorded before implementation: the first native5168
+orientation used recalled originals, but its private structure receipt reports
+zero derived HTML sources. Recalled copies have exact retained_origin pins;
+retained_originals currently searches only the child's document_reads and cannot
+find their already retained parent bytes. Parent research and sources are intact;
+only ordinary continuation bookkeeping changed. Receipt:
+end-to-end-native5168-live-lineage-review.json.
+
+Resolve a recalled current source to its eligible exact captured origin using
+the existing retained-origin identity/access validation. Find the original's
+retained-document entry without changing history, accepting mismatched source
+text or crossing organization/dossier/source rights. Feed those already saved
+bytes to the same SHA-and-passage-checked derivation. Missing, cyclic, stale or
+unavailable origins must not authorize new text or metadata. Verify against the
+frozen public continuation input and focused lineage/withdrawal cases. This is
+the same applicability path for recalled sources, not another research stage.
+The active native5168 snapshot stays untouched and is not restarted; record the
+follow-through separately from its exact evaluated implementation.
+
+The recalled-source follow-through is implemented and locally verified. Existing
+eligible_sources and exact origin_pin validation resolve a current copy to its
+permitted original; run/org/dossier, URL/SHA, immutable excerpts and artifact
+bytes remain bound. Copy chains, stale lineage and unavailable originals cannot
+authorize enrichment. All 22 affected retained/recalled HTML cases pass, as do
+the exact API Ruff, backlog and diff gates; independent review found no blocker.
+An offline replay of recorded orientation213 derived v2 context for all four
+recalled sources while preserving every citation ID, quotation and source SHA.
+Receipt: end-to-end-native5168-recalled-html-offline.json. This performed no model
+or encoder calls and no database writes. It is not in the running native5168
+snapshot, does not establish final answer quality, and remains unpublished.
+
+Native5168 finished failed after 1,388.7 seconds and 50 new model calls. All 11
+captured documents were read and analysed; no new public answer was delivered.
+The final whole-question coverage amendment returned model_incomplete. Its exact
+provider finish_reason was not retained, so token exhaustion is not established.
+The private finalizing checkpoint retains eight raw reviews, three completed
+citation corrections and the pending amendment selection. Completed writer and
+review work was not repeated; an ordinary checked retry remains available. No
+retry has been launched and both production clients remain on their prior release.
+
+Private content remains unacceptable independently of that interruption. The
+redistribution point was removed by number validation that mistook inline list
+labels for factual quantities. Coverage correctly became missing, but the
+remaining patent paragraph also broadened the termination condition even though
+its review received the exact official qualification. A matching citation or a
+positive model verdict does not establish factual correctness. The unchanged
+six-part rubric remains unmet. Frozen evidence: end-to-end-native5168-terminal.json,
+end-to-end-native5168-lifecycle-review.json and
+end-to-end-native5168-content-review.json. No new answer exists to render in the
+product readers; previous reader evidence is not new acceptance.
+
+Next observed implementation scope, not yet implemented: distinguish clearly
+structured ordered-list marker occurrences from substantive numerical claims in
+answer precision validation. Preserve quantities within list items and ordinary
+dates, percentages, amounts, section and case references. Keep exact statement
+and citation bindings and ordinary factual review; this formatting correction
+cannot approve the statement or repair its substantive source-scope errors.
+Further native work needs a material response to the actual semantic failure,
+not an unchanged retry or another reviewer stage.
+
+Scope before implementation: complete-question coverage must use an amendment
+contract capable of answering the complete request. Frozen5168's last request
+received a whole compound question and retained answer, yet the host limited it
+to one 700-character point and one replacement target as for a factual correction.
+This is a confirmed expressiveness mismatch, not proof of the provider's exact
+incomplete-output cause. Allow a capacity-bound set of independent point additions
+or explicit replacements for aggregate missing coverage, retain actual current
+gaps as context, and preserve untouched reviewed siblings. Validate exact target
+ownership, capacity and source bindings. Each replacement must retain its own
+fallback if new content cannot be validated. Existing factual/citation repairs
+remain single-point; ordinary final review and complete-question coverage still
+decide the result. Output allowance follows actual permitted response capacity,
+without new stages, models, total research budgets or speculative cap increases.
+Dependencies are the existing answer splice, correction checkpoint and aggregate
+coverage contracts. Acceptance includes multiple distinct missing answers,
+independent checked siblings, interruption/resume, invalid replacement rejection
+and a genuine unresolved gap. A formatting or contract check alone cannot prove
+semantic acceptance; no unchanged native repeat is authorized by this scope.
+
+Requested-source selection scope recorded before implementation: the retained
+originals named by a user must have a usable route into the writer's evidence
+pack. Use the existing sequential reading pass to retain an optional, quoted
+match to the exact user's requested-source wording. Bind it to the current
+question and exact source identity/quotation; unknown remains unknown. This is
+a fallible request-match annotation, not an authority certificate or factual
+approval. Reuse the existing source classification channel and retained-source
+JSON where possible; add no model stage or storage table. Carry valid matches
+through full-original compaction and provider grouping, and give matching intact
+source units an explicit retrieval preference before unrelated commentary.
+Preserve counterevidence and the existing request envelope. Do not infer authority
+from a host name, manufacture missing matches for legacy captures, exclude all
+other sources because a user said to use one, or grant factual approval from
+the annotation. Exact request/source/permission changes invalidate the preference.
+Acceptance must cover unchanged quotes, stale or forged matches, ordinary
+unconstrained questions, inaccessible sources and original-context closure. This
+addresses writer source selection; the model's interpretation of conditions still
+requires actual whole-path acceptance, not a new reviewer or a trust-score claim.
+
+The three observed corrections are now implemented and locally verified, still
+unpublished: presentation-only list markers no longer become factual quantities
+(20 affected cases); whole-question amendments can address multiple missing parts
+without replacing unrelated checked siblings (37 unique affected cases); and
+quoted requested-source preferences survive authorized full-original compaction
+and recall (118 unique affected cases). The latter preserves unknown sources and
+counterevidence and rejects stale identity, question and access bindings. Its
+initial bibliography test fixture was corrected to the existing reference-entry
+grammar; the affected fixture and complete section-to-provider projection passed.
+Independent reviews and the exact API Ruff/diff gates passed on the final code.
+The unchanged backlog guard had already passed. These are mechanical acceptance
+results, not proof of answer quality.
+
+The next isolated native journey uses the unchanged public Apache-2.0 question
+and six-part content rubric in a fresh folder. Fresh reading is necessary for
+the new request-match annotations; frozen old captures are not retroactively
+annotated. The combined candidate includes the previously verified recalled-HTML
+follow-through. No old failed run is retried unchanged, no production dossier or
+email is created, and Core3162ad9/Sites92 remain the live releases. Final delivery,
+source applicability, decisive qualifications and honest gaps remain unaccepted
+until the actual new answer is inspected.
+
+Native35882 finished failed after 1,334.7 seconds and 61 model calls, with no
+public answer. Frozen artifacts and manifest are in the isolated requested-source
+journey folder. The last provider attempt timed out; lifecycle inspection also
+found a subsequent local mandatory-context packing failure, so provider timeout
+alone does not describe the terminal cause. Content acceptance remains failed.
+Requested-source inspection found no lost valid annotations: the model omitted
+classification on both named originals, and its three supplied match strings did
+not quote the user's source wording. All five writer packets omitted the full
+operative license. The optional match mechanism never activated.
+
+Follow-through scope before implementation: make the existing sequential-reading
+provider schema require an explicit nullable source classification. A non-null
+object must supply its category, original citation and a requested-source string;
+empty means no match, and any positive value must quote the exact distinguishing
+source requirement in the complete question. Keep canonical legacy defaults and
+recoverable optional-field decoding so missing or invalid classification never
+blocks valid document reading or becomes a fabricated source preference. Retain
+all current literal/source/access checks. This adds no model call, reviewer, table
+or source-authority rule. Acceptance covers null, omitted legacy values, empty
+non-matches, invalid copied titles and exact-source propagation; actual meaningful
+selection still requires new native evidence.
+
+The frozen final-review replay identifies a separate general delivery defect:
+the second answer point's ten mandatory references close over 92 original windows,
+requiring 46,883 request characters within a 24,000-character transport allowance.
+That local failure escapes the per-assertion review and terminates the entire
+investigation before checking independent siblings. It is not a provider outage.
+
+Packing-recovery scope before implementation: preserve the full mandatory original
+context and record an oversized point as unreviewed, while continuing independent
+checks. Route this host-owned citation-layout failure through the existing targeted
+citation correction, keeping the statement unchanged unless an independent factual
+objection requires a factual correction. Preserve earlier substantive objections
+and their original witnesses; the layout notice itself must never become a new
+semantic objection or retain discarded draft citations as substantive proof. Fresh
+review of any proposed attachment remains mandatory. If no reviewable attachment
+can be formed, withhold that point and report missing coverage honestly through
+the existing final-answer path. Never truncate a mandatory group, approve from a
+packing failure, mislabel it as a provider interruption, reset retries or add a
+reviewer/model. Verify sibling progress, corrected attachment review, failed repair,
+resume and real objection retention using bounded functional cases.
+
+Both follow-through changes are now locally verified and remain unpublished.
+The explicit reading-choice contract passes 30 affected cases with canonical
+legacy/optional recovery preserved. Point-local packing recovery passes 36 focused
+cases, including real envelope sizing, sibling review/cache, unchanged-statement
+citation repair, failed repair withholding, current-subset coverage, legacy owners,
+access/binding error propagation and interrupted resume. Independent review found
+and closed a fresh-concern retention gap: saved layout tasks now retain the current
+combined concerns and exact originals before repair, including fast advisory
+witnesses. An attachment change cannot discard those obligations. A still oversized
+required context remains unreviewed and is withheld rather than truncated.
+
+An offline replay of the exact frozen native35882 input preserves P1's entire
+46,883-character mandatory closure while reaching P2, P3 and the gap checks. No
+model, encoder, network or database write was used; later inference was deliberately
+unavailable in the replay. It proves recovery control flow, not source selection,
+factual correctness or a delivered answer. Evidence: end-to-end-requested-source-
+explicit-choice-review.json and end-to-end-native35882-packing-recovery-offline.json.
+The unchanged public question/rubric will be evaluated on one fresh isolated native
+candidate so the explicit choice arises during actual reading. No old private
+answer is accepted, and Core3162ad9/Sites92 remain unchanged.
+
+Fresh native5359 failed before source reading: its sole operational-plan call
+returned model_incomplete after 25.15 seconds (31.9 seconds total). The saved route
+records a 1,600-token output allowance and 90-second worker deadline, but no provider
+finish reason, partial response or usage; output exhaustion is not established.
+It provides no native evidence for the corrected reading or finalization paths.
+Its artifacts are frozen; no unchanged planning retry is being made.
+
+The persisted requested-source format remains v1: only new reading grammar changed,
+already distinguished by the exact request/schema fingerprints. Changing the
+annotation contract version unnecessarily invalidated completed writer and repair
+work despite identical source validation and selection semantics. Independent
+review confirmed compatibility; direct imported-policy comparison now matches the
+frozen35882 preparation, part and final-review policies. This does not upgrade
+unknown legacy annotations or bypass current source/access/generation fences.
+Next execution is the ordinary public retry of native35882's saved research using
+the materially corrected point-local packing path, preserving its immutable frozen
+artifacts and completed reading. Actual draft reuse must be observed, not forced.
+No positive reading-classification evidence is claimed for that legacy corpus.
+
+
+### Resume-performance scope before implementation (native12803)
+
+Native12803 retried the materially corrected packing failure through the ordinary
+public retry and ended failed after 1,311.9 seconds, with 23 new model calls and
+no public answer. Its six runtime artifacts are frozen with a manifest. Lifecycle
+and private-content diagnosis remain separate from semantic acceptance.
+
+An offline timing on an exact frozen35882 cached selection found 291 envelope
+calculations and 5.368 seconds before the saved selection lookup; rebuilding its
+structural closure and validating the selected packet took 0.109 seconds. Fresh
+access checks were excluded from this offline timing, and it does not attribute
+the whole native worker duration. Repeated preparation is avoidable saved-work
+latency, not new research.
+
+Implement an explicit caller-envelope binding for existing selection receipts.
+For bound completed receipts, try reuse before whole-corpus envelope preparation
+and per-unit cost calculation. Bind the full prompt, non-source payload, response
+schema contract, provider, allowance, sources, question, required references and
+existing structural/retrieval/packing policies. Still rebuild current mandatory
+closure, validate selected IDs and complete structural units, size the actual
+selected packet and perform fresh access checks before returning it. Legacy or
+custom callers without an explicit envelope binding retain conservative sizing.
+Do not change ranking, source rights, original contents, semantic review policy or
+acceptance. Apply this to the ordinary gateway, answer/correction and final-review
+callers; no new cache store, model, reviewer, budget or workflow status. Verify
+reuse without per-unit recomputation, stale envelopes and changed source/required
+inputs, non-fitting selections and fresh access failure. Reuse the frozen timing
+case once on the changed path. Actual delivered content remains the release gate.
+
+
+### Answer-text completion scope before implementation
+
+Frozen native12803 correction call79 returned valid structured JSON whose natural
+language statement is exactly 700 characters and ends mid-phrase. That is the
+provider grammar's current maxLength, not an observed provider token truncation.
+The existing point-repair instruction correctly limits the task to one assertion;
+the model nevertheless expanded into a whole-answer paragraph. Separately, the
+patent reviewer received the operative grant and falsely approved a reversal of
+contributor/recipient roles. Neither problem is semantic acceptance.
+
+Remove the artificial 700-character generation constraint on final AssessmentPoint
+statements and their request/correction schema so a sentence and its qualifications
+can finish. Preserve existing nonempty validation, exact citation binding, original
+retention, review and transport-completion handling. Check downstream answer
+storage/projection for slicing or another 700-character contract; preserve the
+whole statement through delivery. No blanket changes to unrelated metadata/input
+limits, no new inference or reviewer, and no claim that removing a grammar limit
+corrects role reversal. Verify an ordinary long qualified answer/correction can
+round-trip through the canonical response without truncation, along with existing
+short statements and citation-only correction behavior. This is a concrete
+completion repair within the same unpublished end-to-end outcome.
+
+
+Native12803 lifecycle diagnosis confirms the local packing recovery completed both
+correction tasks and retained 15 deep-review receipts. The one-way exhausted-review
+handoff ran, but the final worker still ended in model_timeout after five returned
+calls. The 700-character unfinished statement was a separate content defect, not
+the terminal exception. No private candidate is accepted as a public answer.
+
+Both completion fixes are frozen and locally verified. Bound selection reuse passes
+82 unique affected cases, including stale caller/structural bindings, complete
+mandatory closure, packet fit, fresh access denial and legacy compatibility. Cache
+lookup metadata is excluded from completed-work accounting, so enrichment cannot
+renew provider retries. A single offline frozen-input comparison preserves the
+exact78selected references and23,870-character packet while reducing a bound hit
+from5.3825seconds/292envelope calculations to0.1324seconds/two calculations. Native
+access-check latency is excluded; the hook is still invoked. This is not a whole
+journey speed or semantic quality claim.
+
+Complete answer text passes nine focused cases (six new plus three existing legacy
+card cases). Canonical response, correction resume and source validation preserve
+long statements and their original citations. The old single-citation card has a
+separate text cap; it now omits an overlong legacy card while preserving the full
+mission answer, just as multipassage answers already avoid that narrow card. Both
+Legal and Pharma final readers render the full statement. No client change is
+required. Exact API Ruff, backlog guard and diff checks pass. Evidence is recorded
+in end-to-end-bound-selection-resume-review.json and
+end-to-end-answer-text-completion-review.json.
+
+Next execution is one fresh isolated native journey on the combined candidate and
+unchanged public question/content rubric. It exercises the changed completion path
+and the explicit requested-source reading choice, which the legacy12803 corpus
+could not exercise. It is not an unchanged retry of either failed12803 or planning-
+only5359, and no old private draft is restored. Source-present false approval remains
+a known failure to evaluate against the new actual answer. Production stays at
+Core3162ad9/Sites92 until a complete delivered outcome passes content and readers.
+
+
+Native27013 completed after1,265.9seconds with84model calls, one publiccheckpoint
+and a partial four-point answer. All15retained documents were completely read and
+analysed; five finalization resumes reused saved work. It recovered20typed rate
+limits and two upstream timeouts without exhausted-review handoff. Both unchanged
+Legal/Pharma readers render all four statements and15exact original citations.
+None of the delivered statements exceeds700characters, so the lifted text bound
+remains locally verified rather than natively exercised.
+
+Semantic acceptance fails: redistribution obligations lose the upstream-NOTICE
+condition and allowed placement, the license-copy requirement is missing, patent
+termination becomes an imprecise litigation rule, and FAQ wording about naming a
+modified license is transferred to product branding. The final writer did not
+receive the operative full license despite its retained originals. All early
+explicit requested-source choices were null; the provider schema alone did not
+activate useful source preference. Coverage is missing/partial with no delivered
+limitations. Source identity and workflow completion do not establish correctness.
+See end-to-end-native27013-content-review.json and lifecycle-review.json.
+
+Rate-limit deferral scope before implementation: the per-assertion review creates
+a new one-request budget for each sibling. After confirmed provider429 it catches
+model_rate_limited and immediately calls the provider again for other assertions.
+Preserve the exact failed target receipt and completed review checkpoints, then
+propagate that429 to the existing native worker backoff immediately. Do not create
+attempt or failure receipts for unvisited siblings. Keep independent-sibling
+continuation for target-specific timeouts/504s. Preserve existing legitimate-work
+progress accounting and the one-way exhausted-review guard; do not reset or add
+retry allowances, or turn cache bookkeeping into progress. Verify one429 stops
+the dispatch, saved checks resume once, unseen assertions remain unattempted and
+504still permits independent progress. No new model, reviewer or overall budget.
+
+Separate read-only capacity diagnosis:24,000characters is an application default,
+while official Swisscom/Apertus documentation advertises up to262,144tokens and
+warns about long-context latency. The current route uses non-streaming responses;
+Swisscom documents subscription timeouts and recommends streaming. Exact issued
+route/tokenizer/operational capacity is not measured. Do not blindly raise the
+allowance. Compare frozen original-source packing before selecting an implementation
+that admits responsible originals within a bound, supported transport contract.
+
+Confirmed429 deferral is implemented and locally verified:18 affected cases pass,
+including saved-check reuse after persisted resume, no attempted/failure receipts
+for untouched siblings, and continued independent work after a target-specific504.
+Root review confirms only the existing transient catch changed; worker retry and
+completed-work accounting are unchanged. No new native run has exercised this
+delta. Exact evidence is in end-to-end-rate-limit-deferral-review.json.
+
+Frozen-input packing diagnosis now establishes a material capacity constraint.
+The exact35882writer envelope was23,849characters; all complete retained passages
+of the explicitly requested official license and FAQ require57,140characters,
+or64,704with its actual optional sources retained too. The official license alone
+needs29,071characters. All citation identities, passage order, source bytes and
+structural closure are preserved. This is envelope arithmetic, not a token count,
+ranking counterfactual, endpoint-capacity measurement or semantic pass. The actual
+27013writer likewise omitted the operative official license from its23,931-character
+packet. Evidence: end-to-end-requested-originals-envelope-review.json.
+
+The next content change must admit relevant complete primary-source context and
+preserve governing qualifications in the answer. Increasing packet capacity alone
+does not establish reliable selection or correct conclusions. Swisscom streaming
+has been scoped as a transport option, but is not implemented and cannot be cited
+as a fix for the observed timeouts. A passing transport-only check does not justify
+repeating the unchanged content evaluation; actual whole-question content remains
+the release gate. Core3162ad9 and Sites92 remain the recorded production versions.
+
+Candidate context scope: a single read-only configured Swisscom model-list request
+matched the actual event route and Apertus1.5-70B model. It returned no capacity
+metadata; documented262,144tokens remains a published upper capability, not an
+actual token measurement. Evaluate an explicit96,000-character request envelope
+in the isolated candidate only, preserving output allowances, originals and current
+rights. This fits the measured complete requested originals with substantial room
+under the published model capability, without claiming a characters-to-tokens
+conversion. The launcher records the override and only permits it for a fresh
+candidate; ordinary production and retained runs keep configured settings. Treat
+actual context rejection or timeout as failure, never silently truncate evidence.
+No global settings default, retry allowance or production configuration is changed.
+The next native also exercises the implemented late-coverage completion repair;
+larger context alone is not semantic acceptance. If the whole outcome passes, the explicit
+operational setting must be applied and recorded through the normal settings path
+with the release, rather than claiming an override-only pilot represents production.
+
+### Receive complete Swisscom responses through streaming
+
+Implement Swisscom-only streaming within the existing model request and retry
+budget, retaining the exact model, strict response schema and output allowance.
+Buffer text privately until an explicit successful finish and stream terminator;
+never pass interrupted output to parsing, repair or publication. Preserve actual
+usage, sanitized integration logs, total request deadlines, outer cancellation,
+and existing HTTP error/backoff behavior. Complete JSON responses and other
+providers retain their current compatibility. Focused transport/privacy checks
+establish this boundary only; streaming does not prove the cause of past504s or
+establish source selection, semantic correctness or end-to-end acceptance.
+
+Late coverage amendment scope before implementation: a current answer reduced or
+revised during factual review must not miss the existing whole-question amendment
+opportunity merely because the earlier draft was covered. When final coverage is
+missing, factual checks are complete, and the existing correction plan has never
+attempted whole-question coverage repair, append that ordinary aggregate task to
+the same private plan and retain it atomically. Resume completed point work; review
+all changed proposals and reassess the actual retained answer. An empty or unchanged
+aggregate result is not permission to repeat the same task. No new reviewer, guessed
+missing fact, optional search restoration or research budget is introduced. Remaining
+missing coverage stays honestly partial; final-action/retry semantics are assessed
+separately rather than silently broadened by this bounded amendment change.
+
+The late aggregate implementation is frozen:21 distinct affected cases passed,
+including persisted-task cancellation, unchanged/empty output, completed sibling
+reuse and preservation of the remaining deadline. Three final-stage resume fixtures
+exposed earlier grammar/coverage mismatches and reproduced without this delta;
+their current correction-only responses and final coverage stubs are now aligned.
+All four final-stage resume cases pass with their original corrected-text, citation,
+sibling reuse and saved writer assertions preserved. Root reviewed the control-flow
+delta. See end-to-end-late-aggregate-review.json.
+
+Swisscom streaming is frozen with52 distinct affected transport/privacy scenarios
+verified, including actual output allowance/strict grammar, terminal markers,
+connection loss, cancellation, total deadlines, usage, HTTP429/504 and legacy JSON.
+Five stale plan/budget fixture expectations were migrated without changing their
+bounded-attempt/no-repair intent. Error logs retain no partial completion text,
+including an incomplete buffered JSON fallback. HTTP200 error frames remain generic
+protocol errors; provider status is never guessed from free text. Root inspected
+the exact transport delta. No live provider inference or semantic pass is claimed
+from these checks.
+
+Reading-anchor diagnosis is retained, not implemented as a rushed ranking change:
+the exact35882union of110 observations expands to624 references and182,432characters,
+which does not fit96,000. Reading-selected original membership is lost during the
+full-corpus expansion, but that membership alone does not distinguish governing
+sources from commentary. No invented authority or ranking was added. Evidence:
+end-to-end-reading-anchor-diagnosis.json. The next fresh native evaluates the real
+late-completion change with the explicit96,000-character setting and streaming,
+using the unchanged original question and content rubric. Production stays unchanged
+unless the actually delivered outcome and both readers pass.
+
+Gap review cache scope before implementation: a citation-only repair must not repurchase completed gap judgments when the actual provider request is unchanged. Bind gap proofs and failed-target identity to the ordered delivered point IDs/statements, exact current source context, schema, question and policy. Validate every current point citation against authorized originals before reusing any proof. Changed assertions, order, gaps, source context or access cannot inherit approval. Existing private receipts may be read only by their exact current legacy binding and revalidated; do not infer old bindings from logs, rename work as new progress, or change the review policy for unchanged model semantics. No new provider run or retry allowance is introduced.
+
+### Diagnose incomplete streams without retaining partial output
+
+Before implementation: retain finite Swisscom SSE failure metadata in the existing
+private transport receipt. Record only a normalized finish reason (null, stop,
+length, content_filter, tool_calls, function_call or other) and a rejection reason
+(non_stop_finish, refusal, tool_call, done_before_stop or eof). Capture these before
+raising; never retain arbitrary provider reason text, refusal text, tool arguments
+or partial completion content. Keep completion acceptance, retry behavior, schemas,
+model selection and output allowances unchanged. Focused fake-stream and existing
+integration-log privacy checks must distinguish explicit termination from EOF.
+This diagnostic change makes no claim about the cause of native30482 or semantic
+answer quality; no provider or native run is required.
+
+Source-scoped reading context before implementation: carry existing current section
+observations and completed whole-document findings into the same synthesis request
+as explicitly fallible, non-citable navigation. New validated readings bind the full
+question, investigation and exact source revision; unproven legacy interpretations
+are omitted without discarding originals or restarting reading. A note may accompany
+only its exact original windows and complete structural/qualification context. Keep
+support, counterevidence and context roles distinct, and retain unchanged quotations
+as the only citation material. Never project generated summaries or limitations as
+source facts. Both small-document and review-tree findings follow current dependency
+checks. The existing request envelope and cache/source-access fences apply; no new
+model stage, reviewer, table, provider run or semantic-success claim is introduced.
+
+Native30482 terminated without a public answer. The larger packet supplied operative originals, yet the private candidate reversed contributor/recipient roles, broadened conditions and invented a source-disclosure obligation; source-present positive model judgments did not establish correctness. The repeated-gap cache defect is separately fixed and verified. See end-to-end-native30482-content-review.json and end-to-end-gap-cache-reuse-review.json.
+
+The source-scoped reading implementation now carries current observations and whole-document findings through the existing synthesis call, paired with exact complete original units. Unknown legacy provenance omits only optional notes; exact legacy execution proof can preserve eligible readings. Generated notes remain non-citable. Literal duplicate notes and repeated per-note scope text are omitted from the provider envelope. The wire-local structural cache binds exact excerpt text, including non-citable headings. Producer/context checks, both writer adapters and their resume/change behavior, required API lint, backlog and diff gates passed; independent review found no blocker. Packet measurement is verified; actual native content acceptance remains open. No production update is claimed.
+
+Native98563 evaluated the combined candidate once with an explicit96,000-character envelope. The actual writer received32 current source-scoped notes with232 canonical citations and complete source units in8 groups; the95,825-character request completed successfully. The investigation later failed after an incomplete final-review response and delivered no public answer (53calls,951seconds). All terminal artifacts are frozen. Source binding success is not semantic or delivery acceptance; bounded content/lifecycle audits must determine the next correction. No unchanged retry, public fixture, production setting change or deployment occurred. See end-to-end-native98563-terminal.json and end-to-end-native98563-reading-packet-observation.json.
+
+Native98563 follow-through scope before implementation: source-bound generated interpretations can still be false, and the later author repeated an erroneous reading note despite correct originals. Provider-facing reading navigation must therefore carry only validated original pointers and complete linked context, not generated interpretation text or generated support/counterevidence labels. Preserve private reading records, full source units, access/provenance checks and exact local reference remapping. Bind the changed provider projection so existing note-bearing answer/review caches cannot stand in for it; unchanged no-note legacy behavior stays intact. No new model stage or semantic-success claim.
+
+The same run also repurchased an entirely invalid citation-only proposal across automatic sibling rate-limit resumes. Retain this exact unsuccessful task outcome for that automatic attempt, while allowing a genuinely new explicit attempt or materially changed input. Never approve or resurrect its rejected text, discard the prior source reading, or repeat completed factual checks. Verify only the affected resume boundaries. The separately proved output-length failure needs a bounded contract diagnosis before changing allowances or retry behavior.
+
+The98563 follow-through is locally verified: model-facing reading navigation now contains only original pointers/complete linked context; private interpretations and semantic role labels cannot leak into either writer or final-review payload. Exact note-bearing projection changes invalidate affected caches, with no-note legacy identities unchanged. Automatic resumes retain a wholly rejected proposal within the current native run/generation; a genuine new generation or changed input can try again without losing completed sibling work. Producer17, adapter/pack10 and focused resume5 cases passed; required API lint/diff passed and independent review found no blocker. These are implementation checks, not semantic acceptance. Explicit output-length termination remains unresolved; the observed small bounded schema does not establish that increasing the4096 allowance is a cure. See end-to-end-original-pointer-delivery-review.json and end-to-end-native98563-followthrough-independent-review.json.
+
+Native93731 terminated without a public answer after explicit output-length termination on gapL4. The initial writer's60 reading records were verified original-only pointers; that transport fix is exercised, not semantic acceptance. Eight completed point/gap proofs survive privately, but no acceptable public subset is established. Frozen artifacts and the actual-content audit remain authoritative.
+
+Incomplete-target completion scope before implementation: an incomplete response during one final-review assertion is unavailability of that exact check, not a proof and not permission to discard independent completed work. Retain a negative target receipt bound to existing run_id/generation, exact validated source/assertion/concern/request binding and policy. Automatic resumes may skip only that exact incomplete target and visit untouched siblings; genuine new generation or materially changed input may attempt it again. Negative receipts must never count as completed verification or renewable research progress. Extend the existing deferred qualification/restoration route coherently for this reason, without pretending provider retries are exhausted or adding counters, stages, models, inference allowances or overall research budgets. The existing original binding, citation obligations, unresolved-concern and subset-coverage gates remain mandatory; no forced partial publication or stale-draft resurrection. Changes are confined to final_review plus the corresponding deferred reason contract in synthesis_resume and focused affected checks.
+
+The incomplete-target completion change passed29 distinct affected cases (12new,17existing), required API lint/diff and independent review. A first-dispatch detached negative-cache bucket found during review was fixed and verified: identical failed targets share the same negative receipt without completed-work inflation. Actual semantic acceptance remains failed; source-present wrong conclusions must not be promoted merely because delivery can continue.
+
+Retained-frontier recovery scope before implementation: native93731 had the requested official FAQ among already returned candidates, but its source branch failed a downstream reflection after three valid readings. The host exposed discovery frontiers only from completed branches, hiding that branch's remaining candidates from later synthesis and rejecting it for continuation. Use one coherent eligibility contract for context, continuation and application: a retained, authorized unprocessed frontier after a failed downstream reflection may be offered and selected without approving or repurchasing that failed reflection. Continue the existing remaining candidates/cursors with existing batch size and source/access/exclusion fences; do not broaden arbitrary failed planning/search/read branches or renew reflection without new actual source progress. Preserve all completed readings. This fixes a demonstrated loss of available discovery state, not model source choice or factual correctness, and introduces no source-specific rule, new model stage or research quota.
+
+The ordinary Retry boundary is part of this frontier fix: when an enabled mission retries its failed briefing, preserve an eligible failed-reflection frontier for that new briefing to select, rather than requeueing the same old reflection and hiding the frontier again. The briefing retry remains normal; reflection-only, legacy and non-mission explicit retries retain their prior behavior. Verify the actual HTTP control-to-preparation path and invalidate the old synthesis checkpoint through the changed supplied frontier. The isolated launcher may preserve its existing explicit96,000-character candidate setting on such a material-change Retry only when both previous candidate/runtime receipts and investigation identity match exactly; all inactive/process/credential/snapshot guards remain.
+
+Retained-frontier recovery passed32 focused cases, required API lint/diff, and independent review. One disposable-copy preflight exercised ordinary Retry and generation advancement from frozen93731: the queued brief receives the retained frontier in its actual supplied context; changing only that frontier invalidates the known-inaccurate finalizing draft. All12 authorized source records and completed readings remained unchanged. The candidate launcher's five offline guard cases verify preservation of the same explicit isolated context setting. Native62956 now exercises one ordinary Retry with those material changes, retaining the same investigation and96,000-character allowance;56 prior model calls are the baseline. These local checks do not establish FAQ selection, answer correctness or production readiness. See end-to-end-retained-frontier-independent-review.json.
+
+Unread discovery identity scope before implementation: actual native62956 Briefing56 received the recovered frontier with four remaining candidates, but no field exposed the retained candidates' identities; even the requested FAQ URL was absent from the supplied request. This proves missing decision input, not the reason for non-selection. Add a narrow projection of currently eligible unread public candidates' sanitized titles and URLs to the existing mission frontier. Require an owned public-question branch and current exclusions/attempted/captured-source filtering independently of legacy frontier eligibility. Keep metadata explicitly unread/untrusted and outside evidence/citation references; never expose raw checkpoint, credentials, private source fields, provider data or discovery cursors. Preserve candidate order, retained acquisition state, source batches and existing routing. Reuse existing request/envelope/checkpoint binding, with no new model, reviewer, ranking, policy-wide invalidation, acquisition quota or research budget. Any view-size omission must be explicit and cannot delete or exhaust the retained frontier. The active62956 snapshot remains unchanged and evaluates the preceding implementation only.
+
+Native62956 completed operationally with an actual partial answer after1,754.6seconds and50 new model calls (56 prior calls retained). Three displayed points and nine exact citations survive in both unchanged product readers' server rendering. Four incomplete review targets were not repurchased;22 valid raw review receipts and all12 complete source readings survive, with six checks deferred and explicit Retry available. This exercises qualified delivery, not source-faithful acceptance: independent content review found four essential questions without direct answers and overbroad NOTICE/patent conditions. The requested official FAQ remains unread. The single generic verification notice does not name the missing requested parts; current coverage stores only whole-question incompleteness, so unverified private statements must not be projected as invented gap labels. See end-to-end-native62956-content-review.json and end-to-end-native62956-lifecycle-review.json. Production remains Core3162ad9/Sites92.
+
+The separate unread-candidate identity projection is locally verified in six focused cases. It includes only sanitized title/URL identities of current eligible public candidates, excludes private/unowned or disabled discovery and current excluded/captured/attempted URLs, preserves stored acquisition state/order, and reports eligible omissions within an8,192-character combined identity-list view. Additional field/scope/count overhead still enters the existing full request envelope. Metadata has no citation IDs and is explicitly unread/untrusted. Provider transport retains it; changed visible identity invalidates the saved synthesis request while unchanged omitted private fields do not. The empty-list accounting edge was fixed with one targeted case; owned lint/diff passed. Independent frozen62956 post-Retry preflight remains pending. No new model/reviewer/schema, source quota or production release.
+
+Independent unread-identity review is complete with no material blocker. One frozen62956 disposable-copy preflight verified ordinary Retry to generation3, exact official FAQ identity in the actual provider projection, unchanged659 canonical references and12 source/read records, and invalidation of the saved qualified draft solely by the new identity metadata. The actual identity lists use1,811 of8,192characters; no raw candidate snippets or private fields enter evidence. Required full API lint, backlog guard and diff checks passed. A single ordinary Retry with the unchanged isolated96,000-character setting may now evaluate real source selection and delivery; source-present semantic errors remain an explicit acceptance risk.
+
+Native73797 is the single active ordinary Retry after that verified identity projection, using the same investigation/originals and explicit96,000-character candidate setting;106 prior model calls are the baseline. Its immutable snapshot is recorded in execution-version.json and end-to-end-checkpoint.json. The prior62956 partial answer remains unacceptable; no publication/deployment occurred. Do not launch an unchanged parallel experiment or treat the retained old checkpoint as a new delivered result.
+
+One observation of actual native73797 Briefing106 verifies delivery of all16 eligible identity records (1,811characters, no omissions), including the requested official FAQ. The response chose clarify and a next check of an already supplied guide, without selecting any retained frontier. The metadata fix is therefore exercised, while appropriate source choice remains unproven. The native remains active; no later content or completion outcome is inferred from this observation. See end-to-end-native73797-source-choice-observation.json.
+
+
+Native73797 is terminal and not accepted. The actual delivered answer contains one patent-termination point with a material trigger-scope error, omits the filing date and leaves five required parts unanswered. Both quotations bind exactly; complete definitions and operative licence sections were present in both writer and reviewer packets. A positive model review therefore did not establish source-faithful content. All12 source records and prior qualified checkpoint remain intact. See end-to-end-native73797-content-review.json and end-to-end-native73797-lifecycle-review.json. No native remains active and no production update occurred.
+
+Clarification action coherence scope before implementation: the actual writer chose clarify while omitting both a user question and selectable alternatives. This invalid action bypassed reading selection and reached expensive final review before checked delivery cleared the controls. Reject an internally incomplete clarification at the existing provider decode/shape-repair boundary, before factual review or continuation routing. A valid clarification needs one nonblank question and two or three distinct, properly cited directions; malformed or uncited choices must not be silently converted to finish/continue. Preserve normal continue/finish controls, the existing repair allowance, current source access and citation checks, legacy non-mission behavior and saved-work dependency fences. Use the existing schema/parser/repair paths, with no new model, reviewer, stage or research budget. Verify actual gateway ordering and repair/failure behavior, valid clarification, unchanged normal actions and cache invalidation for this material contract change.
+
+
+Clarification coherence is locally verified in23 focused cases (20new and3existing), with full API Ruff, backlog guard and diff checks passing. Only the mission answer wire changed: optional clarification text and alternatives have nonempty/list-size grammar bounds; missing, blank or duplicate choices fail the existing decode and single format-repair path before reading/factual review. Ordinary actions and non-mission behavior are preserved. A material schema fingerprint naturally invalidates old private synthesis receipts, including selection receipts, without erasing durable originals or completed reading. This does not prove source choice, semantic correctness or whole-question coverage. Both unchanged readers render actual73797 without dropping its one point, two quotations or one generic limitation; that actual content remains rejected.
+
+
+Independent frozen73797 replay confirms that actual writer106 is rejected before routing/review and that the real provider schema change invalidates its correctly fingerprinted private draft. The frozen saved raw action was clarify; only the checked delivery projection was finish. All12source/read records and frozen database remain unchanged. See end-to-end-clarification-action-independent-review.json. Native77927 is the single ordinary Retry now evaluating this material correction, with126 prior calls, unchanged96,000-character isolated setting and snapshot3f9gzebn. Production remains Core3162ad9/Sites92 with its existing24,000-character setting; no content or deployment acceptance is claimed.
+
+
+Native77927 terminated after89.4seconds and two new model calls, with no new public answer. Both responses selected clarify without a question or alternatives; the new gate correctly rejected them before reading/factual review. The repair received a byte-identical system/input/schema: existing fresh_bounded_draft fallback dropped all validation feedback to fit the selected packet. Exact Swisscom request sizes are95,978original,102,877with full repair feedback, and96,375with error-only feedback, against96,000. Merely omitting the invalid draft is therefore insufficient. All12source/read records and both public checkpoints are unchanged; the preserved73797 answer remains rejected, not a new completed result. See end-to-end-native77927-lifecycle-review.json and end-to-end-native77927-outcome.json. No native is active and no production update occurred. The next correction must preserve actionable repair feedback through existing evidence packing/resume, without another identical request, cutting original evidence, adding model stages or increasing research budgets. Requested-source acquisition ownership and semantic fidelity remain separately unresolved.
+
+
+Feedback-preserving format repair scope before implementation (native77927 follow-through): the existing repair fallback must retain its actionable validation errors. Keep a fitting full-feedback request; otherwise omit only invalid-response text/wrapper, and if still oversized, use existing evidence selection measured against the actual error-only repair instructions. Preserve whole original units and mandatory context closure, canonical reference identity, the complete user question, rights and retained reading. Rebuild the dispatched schema from the actual selected references and fail honestly if required material plus feedback cannot fit; never purchase a byte-identical supposed repair. Keep the same existing repair attempt and per-step allowance, without new stages/models/reviewers/tables/global budgets. Persist the actual repair request in existing private checkpoint state before dispatch and restore it before ordinary selected-request binding on resume; source/question/schema/provider changes must invalidate it, while completed repaired prose and factual checks must not be discarded merely by reselecting the original envelope. Acceptance covers full/error-only/reselected feedback, mandatory overflow, interruption before/after dispatch, same-input resume and material-input invalidation, exact full-unit references and existing no-repair behavior. Actual native content acceptance remains separate.
+
+
+Feedback-preserving repair is locally verified:36 distinct affected cases passed. Two pre-existing mocked-selection fixtures initially omitted mandatory adjacent context and were corrected to genuinely nonadjacent unsupplied references; the production closure check was preserved. The existing single repair path now keeps full feedback, then error-only feedback, then reselects whole units under the actual error-bearing envelope if needed. Existing private preparing state restores that exact system/schema/content before ordinary selection; interrupted repaired drafts and their checks retain their correct request binding. Early orientation/reflection retain only preparation, not previous accepted outputs. Source-bound vector preparation is preserved, while invalid raw and answer-dependent checks are discarded before a changed repair selection.
+
+One actual frozen77927 offline preflight exercised ordinary Retry/current-access on a disposable read-only-origin backup. It retained both actual validation errors and659 canonical source identities, selected265 refs from12sources in complete-unit closure, and produced a95,797-character repair within96,000. JSON-restored preparation recreated the identical request without reranking; all12durable reading/source records and frozen artifacts are unchanged. Ranking was explicitly lexical-only over the real originals; no provider, encoder or network was called, and this is not native or semantic acceptance. See end-to-end-native77927-repair-envelope-preflight.json. Full API lint, backlog guard and diff checks passed.
+
+
+Native83362 failed after94.4seconds/two new calls with no new public answer. The actual repair129 differs in system, selected input and bounded schema and carries both exact validation errors: feedback preservation is exercised. The model nevertheless again returns clarify without question or alternatives. This is not the prior identical-request transport failure; source acquisition/semantic delivery remain unaccepted. Frozen native83362 artifacts preserve the previous answer unchanged.
+
+Provider action grammar coherence scope before implementation: align the model-facing mission action with the existing host execution contract. Continue/finish remain simple actions; clarification is a structured alternative containing its required question and two or three cited directions, so selecting it cannot structurally omit the choice. Use existing supported nested schema alternatives, current bounded citation IDs and existing canonical Briefing/mission shape, with exact legacy valid action normalization only at the transport boundary. Do not infer missing content, silently select continue/finish, add a new action/stage/model/reviewer, or relax host nonblank/distinct/source checks. Update only the corresponding protocol description, encoding/decoding and meaningful affected checks. The material provider schema/system change invalidates incompatible private drafts naturally; no global policy bump. Verify canonical roundtrip, real old malformed response rejection, valid legacy/current clarification and ordinary actions, bounded citations, cache invalidation and unchanged non-mission behavior. This is a typed protocol correction, not a claim that a clarification is needed or that its content is factually sound.
+
+The bounded-schema integration must disable only the cited clarification alternative when the selected packet has no citable originals, keeping continue/finish. Otherwise the generic zero-evidence array normalization would reopen an empty clarification in the provider grammar. No source ranking, packing policy or model change is included.
+
+
+The typed provider action is locally verified in92 affected cases on the first run, including structured/legacy valid clarification, incomplete/blank/duplicate choices, exact citation bounds, canonical roundtrip, request-slot compatibility and format-repair regression. A closed clarification object requires its question and alternatives; no-evidence packets expose only continue/finish. Full API lint, backlog guard and diff checks passed. See end-to-end-typed-clarification-action-review.json; canonical product controls and non-mission behavior remain unchanged. This aligns grammar with execution but does not establish content or source-selection acceptance.
+
+Independent native83362 lifecycle audit confirms actual repair129 fits95,943/96,000characters with237exact references, complete-unit closure and both validation errors. All12readings and the previous public answer are unchanged. Its route hashes match the dispatched request, but no terminal synthesis/format-repair checkpoint survives the repeated WireError; durable terminal binding is not claimed. See end-to-end-native83362-lifecycle-review.json.
+
+
+Semantic action scope before implementation (actual native35004 Briefing130 observation): typed clarification is structurally complete but asks the user to locate/read accessible originals instead of identifying a consequential missing user decision. The current original_check returns immediately for clarify and therefore bypasses the existing next-reading arbitration. Extend that same decision point to consider the supplied clarification alongside existing executable checks, current discovery frontiers and witnessed original links. A positive decision may keep a genuine user choice, select necessary autonomous reading, or determine no material further reading is needed; incidental next_checks alone cannot convert the action. Preserve source access, citation identity, deduplication, original-question scope and existing continuation routing. Clear outer clarification controls only after an affirmative decision choosing autonomous reading or no-needed-work. If arbitration is unavailable, retain work and report unavailability rather than silently approving the choice. No new model, reviewer, stage, keyword/source-specific parser or research budget. Bind reusable action decisions to current question/evidence/work scope, policy and resulting controls. Previously saved finalizing clarification without a current receipt must pass this action boundary while retaining independently valid point/gap proofs; do not regenerate a draft solely to obtain the missing routing decision. Native35004 continues against its immutable preceding snapshot and cannot prove this later scope. Requested-source acquisition ownership remains a separate saved design.
+
+
+Native35004 is terminal failed after374.9seconds and12newcalls, with no new public answer. Actual writer130 now supplies a typed clarification question and three cited choices, exercising the grammar correction. It asks the user to locate/read sources; this is observed semantic action misuse, not a demonstrated missing user decision. The exact prior73797 answer remains retained and rejected. Later provider interruption appears in recorded calls; its terminal failure classification and saved lifecycle are independently under review. All native35004 files are frozen once. Semantic action integration begun after snapshotmt8i08mu is explicitly excluded from this run. No native is active; production remains unchanged.
+
+
+Independent native35004 lifecycle review classifies the terminal finalizing step as model_incomplete: L0 call140 was incomplete, then L1 call141 returned, so failure is the unresolved-check aggregate rather than the last call alone. Its valid saved finalizing checkpoint is bound exactly to writer130 and retains six original review responses; two subsequent worker steps did not regenerate the writer. All12source/reading records and the older public answer/briefing/checkpoint list are unchanged. Retry remains available. See end-to-end-native35004-lifecycle-review.json. The action integration must preserve this actual private work while adding its missing routing decision.
+
+
+Semantic clarification arbitration is locally verified in43 focused cases on the first run:23 new decision/receipt/scope checks,13 existing next-reading checks,5 gateway action/resume checks and2 format-repair resume variants. The existing chooser can retain a genuine user choice, choose necessary autonomous reading, or send the answer onward for factual review. Result-control fingerprints prevent restoring an obsolete choice; current-input/policy/result binding prevents stale decision reuse. Saved finalizing clarification now passes the missing action decision while retaining its six proof records and writer result. Private/mixed/empty/local scopes preserve their existing behavior without a new external request or a fabricated approval. Full API lint, current backlog guard and diff checks passed. Native content, required-source acquisition and deployment remain unaccepted.
+
+
+Native9520 is terminal failed after389.2seconds and6newcalls with no new public answer. It resumed the saved finalizing writer, exercised the new clarification decision, and added completed checks; no new original was acquired in the observed resumed stage. The existing Jev decision selected check:1 while the saved canonical action became finish; exact lifecycle/routing audit is pending. The previous73797 answer remains byte-equivalent and rejected, so repeating its semantic review or reader rendering would add no evidence. All9520 artifacts are frozen; no native remains active. Required-original acquisition ownership is the next substantive implementation direction; another unchanged retry is not justified. Local fixes are not a completed product or release. Production remains Core3162ad9/Sites92.
+
+
+Final independent9520 review proves exact writer/request-binding reuse and six-to-nine retained checks, with all12originals/readings unchanged. Jev selected check:1; pure existing continuation routing rejected it at the unchanged-evidence-signature/no-selected-deeper-frontier gate, despite a nonduplicate question. The selected question concerns binary obligations while its query concerns trademark guidance; this is not evidence that the rejected work was useful or that a new source was acquired. Final step ended model_incomplete; recorded146=L4 and147=P1 were incomplete. See end-to-end-native9520-lifecycle-review.json. No new answer or release acceptance.
+
+The requested-source ownership design received independent review with four required corrections: preserve literal planner-only ownership through question deduplication; retain plural fallible identity matches separately from current whole-reading proof; reopen eligible existing discovery before question_finished while preserving current access/progress safeguards; derive public current outcomes without exposing private pins or changing legacy runs. See end-to-end-requested-source-ownership-independent-review.json. This remains the next implementation direction, not a completed feature. A planner-owned change needs a fresh isolated original-question evaluation after implementation, not retrospective requirement injection or another unchanged9520Retry. Final required lint/backlog/diff gates passed; production remains unchanged.
+
+
+Requested-original execution scope before implementation: the existing planner will bind literal user-requested source spans to stable IDs on admitted planned questions, preserving ownership through question deduplication. Only planner admission may create obligations; generated gaps and legacy runs gain none. Existing reader calls receive those exact requirements and may record multiple cited, fallible source identity matches separately from topic claims. Resolution requires current authorized identity plus current complete whole-document reading/analysis; matched identity alone, source title/SHA coincidence and unrelated ClaimEvidence are insufficient. Direct submitted URLs use only existing admitted-source provenance. Current eligible candidates/cursors resume the owning branch before question_finished, preserving full originals, consumed cursor/dedup/access controls and failed-reflection progress guards. Current safe source-work outcomes and named workflow limitations survive delivery through the existing mission/reader channels; private pins are not public question fields. No new stage, model, reviewer, table or total research allowance. Keep canonical older plans compatible and leave old runs unannotated. Acceptance covers atomic literal ownership/dedup/retry, plural exact matches, cross-branch complete reads, revocation/changed-question/partial-read rejection, finite existing frontier continuation, honest direct failure/unknown outcomes, final source-work visibility and a fresh isolated original-question journey after meaningful affected checks. Existing native9520 is a frozen failed predecessor, never an unchanged retry target for this planner-owned feature.
+
+
+Requested-original ownership is implemented locally across the existing planner, canonical question admission/dedup, optional plural reader identity, current full-reading resolver and pre-completion discovery continuation. Literal requirements retain one owner; later unknown identity does not erase valid earlier matches, and topic evidence never discharges a source task. Current authorized complete originals can satisfy another branch or an exactly retained copy without refetch. Direct submitted URL failures remain separate from unidentified named documents. Mission views include current named source-work limitations without certifying interpretation. Resolver36 and continuation26 focused cases passed. Root ownership/transport checks found and fixed a missing source-ID field; the affected legacy coordinator, transport and backlog checks pass except a stale provider fixture now corrected for the new explicit requested_sources field. Independent review found the ordinary source snapshot projection still exposed new private identity receipts; the narrow redaction and its regression case are in progress. No native or production success is claimed. The next evaluation must start fresh, preserving frozen predecessor9520.
+
+
+Requested-original ownership is frozen and independently reviewed. The normal API regression now confirms new identity receipts are omitted from the public snapshot copy while exact original passages and stored proof remain unchanged. Resolver36 and continuation/projection27 focused cases pass; root ownership/operational/requested-source and affected transport/legacy coordinator checks pass after the two recorded corrections. Final exact API Ruff, updated backlog guard and diff checks pass. Fresh isolated native2862 started against a new immutable candidate snapshot in /tmp/hl-public-owned-originals-journey with the original Apache question and explicit96k candidate context. Production remains Core3162ad9/Sites92 at24k; no publication or semantic acceptance is claimed. Receipts: end-to-end-requested-source-ownership-implementation-review.json, end-to-end-requested-originals-resolver-review.json and end-to-end-requested-source-continuation-review.json.
+
+
+Fresh native2862 failed during planning after18.9seconds and2 returned model calls, before source reading or answer delivery. Both initial and format-repair responses paraphrased the requested originals instead of copying literal user text; exact-span admission correctly rejected them. Frozen files and manifest remain in the isolated owned-originals journey. Before implementation: change only the existing plan wire representation to integer-referenced contiguous words of the complete original question. The provider selects first/last word references; the host slices the exact original characters into the unchanged canonical requested_sources list. Validate boundaries and nonempty bounded spans before ownership admission. Preserve all current canonical legacy, atomic dedup, reader and resolver contracts. No fuzzy source matching, domain rules, additional model/stage or budget. Verify selected exact user spans, invalid/reversed/out-of-range references, original whitespace/punctuation, and old paraphrased-response rejection before a changed native run.
+
+
+The plan word-reference correction passed20 focused cases and independent review; exact API lint/diff passed. Actual original whitespace and punctuation are retained by offset slicing. Invalid, reversed and noninteger references are rejected without fuzzy repair; canonical ownership remains unchanged. Native19841 is ordinary isolated Retry after this material correction of2862, whose failed planning admitted no questions or originals. It preserves the same public admission and explicit96k candidate context. No retrospective source tasks are attached to an old researched corpus. No content or production success is claimed. Evidence: end-to-end-native2862-lifecycle-review.json and end-to-end-requested-source-word-refs-review.json.
+
+
+Native19841 reached one new public checkpoint after1880.3seconds and64new model exchanges (66total). Workflow status completed but mission incomplete/review_unavailable; actual three-point answer is not accepted. The full official license and FAQ are captured, yet four requested areas are absent and two delivered points lose material Source-form/relevance and NOTICE-placement qualifications. Exact18citation bindings are not semantic approval. Frozen artifacts are under the owned-originals journey; native19841-receipt.json retains initial admission timing and is not the Retry timing source. Progress and recorded calls establish this attempt. No native is active or production changed.
+
+Next source-target scope before implementation: remove the new plan word-index representation. PlannedBranch gains explicit interpreted source_targets, admitted only during planning with host-stamped planner_interpretation origin and identity bound to the complete original question and admitted owner. Preserve existing v1 exact-literal ownership unchanged; never relabel historical records. Host-admitted literal URLs retain submitted_url provenance, which no model-generated URL-looking label can acquire. Pass target origin through existing optional reader identity, current complete-reading resolver and safe mission outcomes; describe interpreted targets as planned source work, never exact user requirements or factual gaps. Continue only the existing finite eligible owner frontier; no query invented solely to satisfy a target. No new table/model/reviewer/stage or total allowance. Acceptance: new interpreted names survive admission/dedup/retry, legacy v1 stays exact, URL authority cannot be forged, current source rights and whole-reading checks remain, and public labels cannot misrepresent planner hypotheses. In parallel diagnose the actually delivered source-scope and coverage failures from frozen19841 before selecting a synthesis correction.
+
+
+Additional bounded review-contract scope before implementation: frozen19841 P2 contains four explicit enumerated obligations but assertion_clauses submits the entire sentence as one S0 judgment. Expose actual sequential parenthesized list items as additional exact spans inside the existing single review request, retaining the complete sentence and its shared context as a required judgment. Recognize explicit colon-introduced ordered runs only; do not split ordinary noun lists, conjunctions or section references into invented propositions. Reuse the existing eight-judgment envelope, retaining an exact combined tail when needed, without clipping the full assertion or adding a reviewer/call. Missing or negative item judgments must prevent whole-point approval through the existing gate. This closes a structural review-coverage gap; it cannot guarantee that a model correctly judges source qualifications. Validate missing/negative item rejection, correct paraphrase compatibility, exact text/qualifier retention and conservative non-list behavior.
+
+
+Citation-rebinding scope before implementation: native19841 call65 reviewed P3, after which the host made an exact-text citation candidate and promoted all234 selected packet references to mandatory context. Background evidence then prevented the next independent check from fitting, despite no new substantive claim. Candidate inheritance will retain original cited/prior mandatory references and every exact witness actually used in overall/clause/concern judgments, including negative and qualifying witnesses. Optional background remains in the current full corpus and is retrieved afresh under the existing selector; structural-unit closure and inherited contrary originals stay mandatory. No source clipping, evidence deletion, bigger context, new model or extra review stage. Verify all verdict witnesses survive, optional packet entries are not promoted, whole original units remain available and the next existing check can select from the full corpus. Existing saved concerns are not retroactively weakened.
+
+
+The three bounded corrections are implemented and independently reviewed: interpreted source targets passed42 affected cases; all11 new enumeration cases passed after correcting parent/child rebinding; candidate-context and affected original-selection/delivery cases passed10first-run checks. Exact API Ruff, updated backlog guard and diff checks passed. Native19841 P3 packing is reproduced offline: the original request was95,974characters; its unchanged234-reference packet was promoted into mandatory context and the next saved qualification increased the envelope to96,452against96,000. The new inheritance keeps actual positive/negative/concern witnesses and prior obligations while searching the full corpus again. Complete source qualifiers were already supplied to the semantically incorrect19841 P1/P2 judgments, so this is no claim that missing context explained those errors. Nine broader final-review test failures reproduce identically against the preceding frozen production pair; their stale typed-aggregate/work-input/citation-cache fixtures are being corrected without changing production behavior. Native19841 remains rejected; no production change. Receipts: end-to-end-interpreted-source-targets-review.json, end-to-end-final-review-corrections-review.json and their independent counterparts.
+
+
+All nine preceding final-review fixture failures are reconciled and passed without production changes: typed late aggregate responses now use current placement/dispatch; direct finalizer fixtures carry their existing full work.input; citation-only changes preserve literal gap approval. The single-empty outage case keeps its original partial/unavailable assertions. Fresh isolated native92743 is active in /tmp/hl-public-interpreted-originals-journey, immutable snapshot /tmp/hl-native-api-snapshot-2x0lpt95, investigation d674c1f0-1fde-4e12-96fe-679473a8658e, original rubric question and96k candidate allowance. Baseline model calls0. Its plan returned actual interpreted names rather than word offsets; generated URL-looking labels still have planner_interpretation provenance. No semantic acceptance or production deployment yet.
+
+Duplicate-analysis fallback eligibility scope before implementation: native92743 retained a fully read duplicate of an original whose extraction was interrupted. Existing whole-document recovery scheduled the duplicate for ordinary section extraction, but the read-relevance availability check excludes every duplicate and skipped that same task without inference. Permit only an explicitly scheduled, currently authorized same-run duplicate analysis fallback through this boundary. Bind it to the current original question, source identities, captured content and owned document; revalidate current rights and versions before accepting results. Preserve ordinary duplicate suppression, source exclusions, full section and whole-document validation, and canonical provenance. Matching bytes alone must never establish completed analysis. Verify the real worker preparation/application path and withdrawal/version rejection with scripted local calls; no provider or native execution is part of this correction.
+
+
+Reader identity-input scope before implementation: frozen92743 extract inputs omit each captured page URL while four owned targets include two URL names. Successful readers explicitly return no matches; no serialization/resolver loss is inferred. Supply the validated public source URL beside its stored title and exact passages in the existing extraction request. Public URL policy rejects credentials, local/internal addresses and unsafe schemes; private contributions receive no URL field. Address metadata is neither source authority, an identity match nor reading completion. Preserve quoted IDs, current source rights, full section text and all existing matching validation. Extend the actual coordinator-to-provider input check; no new model/call or research allowance. This fixes unavailable metadata, not the separately proven semantic misjudgment with full license clauses already supplied.
+
+
+Native92743 is terminal after1869.53seconds and76model calls, with a real two-point checkpoint,7citations and7limitations. Independent content review rejects the answer as PARTIAL: notice retention is overextended to source or object form; closed-source publication, conditional NOTICE and trademark responses are missing; patent qualifications are incomplete. Both unchanged readers render all actual statements/citations/limitations. Full official license and FAQ were completely read/analyzed and the governing §4 clauses were supplied to writer45 and reviewer48, which nevertheless approved a broader blog paraphrase. No semantic source-loss explanation is claimed. All31synthesis envelopes fit96k; prior packing failure did not recur. Final synthesis resumed with0model calls and pendingchecks[], so saved research_review_yield is historical. The run instead failed on3analysis-incomplete documents, including a scheduled same-run duplicate that read-relevance wrongly skipped. All13successful section extractions explicitly returned source_class=null and requested_source_matches=[]; no positive receipt was lost by the resolver. Current source/reader recovery is scoped separately. No publication. Receipts: end-to-end-native92743-{content,lifecycle,synthesis-boundary,reader}-review.json.
+
+
+Duplicate-analysis recovery is implemented locally: only an explicitly scheduled, exact current same-run duplicate-analysis fallback may cross the read-relevance boundary; current question/document/source-chain/capture and exclusion checks are repeated after the awaited extraction. The alias stays excluded from ordinary public source selection and requires its own section and whole-document review; SHA equality cannot supply analysis completion. All26focused cases pass, including real worker dispatch/application/reconciliation and withdrawal/capture mutation during the await. Reader public-URL metadata passes the actual coordinator-to-provider input case and independent review. Exact full API Ruff, updated backlog guard and final diff checks pass. This repairs proven original-reading behavior; the92743semantic misjudgment remains open. A subsequent ordinary isolated Retry may evaluate this changed reading path while retaining current admission, originals, completed work and the existing96kpilot allowance; no production update or unchanged retry is authorized by these local gates alone.
+
+
+Changed native57142 ordinaryRetry did not deliver a new answer: it paused after22.0seconds and2successful section extractions (76→78total recorded calls). All six terminal artifacts are frozen once with verified hashes. Actual provider inputs now contain stored public URLs; both readers still returned no source identity matches. The alias was no longer skipped: extraction and claim updates succeeded. The next coordinator preflight then failed the applicability-current fence because its new unassessed reading references an alias intentionally omitted from general public source visibility. All other inspected adaptive-current subchecks pass. Last-step research_review_yield remains an older retained error. Both unchanged readers correctly hide stale answer under evidence_changed; prior92743 content remains rejected and is not a new result. The earlier26-case fallback gate missed a realistic applicability record, so the narrow integration and whole-worker dependency regression are required before another native. No publication or unchanged Retry.
+
+
+Duplicate-reading dependency follow-through scope before implementation: native57142 completed two ordinary extraction calls, including the scheduled duplicate under its own citation IDs, then paused because applicability.current could not find that duplicate in the intentionally deduplicated general source view. The saved applicability record was unassessed; the pause was not caused by changed source passages or an invalid claim. Retain a private exact dependency for completed duplicate fallback reading and validate its owned document, question, complete authorized capture chain, section receipt and exact source snapshot independently of general source visibility. Its data provenance must survive whole-document reconciliation and later run generations, while generation still fences in-flight extraction admission. Existing unstamped fallback readings may resolve only from their exact retained scheduled receipt and completed own-source extraction proof. Do not promote duplicate visibility, infer whole analysis from section extraction, or discard freshness checks. Extend the actual worker path with claims, assessed/unassessed applicability, whole-document review and the next preflight; verify current question, version and rights rejection without provider or native calls.
+
+
+Per-point citation representation scope before implementation: frozen92743 contains completed positive clause reviews whose exact distinct supporting witness unions contain more than eight references; the answer representation and deterministic rebinding reject those unions solely because of an inconsistent eight-citation ceiling. Remove this per-point ceiling without replacing it with another count cap. Retain nonempty evidence, exact supplied/current references and deduplication, all required original qualifications and negative concerns, existing measured request envelopes, and the next ordinary factual review. Apply the same representation consistently to canonical points, writer/correction grammar, citation-context completion and reviewed candidate construction. No change to point-count limits, inference allowances, review standards or semantic acceptance; the separately evidenced factual overclaim remains unresolved. Verify larger exact witness unions through canonical/wire roundtrip and subsequent rejection/oversize boundaries with local scripted checks only.
+
+
+Review source-role clarification scope before implementation: native92743 supplied both the governing license clauses and commentary, yet a reviewer treated a broader commentary paraphrase as the original rule. Add a general instruction within the existing review request to distinguish captured commentary from the governing text it describes and reconcile material conditions when both are supplied. Commentary remains eligible evidence; no domain authority heuristic, new stage, provider call or truth certificate is introduced. The review policy already binds its exact instruction text, so old judgments will invalidate naturally. This wording is an unverified semantic correction, not acceptance of the prior answer.
+
+
+Completed-duplicate applicability follow-through is independently approved with six real-worker cases, including actual claims, whole-document completion, current dependency rejection and ordinary Retry. The point witness representation correction is independently approved with17unique affected cases: more than8valid references remain representable, while exact identity, subsequent contradiction/concern checks and the real complete-original envelope remain enforced. The separate governing-text/commentary clarification is a fallible instruction correction, not proof of truth. Full API Ruff and diff checks pass after final freeze; producer hashes match. Ordinary isolated native30300 is active, snapshot /tmp/hl-native-api-snapshot-mi54qqyn, same admitted investigation d674c1f0-1fde-4e12-96fe-679473a8658e and unchanged96k candidate context; recorded-call baseline78. It has passed the former paused preflight and completed extraction/document-review calls, but no new answer is accepted. The once-only terminal freezer is /tmp/hl-freeze-native30300.py. Do not duplicate or interrupt it. Production remains Core3162ad9/Sites92 at24k and no publication has occurred. Receipts: end-to-end-native57142-duplicate-reading-dependency-{review,independent-review}.json and end-to-end-point-witness-capacity-{review,independent-review}.json.
+
+
+Native30300 completed after1606.9seconds with44new model exchanges (78to122total), but actual new round2 answer remains PARTIAL and unaccepted:4requested topics are absent and its project-name/logo marketing prohibition overextends a narrow ASF-logo printed-cover restriction. All19originals now have complete reading and analysis; all4delivered citations bind exactly. Both unchanged readers retain2points/4quotations/5limitations. Factual review100 was supplied the contrary official FAQ marketing permission and its full conditions, as well as the distinct cover/Powered-by questions; no structural omission is established and the wording clarification did not prevent false approval. No publication or unchanged Retry. Frozen receipt.json still contains older admission timing and is not this attempt timing. See end-to-end-native30300-{content,lifecycle,reader}-review.json and trademark-review-context.json.
+
+Host throughput scope before implementation: the isolated frozen30300 profile found15.10seconds of pure-host reflection preparation, including10.39seconds constructing the same visibility-heavy comparison query64times through current_dossier_knowledge.project. Use the existing fresh read_view boundary on that synchronous projection so read_query reuses SQL expressions inside one projection. Do not cache rows, authorization or projection results across calls, awaits, mutations or generations. Current source/tenant/human-review checks must still execute and changes between views must be observed. Verify query-construction reuse, unchanged permitted output, fresh rights/data across views, and one before/after measured host preparation on the same readonly public input. No model/provider/encoder call, larger allowance or serving/snapshot modification. This addresses measured CPU overhead, not the unresolved factual answer failure.
+
+
+Citation-rebound precision context scope before implementation: terminal30300 P1 has an exact-text12-witness candidate that is discarded before its required next review because its version2.0 is absent from those selected body passages. The actual supplied corpus includes same-original ref258, p00001-block-1-char-1, Apache License, Version 2.0 heading (29characters). Reuse the existing deterministic short same-original precision-context completion used by answer_parts before rejecting a rebound candidate: retain every chosen witness and unchanged statement, add only deduplicated currently supplied source-local missing-number context as context-role references, then rerun the unchanged quantity validator. Missing/foreign context must still fail; full original-unit closure, actual envelope, inherited concerns and next factual review remain mandatory. No identifier exemption, Apache rule, extra model/decision, new review stage, replacement citation cap or changed allowance. Focused acceptance must exercise the real candidate-to-review path and its later rejection boundaries. This repairs a proven representation loss; it does not cure the independent false trademark approval or certify omitted private prose.
+
+
+Citation-only rebinding concern scope before implementation: frozen30300 calls98/120 have byte-identical P0 statements, but the host adds a synthetic omitted_qualification concern during citation-only rebinding. The next ordinary review supports every clause and overall text yet cannot assess that unspecified omission, so the host correctly withholds the point. Create this synthetic text-omission concern only when the candidate statement actually changes. Preserve all inherited real objections and their exact original witnesses, previous statements, complete source context, precision validation and mandatory subsequent factual review. Never reinterpret cannot_assess as resolved or infer patent objections were resolved from a later unrelated review. Verify exact-text rebinding, real inherited objection rejection and actual shortened-text omission enforcement without providers. This removes an incorrectly assigned review task; it does not certify the final answer.
+
+
+Fresh concern propagation scope before implementation: frozen30300 patent review102 cannot assess real fast concern C0. Citation-only repair114 receives only its mechanical citation_attachment issue; later118 resolves a different C1, never the lost C0. check() retains fresh concerns locally but correction-plan creation copies them only for citation_layout, so ordinary attachment correction loses the prior objection. Bind current real concerns to the exact point identity for every actual point correction and preserve their original witnesses through existing writer feedback, retained correction state and required next review. Missing, foreign or changed original context must remain blocked; no unrelated point inherits the objection and no cannot_assess verdict becomes resolved. Verify interrupted/resumed ordinary citation repair and inherited unresolved objection withholding. No added review stage, provider, global budget or source rule. This is an actual loss of negative evidence, separate from source-present false approval on the trademark point.
+
+
+Post30300 local freeze: read_view reuse passes5affected cases and identical-input host preparation measures10.588s/64query builds to2.549s/1build, with unchanged complete work and freshness checks. Precision context, truthful omission tasks and fresh concern transfer pass24unique focused cases; a legacy pending point plan replans only the current retained answer using exact saved judgments, while completed plans/siblings are not revived. An existing layout-only fixture was aligned to its legacy owned request scope; new aggregate/append tests preserve whole-answer ownership and rejection checks. Exact API Ruff, git diff check and current producer hashes pass. No semantic acceptance or whole-native timing claim. Native100 separately proves a source-present false approval by the model, without a demonstrated mapping/parser defect. Production remains3162ad9/Sites92; receipts are end-to-end-current-knowledge-read-view-review.json, end-to-end-rebound-precision-context-review.json, end-to-end-fresh-point-concern-transfer-review.json and end-to-end-native30300-semantic-boundary-review.json.
+
+
+Fresh native91401 is running the unchanged original public rubric question in /tmp/hl-public-complete-context-journey, frozen API snapshot /tmp/hl-native-api-snapshot-spd59_et, isolated investigation1263296d-ff56-478e-8a31-13b7c0e68b91. Recorded-call baseline0; candidate96k context, production24k unchanged. Initial mapping progress observed. Once-only freezer52541 uses /tmp/hl-freeze-native91401.py. Combined independent review has no scoped blocker: end-to-end-native30300-followthrough-independent-review.json. Preserve the active process and snapshot; assess the actual terminal answer and both readers before any publication. All prior content acceptance remains PARTIAL; no commit, push or deployment occurred.
+
+
+Complete-user-journey scope before implementation: the product-flow audit found that optional early orientation still uses legacy total model-call/time reserves even for admitted research missions whose execution is explicitly unmetered. Use the existing admission.unmetered(run) contract to bypass only those legacy total reserves for initial source-backed orientation. Preserve eligible source/active-question prerequisites, one-checkpoint scheduling, current rights and per-request execution limits; retain the legacy reserve behavior for old metered investigations. Prove late-source scheduling after historical totals, no duplicate orientation and unchanged legacy behavior using existing worker/scheduler fixtures. This fixes a user-visible silent-progress path without changing source truth, final-answer acceptance or the running frozen native91401.
+
+
+The owner explicitly requested the whole outcome in one sustained implementation. Both existing1.89.0 clients connect question admission, early source-backed orientation and revision-bound clarification, final reading, team discussion, explicit monitoring and public versions; no missing client route was found. Production browser inspection confirmed one-question entry in both and anonymous Legal public catalogue access (empty); no production data were created. The late-source early-orientation reserve correction passes8affected cases, independent review, exact API Ruff and diff checks. This is the only API package difference from active91401 and is separately verified; it is not claimed to cause that run's behavior. See end-to-end-early-orientation-{unmetered,independent}-review.json and end-to-end-single-question-browser-review.json. Native91401 remains active; no content acceptance, commit or deployment.
+
+
+Native91401 terminated after2148.2seconds/128worker steps/110model exchanges with18fully read and analyzed documents. Its actual five-point public answer remains PARTIAL: requested source-form notice preservation and patent scope/termination are not answered, and an absolute trademark claim omits supplied exceptions. All19citation identities match retained originals; this does not certify the prose. Final coverage was unavailable because the worker deadline elapsed, yet ordinary nonqualified delivery published without resuming that check. The patent assertion was withheld after a second factual review selected additional support beyond its mechanically rebound references. These are distinct from the remaining model-semantic error. No publication or new native was triggered at this diagnosis.
+
+Terminal follow-through scope: (1) use the existing coverage interruption/resume contract when ordinary current-answer coverage is unavailable, preserving actual successful factual receipts and running the existing aggregate amendment when the resumed decision identifies missing coverage; (2) preserve factually supported exact assertions while reconciling their reviewed witness attachments, without treating unresolved concerns as resolved or requiring arbitrary repeated identical judgments; (3) clarify in the existing first writer, correction writer and reviewer that a quoted exception does not repair an unqualified absolute assertion. The shared qualification instruction applies to all domains and changes the ordinary bound request identities; it adds no classifier, source rule or model call. Verify control-flow boundaries and citation/concern preservation locally, then evaluate the actual complete answer. The wording correction remains a fallible instruction, not proof of semantic success.
+
+
+Native91401 follow-through is frozen and independently approved within implementation scope:17coverage cases,25citation convergence cases,104other prompt/source contract cases and the repaired metadata-cache regression pass; the two stale scripted fixtures now model actual coverage and retained raw judgments without weakening acceptance. Current standard release gate passes756tests/3warnings in53.74seconds, including the updated backlog guard; exact API Ruff and diff checks pass. Root qualification instructions bind all four actual requests and preserve source/model settings. The isolated launcher now permits ordinary continuation to retain only its exact previously recorded candidate context; changed allowance/identity/noncandidate inputs are rejected. Native17935 is the ordinary same-question public continuation of91401, recorded-call baseline110 and unchanged96k candidate setting, not a forced Retry or restored rejected private answer. Its immutable snapshot is recorded in execution-version.json; once-only freezer5590 uses /tmp/hl-freeze-native17935.py. Production remains3162ad9/Sites92/24k. No commit, push, deployment or content acceptance yet. See end-to-end-native91401-followthrough-independent-review.json and end-to-end-final-answer-recovery-release-gate.json.
+
+Unmetered model-operation deadline scope before implementation: native17935 retained explicit provider length finishes at the configured 4096-token structured-output floor. The existing operator setting already supports up to8192tokens, but admitted research model dispatches independently impose90seconds even when a supported provider timeout is longer. Let registered synthesis operations in admitted unmetered research use the configured provider timeout as their per-dispatch ceiling, without raising its default or introducing a total research allowance. Preserve the job-lease safety margin, any explicit shorter phase timeout, current permission/user-stop checks, non-model operation deadlines and legacy metered reserves. Verify the real worker's saved deadline and gateway budget, the lease clamp, explicit phase limits and metered behavior with scripted local operations only. The active native17935 snapshot and all runtime settings remain unchanged; longer execution does not establish content correctness.
+
+
+Terminal failure-message scope before implementation: native17935 reached answer_unavailable after a final-check failure, but finish_or_yield overwrote that reason when it also found two read documents awaiting validated analysis. Preserve the final-answer validation failure and append the existing exact unread/unfinished-analysis counts instead of presenting document work as the sole cause. Document-only failures keep their existing message and failed state. Retain previous-answer wording only on the existing saved-answer path; never describe a private candidate or another investigation as the current delivered answer. Verify combined failure, document-only failure and the existing saved-answer retention boundary through the worker/public result without live providers. No state routing, retries, deadlines, settings, source access or semantic acceptance rules change.
+
+Native17935 terminal is failed, with no new delivered answer/checkpoint after1864.4seconds and60new provider exchanges. All six frozen artifacts match their manifest; prior91401 partial answer remains unchanged. The terminal cause is an otherwise shape-valid factual review repeating identical witness selections, separately from earlier explicit4096-token length finishes. Exact duplicate normalization, configured model-operation timeout handling and truthful terminal failure messaging are being verified locally. Production remains3162ad9/Sites92; no semantic acceptance or publication is claimed. Receipts: end-to-end-native17935-content-review.json and end-to-end-unmetered-operation-deadline-review.json.
+
+
+Isolated provider-capacity experiment scope before implementation: native17935 contains explicit provider length finishes at4096output tokens. The existing operator settings support8192tokens and up to300seconds, and the admitted worker deadline correction now respects that configured per-operation timeout. Add explicit candidate-only --max-output-tokens128..8192 and --provider-timeout5..300 to the parent isolated launcher/pilot, without changing defaults or production settings. The next separately authorized ordinary Retry may preserve its already recorded96k context while explicitly testing8192tokens/180seconds. Record configured, requested and effective nonsecret values in both runtime and execution receipts; preserve current-run admission, exclusive lock, same-question ownership, readonly snapshot and stdin-only credential transport. Verify invalid arguments and exact flag/receipt wiring with temporary fake inputs only; this implementation does not launch Docker, export credentials, call providers or establish answer quality.
+
+
+Native21080 is terminal FAILED after1058.0seconds and51worker steps, with33new model exchanges (170to203total), no new public answer and no checkpoint. The two interrupted document analyses resumed and completed; the older91401 partial answer is retained unchanged. Its final P3 factual review ended at135.13seconds with explicit provider finish_reason=length under requested8192tokens/180seconds, so the host deadline did not cause this terminal failure. No usage trailer was returned;8192SSE events are not reported as actual token usage. All six frozen artifacts match their manifest. Both failure recovery and output-capacity transport behaved as configured, but the complete user journey remains unaccepted. Production remains3162ad9/Sites92, with saved effective24k/1600/90settings; the larger isolated proposal has not been submitted and is not a validated cure. Exact API Ruff/diff and the standard release gate passed756tests/3warnings in53.98seconds. Evidence: end-to-end-native21080-content-review.json, end-to-end-native21080-terminal-transport-diagnosis.json and end-to-end-final-operation-recovery-release-gate.json.
+
+Bounded terminal diagnostics: reconstruct only frozen native21080 call202 in a separate isolated one-request diagnostic, retaining its exact original public-source payload and normal completion rejection. Privately capture SSE deltas to identify the observed incomplete-generation pattern; use retries0, one-request inference budget and the same180second timeout. Credentials remain in process pipes and no pilot/production database or public result is mutated. A replay cannot recover the original discarded bytes or certify content acceptance. Read-only schema assessment separately identifies repeated descriptive witness labels:20,627schema characters can become6,602using lossless short host-bound IDs, preserving every full original and scope/verdict field. This measurement alone does not explain the terminal failure or authorize a semantic pass; no changed-schema provider call has occurred.
+
+
+Untouched final-check continuation scope before implementation: terminal21080 retained a negative receipt for P3's incomplete response and two completed sibling reviews, but its same dispatch expired before the remaining point/gap checks. The finalizer prioritizes that already-performed terminal failure over untouched step_deadline entries and ends the whole run before ordinary same-attempt continuation can visit those siblings. When this exact mixture occurs, yield through the existing saved-review continuation before narrowing a subset; the next dispatch must skip the bound incomplete target and reuse successful receipts while visiting untouched checks. Once no untouched deadline entries remain, retain the existing terminal/qualified-delivery decision and all coverage, source-currentness, unresolved-concern and citation obligations. Never automatically retry the incomplete target, count its failure as successful progress, expose private drafts or change generation/allowances. Verify the real finalizer's persisted/resumed path and terminal behavior with local scripted responses, including the mixed deadline case absent from existing tests. This fixes dropped execution work, not the source-present semantic errors in the model's original draft.
+
+First-target continuation dependency: the existing worker renews research_review_yield only after completed_work grows. If the first attempted check ends incomplete, its saved negative receipt is real performed work but is not a successful proof. Honor this yield once for a newly retained exact current-attempt incomplete-target receipt, separately from completed_work. Do not reset successful-progress counters or classify failures as accepted checks; an unchanged negative receipt cannot renew another dispatch. Include the real worker path in the focused regression, with exact attempt binding and stale/unchanged rejection.
+
+The exact call202 diagnostic completed once in11.714seconds withHTTP200, stop/DONE,668completion tokens and2,311content characters. Its outgoing payload hash matches the frozen failed request; the complete JSON has ordinary whitespace. The original length failure was not reproduced, and its lost partial bytes remain unavailable. No diagnosis of whitespace/grammar runaway, no reduced-schema cure and no research acceptance follows. The returned reviewer still approves an overbroad assertion and cites a different-topic passage, so successful transport does not resolve the source-present semantic blocker. Diagnostic outputs are private0600 artifacts; no credentials, production writes, pilot writes, extra retries or new native. See end-to-end-native21080-call202-diagnostic.json.
+
+Untouched-check continuation is implemented and independently reviewed:20unique affected cases pass, including real finalizer saved/resumed behavior and worker first-target failure, no-progress rejection and rights withdrawal. Exact API Ruff/diff pass; current standard release gate passes756tests/3warnings in54.15seconds. Native46456 is one ordinary isolated Retry on the changed control flow, same admitted question and96k/8192/180candidate settings, baseline203model exchanges, frozen snapshot /tmp/hl-native-api-snapshot-nmowmgr5. It retained P3's new incomplete-target receipt and subsequently completed P4/P5 checks; full terminal content acceptance remains pending. No production publication. See end-to-end-untouched-final-check-continuation-review.json and end-to-end-untouched-review-release-gate.json.
+
+Native46456 terminal content audit (2026-10-04): workflow completed after 1,652.7 seconds and 28 new model calls, but the mission remained incomplete. The actual new public answer had three points, thirty exact citations and five limitations. It materially misrepresented patent-license termination as removal of the right to sue, overstated notice preservation, and omitted requested closed-source, NOTICE and trademark guidance. Literal citation identity and model approval did not establish correct meaning. All six frozen artifacts were verified; the previous parent answer is unchanged. Independent receipt: `end-to-end-native46456-content-review.json` (parent workspace), SHA256 `703048063cd306292f5c6635a00bfa183c03b82037a2553555407d5408d6739f`. Native and freezer are closed; no automatic unchanged retry, commit, push or deployment. Local release gate remains 756 passing tests; semantic acceptance remains failed.
+
+Bounded followthrough scope: route an actual fast-negative assertion through the existing source-grounded correction writer before asking the same synthesis model to approve unchanged text. Preserve exact target ownership, advisory-only semantics, original fallback, all unresolved concerns, interruption checkpoints and ordinary final review; never infer a factual gap or successful verification from the routing signal. Native46456 source/citation records remain the prerequisite. Acceptance requires correction-before-approval ordering, false-negative/empty/failed-rewrite recovery, interrupted resume and unchanged sibling reuse; it does not close the broader semantic or public-release gate. One isolated existing POINT_REPAIR call removed the wrong right-to-sue relation in4.766seconds but still compressed qualifications. A separate existing Jev call with all229original passages continued to approve the overbroad notices claim in0.779seconds. Therefore no fuller-fast-context implementation or semantic-ready claim follows from these discriminators. Both used the same configured providers without production or pilot writes.
+
+Advisory-correction-first implementation is frozen: an exact fast-negative target gets one existing POINT_REPAIR opportunity before factual approval. Ordinary review still owns correctness; false/empty/invalid/oversized corrections retain or restore the original for review, and current concerns survive replacement and rollback. Completed plans/proposals/sibling checks resume without repurchase; unavailable unchanged fast decisions are reused only within that dispatch. Independent code review found no remaining implementation blocker.36affectedcases pass (13new,16incomplete-target,4qualification-resume,3concern-transfer). Exact API Ruff and diff pass; standard release gate passes756tests/3warnings in53.84seconds. Parent-workspace receipts: `end-to-end-fast-correction-first-review.json` and `end-to-end-advisory-correction-release-gate.json`. The full-original fast-positive semantic defect remains unresolved. No further full native, commit, push or deployment; the complete user journey remains IN PROGRESS, not accepted.
+
+Final independent routing review matched all four producer file hashes and found no material implementation blocker (`end-to-end-fast-correction-first-independent-review.json`, parent workspace). One subsequent blind whole-question WRITE diagnostic preserved all selected original passages, removed prior drafts/verdicts/mission controls, and returned in28.139seconds. Shape, exact citation mapping and quantity checks passed offline; the combined answer still invented a mandatory license filename, overstated notices and omitted material qualifications. It failed the unchanged six-part rubric. This writer/controller separation was assessed but NOT integrated. Receipt: `end-to-end-native46456-blind-answer-diagnostic.json`, SHA256 `ef425597f9363b379146efb52852c4e176d37a5d85355a692a04dec6457a5440`. All calls and checks are closed. Current synthesis quality remains an unresolved release gate; technical verification does not complete the requested user journey.
+
+### Publicly composed scope and exceptions (local implementation, 4 October)
+
+Scope: change the existing final-answer and focused-answer provider contracts so
+material applicability conditions and exceptions are public conclusion components,
+not facts left only in attached source quotations. The host composes every returned
+component verbatim into the canonical statement and carries its exact cited evidence;
+ordinary review therefore sees the complete composed point. No additional model,
+reviewer, persistent table, research budget or domain-specific rule is introduced.
+
+Dependencies/readiness: current retained originals and existing provider; source
+access and full-document reading checks remain unchanged. The source-preference
+diagnosis found no host loss explaining the known semantic errors: all completed
+readers returned empty matches, while governing text reached synthesis. Exact mirror
+redundancy is real but is not evidence that deduplication would cure those errors.
+
+Acceptance: provider shape validation must reject missing/malformed qualification
+components; canonical output must contain all returned components and their citations
+without mutation or role collapse. Legacy/early nonfinal schemas remain compatible.
+Then evaluate actual current synthesis from retained originals against the unchanged
+full-answer rubric, followed by native/public-reader checks only if warranted. A
+valid structured response is not proof that the model identified every qualification.
+This direction and the complete product journey remain IN PROGRESS.
+
+The scoped-output experiment is **rejected and removed from the candidate**. Its
+15 helper and5 focused composition cases passed, but the one real writer request
+with exactly the earlier blind diagnostic originals returned7points with every
+scope_conditions and exceptions array empty. The notice/source-form, NOTICE,
+trademark and patent qualifications still failed the unchanged rubric. The exact
+experiment code/tests are preserved outside Git at
+`/tmp/hl-scoped-answer-experiment`; preexisting unpublished work was preserved.
+
+A separate single request kept the same originals/task and schema instruction but
+removed guided decoding. It returned malformed JSON and the same material semantic
+omissions. This does not support changing the provider contract. Both requests
+are closed (15.271s and10.369s respectively); neither wrote to production or the
+pilot. No new native, commit, push or deployment followed. See the parent receipt
+`end-to-end-native46456-scoped-and-transport-discriminators.json`.
+
+The output-contract audit confirmed that strict schema precedence over the optional
+JSON-object flag was intentional, not a demonstrated ignored-setting defect. The
+[official Swisscom Apertus1.5 70B model guide](https://docs.cloud.swisscom.ch/guide/cloud-services/aip/models/apertus-1_5_70B/)
+currently documents thinking mode as unsupported. The event-route guide names the
+configured endpoint but exposes no thinking switch. The underlying model's
+self-hosted capability must not be assumed to exist at this hosted endpoint; this
+also does not prove the sole cause of all semantic errors.
+
+The owner selected and activated a temporary personal Legal/Pharma pilot using
+the existing signed-in local Codex account, `gpt-6-astra` with high reasoning.
+The private authenticated bridge serves only the owner's workspace; the real API
+connection and worker model binding were verified, with six other workspaces
+unchanged. One synthesis using the same public evidence passed all six original
+rubric parts in 43.875 seconds, with no tool events. This establishes same-source
+synthesis quality for that case, not full investigation or product acceptance.
+Native74605 then failed before producing a public answer. The private bridge's
+strict-schema transport incompatibilities with optional fields and quoted enum
+values were corrected. Replays of the actual extraction and citation-review
+requests completed in 43.188 and 25.683 seconds respectively; restored outputs
+validated against the original application schemas. These are transport integration
+checks, not acceptance of a complete answer.
+
+The native also exposed a separate Core response-boundary defect: compact section
+references expanded into exact original quotes and context anchors, then exceeded
+the 30,000-character extraction limit. The candidate now bounds compact section
+responses at 30,000 characters before parsing or expansion, including format repair,
+and permits the validated canonical result up to the existing 262,144-character
+expanded-answer limit. Legacy routes, citation/schema checks and provider allowances
+are unchanged. Ten focused cases pass; a 6,639-character compact response preserves
+all 128 anchors in a 92,673-character canonical extraction. Exact API Ruff passes;
+the required release suite passes 756 cases (three warnings) in 52.94 seconds.
+See the parent receipts `end-to-end-expanded-section-response-review.json` and
+`end-to-end-astra-expanded-extraction-release-gate.json`.
+
+Ordinary isolated Retry native36803 completed in 927.5 seconds, producing five
+public answer points with 28 citations and no limitations. Independent review
+passed the six-part rubric for the delivered answer including its attached
+original quotations: all 28 citation identities and five original-file hashes
+matched. The trademark qualification is visible in a context quotation; moving
+it into the main prose remains a readability improvement, not a material failure.
+Both unchanged Legal and Pharma MissionReading components rendered every actual
+statement and citation successfully. This is component-render acceptance, not a
+browser or production publication check; see the parent receipt
+`end-to-end-astra-native36803-reader-review.json`.
+
+This retained-evidence personal pilot passes its scoped native journey and reader
+checks. It does not establish general model quality or complete the broader product.
+Core 3162ad9 / Sites 92 remain unchanged; candidate publication is pending.
+Migration to an official API remains a later step. See the parent workspace's
+`local-codex-monitor/activation.json`, `astra-public-case.review.json` in that
+folder, and `end-to-end-checkpoint.json`.

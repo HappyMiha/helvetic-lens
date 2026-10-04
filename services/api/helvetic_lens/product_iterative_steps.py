@@ -28,6 +28,7 @@ from . import product_research_memory as memory
 from . import product_research_mission as mission
 from . import product_research_pacing as pacing
 from . import product_source_recovery as recovery
+from .analysis import ModelClient
 from .product_investigation_models import InvestigationBranch, InvestigationSource
 from .product_investigations import event, rows
 from .product_research_gate import evaluate
@@ -88,6 +89,10 @@ def prepare(session, run, branch, state, work):
             if branch.phase == "brief" and work["unmetered_research"] and state.get(EXHAUSTED_REVIEW):
                 work[EXHAUSTED_REVIEW] = deepcopy(state[EXHAUSTED_REVIEW])
                 work["retry_deferred_review"] = bool(deferred_verification(state.get(KEY)))
+                # Explicit user retry clears this counter. Ordinary job delivery
+                # instead consumes the existing exhausted-input handoff once.
+                binding = state[EXHAUSTED_REVIEW].get("input_fingerprint")
+                work["automatic_review_handoff"] = state.get("provider_retries", {}).get(binding, 0) >= 3
         if branch.phase == "orient":
             work["early_clarification"] = clarification.enabled(run)
             work["timeout_seconds"] = 45 if work.get("unmetered_research") else 20
@@ -186,10 +191,12 @@ async def execute(service, work, seconds):
         from . import product_document_analysis as document_analysis
         schema, system = document_analysis.schema(schema), system + document_analysis.SECTION_SYSTEM
     raw = await research_gateway.complete(service, work, system, schema, seconds)
-    # Compact provider refs expand into exact quotes in the existing answer,
-    # question assessment and compatibility cards. Bound that canonical shape,
-    # rather than rejecting valid server-expanded citations at the wire limit.
-    response_limit = 262144 if phase == "brief" and work.get("unmetered_research") else 30000
+    # Compact refs expand into exact quotes, including section context anchors.
+    # The gateway bounds section wire output before this host-owned expansion;
+    # legacy adapters still have the ordinary unexpanded response limit.
+    expanded_section = (phase == "extract" and work["input"].get("document_section")
+        and isinstance(service.model_client, ModelClient))
+    response_limit = 262144 if work.get("unmetered_research") and (phase == "brief" or expanded_section) else 30000
     if not isinstance(raw, str) or len(raw) > response_limit:
         raise ValueError("Unbounded research response")
     raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw.strip())
@@ -198,7 +205,7 @@ async def execute(service, work, seconds):
         optional = {"applicability_checks": "_applicability_unavailable"} if work.get("applicability") else {}
         if work.get("unmetered_research"):
             optional.update({key: "_" + key + "_unavailable" for key in
-                ("entities", "relationships", "source_class", "read_relevance", "professional_facts")})
+                ("entities", "relationships", "source_class", "read_relevance", "professional_facts", "requested_source_matches")})
         result = renewal.parse_recoverable(schema, raw, optional)
         omitted = [key for key, flag in optional.items() if getattr(result, flag, False)]
         if "entities" in omitted:
@@ -235,6 +242,17 @@ def settle(branch, state):
         state["empty_search"] = not state.get("items")
     if branch.phase == "extract" and state.get("extract_index", 0) >= len(state.get("source_ids", [])):
         if state.get("analysed", 0) and not state.get("saved") and not state.get("reflection_done"):
+            recovery_state = state.get("reflection_frontier_recovery")
+            if recovery_state is not None:
+                fresh = set(state.get("source_ids", [])) - set(recovery_state["source_ids"])
+                if not any(doc.get("complete") and doc.get("read_complete") and doc.get("analysis_complete")
+                        and fresh.intersection(doc.get("source_ids", []))
+                        for doc in state.get("document_reads", {}).values()):
+                    # Rejected, duplicate or failed reads do not authorize
+                    # repurchasing the same failed reflection of old evidence.
+                    branch.status = "failed"
+                    return
+                state.pop("reflection_frontier_recovery")
             branch.phase = "reflect"
             branch.status = "running"
 
@@ -259,10 +277,12 @@ def failed(branch, state, *, interrupted=False):
         branch.phase = "gate"
 
 
-def continue_discovery(branch, state):
+def continue_discovery(branch, state, *, remaining_candidates=True):
+    if branch.status == "failed" and branch.phase == "reflect":
+        state["reflection_frontier_recovery"] = {"source_ids": list(state.get("source_ids", []))}
     state["reflection_done"] = False
     state["empty_search"] = False
-    if state.get("gate_index", 0) < len(state.get("candidates", [])):
+    if remaining_candidates and state.get("gate_index", 0) < len(state.get("candidates", [])):
         # A reading batch is a checkpoint, not a research quota. Keep every
         # remaining candidate and resume it only when useful to the answer.
         state["source_limit"] = len(state.get("items", [])) + 3

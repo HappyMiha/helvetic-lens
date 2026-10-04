@@ -188,4 +188,6 @@ async def test_nontransient_configuration_failure_is_not_an_unavailable_assertio
     with pytest.raises(DomainError) as failure:
         await review.reasoned_review(SimpleNamespace(settings=Settings(_env_file=None), model_client=Model()),
             wire, parsed.mission_checkpoint.answer, 90, checkpoints=saved)
-    assert failure.value.code == 'model_access_denied' and saved == {}
+    assert failure.value.code == 'model_access_denied'
+    assert not saved.get('transient_assertions') and not any(key.startswith('clauses:') for key in saved)
+    assert completed_work({'parts': {'final_reviews': saved}}) == {}, 'Retrieval scope is not a completed factual check'

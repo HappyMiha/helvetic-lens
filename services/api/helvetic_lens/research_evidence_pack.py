@@ -9,12 +9,17 @@ from .config import DomainError
 from .product_operations import fingerprint
 from .research_original_context import POLICY as ORIGINAL_CONTEXT_POLICY
 from .research_original_context import provider_excerpts, reference_units
+from .research_reading_context import PROJECTION as READING_CONTEXT_POLICY
+from .research_reading_context import SCOPE as READING_CONTEXT_SCOPE
+from .research_reading_context import provider_notes
 from .research_reference_metadata import POLICY as SOURCE_USE_POLICY
+from .research_requested_sources import CONTRACT as REQUESTED_SOURCE_POLICY
+from .research_requested_sources import provider_basis, validated_matches, wire_matches
 
 POLICY = fingerprint({'contract': 'local-hybrid-evidence-pack/v2',
-    'units': ORIGINAL_CONTEXT_POLICY, 'packing': 'incremental-question-relevance-cost/v1',
-    'mission_metadata': 'completed-document-counts/v1', 'cost': 'actual-caller-envelope/v1',
-    'source_use': SOURCE_USE_POLICY})
+    'units': ORIGINAL_CONTEXT_POLICY, 'packing': 'requested-source-then-request-fair-whole-group-seeding/v6',
+    'mission_metadata': 'completed-document-and-brief-history-counts/v2', 'cost': 'actual-caller-envelope/v1',
+    'source_use': SOURCE_USE_POLICY, 'requested_sources': REQUESTED_SOURCE_POLICY})
 
 
 def _json(value):
@@ -25,11 +30,15 @@ def provider_sources(wire, references):
     """A provider view, without altering host discovery links or source records."""
     metadata = {source['id']: source for source in wire.input.get('sources', [])}
     groups = []
+    matches = wire_matches(wire)
+    readings = provider_notes(wire, references)
     for source_id, excerpts in provider_excerpts(wire, references).items():
         source = metadata.get(source_id, {})
         groups.append({
             **{field: source[field] for field in ('sha256', 'title', 'url') if field in source},
-            'id': source_id, 'excerpts': excerpts})
+            'id': source_id, 'excerpts': excerpts, **provider_basis(wire, source_id, matches=matches),
+            **({'reading_scope': READING_CONTEXT_SCOPE, 'reading_notes': readings[source_id]}
+                if readings.get(source_id) else {})})
     return groups
 
 
@@ -51,6 +60,14 @@ def provider_input(wire, references):
                 'Propose only consequential evidence-backed next readings; listed links are unread leads, not findings.'}
     mission = result.get('research_mission')
     if isinstance(mission, dict):
+        if phase == 'brief':
+            # Past search wording is routing history, not the question or
+            # evidence for the answer. Keep full history on the host for the
+            # next-reading/deduplication checks and on the reflection path.
+            for field, count in (('attempted_queries', 'attempted_query_count'),
+                    ('attempted_questions', 'attempted_question_count')):
+                if isinstance(mission.get(field), list):
+                    mission[count] = len(mission.pop(field))
         if mission.get('question') == result.get('original_question'):
             mission.pop('question', None)
         if mission.get('unvalidated_proposals') == []:
@@ -95,6 +112,11 @@ def bounded_schema(schema, references):
                 walk(item)
         elif isinstance(value, dict):
             properties = value.get('properties', {})
+            action = properties.get('next_action', {})
+            if not allowed and 'anyOf' in action:
+                # A cited clarification cannot be offered without originals.
+                action['anyOf'] = [branch for branch in action['anyOf']
+                    if branch.get('properties', {}).get('kind', {}).get('enum') != ['clarify']]
             if 'citation_ref' in properties and allowed:
                 properties['citation_ref'] = {'type': 'integer', 'enum': allowed}
             if not allowed:
@@ -149,22 +171,117 @@ def _question_scores(rankings):
         maximum = max(scores.values(), default=0)
         if maximum:
             queries[ranking['query']] = {key: value / maximum for key, value in scores.items()}
-    return list(queries.values())
+    return queries
 
 
 def _incremental_units(wire, units, rankings, selected, retained, costs, request_size, allowance):
-    """Prefer new question relevance, using cost estimates only for ordering."""
-    scores = _question_scores(rankings)
+    """Balance question relevance of whole groups, not their text volume."""
+    query_scores = _question_scores(rankings)
+    scores = list(query_scores.values())
     pool = {index for index, unit in enumerate(units)
-        if any(key in row for row in scores for key in unit['primary'])} - selected
+        if any(key in row for row in scores for key in unit.get('ranking_refs', unit['primary']))} - selected
     empty_cost = request_size({})
-    # Weight original text, not the number of PDF lines/citation records. A
-    # heading does not supply as much material as a complete relevant passage.
-    text_weights = {key: len(''.join(ref['quote'].split())) for key, ref in wire.references.items()}
+    # Citation windows and PDF lines are transport geometry. Count a structural
+    # group once per request, without rewarding a long, weakly related source
+    # for repeating query words across many windows. Context travels with the
+    # group but does not inflate the group's retrieval priority.
+    # Original headings and local navigation may retrieve their bound body,
+    # without becoming the primary material or independently filling the pack.
+    group_scores = [[max((row.get(key, 0) for key in unit.get('ranking_refs', unit['primary'])), default=0)
+        for row in scores] for unit in units]
+    original_question = getattr(wire, 'input', {}).get('original_question', '').strip()
+    waiting = {index for index, query in enumerate(query_scores) if query != original_question}
+    if not waiting:
+        waiting = set(range(len(scores)))
+
+    def union_cost(index):
+        keys = retained | set(units[index]['references'])
+        return request_size({key: ref for key, ref in wire.references.items() if key in keys})
+
+    # Seed each existing literal query from its strongest relevant matched
+    # original group before commentary competes. A match is fallible, not a
+    # mandatory corpus or authority verdict. One long original may address
+    # several requests; a single title/chapter seed must not stand in for it all.
+    sources = {source['id']: source for source in wire.input.get('sources', [])}
+    matched = validated_matches(sources.values(), original_question)
+    preferred = {index for index in pool if units[index]['source_id'] in matched}
+    for query in sorted(waiting):
+        best = max((group_scores[index][query] for index in selected
+            if units[index]['source_id'] in matched), default=0)
+        candidates = [index for index in preferred & pool if group_scores[index][query] > best]
+        for index in sorted(candidates, key=lambda index: (-group_scores[index][query], union_cost(index), index)):
+            pool.remove(index)
+            before = set(retained)
+            yield index
+            if retained != before:
+                break
+
+    # Completed reading supplies fallible navigation to exact originals, not
+    # a second corpus or a support verdict. Seed one feasible reading-selected
+    # whole group per existing query, including context and counterevidence.
+    # The remaining original corpus still competes during ordinary refinement.
+    anchors = set(getattr(wire, 'reading_anchor_refs', [])) if getattr(wire, 'reading_context', {}) else set()
+    anchored = {index for index, unit in enumerate(units) if anchors.intersection(unit['primary'])}
+    reading_queries = set(waiting) if anchored else set()
+    while reading_queries:
+        represented = {index for index in anchored if set(units[index]['primary']) <= retained}
+        best = [max((group_scores[index][query] for index in represented), default=0)
+            for query in range(len(scores))]
+
+        def reading_priority(query):
+            candidates = [index for index in anchored & pool if group_scores[index][query] > best[query]]
+            strongest = max((group_scores[index][query] for index in candidates), default=0)
+            cost = min((union_cost(index) for index in candidates
+                if group_scores[index][query] == strongest), default=math.inf)
+            return best[query], cost, query
+
+        query = min(reading_queries, key=reading_priority)
+        reading_queries.remove(query)
+        candidates = [index for index in anchored & pool if group_scores[index][query] > best[query]]
+        for index in sorted(candidates, key=lambda index: (-group_scores[index][query], union_cost(index), index)):
+            pool.remove(index)
+            before = set(retained)
+            yield index
+            if retained != before:
+                break
+
+    while waiting:
+        represented = [index for index, unit in enumerate(units) if set(unit['primary']) <= retained]
+        best = [max((group_scores[index][query] for index in represented), default=0)
+            for query in range(len(scores))]
+        def query_priority(query):
+            candidates = [index for index in pool if group_scores[index][query] > best[query]]
+            strongest = max((group_scores[index][query] for index in candidates), default=0)
+            # Equal representation does not privilege input order: a smaller
+            # strongest group leaves other queries more room for their seed.
+            cost = min((union_cost(index) for index in candidates
+                if group_scores[index][query] == strongest), default=math.inf)
+            return best[query], cost, query
+
+        query = min(waiting, key=query_priority)
+        waiting.remove(query)
+
+        def seed_priority(index):
+            return (-group_scores[index][query], union_cost(index), index)
+
+        # Give the least represented query its strongest whole feasible group
+        # before summed relevance can spend the packet on common topics. An
+        # already-retained best group needs no extra seed. These retrieval
+        # scores are not answer coverage or factual support.
+        candidates = (index for index in pool if group_scores[index][query] > best[query])
+        for index in sorted(candidates, key=seed_priority):
+            pool.remove(index)
+            before = set(retained)
+            yield index  # The caller checks the complete union's exact envelope.
+            if retained != before:
+                break
+        # Rejected groups cannot fit a later, larger union. Do not repeat
+        # their fit checks for another query or during ordinary refinement.
     while pool:
         present = {key: ref for key, ref in wire.references.items() if key in retained}
         room = max(1, allowance - request_size(present))
-        accumulated = [sum(row.get(key, 0) * text_weights[key] for key in retained) for row in scores]
+        represented = [index for index, unit in enumerate(units) if set(unit['primary']) <= retained]
+        accumulated = [sum(group_scores[index][query] for index in represented) for query in range(len(scores))]
         sources = {ref['source_id'] for ref in present.values()}
 
         def priority(index):
@@ -172,8 +289,8 @@ def _incremental_units(wire, units, rankings, selected, retained, costs, request
             novel = set(unit['references']) - retained
             # Smooth diminishing returns retain independently relevant or
             # opposing originals after the highest-ranked passage is present.
-            gain = sum(math.sqrt(1 + previous + sum(row.get(key, 0) * text_weights[key] for key in novel))
-                - math.sqrt(1 + previous) for row, previous in zip(scores, accumulated))
+            gain = sum(math.sqrt(1 + previous + score) - math.sqrt(1 + previous)
+                for score, previous in zip(group_scores[index], accumulated)) if novel.intersection(unit['primary']) else 0
             weights = {key: max(1, len(ref['quote'])) for key, ref in unit['references'].items()}
             # Standalone costs use the actual caller envelope. Discount overlap
             # for ordering; the caller still checks every accepted union exactly.
@@ -202,7 +319,8 @@ def _coverage(wire, checkpoints, receipt):
         wire.receipt['retrieval'] = deepcopy(receipt)
 
 
-async def select_evidence(service, wire, question, seconds, *, checkpoints=None, on_progress=None, fits=None, required_refs=(), request_size=None):
+async def select_evidence(service, wire, question, seconds, *, checkpoints=None, on_progress=None,
+        fits=None, required_refs=(), request_size=None, envelope_binding=None):
     """Rank locally, then pack whole original groups; no generative selection."""
     from . import research_active_retrieval as retrieval
 
@@ -225,15 +343,56 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
             422, 'research_evidence_required_reference_invalid')
     required_refs = set(required_refs)
     checkpoints = checkpoints if checkpoints is not None else {}
-    if fits(wire.references):
-        await retrieval.ensure_current(service, wire)
-        _coverage(wire, checkpoints, {'method': 'complete_original_pack', 'semantic_status': 'not_needed',
-            'available_references': len(wire.references), 'selected_references': len(wire.references),
-            'all_originals_supplied': True, 'absence_established': False})
-        return deepcopy(wire.references)
     units = _units(wire)
     required = {index for index, unit in enumerate(units) if required_refs.intersection(unit['primary'])}
     mandatory = _references(wire, [units[index] for index in sorted(required)])
+    input_fingerprint = fingerprint({'question': question, 'originals': wire.references,
+        'sources': wire.input.get('sources', []), 'required': sorted(required_refs),
+        'source_uses': getattr(wire, 'reference_uses', {}),
+        **({'reading_context_policy': READING_CONTEXT_POLICY, 'reading_context': wire.reading_context,
+            'reading_anchor_refs': getattr(wire, 'reading_anchor_refs', [])}
+            if getattr(wire, 'reading_context', {}) else {})})
+    # An explicit caller contract binds every prompt/payload/schema/provider
+    # input to its fit callback. Unbound callbacks retain the cost-based path.
+    # Keep that existing node identity so legacy completed work remains usable.
+    envelope_fingerprint = fingerprint({'contract': 'bound-selection-envelope/v1',
+        'envelope': envelope_binding, 'input': input_fingerprint, 'wire_input': wire.input,
+        'source_context': getattr(wire, 'source_context', []),
+        'work_scope': {key: getattr(wire, 'work', {}).get(key) for key in ('phase', 'run_id', 'generation')},
+        'policy': POLICY, 'retrieval': retrieval.POLICY, 'allowance': allowance}) if envelope_binding is not None else None
+    nodes = checkpoints.get('evidence_selection', {})
+
+    def saved_references(saved):
+        if (isinstance(saved, dict) and saved.get('status') == 'complete'
+                and saved.get('input_fingerprint') == input_fingerprint and saved.get('policy_fingerprint') == POLICY
+                and isinstance(saved.get('selected'), list)
+                and all(type(key) is int and key in wire.references for key in saved['selected'])
+                and len(saved['selected']) == len(set(saved['selected']))
+                and set(mandatory) <= set(saved['selected']) and isinstance(saved.get('retrieval_coverage'), dict)
+                and isinstance(saved.get('selected_units'), list)
+                and all(type(index) is int and 0 <= index < len(units) for index in saved['selected_units'])
+                and set(_references(wire, [units[index] for index in saved['selected_units']])) == set(saved['selected'])):
+            return {key: value for key, value in wire.references.items() if key in saved['selected']}
+        return None
+
+    if envelope_fingerprint is not None:
+        for saved in nodes.values():
+            if not isinstance(saved, dict) or saved.get('envelope_fingerprint') != envelope_fingerprint:
+                continue
+            references = saved_references(saved)
+            if references is not None and fits(mandatory) and fits(references):
+                await retrieval.ensure_current(service, wire)
+                _coverage(wire, checkpoints, saved['retrieval_coverage'])
+                return deepcopy(references)
+    complete = _references(wire, [unit for index, unit in enumerate(units)
+        if index in required or unit.get('ranking_refs', unit['primary'])])
+    if fits(complete):
+        await retrieval.ensure_current(service, wire)
+        _coverage(wire, checkpoints, {'method': 'complete_original_pack' if len(complete) == len(wire.references)
+                else 'complete_eligible_original_pack', 'semantic_status': 'not_needed',
+            'available_references': len(wire.references), 'selected_references': len(complete),
+            'all_originals_supplied': len(complete) == len(wire.references), 'absence_established': False})
+        return deepcopy(complete)
     if not fits(mandatory):
         raise DomainError('Mandatory original witnesses or request metadata exceed the configured synthesis allowance.',
             422, 'research_evidence_group_too_large')
@@ -241,27 +400,23 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
         raise DomainError('The synthesis request metadata exceeds the configured allowance even without evidence.',
             422, 'research_evidence_group_too_large')
     costs = [request_size(unit['references']) for unit in units]
-    input_fingerprint = fingerprint({'question': question, 'originals': wire.references,
-        'sources': wire.input.get('sources', []), 'required': sorted(required_refs),
-        'source_uses': getattr(wire, 'reference_uses', {})})
     binding = fingerprint({'input': input_fingerprint, 'policy': POLICY, 'retrieval': retrieval.POLICY,
         'allowance': allowance, 'fixed_cost': request_size({}), 'unit_costs': costs,
         'mandatory_cost': request_size(mandatory)})
     nodes = checkpoints.setdefault('evidence_selection', {})
     saved = nodes.get(binding)
-    if (isinstance(saved, dict) and saved.get('status') == 'complete'
-            and saved.get('input_fingerprint') == input_fingerprint and saved.get('policy_fingerprint') == POLICY
-            and isinstance(saved.get('selected'), list)
-            and all(type(key) is int and key in wire.references for key in saved['selected'])
-            and len(saved['selected']) == len(set(saved['selected']))
-            and set(mandatory) <= set(saved['selected']) and isinstance(saved.get('retrieval_coverage'), dict)
-            and isinstance(saved.get('selected_units'), list)
-            and all(type(index) is int and 0 <= index < len(units) for index in saved['selected_units'])
-            and set(_references(wire, [units[index] for index in saved['selected_units']])) == set(saved['selected'])):
-        references = {key: value for key, value in wire.references.items() if key in saved['selected']}
+    references = saved_references(saved)
+    if (envelope_fingerprint is not None and isinstance(saved, dict)
+            and saved.get('envelope_fingerprint') not in (None, envelope_fingerprint)):
+        references = None  # Equal character counts do not establish an equal caller contract.
+    if references is not None:
         if fits(references):
             await retrieval.ensure_current(service, wire)
             _coverage(wire, checkpoints, saved['retrieval_coverage'])
+            if envelope_fingerprint is not None and saved.get('envelope_fingerprint') != envelope_fingerprint:
+                saved['envelope_fingerprint'] = envelope_fingerprint
+                if on_progress:
+                    on_progress()
             return deepcopy(references)
     ranked = await retrieval.rank_evidence(service, wire, question, max(0, seconds - (monotonic() - started)),
         checkpoints=checkpoints, on_progress=on_progress)
@@ -294,6 +449,8 @@ async def select_evidence(service, wire, question, seconds, *, checkpoints=None,
         'scope': 'Local retrieval ranks retained originals; unselected material is not evidence of absence. Complete original groups and context are preserved.'}
     saved = {'status': 'complete', 'input_fingerprint': input_fingerprint, 'policy_fingerprint': POLICY,
         'selected': list(references), 'selected_units': sorted(selected_units), 'retrieval_coverage': coverage}
+    if envelope_fingerprint is not None:
+        saved['envelope_fingerprint'] = envelope_fingerprint
     nodes[binding] = saved
     _coverage(wire, checkpoints, coverage)
     if on_progress:

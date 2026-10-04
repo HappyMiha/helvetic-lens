@@ -14,26 +14,33 @@ from .product_operations import fingerprint
 from .research_model_transport import explicit_requests
 
 POLICY = fingerprint({'contract': 'active-original-retrieval/v1', 'model': embeddings.MODEL,
-    'ranking': 'dense-bm25-cited-graph/2:1:1', 'queries': 'original-explicit-correction/v1'})
+    'ranking': 'dense-bm25-cited-graph/2:1:1', 'queries': 'focused-correction-composite-context/v3'})
 
 
 def _queries(wire, question):
-    values = [question]
+    values = [(question, True)]
     try:
         task = json.loads(question)
     except (TypeError, ValueError):
         task = None
     if isinstance(task, dict) and any(key in task for key in ('original_question', 'requested_part')):
-        values = [task.get('original_question'), task.get('requested_part')]
+        values = []
         correction = task.get('correction_target')
+        statement = correction.get('previous_statement') if isinstance(correction, dict) else None
+        focused = isinstance(statement, str) and bool(statement.strip())
         if isinstance(correction, dict):
-            values.append(correction.get('previous_statement'))
-            values.extend(error.get('reason') for error in correction.get('validation_errors', [])
+            values.append((statement, True))
+            values.extend((error.get('reason'), True) for error in correction.get('validation_errors', [])
                 if isinstance(error, dict))
-    values = [value.strip() for value in values if isinstance(value, str) and value.strip()]
+        # A concrete correction concerns this assertion. The complete original
+        # question supplies meaning, not independent votes for sibling requests.
+        # An explicitly requested part still retains its ordinary retrieval role.
+        values.extend([(task.get('original_question'), not focused), (task.get('requested_part'), True)])
+    values = [(value.strip(), expand) for value, expand in values if isinstance(value, str) and value.strip()]
     if not values:
-        values = [wire.input.get('original_question', '')]
-    return list(dict.fromkeys(part for value in values for part in [value, *explicit_requests(value)] if part))
+        values = [(wire.input.get('original_question', ''), True)]
+    return list(dict.fromkeys(part for value, expand in values
+        for part in [value, *(explicit_requests(value) if expand else [])] if part))
 
 
 def _records(wire):

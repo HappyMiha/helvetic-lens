@@ -75,11 +75,15 @@ def current(session, run, dependencies=None):
 def prepare(session, run, branch, state, source, work):
     if not eligible(run, branch, state) or source.kind != "public_source":
         return
+    from .product_document_analysis import scheduled_duplicate_analysis
     from .product_exploration import sources
 
     available = sources(session, run)
+    fallback = scheduled_duplicate_analysis(session, run, state, source.id)
+    if fallback:
+        work["duplicate_analysis_fallback"] = fallback
     work["read_relevance"] = True
-    work["skip"] = work.get("skip", False) or source.id not in available or not current(session, run)
+    work["skip"] = work.get("skip", False) or (source.id not in available and not fallback) or not current(session, run)
     work["read_dependencies"] = [{"source_id": s.id, "sha256": s.sha256} for s in available.values()]
     target = next(q for q in run.research_state["questions"] if q["id"] == state["question_id"])
     work["input"]["read_question"] = {"question_id": target["id"], "question": target["question"]}
@@ -100,6 +104,15 @@ def validate(session, run, source, work, result):
         return None
     if not current(session, run, work["read_dependencies"]):
         fail("Read assessment inputs changed.", 422, "invalid_evidence")
+    if work.get("duplicate_analysis_fallback"):
+        from .product_document_analysis import scheduled_duplicate_analysis
+
+        branch = session.get(InvestigationBranch, work["branch_id"])
+        if (not branch or (branch.investigation_id, branch.organization_id, branch.dossier_id)
+                != (run.id, run.organization_id, run.dossier_id)
+                or scheduled_duplicate_analysis(session, run, branch.checkpoint, source.id)
+                != work["duplicate_analysis_fallback"]):
+            fail("Duplicate analysis inputs changed.", 422, "invalid_evidence")
     try:
         return validate_assessment(source, work, result)
     except DomainError:

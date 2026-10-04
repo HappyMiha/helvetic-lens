@@ -18,6 +18,7 @@ from .product_investigation_models import (
 from .product_operations import fingerprint
 from .product_public_research import sources_visible
 from .research_knowledge import captured_at
+from .research_read_view import read_view
 
 CONTRACT = "current-dossier-knowledge/v1"
 SYSTEM = """current_dossier_knowledge groups cited identifiers and links earlier
@@ -31,6 +32,7 @@ Professional context consists of source quotations, not verified applicability.
 """
 
 
+@read_view
 def project(session, run):
     runs = select(Investigation.id).where(Investigation.dossier_id == run.dossier_id,
         Investigation.organization_id == run.organization_id, Investigation.publication_id.is_(None),

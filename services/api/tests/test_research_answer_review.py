@@ -294,21 +294,23 @@ async def test_two_rejected_assertions_in_one_question_cannot_share_a_cached_cor
             index = wrong.index(target) + 1
             if 'citation_refs' in options['response_schema']['properties']:
                 return json.dumps({'citation_refs': {'S0': [index]}})
-            assert options['response_schema']['properties']['remaining_gap']['enum'] == ['']
+            assert 'remaining_gap' not in options['response_schema']['properties']
             return json.dumps({'statement': refs[index]['quote'], 'remaining_gap': '',
                 'evidence': [{'citation_ref': index, 'role': 'support'}]})
     wire = SimpleNamespace(references=refs, input={'original_question': 'Compare the two organizations.'})
-    result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60, checkpoints={})
+    result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60, checkpoints={},
+        issues=[{'path': ['answer', 'points', index, 'statement'], 'reason': 'The source establishes a different founding date.'}
+            for index in range(2)])
     assert len(result) == 2 and seen == [wrong[0], wrong[0], wrong[1], wrong[1]]
     assert [point.statement for point in answer.points] == [ref['quote'] for ref in refs.values()]
 
 
 def precision_fixture():
     from helvetic_lens.product_exploration import AssessmentOutcome
-    refs = {77: {'source_id': 'a', 'locator': 'heading', 'quote': 'Registry update, 2024.'},
-        90: {'source_id': 'a', 'locator': 'body', 'quote': 'The eastern station reopened.'},
-        95: {'source_id': 'a', 'locator': 'qualification', 'quote': 'Its western branch remains closed.'},
-        100: {'source_id': 'b', 'locator': 'other', 'quote': 'Another register was published in 2024.'}}
+    refs = {77: {'source_id': 'a', 'locator': 'p1', 'quote': 'Registry update, 2024.'},
+        90: {'source_id': 'a', 'locator': 'p2', 'quote': 'The eastern station reopened.'},
+        95: {'source_id': 'a', 'locator': 'p3', 'quote': 'Its western branch remains closed.'},
+        100: {'source_id': 'b', 'locator': 'p1', 'quote': 'Another register was published in 2024.'}}
     wire = SimpleNamespace(references=refs, input={'original_question': 'What reopened, and when?',
         'sources': [{'id': 'a', 'title': 'Original registry'}, {'id': 'b', 'title': 'Other register'}]})
     answer = AssessmentOutcome(status='partial', limitations=['The next inspection is unknown.'], points=[
@@ -339,8 +341,7 @@ async def test_known_precision_reuses_exact_originals_without_selector_or_headin
             by_text = {item['text']: item['citation_ref'] for item in passages}
             evidence = [{'citation_ref': by_text[wire.references[key]['quote']], 'role': role}
                 for key, role in ((90, 'support'), (77, 'context'))]
-            return json.dumps({'points': [{'statement': before.points[0].statement, 'evidence': evidence}] if supported else [],
-                'remaining_gap': ''})
+            return json.dumps({'points': [{'evidence': evidence}] if supported else []})
 
     result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60,
         selected_references=selected, checkpoints={})
@@ -396,12 +397,22 @@ async def test_precision_scope_falls_back_to_full_current_corpus(monkeypatch, ca
                 return json.dumps({'citation_refs': {s['selection_key']: [90] if 90 in [p['citation_ref'] for p in s['passages']] else []
                     for s in payload['sources']}})
             seen.append('write')
-            # Remove the unestablished precision; don't borrow another source's date.
             passage = next(p for s in payload['sources'] for p in s['passages'] if p['text'] == wire.references[90]['quote'])
-            return json.dumps({'points': [{'statement': 'The eastern station reopened.',
-                'evidence': [{'citation_ref': passage['citation_ref'], 'role': 'support'}]}], 'remaining_gap': ''})
+            evidence = [{'citation_ref': passage['citation_ref'], 'role': 'support'}]
+            if 'previous_proposal' in payload:
+                assert set(options['response_schema']['properties']) == {'evidence'}
+                return json.dumps({'evidence': evidence})
+            point = {'evidence': evidence}
+            if issues is not None:
+                point['statement'] = 'The eastern station reopened.'
+            return json.dumps({'points': [point]})
 
     result = await review.repair_points(SimpleNamespace(model_client=Model()), wire, answer, 60,
         selected_references=selected, issues=issues)
-    assert seen == ['full_corpus', 'write'] and result
-    assert 'evidence_scope' not in result[0]
+    assert seen == ['full_corpus', 'write'] + ([] if issues is not None else ['write'])
+    if case in {'other_source_only', 'oversized'}:
+        assert not result and answer.points[0].statement == 'The eastern station reopened in 2024.'
+    else:
+        assert result and 'evidence_scope' not in result[0]
+        assert answer.points[0].statement == ('The eastern station reopened.' if issues is not None
+            else 'The eastern station reopened in 2024.')

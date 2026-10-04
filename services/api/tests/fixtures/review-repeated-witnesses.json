@@ -1,0 +1,51 @@
+{
+  "origin": {
+    "native": 17935,
+    "zero_based_call": 168,
+    "raw_response_sha256": "2f2f24d78adc00a7c01d51da37f0453a18c4e072eb7d6c7454570b2f16ca60a2",
+    "scope": "Exact recorded raw response and the exact original quotations selected by it. Transport regression only; recorded verdicts are not semantic acceptance."
+  },
+  "assertion": "You may sell a closed-source application that incorporates or modifies an Apache-2.0-licensed library without being required to open-source your own proprietary code. Apache-2.0 is a permissive license with no copyleft requirement.",
+  "references": {
+    "28": {
+      "quote": "No. Apache 2.0 is permissive and has no copyleft. You can keep your own code proprietary while depending on, modifying, and bundling Apache-licensed software."
+    },
+    "285": {
+      "quote": "The Apache License 2.0 is a permissive, OSI-approved open-source license published by the Apache Software Foundation in January 2004. It grants anyone a perpetual, worldwide, royalty-free right to use, copy, modify, distribute and sublicense the software — including inside closed-source commercial products — in exchange for a set of attribution obligations. It has no copyleft : using an Apache-2.0 component never obliges you to publish your own source."
+    },
+    "288": {
+      "quote": "Type: permissive (not copyleft) · SPDX: Apache-2.0 · Published: 2004 by the Apache Software Foundation."
+    },
+    "289": {
+      "quote": "Commercial use: permitted, including proprietary and closed-source products you sell."
+    },
+    "329": {
+      "quote": "The Apache License 2.0 is a permissive, OSI-approved open-source license published by the Apache Software Foundation in 2004. It grants a perpetual, worldwide, royalty-free right to use, copy, modify, distribute and sublicense the software — including inside closed-source commercial products — in exchange for attribution obligations: include the license, keep existing notices, mark files you changed, and propagate any NOTICE file. It has no copyleft, so it never obliges you to publish your own source. Its SPDX identifier is Apache-2.0, and it is also"
+    },
+    "331": {
+      "quote": "Is Apache-2.0 safe for commercial use?"
+    },
+    "332": {
+      "quote": "Yes. Apache-2.0 is a permissive, OSI-approved license that grants a perpetual, worldwide, royalty-free right to reproduce, modify, distribute and sublicense the work, including in closed-source commercial products. There is no copyleft and no obligation to publish your own source. The conditions are attribution-shaped: keep the license and copyright notices, state significant changes you made, and pass along the NOTICE file if one exists."
+    },
+    "338": {
+      "quote": "No. Apache-2.0 has no copyleft provision. Your own source can remain entirely proprietary and you may license your product on whatever terms you like. The obligations attach to the Apache-2.0 component you redistribute — its notices, its license text, and a statement of any significant modifications you made to it."
+    },
+    "405": {
+      "quote": "Grant of Copyright License. Subject to the terms and conditions of this License, each Contributor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to reproduce, prepare Derivative Works of, publicly display, publicly perform, sublicense, and distribute the Work and such Derivative Works in Source or Object form."
+    },
+    "408": {
+      "quote": "Redistribution. You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, and in Source or Object form, provided that You meet the following conditions: You must give any other recipients of the Work or Derivative Works a copy of this License; and You must cause any modified files to carry prominent notices stating that You changed the files; and You must retain, in the Source form of any Derivative Works that You distribute, all copyright, patent, trademark, and attribution notices"
+    },
+    "642": {
+      "quote": "Redistribution. You may reproduce and distribute copies of the Work or Derivative Works thereof in any medium, with or without modifications, and in Source or Object form, provided that You meet the following conditions: You must give any other recipients of the Work or Derivative Works a copy of this License; and You must cause any modified files to carry prominent notices stating that You changed the files; and You must retain, in the Source form of any Derivative Works that You distribute, all copyright, patent, trademark, and attribution notices"
+    },
+    "671": {
+      "quote": "no viral inheritance of the license onto unrelated parts of a larger codebase — it applies only to the Apache-licensed component itself."
+    },
+    "679": {
+      "quote": "Yes. Apache 2.0 license commercial use explicitly permits closed-source, proprietary use, provided you retain the required notices and license text and document any modifications you made to the licensed files."
+    }
+  },
+  "raw_response": "{\n  \"clauses\": {\n    \"S0\": {\n      \"reason\": \"Supported by multiple passages. The Apache License 2.0 (source text sections 405, 408, 642, 671, 679) grants a broad copyright license to reproduce, modify, distribute and sublicense the work, including in closed-source commercial products. It explicitly states no copyleft requirement (source sections 405, 408, 642, 671, 679). The FAQs (citation_refs 28, 338, 679) confirm you do not have to open-source your own proprietary code when using an Apache-2.0 library. Scope relation: compatible.\",\n      \"verdict\": \"supported\",\n      \"witnesses\": [{\"key\": \"28: No. Apache 2.0 is permis\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"338: No. Apache-2.0 has no co\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"405: Grant of Copyright Licen\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"408: Redistribution. You may \", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"642: Redistribution. You may \", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"671: no viral inheritance of \", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"679: Yes. Apache 2.0 license \", \"scope_relation\": \"compatible\"}]\n    },\n    \"S1\": {\n      \"reason\": \"Supported by multiple passages. The license is defined as permissive (source sections 288, 289, 329, 331, 332, 685) and explicitly stated to have no copyleft requirement (source sections 405, 408, 642, 671, 679). The FAQs (citation_refs 28, 338, 679) and explanatory articles (citation_refs 285, 288, 289, 329, 331, 332) confirm it is permissive and lacks copyleft. Scope relation: compatible.\",\n      \"verdict\": \"supported\",\n      \"witnesses\": [{\"key\": \"288: Type: permissive (not co\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"289: Commercial use: permitte\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"329: The Apache License 2.0 i\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"331: Is Apache-2.0 safe for c\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"332: Yes. Apache-2.0 is a per\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"285: The Apache License 2.0 i\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"288: Type: permissive (not co\", \"scope_relation\": \"compatible\"},\n                   {\"key\": \"289: Commercial use: permitte\", \"scope_relation\": \"compatible\"}]\n    }\n  },\n  \"overall\": {\n    \"reason\": \"Both clauses are directly supported by the Apache License 2.0 text and multiple official FAQs and explanatory articles. The license text (sections 405, 408, 642) and FAQs (28, 338, 679) confirm no copyleft and no requirement to open-source proprietary code when selling a closed-source application that uses or modifies an Apache-2.0 library. The obligations are limited to attribution notices, license inclusion, and marking changes.\",\n    \"verdict\": \"supported\"\n  }\n}"
+}

@@ -155,7 +155,9 @@ async def test_later_gap_outage_joins_deferred_obligations_and_explicit_restore_
     saved = json.loads(json.dumps(atomic['parts']))
     parsed.mission_checkpoint.answer = AssessmentOutcome.model_validate(atomic['answer'])
     saved['final_correction_round'] = {'contract': 'literal-request-repair/v1', 'tasks': [],
-        'observations': [], 'completed': 0, 'receipts': [{'status': 'retained_after_restore'}]}
+        'observations': [], 'completed': 0, 'receipts': [{'status': 'retained_after_restore'}],
+        'point_concern_contract': 'point-task-concerns/v1', 'fast_correction_policy': review.FAST_CORRECTION_PLAN,
+        'ordinary_planned': True, 'advisory_lineages': []}
     stage[0] = 'finish'
     result = await review.finalize(service, work, wire, parsed, 90, checkpoints=saved, defer_pending=True)
     assert result['repairs'] == [{'status': 'retained_after_restore'}]

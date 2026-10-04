@@ -2,15 +2,38 @@
 import re
 from copy import deepcopy
 
-WITNESS_POLICY = 'clause-bound-host-excerpts-and-scope/v3'
+WITNESS_POLICY = 'clause-bound-host-excerpts-and-scope/v6-explicit-enumerated-items'
 
 
 def assertion_clauses(assertion):
-    """Exact sentence spans; shared verbs and qualifications stay together."""
+    """Keep full sentences and require witnesses for their explicit list items."""
     # Keep the remaining tail intact after seven boundaries. The mandatory
     # overall judgment also checks relationships across these sentence spans.
     spans = re.split(r'(?<=[.!?])(?=\s+[A-Z])', assertion, maxsplit=7)
-    return {f'S{i}': span for i, span in enumerate(spans)}
+    result = {f'S{i}': span for i, span in enumerate(spans)}
+    for i, span in enumerate(spans):
+        available = 8 - len(result)
+        if available < 2:
+            break
+        markers = list(re.finditer(r'\(([a-z]|[1-9][0-9]*)\)\s+', span))
+        if len(markers) < 2 or not span[:markers[0].start()].rstrip().endswith(':'):
+            continue
+        labels = [item.group(1) for item in markers]
+        ordered = (all(label.isdigit() for label in labels)
+            and [int(label) for label in labels] == list(range(1, len(labels) + 1))) or (
+                all(len(label) == 1 and label.isalpha() for label in labels)
+                and [ord(label) for label in labels] == list(range(ord('a'), ord('a') + len(labels))))
+        ends = [item.start() for item in markers[1:]] + [len(span)]
+        if not ordered or any(not span[item.end():end].strip(' ,;:\n\t') for item, end in zip(markers, ends, strict=True)):
+            continue
+        # The original sentence remains mandatory, including its introduction,
+        # modality, shared qualifiers and relationships. Added rows are exact
+        # item spans to check within that parent, never inferred new claims.
+        count = min(available, len(markers))
+        for item in range(count):
+            end = len(span) if item == count - 1 else markers[item + 1].start()
+            result[f'S{i}.item{item + 1}'] = span[markers[item].start():end]
+    return result
 
 
 def witness_choices(references):
@@ -19,7 +42,7 @@ def witness_choices(references):
         for key, ref in references.items()}
 
 
-def review_schema(assertion, references, concerns, *, point=True):
+def review_schema(assertion, references, concerns, *, point=True, delivered=()):
     refs = {'type': 'array', 'items': {'type': 'integer', **({'enum': list(references)} if references else {})},
         'maxItems': min(8, len(references))}
     def judgment(*, clause=False):
@@ -35,8 +58,6 @@ def review_schema(assertion, references, concerns, *, point=True):
             props['witnesses'] = {'type': 'array', 'maxItems': min(8, len(references)),
                 'items': {'type': 'object', 'properties': witness,
                     'required': list(witness), 'additionalProperties': False}}
-        else:
-            props['citation_refs'] = {**refs, 'minItems': 0}
         props.update(reason={'type': 'string', 'maxLength': 600}, verdict={'type': 'string', 'enum': verdicts})
         return {'type': 'object', 'properties': props,
             'required': list(props), 'additionalProperties': False}
@@ -45,8 +66,15 @@ def review_schema(assertion, references, concerns, *, point=True):
             'required': list(assertion_clauses(assertion)), 'additionalProperties': False}},
         'required': ['clauses'], 'additionalProperties': False}
     if not point:
-        schema['properties']['gap_status'] = {'type': 'string', 'enum': ['unresolved', 'answered', 'answer_available', 'outside_request']}
-        schema['required'].append('gap_status')
+        unresolved = {'type': 'string', 'enum': ['unresolved', 'answer_available', 'outside_request']}
+        resolution = unresolved
+        if delivered:
+            resolution = {'anyOf': [
+                {'type': 'array', 'minItems': 1, 'maxItems': len(delivered),
+                    'items': {'type': 'string', 'enum': [item['point_id'] for item in delivered]}},
+                unresolved]}
+        schema['properties']['gap_resolution'] = resolution
+        schema['required'].append('gap_resolution')
     if concerns:
         def concern(outcomes, minimum):
             props = {'id': {'type': 'string', 'enum': list(concerns)},
@@ -75,23 +103,39 @@ def invalid_clause_witnesses(data, references):
         keys = [witness['key'] for witness in witnesses]
         if any(key not in choices for key in keys):
             return 'unbound_clause_witness'
-        if len(keys) != len(set(keys)):
-            return 'duplicate_clause_witness'
+        relations = {}
+        for witness in witnesses:
+            key, relation = witness['key'], witness['scope_relation']
+            if key in relations and relations[key] != relation:
+                return 'duplicate_clause_witness'
+            relations[key] = relation
     return None
 
 
 def normalize_clause_witnesses(data, references):
-    """Derive citations and literal text; model prose never becomes a quote."""
+    """Decode a shape-validated receipt; only originals supply literal text."""
     invalid = invalid_clause_witnesses(data, references)
     if invalid:
         raise ValueError(invalid)
     choices = witness_choices(references)
     result = deepcopy(data)
+    if 'gap_resolution' in result:
+        resolution = result.pop('gap_resolution')
+        result['gap_status'] = 'answered' if isinstance(resolution, list) else resolution
+        result['answer_point_ids'] = resolution if isinstance(resolution, list) else []
     for clause in result['clauses'].values():
-        clause['witnesses'] = [{'citation_ref': choices[witness['key']],
-            'quote': references[choices[witness['key']]]['quote'],
-            'scope_relation': witness['scope_relation']} for witness in clause['witnesses']]
+        # The raw grammar permits repeated selections. Exact duplicates carry
+        # no additional evidence; retain the first position without changing
+        # the original receipt or resolving conflicting scope judgments.
+        selections = dict.fromkeys((witness['key'], witness['scope_relation']) for witness in clause['witnesses'])
+        clause['witnesses'] = [{'citation_ref': choices[key],
+            'quote': references[choices[key]]['quote'],
+            'scope_relation': relation} for key, relation in selections]
         clause['citation_refs'] = [witness['citation_ref'] for witness in clause['witnesses']]
+    # Overall judges relationships across these same originals. It supplies its
+    # own verdict, never a second citation selection or a host-inferred verdict.
+    result['overall']['citation_refs'] = list(dict.fromkeys(ref
+        for clause in result['clauses'].values() for ref in clause['citation_refs']))
     return result
 
 
@@ -108,12 +152,18 @@ def enforce_clause_scope(data):
     return data
 
 
-def invalid_review(data, assertion, concerns, *, point):
+def invalid_review(data, assertion, concerns, *, point, delivered=()):
     """Missing witnesses are a failed check, never a negative factual verdict."""
     if {c['id'] for c in data.get('concern_checks', [])} != set(concerns):
         return 'incomplete_concern_check'
     if set(data['clauses']) != set(assertion_clauses(assertion)):
         return 'incomplete_assertion_check'
+    if not point:
+        selected = data.get('answer_point_ids', [])
+        available = {item['point_id'] for item in delivered}
+        if (len(selected) != len(set(selected)) or any(key not in available for key in selected)
+                or (data['gap_status'] == 'answered') != bool(selected)):
+            return 'unbound_answered_gap'
     # The serving JSON grammar does not implement uniqueItems.
     if any(len(c['citation_refs']) != len(set(c['citation_refs']))
             for c in [data['overall'], *data['clauses'].values(), *data.get('concern_checks', [])]):

@@ -1,4 +1,5 @@
 """Durable evidence-led rounds with saved progress and whole-document completion."""
+import json
 from copy import deepcopy
 from typing import Literal
 
@@ -13,6 +14,9 @@ from .product_investigations import ACTIVE, citation, event, rows, scope
 from .product_operations import fingerprint
 
 CONTRACT = "research-mission/v1"
+UNREAD_CANDIDATE_CHARACTERS = 8192
+UNREAD_CANDIDATE_SCOPE = ("Unread, untrusted discovery metadata. Titles and URLs do not establish "
+    "source contents or authority and are not citable evidence. Omitted identities remain in the saved frontier.")
 SYSTEM = """This is a sustained research mission, not an instant dossier form.
 The mission_checkpoint must answer the ORIGINAL question using only supplied read
 passages. Use answer.points for cited conclusions and counterevidence, and
@@ -72,22 +76,177 @@ def branch_capacity(run):
     return run.research_state["mission"]["round"] * 4
 
 
+def discovery_frontier_available(session, run, branch):
+    """A failed reflection does not consume an otherwise current discovery frontier."""
+    from .product_document_analysis import current_document_reading
+    from .product_document_reading import failed_analysis
+    from .product_iterative_steps import discovery_available
+    from .product_source_recovery import public_state, unavailable
+
+    state = branch.checkpoint
+    if branch.investigation_id != run.id or not discovery_available(state):
+        return False
+    if branch.status == "completed":
+        return True  # Preserve the established successful-branch continuation.
+    last = (state.get("steps") or [{}])[-1]
+    if (branch.status != "failed" or branch.phase != "reflect" or not public_state(state)
+            or last.get("phase") != "reflect" or last.get("status") != "unavailable"
+            or state.get("reflection_done") or failed_analysis(state)
+            or not any(q["id"] == state["question_id"] and q.get("branch_id") == branch.id
+                for q in run.research_state.get("questions", []))):
+        return False
+    available = exploration.sources(session, run)
+    documents = state.get("document_reads", {})
+    source_ids = set(state.get("source_ids", []))
+    if (not source_ids or not source_ids <= available.keys() or not documents
+            or state.get("read_index", 0) < len(state.get("items", []))
+            or state.get("extract_index", 0) < len(source_ids)
+            or not source_ids <= {identifier for doc in documents.values() for identifier in doc.get("source_ids", [])}
+            or not all(current_document_reading(session, run, branch, key, doc, available)
+                for key, doc in documents.items())):
+        return False
+    return bool(state.get("next_discovery_cursors") or any(
+        not unavailable(session, run, branch, state, item)
+        for item in state.get("candidates", [])[state.get("gate_index", 0):]))
+
+
+def unread_frontier_metadata(session, run, branches):
+    """Expose only public discovery identities, never source evidence or raw state."""
+    from .decision_search import plain, public_url
+    from .product_investigation_models import InvestigationSource
+    from .product_source_recovery import public_state
+    from .product_source_reviews import current_reviews
+
+    if not run.external_discovery:
+        return {}
+    owned = {(q["id"], q.get("branch_id")) for q in run.research_state.get("questions", [])}
+    branches = [branch for branch in branches if public_state(branch.checkpoint)
+        and (branch.checkpoint["question_id"], branch.id) in owned]
+    if not branches:
+        return {}
+    # Unlike recovery.unavailable, this presentation fence also applies to
+    # legacy completed branches without a source-recovery contract.
+    unavailable = {url for url, review in current_reviews(session, run.dossier_id).items()
+        if review.data_json["decision"] == "exclude"}
+    for source in rows(session, InvestigationSource, run):
+        unavailable.update([source.url, source.snapshot.get("requested_url"), *source.snapshot.get("redirect_chain", [])])
+    for branch in rows(session, InvestigationBranch, run):
+        unavailable.update(branch.checkpoint.get("attempted_urls", []))
+    unavailable = {url for value in unavailable if (url := public_url(value))}
+    result, remaining = {}, UNREAD_CANDIDATE_CHARACTERS
+    for branch in branches:
+        state = branch.checkpoint
+        candidates, index = state.get("candidates", []), state.get("gate_index", 0)
+        if not isinstance(candidates, list) or type(index) is not int or index < 0:
+            continue
+        eligible, seen = [], set()
+        for item in candidates[index:]:
+            if not isinstance(item, dict) or not isinstance(item.get("title"), str):
+                continue
+            url, title = public_url(item.get("url")), plain(item["title"], 240)
+            if not url or not title or url in unavailable or url in seen:
+                continue
+            seen.add(url)
+            eligible.append({"title": title, "url": url})
+        if not eligible:
+            continue
+        projected = []
+        for item in eligible:
+            # Complete identity records only. This bounds the combined JSON
+            # lists, not discovery/reading capacity, and keeps stored order.
+            cost = len(json.dumps(item, ensure_ascii=False)) + 2
+            if cost <= remaining:
+                projected.append(item)
+                remaining -= cost
+        result[branch.id] = {"unread_candidates": projected} if projected else {}
+        if len(projected) != len(eligible):
+            result[branch.id]["unread_candidates_omitted"] = len(eligible) - len(projected)
+    return result
+
+
+def continue_required_sources(session, run, branch, outcomes):
+    """Resume an owned, still-eligible frontier before closing a source task."""
+    from .product_iterative_steps import continue_discovery
+    from .product_source_recovery import public_state
+    from .product_source_requirements import requirements
+
+    state = branch.checkpoint
+    owner = next((question for question in run.research_state.get("questions", [])
+        if question["id"] == state.get("question_id") and question.get("branch_id") == branch.id), None)
+    if (not enabled(run) or run.status not in ACTIVE or not run.external_discovery
+            or branch.investigation_id != run.id or branch.organization_id != run.organization_id
+            or branch.dossier_id != run.dossier_id or owner is None or not public_state(state)):
+        return False
+    wanted = {item["id"] for item in requirements(run, owner["id"])}
+    pending = [item["id"] for item in outcomes if item.get("id") in wanted
+        and item.get("question_id") == owner["id"] and item.get("status") == "not_identified"]
+    if (not pending or not discovery_frontier_available(session, run, branch)
+            or not set(state.get("source_ids", [])) <= exploration.sources(session, run).keys()):
+        return False
+    frontier = unread_frontier_metadata(session, run, [branch]).get(branch.id, {})
+    candidates = bool(frontier.get("unread_candidates") or frontier.get("unread_candidates_omitted"))
+    if not candidates and not state.get("next_discovery_cursors"):
+        return False
+    state = deepcopy(state)
+    # Filtered old candidates remain retained, but cannot force another empty
+    # reading/reflection batch ahead of an already saved discovery cursor.
+    continue_discovery(branch, state, remaining_candidates=candidates)
+    state.pop("question_finished", None)
+    branch.checkpoint = state
+    data = deepcopy(run.research_state)
+    question = next(item for item in data["questions"] if item["id"] == owner["id"])
+    question.update(status="investigating", waiting_reason=None)
+    run.research_state = data
+    event(session, run, "requested_original_continued", branch_id=branch.id, requirement_ids=pending)
+    return True
+
+
+def source_work_limits(outcomes):
+    """Finite host workflow notices, not scientific/legal evidence gaps."""
+    return [("Planned source target" if item.get("origin") == "planner_interpretation" else "Requested source")
+        + f" “{item['requested_source']}”: {item['reason']}"
+        for item in outcomes if item["status"] != "matched_read"]
+
+
+def with_source_work(answer, outcomes, previous=None):
+    answer = deepcopy(answer)
+    if previous:
+        answer["limitations"] = [text for text in answer["limitations"] if text not in previous["limitations"]]
+        answer["status"] = previous["status"]
+    limits = source_work_limits(outcomes)
+    receipt = {"status": answer["status"], "limitations": [text for text in limits if text not in answer["limitations"]]}
+    if limits:
+        if answer["status"] == "possible_answer":
+            answer["status"] = "partial"
+        answer["limitations"] = list(dict.fromkeys([*answer["limitations"], *limits]))
+    return answer, receipt
+
+
 def context(session, run):
     from . import product_document_reading as document_reading
-    from .product_iterative_steps import discovery_available
+    from .product_requested_originals import outcomes
 
     state = run.research_state["mission"]
+    branches = rows(session, InvestigationBranch, run)
+    frontiers = [branch for branch in branches if discovery_frontier_available(session, run, branch)]
+    metadata = unread_frontier_metadata(session, run, frontiers)
+    requested = outcomes(session, run)
+    previous = deepcopy(state["checkpoints"][-1]) if state["checkpoints"] else None
+    if previous:
+        previous.pop("source_work", None)
     return {"contract": CONTRACT, "round": state["round"], "question": run.question,
-        "previous_checkpoint": state["checkpoints"][-1] if state["checkpoints"] else None,
+        "previous_checkpoint": previous,
         "completion_policy": "Answer the original question with honest limits after needed whole-document reading; optional extensions do not block delivery. No internal execution budget.",
         "unvalidated_proposals": [{"source_id": s.id, "rejected": s.snapshot["analysis_gaps"]}
             for s in exploration.sources(session, run).values() if s.snapshot.get("analysis_gaps")],
-        "documents": [document_reading.model_projection(d) for b in rows(session, InvestigationBranch, run) for d in document_reading.projection(b.checkpoint)],
+        "documents": [document_reading.model_projection(d) for b in branches for d in document_reading.projection(b.checkpoint, session, run)],
         "discovery_frontiers": [{"branch_id": b.id, "query": b.query,
             "channels": list(b.checkpoint.get("next_discovery_cursors", {})),
             "remaining_candidates": max(0, len(b.checkpoint.get("candidates", [])) - b.checkpoint.get("gate_index", 0)),
-            "pages_checked": len(b.checkpoint.get("discovery_history", []))}
-            for b in rows(session, InvestigationBranch, run) if b.status == "completed" and discovery_available(b.checkpoint)],
+            "pages_checked": len(b.checkpoint.get("discovery_history", [])), **metadata.get(b.id, {})}
+            for b in frontiers],
+        **({"unread_candidates_scope": UNREAD_CANDIDATE_SCOPE} if metadata else {}),
+        **({"requested_sources": requested} if requested else {}),
         "attempted_questions": research.public_questions(run.research_state["questions"])}
 
 
@@ -99,7 +258,6 @@ def evidence_signature(session, run):
 def continuation_context(session, run):
     """Private scheduling state, never part of the provider's evidence payload."""
     from .product_document_reading import incomplete
-    from .product_iterative_steps import discovery_available
 
     state = run.research_state["mission"]
     branches = rows(session, InvestigationBranch, run)
@@ -107,11 +265,11 @@ def continuation_context(session, run):
     published = run.research_state.get("exploration", {})
     receipt = (published.get("direction_assessment_context") or {}).get("next_check_receipt") or {}
     return {"round": state["round"], "signature": evidence_signature(session, run),
-        "previous_signature": previous.get("evidence_signature"), "unfinished": bool(incomplete(branches)),
+        "previous_signature": previous.get("evidence_signature"), "unfinished": bool(incomplete(branches, session, run)),
         "questions": deepcopy(run.research_state["questions"]),
         "queries": [query for branch in branches for query in
             (branch.query, branch.checkpoint.get("query_recovery", {}).get("query") or branch.query)],
-        "frontiers": [branch.id for branch in branches if branch.status == "completed" and discovery_available(branch.checkpoint)],
+        "frontiers": [branch.id for branch in branches if discovery_frontier_available(session, run, branch)],
         "published_question_ids": list(receipt.get("question_fingerprints", {})) if published.get("briefing") else [],
         "next_slots": (state["round"] + 1) * 4 - sum(bool(branch.checkpoint.get("question_id")) for branch in branches)}
 
@@ -162,8 +320,6 @@ def route_continuation(work, checkpoint):
 
 def next_work(session, run, supplied, checkpoint):
     """Validate the live source/branch boundary before scheduling any next read."""
-    from .product_iterative_steps import discovery_available
-
     available = exploration.sources(session, run)
     gaps = []
     for draft in checkpoint.next_checks:
@@ -176,7 +332,7 @@ def next_work(session, run, supplied, checkpoint):
     deeper = []
     for identifier in dict.fromkeys(checkpoint.deepen_branches):
         branch = session.get(InvestigationBranch, identifier)
-        if not branch or branch.investigation_id != run.id or branch.status != "completed" or not discovery_available(branch.checkpoint):
+        if not branch or not discovery_frontier_available(session, run, branch):
             fail("Deeper discovery requires a current supplied search frontier.", 422)
         if not any(f["branch_id"] == identifier for f in supplied.get("research_mission", {}).get("discovery_frontiers", [])):
             fail("The search frontier was not supplied for this assessment.", 422)
@@ -309,12 +465,16 @@ def apply(session, run, supplied, result, *, verification=None):
             + "; ".join(s.title for s in gaps_in_analysis) + ". Validated findings are retained; these interpretation gaps remain unresolved."]))
     from .product_document_reading import incomplete
 
-    unfinished = incomplete(rows(session, InvestigationBranch, run))
+    unfinished = incomplete(rows(session, InvestigationBranch, run), session, run)
     if unfinished:
         if answer["status"] == "possible_answer":
             answer["status"] = "partial"
         answer["limitations"] = list(dict.fromkeys([*answer["limitations"], *(
             f"{d.get('title', 'Document')}: reading or whole-document analysis is incomplete. {d.get('error') or d.get('unread_reason') or ''}" for d in unfinished)]))
+    from .product_requested_originals import outcomes
+
+    requested = outcomes(session, run)
+    answer, source_work = with_source_work(answer, requested)
     if checkpoint.action == "clarify" and (not result.clarification.strip() or len(result.directions) < 2):
         fail("A consequential choice needs cited alternatives.", 422, "invalid_evidence")
     gaps, deeper = next_work(session, run, supplied, checkpoint)
@@ -324,6 +484,8 @@ def apply(session, run, supplied, result, *, verification=None):
         "evidence_signature": signature, "action": checkpoint.action,
         "deepen_branches": checkpoint.deepen_branches,
         "gaps": [{"question": g.question, "purpose": g.purpose, **pin} for g, pin in gaps]}
+    if requested:
+        record["source_work"] = source_work
     if verification:
         record["verification"] = deepcopy(verification)
     previous = state["checkpoints"][-1] if state["checkpoints"] else None
@@ -380,30 +542,38 @@ def schedule(session, run, branches):
 def project(session, run):
     if not enabled(run):
         return None
+    from .product_requested_originals import outcomes
+
+    requested = outcomes(session, run)
+    requested_view = {"requested_sources": requested} if requested else {}
     if not exploration.adaptive_current(session, run):
-        return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None}
+        return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None, **requested_view}
     state = deepcopy(run.research_state["mission"])
     state.pop("last_continuation", None)
     state.pop("selected_question_ids", None)
     available = exploration.sources(session, run)
     for record in state["checkpoints"]:
         if any(d["source_id"] not in available or available[d["source_id"]].sha256 != d["sha256"] for d in record.get("source_dependencies", [])):
-            return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None}
+            return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None, **requested_view}
         refs = [r for p in record["answer"]["points"] for r in p["evidence"]] + record["gaps"]
         if any(r["source_id"] not in available or r["sha256"] != available[r["source_id"]].sha256
                or not any(p["passage"] == r["locator"] and r["quote"] in p["text"]
                    for p in available[r["source_id"]].snapshot["excerpts"]) for r in refs):
-            return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None}
+            return {"contract": CONTRACT, "stage": "evidence_changed", "checkpoints": [], "answer": None, **requested_view}
         record.pop("evidence_signature", None)
         record.pop("input_fingerprint", None)
         record.pop("source_dependencies", None)
+        previous_source_work = record.pop("source_work", None)
+        if record is state["checkpoints"][-1]:
+            record["answer"], _ = with_source_work(record["answer"], requested, previous_source_work)
     state["answer"] = state["checkpoints"][-1]["answer"] if state["checkpoints"] else None
     state["question"] = run.question
+    state.update(requested_view)
     from .product_current_knowledge import project as knowledge
 
     state["knowledge"] = knowledge(session, run) if state["answer"] else None
     from .product_document_reading import projection as reading_projection
 
     state["documents"] = [reading for branch in rows(session, InvestigationBranch, run)
-        for reading in reading_projection(branch.checkpoint)]
+        for reading in reading_projection(branch.checkpoint, session, run)]
     return state

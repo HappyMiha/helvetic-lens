@@ -198,7 +198,7 @@ def test_linked_source_leads_do_not_invalidate_unchanged_canonical_evidence(sign
 
 
 @pytest.mark.parametrize('withdraw', [False, True])
-@pytest.mark.parametrize('failure', ['research_review_incomplete', 'research_evidence_group_too_large'])
+@pytest.mark.parametrize('failure', ['research_review_incomplete', 'research_evidence_group_too_large', 'model_incomplete'])
 def test_incomplete_final_review_requires_explicit_retry_and_retains_private_checkpoint(signed, monkeypatch, withdraw, failure):
     import json
 
@@ -208,10 +208,22 @@ def test_incomplete_final_review_requires_explicit_retry_and_retains_private_che
     from test_product_iterative_research import complete
 
     from helvetic_lens import research_gateway
-    from helvetic_lens.research_synthesis_resume import KEY
+    from helvetic_lens.research_synthesis_resume import EXHAUSTED_REVIEW, KEY
 
     client, service, identity, model = signed
     adapters(monkeypatch, service, model)
+    scripted = model.complete
+    async def completed_mission(*args, **kwargs):
+        value = json.loads(await scripted(*args, **kwargs))
+        if 'mission_checkpoint' in kwargs['response_schema'].get('properties', {}):
+            first = value['findings'][0]
+            value['mission_checkpoint'] = {'action': 'finish',
+                'reason': 'The retained source supports this finding; remaining uncertainty is explicit.',
+                'answer': {'status': 'partial', 'limitations': value['uncertainties'],
+                    'points': [{'statement': first['statement'], 'evidence': [
+                        {**{key: first[key] for key in ('source_id', 'locator', 'quote')}, 'role': 'support'}]}]}}
+        return json.dumps(value)
+    monkeypatch.setattr(model, 'complete', completed_mission)
     root, run, _ = explore(client)
     original, calls, sources = research_gateway.execute, [], []
     marker = 'PRIVATE CHECKED SIBLINGS AND PENDING FINAL REVIEW'
@@ -224,7 +236,8 @@ def test_incomplete_final_review_requires_explicit_retry_and_retains_private_che
             work[KEY] = {'raw': marker, 'stage': 'reviewed'}
             if withdraw:
                 exclude(service, identity, sources[0])
-            raise DomainError('Fictional incomplete evidence review', 422 if failure == 'research_evidence_group_too_large' else 503, failure)
+            status = {'research_evidence_group_too_large': 422, 'model_incomplete': 502}.get(failure, 503)
+            raise DomainError('Fictional interrupted generation or evidence review', status, failure)
         assert work[KEY]['raw'] == marker
         assert [s['id'] for s in work['input']['sources']] == sources
         return await original(service, work, seconds)
@@ -241,6 +254,7 @@ def test_incomplete_final_review_requires_explicit_retry_and_retains_private_che
         assert branch.checkpoint[KEY]['raw'] == marker
         assert branch.checkpoint['steps'][-1]['error_code'] == failure
         assert not branch.checkpoint.get('provider_retries'), 'Invalid review is not automatically repurchased'
+        assert EXHAUSTED_REVIEW not in branch.checkpoint, 'An incomplete response cannot authorize checked partial delivery'
     assert result['status'] == 'failed' and result['retry']['available'] is True and len(calls) == 1
     tick(service, run['id'])
     assert len(calls) == 1

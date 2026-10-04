@@ -486,11 +486,12 @@ class ModelClient:
         started: float,
         status: str,
         error: str | None = None,
+        response_body_override=None,
     ) -> None:
         if not self.integration_logger:
             return
         try:
-            response_body = (
+            response_body = response_body_override if response_body_override is not None else (
                 response_snapshot(response.content, response.headers.get("content-type", ""))
                 if response is not None
                 else None
@@ -575,7 +576,7 @@ class ModelClient:
     def is_context_limit_error(response: httpx.Response) -> bool:
         try:
             payload = response.json()
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, httpx.ResponseNotRead):
             return False
         try:
             text = json.dumps(payload, ensure_ascii=False).casefold()[:8000]
@@ -679,7 +680,20 @@ class ModelClient:
 
     @staticmethod
     def message_content(payload: dict) -> str:
-        content = payload["choices"][0]["message"]["content"]
+        choice = payload["choices"][0]
+        if not isinstance(choice, dict) or not isinstance(choice.get("message"), dict):
+            raise ValueError("Invalid chat completion choice")
+        message = choice["message"]
+        content = message.get("content")
+        # Some compatible adapters omit terminal metadata. Keep that legacy
+        # contract, but never treat an explicit interruption/refusal as finished
+        # text: parsing it would purchase an unchanged-schema format repair.
+        if (("finish_reason" in choice and choice["finish_reason"] != "stop")
+                or message.get("refusal") or message.get("tool_calls") or message.get("function_call")
+                or (isinstance(content, list) and any(isinstance(item, dict)
+                    and item.get("type") == "refusal" for item in content))):
+            raise DomainError("The model did not finish a complete answer. Check the output limit or model access.",
+                502, "model_incomplete")
         if isinstance(content, str) and content.strip():
             return content
         if isinstance(content, list):
@@ -739,6 +753,8 @@ class ModelClient:
                 payload.pop(field, None)
             payload["store"] = False
         payload[token_field] = self.settings.apertus_max_tokens
+        if self.settings.apertus_provider == "swisscom":
+            payload.update(stream=True, stream_options={"include_usage": True})
         if self.active_capability is not None and self.active_capability.budget is not None:
             payload[token_field] = min(payload[token_field], self.active_capability.budget.output_tokens)
         if self.settings.apertus_reasoning_effort != "default":
@@ -880,6 +896,7 @@ class ModelClient:
             for attempt in range(1, total_attempts + 1):
                 started = time.monotonic()
                 response: httpx.Response | None = None
+                envelope, stream_log = None, None
 
                 def log(status: str, error: str | None = None):
                     self.log_exchange(
@@ -892,6 +909,10 @@ class ModelClient:
                         started=started,
                         status=status,
                         error=(f"Attempt {attempt} of {total_attempts}: {error}" if error else None),
+                        response_body_override=(
+                            {'transport': 'stream-request', 'completion': envelope}
+                            if status == 'success' and stream_log is not None else stream_log
+                        ),
                     )
 
                 try:
@@ -902,12 +923,28 @@ class ModelClient:
                         if remaining is not None
                         else self.settings.apertus_timeout_seconds
                     )
-                    response = await client.post(
-                        url,
-                        headers=headers,
-                        json=payload,
-                        timeout=max(1.0, request_timeout),
-                    )
+                    if self.settings.apertus_provider == "swisscom":
+                        from .model_completion_stream import completion_envelope
+                        # Read timeouts reset with each chunk. The total deadline
+                        # must still stop a trickling or stalled structured reply.
+                        try:
+                            async with asyncio.timeout(request_timeout):
+                                async with client.stream("POST", url, headers=headers, json=payload,
+                                        timeout=max(1.0, request_timeout)) as response:
+                                    if response.is_success:
+                                        stream_log = {'stream': {}}
+                                        envelope = await completion_envelope(response, stream_log['stream'])
+                                    else:
+                                        await response.aread()  # Preserve existing HTTP error classification/logging.
+                        except TimeoutError as exc:
+                            raise httpx.ReadTimeout('The complete model stream exceeded its request deadline.') from exc
+                    else:
+                        response = await client.post(
+                            url,
+                            headers=headers,
+                            json=payload,
+                            timeout=max(1.0, request_timeout),
+                        )
                     if runtime is not None and response.status_code == 409:
                         raise DomainError(
                             "The local model deployment changed during analysis. No result from a different deployment was accepted; start a new analysis.",
@@ -944,7 +981,8 @@ class ModelClient:
                     self.check_capability()
                     if runtime is not None and response.headers.get("x-helvetic-runtime-binding") != runtime.binding_fingerprint:
                         raise DomainError("The local runner response does not match this analysis's deployment.", 409, "runtime_binding_changed")
-                    envelope = response.json()
+                    if envelope is None:
+                        envelope = response.json()
                     if not isinstance(envelope, dict):
                         raise ValueError("Expected a model response object")
                     if self.settings.apertus_provider == "anthropic":

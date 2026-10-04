@@ -143,7 +143,14 @@ def retry(session, run):
     failed = retryable_branches(session, run)
     if not failed:
         fail("There are no unavailable investigation steps to retry.", 409)
+    from . import product_research_mission as research_mission
+
+    retrying_brief = research_mission.enabled(run) and any(branch.phase == "brief" for branch in failed)
     for branch in failed:
+        if retrying_brief and research_mission.discovery_frontier_available(session, run, branch):
+            # The queued briefing can select the retained search frontier.
+            # Do not repurchase its failed reflection before that decision.
+            continue
         state = deepcopy(branch.checkpoint)
         if branch.phase == "brief":
             from .research_synthesis_resume import EXHAUSTED_REVIEW, exhausted_review

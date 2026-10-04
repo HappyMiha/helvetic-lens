@@ -14,6 +14,7 @@ import httpx
 from bs4 import BeautifulSoup, UnicodeDammit
 
 from .config import DomainError, Settings
+from .html_document_structure import annotate_passages
 from .integration_logs import IntegrationLogger, response_snapshot
 from .pdf_reader import MAX_PDF_PAGES, PDF_EXTRACTOR_VERSION, read_pdf
 
@@ -721,12 +722,15 @@ def extract(
                 if court_root is not None
                 else root.find_all(list(tags))
             )
+            structured = []
             for node in nodes:
                 if any(parent.name in tags for parent in node.parents if parent is not root):
                     continue
                 text = normalize(node.get_text(" ", strip=True))
                 if text:
                     passages.append({"text": text, "page": None})
+                    structured.append((node, passages[-1]))
+            annotate_passages(root, structured)
             if not passages:
                 passages = [
                     {"text": normalize(t), "page": None}
