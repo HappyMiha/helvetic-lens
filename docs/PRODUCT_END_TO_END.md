@@ -3914,3 +3914,15 @@ previous failure was also reproduced against the pre-change worker. Exact API
 Ruff, the backlog structure guard and diff checks pass. These checks used local
 fixtures, with no new production dossiers or provider requests. Publication and
 the guarded same-run production retry are recorded in the parent checkpoint.
+
+The first publication attempt was rejected before changing serving containers:
+the deployment validator still allowed only Docker or Swisscom defaults while
+the existing runtime supports the owner's activated custom local Codex provider.
+Align validation with that supported provider's required URL, model and key,
+retaining production configuration checks; verify both valid custom settings and
+rejection of missing/unsafe configuration before ordinary deployment resumes.
+The custom branch now validates an explicit authenticated HTTP(S) API base,
+model and single-line credential. Docker defaults and the Swisscom endpoint
+restriction are unchanged. The actual 62-field production configuration passes
+without displaying values; the 32-case deployment validation module and exact
+API/script lint pass.

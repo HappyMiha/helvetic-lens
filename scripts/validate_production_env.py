@@ -115,8 +115,31 @@ def validate(values: dict[str, str], *, host_platform: str = "posix") -> list[st
         key = require("APERTUS_API_KEY")
         if key and (_placeholder(key) or "\n" in key or "\r" in key):
             errors.append("APERTUS_API_KEY: use the issued single-line credential")
+    elif provider == "custom":
+        # Custom endpoints are an explicit operator selection, including an
+        # authenticated HTTP bridge on the private container network.
+        base_url = require("APERTUS_BASE_URL")
+        try:
+            endpoint = urlsplit(base_url)
+            _ = endpoint.port  # Reject malformed or out-of-range ports as the runtime does.
+            valid_endpoint = (
+                endpoint.scheme in {"http", "https"} and bool(endpoint.hostname)
+                and not (endpoint.username or endpoint.password or endpoint.query or endpoint.fragment)
+                and not endpoint.path.rstrip("/").endswith("/chat/completions")
+                and len(base_url) <= 2000 and not any(char.isspace() for char in base_url)
+            )
+        except ValueError:
+            valid_endpoint = False
+        if not valid_endpoint:
+            errors.append("APERTUS_BASE_URL: use an HTTP or HTTPS API base URL without credentials, query, fragment, or /chat/completions")
+        model = require("APERTUS_MODEL")
+        if len(model) > 300 or "\n" in model or "\r" in model:
+            errors.append("APERTUS_MODEL: use a single-line model identifier of at most 300 characters")
+        key = require("APERTUS_API_KEY")
+        if key and (_placeholder(key) or len(key) > 4000 or "\n" in key or "\r" in key):
+            errors.append("APERTUS_API_KEY: use an issued single-line credential of at most 4,000 characters")
     elif provider != "docker":
-        errors.append("APERTUS_PROVIDER: select docker or swisscom for the deployment default")
+        errors.append("APERTUS_PROVIDER: select docker, swisscom, or custom for the deployment default")
     if require("JOB_EXECUTION_MODE") != "celery":
         errors.append("JOB_EXECUTION_MODE: production requires celery")
     if values.get("DEFAULT_LOCALE", "de-CH") not in LOCALES:

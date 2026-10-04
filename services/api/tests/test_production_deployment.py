@@ -68,6 +68,44 @@ def test_explicit_swisscom_default_requires_complete_protected_connection():
         assert "synthetic" not in " ".join(errors)
 
 
+def custom_environment() -> dict[str, str]:
+    return {**valid_environment(), "APERTUS_PROVIDER": "custom",
+        "APERTUS_BASE_URL": "http://172.18.0.1:18891/v1",
+        "APERTUS_MODEL": "gpt-6-astra", "APERTUS_API_KEY": "synthetic-issued-bridge-key"}
+
+
+@pytest.mark.parametrize("endpoint", ["http://172.18.0.1:18891/v1", "https://inference.real-domain.ch/v1"])
+def test_explicit_custom_default_accepts_complete_authenticated_connection(endpoint):
+    assert validate({**custom_environment(), "APERTUS_BASE_URL": endpoint}) == []
+
+
+@pytest.mark.parametrize("field,value", [
+    ("APERTUS_BASE_URL", ""),
+    ("APERTUS_MODEL", ""),
+    ("APERTUS_API_KEY", ""),
+    ("APERTUS_BASE_URL", "ftp://inference.real-domain.ch/v1"),
+    ("APERTUS_BASE_URL", "http:///v1"),
+    ("APERTUS_BASE_URL", "http://[invalid/v1"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1:invalid/v1"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1:99999/v1"),
+    ("APERTUS_BASE_URL", "http://synthetic-secret@172.18.0.1:18891/v1"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1:18891/v1?key=synthetic-secret"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1:18891/v1#synthetic-secret"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1:18891/v1/chat/completions/"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1:\n18891/v1"),
+    ("APERTUS_BASE_URL", "http://172.18.0.1/" + "a" * 2000),
+    ("APERTUS_MODEL", "a" * 301),
+    ("APERTUS_MODEL", "synthetic\nmodel"),
+    ("APERTUS_API_KEY", "change_me"),
+    ("APERTUS_API_KEY", "a" * 4001),
+    ("APERTUS_API_KEY", "synthetic\nsecret"),
+])
+def test_explicit_custom_default_rejects_incomplete_or_unsafe_connection_without_exposing_values(field, value):
+    errors = validate({**custom_environment(), field: value})
+    assert any(error.startswith(field + ":") for error in errors)
+    assert "synthetic" not in " ".join(errors)
+
+
 def test_deployment_status_mount_is_read_only_and_docker_socket_is_never_exposed():
     compose = (ROOT / "compose.production.yaml").read_text(encoding="utf-8")
 
