@@ -82,7 +82,7 @@ def viewer_route(path, method):
     if grant:
         return grant[2] != "monitor"
     profile = PROFILE_PATH.fullmatch(path)
-    if profile and (method == "PUT" or profile[2] in {"suggest", "preview"}):
+    if profile and (method == "PUT" or profile[2] in {"suggest", "suggestions", "preview"}):
         return True  # record() refuses native profiles without a dossier grant.
     return bool(re.fullmatch(r"/api/products/(pharma|loyer)/dossier-invitations/[^/]+/accept", path))
 

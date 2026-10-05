@@ -111,6 +111,10 @@ class SuggestInput(RevisionInput):
     locale: Literal["en-CH", "de-CH", "fr-CH", "it-CH", "rm-CH"] = "en-CH"
 
 
+class QueuedSuggestInput(SuggestInput):
+    request_key: UUID
+
+
 class StatusInput(RevisionInput):
     status: Literal["active", "paused"]
 
@@ -322,6 +326,22 @@ def legal_profiles_router(service):
             session.commit()
             return {"profile": payload(session, row), "suggestions": cards,
                     "provider": service.settings.apertus_provider, "model": service.settings.apertus_model}
+
+    @router.post("/{profile_id}/suggestions", status_code=202)
+    def request_suggestions(profile_id: str, data: QueuedSuggestInput, request: Request, response: Response):
+        from . import profile_suggestion_jobs
+
+        identity = actor(request, response)
+        with service.write_guard, service.db.session() as session:
+            return profile_suggestion_jobs.enqueue(service, session, profile_id, identity, data)
+
+    @router.get("/{profile_id}/suggestions")
+    def read_suggestions(profile_id: str, request: Request, response: Response):
+        from . import profile_suggestion_jobs
+
+        identity = actor(request, response)
+        with service.db.session() as session:
+            return profile_suggestion_jobs.latest(session, profile_id, identity.user_id)
 
     @router.post("/{profile_id}/preview")
     def preview(profile_id: str, data: RevisionInput, request: Request, response: Response):

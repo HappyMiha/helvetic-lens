@@ -2120,6 +2120,8 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "profile_suggestions":
+            raise DomainError("Use the monitoring profile suggestion controls.", 404, "not_found")
         if job["target_type"] == "product_investigation":
             # Private dossier job metadata is available only through its scoped
             # API. Generic retry/cancel must not bypass coordinator generations.
