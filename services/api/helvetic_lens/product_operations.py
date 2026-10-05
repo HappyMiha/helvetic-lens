@@ -544,6 +544,9 @@ def operations(router, service, actor):
                         answer += '<p class="meta">AI research note accepted by the team; citations are saved snapshots.</p>'
                 discussion.append(f'<article><h3>{esc(question.title)}</h3><p>{esc(question.body)}</p>{answer}</article>')
             title = profile.config_json.get("name", "Monitoring dossier")
+            from .product_research_brief import research_brief
+
+            current_research = research_brief(session, row.id)
             saved_searches = []
             for search in searches:
                 recipe = search.data_json
@@ -551,16 +554,16 @@ def operations(router, service, actor):
                 mode = (" · Exact phrase" if recipe.get("match_mode") == "phrase" else " · All words") if recipe.get("provider") == "workspace" else ""
                 saved_searches.append(f'<article><h3>{esc(recipe.get("query"))}</h3><p class="meta">{esc(provider + mode)} · Saved {esc(iso(search.created_at))}</p><p>{esc(search.body)}</p></article>')
             page = f'''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{esc(title)} — Topic brief</title>
-<style>body{{font:16px/1.55 system-ui,sans-serif;color:#172640;max-width:900px;margin:40px auto;padding:0 24px}}h1{{font-size:32px}}h2{{margin-top:36px}}h3{{font-size:18px;margin-bottom:8px}}.meta,footer{{font-size:14px;color:#475569}}dl{{display:grid;grid-template-columns:210px 1fr;gap:8px}}dt{{font-weight:600}}dd{{margin:0}}article{{border-top:1px solid #cbd5e1;break-inside:avoid}}p{{white-space:pre-wrap}}a{{color:#174fb2;overflow-wrap:anywhere}}footer{{border-top:1px solid #cbd5e1;margin-top:36px;padding-top:16px}}@media print{{body{{max-width:none;margin:0;padding:0}}.print-tip{{display:none}}@page{{margin:18mm}}}}</style>
-<p class="meta">HELVETICLENS {esc(product.upper())} · INTERNAL TOPIC BRIEF</p><h1>{esc(title)}</h1><p>{esc(profile.config_json.get("goal"))}</p>
+<style>body{{font:16px/1.55 system-ui,sans-serif;color:#172640;max-width:900px;margin:40px auto;padding:0 24px}}h1{{font-size:32px}}h2{{margin-top:36px}}h3{{font-size:18px;margin-bottom:8px}}.meta,footer{{font-size:14px;color:#475569}}dl{{display:grid;grid-template-columns:210px 1fr;gap:8px}}dt{{font-weight:600}}dd{{margin:0}}article{{border-top:1px solid #cbd5e1;break-inside:avoid}}p,blockquote{{white-space:pre-wrap;overflow-wrap:anywhere}}.research-reading,.research-point,.research-citation{{break-inside:auto}}.research-citation{{border-left:3px solid #cbd5e1;padding-left:16px;margin:16px 0}}.research-citation blockquote{{margin:8px 0}}h2,h3,h4{{break-after:avoid}}a{{color:#174fb2;overflow-wrap:anywhere}}footer{{border-top:1px solid #cbd5e1;margin-top:36px;padding-top:16px}}@media print{{body{{max-width:none;margin:0;padding:0}}.print-tip{{display:none}}@page{{margin:18mm}}}}</style>
+<p class="meta">HELVETICLENS {"PHARMA" if product == "pharma" else "LEGAL"} · INTERNAL TOPIC BRIEF</p><h1>{esc(title)}</h1><p>{esc(profile.config_json.get("goal"))}</p>
 <p class="print-tip">Use your browser's Print command to print or save this brief as PDF. Review the content before sharing it.</p>
-<dl>{facts}</dl><h2>Questions and working answers</h2>{"".join(discussion) or "<p>No research questions recorded.</p>"}
+{current_research}<h2>Dossier context</h2><dl>{facts}</dl><h2>Questions and working answers</h2>{"".join(discussion) or "<p>No discussion questions recorded.</p>"}
 <h2>Actions and outcomes</h2>{''.join(cards) or '<p>No actions recorded.</p>'}
 <h2>Review decisions and notes</h2>{decisions or '<p>No review decisions recorded.</p>'}
 <h2>Original-source references</h2><ul>{sources or '<li>No additional references saved.</li>'}</ul>
 <h2>Source review history</h2><p class="meta">Latest {len(review_history)} of {review_count} reviews. Decisions apply to the exact URL in this dossier's new AI research. Unreviewed sources remain eligible. Existing answers, page watches and notifications are retained.</p>{review_history_html or '<p>No source reviews recorded.</p>'}
 <h2>Saved searches</h2><p class="meta">Reusable search queries, not scheduled monitors or records of retrieved results. Review each query before searching again.</p>{''.join(saved_searches) or '<p>No searches saved.</p>'}
-<footer>Generated {esc(iso(utcnow()))}. Snapshot of this workspace's recorded work: latest 50 questions, 100 actions, 20 notes/reviews, 100 saved references and 50 saved searches. Attachments are not included. This brief records team decisions; it does not establish complete source coverage or professional validation. Monitoring remains {esc(profile.status)}. Dates use Europe/Zurich for the work queue.</footer></html>'''
+<footer>Generated {esc(iso(utcnow()))}. Snapshot of this workspace's recorded work: current exploratory research with its saved answer, latest 50 discussion questions, 100 actions, 20 notes/reviews, 100 saved references and 50 saved searches. Full research history is available in the dossier and JSON export. Attachments are not included. This brief records AI assessments and team decisions; it does not establish complete source coverage or professional validation. Monitoring remains {esc(profile.status)}. Dates use Europe/Zurich for the work queue.</footer></html>'''
             return HTMLResponse(page, headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
                 "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'",
                 "Referrer-Policy": "no-referrer"})

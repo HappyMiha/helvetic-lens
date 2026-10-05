@@ -16,7 +16,7 @@ DONE within verified scope; [complete release commentary](BACKLOG_MONITORING_V2_
 
 Activated five-block mission and shared allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: truthful resumed-finalization and long-operation progress. [Evidence](docs/PRODUCT_END_TO_END.md).
+Question-to-dossier IN PROGRESS: printable current research answers locally verified; exact Core activation tracked separately. [Scope and evidence](docs/PRODUCT_END_TO_END.md#print-the-current-research-answer).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).

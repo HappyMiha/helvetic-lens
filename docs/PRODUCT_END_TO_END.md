@@ -4065,3 +4065,46 @@ Ruff, diff checks and independent implementation review pass. No production
 research, provider inference, accepted dossier replay or client deployment was
 needed. Exact Core activation is recorded in the parent release checkpoint;
 broader question-to-dossier acceptance remains open.
+
+## Print the current research answer
+
+Scope recorded 5 October, MV2-020/023. Both product clients open the shared Core
+brief endpoint for Print dossier. It currently prints legacy discussion answers
+but omits the modern investigation answer shown in the dossier overview.
+Include the same latest exploratory research, with its exact cited passages,
+source URLs, locators, counterevidence and real limitations, before administrative
+context. Preserve older answers during continuation only through the existing
+authorized retained-reading projection and label their original question/date.
+Never present a private draft or a withdrawn answer as a printable fallback.
+
+Dependencies/source readiness: existing authenticated dossier access, latest
+exploration selection and the current investigation payload with retained reading.
+No source acquisition, inference, new credentials, client changes or JSON export
+changes are needed. Existing source rights and evidence-version checks apply.
+
+Acceptance: a modern dossier with no legacy threads prints its complete projected
+answer and evidence; partial/conflicting answers remain qualified; failed and
+unfinished updates retain only clearly labelled saved work. Changed/revoked evidence,
+cross-product access and other accounts cannot expose the answer. Escape all
+dynamic HTML, preserve legacy notes/actions and the private no-store response.
+Run focused endpoint regressions, API lint and the backlog guard, then publish
+through the normal Core release and verify its exact production identity.
+
+Implemented using the existing authorized investigation payload. The answer now
+precedes dossier context, with printable exact passages, original links, locators,
+counterevidence and named gaps. Earlier answers retain their question and date;
+failed replacement and pending verification notices remain explicit. Preliminary
+findings retain their analogy qualification. Planned source checks stay separate
+from answer gaps, and incomplete document reading/analysis remains visible.
+The printed Legal heading uses the current product name. Legacy discussion,
+notes, reviews, actions and the JSON export are preserved.
+
+Validation: 11 new endpoint scenarios passed across both products, plus 9 existing
+operations, accepted source-analysis and backlog checks. Cases cover current and
+retained answers, failed updates, permission/SHA/passage withdrawal, cross-product
+and cross-account denial, anonymous access, private draft suppression, exact
+quotations, HTML escaping and the absence of model calls or research-state writes.
+Exact API Ruff and diff checks passed; independent review approved the implementation
+after preserving the preliminary analogy label. Tests use only fictional local
+records and scripted providers. Exact normal-release activation is recorded in the
+parent checkpoint; no accepted personal investigation was rerun.
