@@ -1,5 +1,6 @@
 """A current public research checkpoint, bounded by the actual worker receipt."""
 from datetime import UTC, datetime, timedelta
+from math import isfinite
 
 from . import product_source_recovery as recovery
 from .db import utcnow
@@ -15,12 +16,15 @@ PURPOSE_CONTRACT = "research-purpose/v1"
 PHASES = {"plan", "search", "gate", "gate_review", "read", "extract", "reflect", "orient", "brief", "compare", "reformulate", "document_review"}
 
 
-def record(run, job, state, work):
+def record(run, job, state, work, *, lease_seconds):
     if (run.research_state or {}).get("exploration", {}).get("activity_contract") != CONTRACT:
         return
+    started = datetime.fromisoformat(state["steps"][-1]["started_at"])
     state["current_activity"] = {"contract": CONTRACT, "step_id": work["token"],
         "job_id": job.id, "leased_at": iso(job.leased_at),
-        "expires_at": iso(utcnow() + timedelta(seconds=work["deadline_seconds"]))}
+        "generation": work["generation"], "lease_owner": job.lease_owner,
+        "lease_seconds": lease_seconds,
+        "expires_at": iso(started + timedelta(seconds=work["deadline_seconds"]))}
     if run.research_state["exploration"].get("purpose_contract") == PURPOSE_CONTRACT:
         question = next((q for q in run.research_state["questions"]
             if q["id"] == state.get("question_id") and q.get("branch_id") == work["branch_id"]), None)
@@ -120,7 +124,16 @@ def projection(session, run, available, *, invalid=False):
     job = session.get(Job, run.job_id) if run.job_id else None
     try:
         expiry = datetime.fromisoformat(receipt["expires_at"])
-        if expiry.tzinfo is None:
+        started = datetime.fromisoformat(steps[-1]["started_at"])
+        deadline = steps[-1]["deadline_seconds"]
+        lease_seconds = receipt["lease_seconds"]
+        # Old receipts do not establish current generation/lease ownership.
+        if (expiry.tzinfo is None or started.tzinfo is None
+                or type(receipt.get("generation")) is not int
+                or not isinstance(receipt.get("lease_owner"), str)
+                or type(lease_seconds) is not int or not 30 <= lease_seconds <= 3600
+                or type(deadline) not in (int, float) or not isfinite(deadline)
+                or not 0 < deadline <= lease_seconds):
             return value
         expiry = expiry.astimezone(UTC)
     except (KeyError, ValueError, TypeError):
@@ -131,13 +144,20 @@ def projection(session, run, available, *, invalid=False):
             or job.type != "product_investigation" or job.organization_id != run.organization_id
             or job.state != "running" or not job.lease_owner or job.cancel_requested
             or not job.leased_at or receipt.get("leased_at") != iso(job.leased_at)
-            or remaining <= 0 or remaining > 90000):
+            or receipt["generation"] != run.generation or receipt["lease_owner"] != job.lease_owner
+            or not job.heartbeat_at or started > now
+            or expiry != started + timedelta(seconds=deadline) or remaining <= 0):
+        return {**value, "status": "stale"}
+    leased = job.leased_at.replace(tzinfo=job.leased_at.tzinfo or UTC)
+    heartbeat = job.heartbeat_at.replace(tzinfo=job.heartbeat_at.tzinfo or UTC)
+    lease_remaining = int(((heartbeat + timedelta(seconds=lease_seconds)) - now).total_seconds() * 1000)
+    if heartbeat < leased or heartbeat > now or lease_remaining <= 0:
         return {**value, "status": "stale"}
     latest = max(available.values(), key=lambda source: (source.created_at.replace(tzinfo=source.created_at.tzinfo or UTC).timestamp(), source.id), default=None)
     return {**value, "status": "working", "phase": branch.phase,
         "question": question["question"] if question else run.question,
         "purpose": purpose(session, run, question, receipt, available),
-        "observed_at": iso(now), "valid_for_ms": remaining,
+        "observed_at": iso(now), "valid_for_ms": min(remaining, lease_remaining, 90000),
         "checking_alternative": recovery.alternative(state, branch.phase),
         "testing_query": bool(state.get("query_recovery", {}).get("query")) and branch.phase == "search",
         "latest_source": {"id": latest.id, "title": latest.title, "url": latest.url,

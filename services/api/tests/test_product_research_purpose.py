@@ -14,6 +14,7 @@ from test_product_iterative_research import complete
 from test_product_research_activity import current, projected
 
 from helvetic_lens import product_exploration, product_iterative_steps
+from helvetic_lens import product_exploration_activity as activity
 from helvetic_lens.product_investigation_models import (
     ClaimEvidence,
     DossierClaim,
@@ -113,6 +114,12 @@ def test_unverifiable_purpose_never_reconstructs_an_explanation(signed, monkeypa
                 saved.research_state = state
                 session.commit()
             value = projected(service, run)
+            if change == 'missing':
+                # The recorded public query also binds purpose: changing it
+                # invalidates the full view, independently of this fallback.
+                assert value == {'contract': activity.CONTRACT, 'status': 'evidence_changed'}
+                with service.db.session() as session:
+                    value = activity.projection(session, session.get(Investigation, run['id']), {})
             assert value['status'] == 'working' and value['purpose'] is None
             assert 'PRIVATE' not in json.dumps(value)
             observed.append(value)

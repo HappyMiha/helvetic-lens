@@ -76,6 +76,10 @@ def test_failed_answer_update_retains_previous_dossier_and_private_candidate_for
     url = root + '/investigations/' + run['id']
     retry = post(client, url + '/control', {'action': 'retry', 'expected_revision': delivered['revision']})
     assert retry.status_code == 200, retry.text
+    assert retry.json()['exploration']['mission']['stage'] == 'synthesizing'
+    assert retry.json()['exploration']['mission']['answer'] == previous
+    assert retry.json()['exploration']['current_activity']['status'] == 'waiting'
+    assert private not in retry.text
     failed = finish(client, service, root, retry.json())
     assert failed['status'] == 'failed' and failed['retry']['available']
     assert failed['exploration']['mission']['stop'] == 'answer_unavailable'
@@ -92,6 +96,10 @@ def test_failed_answer_update_retains_previous_dossier_and_private_candidate_for
     assert len(calls) == 2, 'A failed update must wait for the ordinary explicit retry'
     retry = post(client, url + '/control', {'action': 'retry', 'expected_revision': failed['revision']})
     assert retry.status_code == 200, retry.text
+    assert retry.json()['exploration']['mission']['stage'] == 'synthesizing'
+    assert retry.json()['exploration']['mission']['answer'] == previous
+    assert retry.json()['exploration']['current_activity']['status'] == 'waiting'
+    assert private not in retry.text
     completed = finish(client, service, root, retry.json())
     assert completed['id'] == run['id'] and completed['status'] == 'completed'
     assert len(calls) == 3 and not completed['retry']['available']

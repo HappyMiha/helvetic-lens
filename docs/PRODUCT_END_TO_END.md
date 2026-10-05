@@ -4015,3 +4015,53 @@ keeps provenance and all five acquisition/reading states separate from substanti
 answer gaps. Independent Core and reader reviews found no blocker. Exact-release
 activation and the final read-only production projection check are recorded in
 the parent release checkpoint; broader architecture acceptance remains open.
+
+## Truthful resumed research progress
+
+Scope recorded 5 October, MV2-020. The accepted personal-dossier recovery exposed
+a stale deepening label during a resumed final briefing. Retry requeues an existing
+brief branch, bypassing the new-brief scheduler that normally records synthesizing.
+A separate confirmed defect rejects current activity whenever its remaining
+operation exceeds 90 seconds, although admitted operations can run longer.
+
+Derive the displayed synthesis stage from current active branch work without
+publishing private synthesis drafts or changing research scheduling. Only an
+active mission with no stop and exclusively brief work may show synthesis; mixed
+source work, paused/terminal runs, and changed-evidence fences remain authoritative.
+Keep stored checkpoints and previous validated answers unchanged. A long live
+operation should have a short renewable display lifetime, bounded by both its
+actual operation expiry and current job ownership/heartbeat, rather than being
+mistaken for stale activity. Persist generation, owner and lease-duration binding
+with new activity receipts; older unbound receipts remain conservative. Keep the
+existing public activity contract and its maximum 90-second display lifetime.
+
+Dependencies/source readiness: existing branch phases, job lease, activity receipt,
+mission projection and unchanged Legal/Pharma readers. No sources, credentials,
+providers or models change. Acceptance: ordinary failed-brief retry and transition
+from mixed work to final briefing show synthesis while preserving the earlier
+answer and hiding private drafts. Long current operations show working with a
+short display lifetime; expired operations/leases, replaced ownership/generation,
+cancellation, pause, backoff and source withdrawal never imply active work.
+Use focused local regressions and existing reader contract tests, exact API lint
+and the backlog guard. Publish normally and verify the exact release. Do not rerun
+accepted personal dossiers or native evaluations to demonstrate this status fix.
+
+Implemented in the shared Core. Public mission projection derives synthesis from
+current brief-only work, after the existing evidence and access checks; persisted
+history and the previously validated answer stay unchanged. New activity receipts
+bind the operation, generation, lease owner and configured lease duration. Their
+public display lifetime is bounded by the real operation deadline, current
+heartbeat lease and the existing 90-second maximum, without extending research.
+
+Validation: 24 unique focused Core cases pass, including the backlog guard;
+10 existing relevant reader cases pass in each unchanged client. This includes
+ordinary failed-answer retries, mixed work, source withdrawal, private-draft
+suppression, 180/295-second operations and expired or replaced ownership.
+One existing purpose fixture failed identically against the prior implementation:
+a changed query-purpose binding correctly invalidates the complete view. The
+fixture now preserves that evidence-changed assertion and separately verifies
+missing-purpose suppression. Only its failed selector was repeated. Exact API
+Ruff, diff checks and independent implementation review pass. No production
+research, provider inference, accepted dossier replay or client deployment was
+needed. Exact Core activation is recorded in the parent release checkpoint;
+broader question-to-dossier acceptance remains open.

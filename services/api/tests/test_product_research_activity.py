@@ -11,7 +11,8 @@ from test_product_exploration import adapters, start
 from test_product_investigations import tick
 from test_product_iterative_research import complete
 
-from helvetic_lens import product_exploration, product_iterative_steps
+from helvetic_lens import jobs, product_exploration, product_iterative_steps
+from helvetic_lens import product_exploration_activity as activity
 from helvetic_lens.db import utcnow
 from helvetic_lens.models import Job
 from helvetic_lens.product_api import iso
@@ -27,6 +28,119 @@ def current(client, root, run):
 def projected(service, run):
     with service.db.session() as session:
         return product_exploration.projection(session, session.get(Investigation, run['id']))['current_activity']
+
+
+@pytest.fixture
+def owned_activity(signed, monkeypatch):
+    """An actual claimed job and persisted operation, with no model execution."""
+    client, service, _, _ = signed
+    _, run, _ = start(client)
+    now = [utcnow()]
+    monkeypatch.setattr(activity, 'utcnow', lambda: now[0])
+    monkeypatch.setattr(jobs, 'utcnow', lambda: now[0])
+    with service.db.session() as session:
+        saved = session.get(Investigation, run['id'])
+        job = jobs.claim(session, saved.job_id, 'activity-owner')
+        assert job is not None
+        saved.status = 'running'
+        branch = InvestigationBranch(organization_id=saved.organization_id, dossier_id=saved.dossier_id,
+            investigation_id=saved.id, query='Finish the current answer', reason='Current activity fixture',
+            phase='brief', status='running', checkpoint={})
+        session.add(branch)
+        session.flush()
+        work = {'branch_id': branch.id, 'token': 'activity-token', 'generation': saved.generation,
+            'deadline_seconds': 295}
+        state = {'research_control': True, 'inflight': work['token'], 'steps': [{
+            'id': work['token'], 'phase': branch.phase, 'status': 'running',
+            'started_at': iso(now[0]), 'deadline_seconds': work['deadline_seconds']}]}
+        activity.record(saved, job, state, work, lease_seconds=300)
+        branch.checkpoint = state
+        session.commit()
+        return service, saved.id, job.id, branch.id, now
+
+
+@pytest.mark.parametrize('seconds', [180, 295])
+def test_long_activity_keeps_exact_deadline_with_short_read_only_display_receipt(owned_activity, seconds):
+    service, run_id, job_id, branch_id, now = owned_activity
+    with service.db.session() as session:
+        run, job = session.get(Investigation, run_id), session.get(Job, job_id)
+        branch = session.get(InvestigationBranch, branch_id)
+        state = deepcopy(branch.checkpoint)
+        state['steps'][-1]['deadline_seconds'] = seconds
+        work = {'branch_id': branch.id, 'token': state['inflight'],
+            'generation': run.generation, 'deadline_seconds': seconds}
+        activity.record(run, job, state, work, lease_seconds=300)
+        branch.checkpoint = state
+        session.commit()
+        before = deepcopy(branch.checkpoint)
+        first = activity.projection(session, run, {})
+        assert first['status'] == 'working' and first['valid_for_ms'] == 90000
+        assert first['question'] == run.question
+        assert not {'generation', 'lease_owner', 'lease_seconds', 'expires_at', 'job_id', 'step_id'} & first.keys()
+        now[0] += timedelta(seconds=seconds - 7)
+        job.heartbeat_at = now[0]
+        assert activity.projection(session, run, {})['valid_for_ms'] == 7000
+        now[0] += timedelta(seconds=7)
+        job.heartbeat_at = now[0]
+        assert activity.projection(session, run, {}) == {'contract': activity.CONTRACT, 'status': 'stale'}
+        assert branch.checkpoint == before, 'Projection and lease renewal must not rewrite the operation deadline'
+
+
+def test_activity_ttl_respects_current_heartbeat_and_renewal_without_extending_operation(owned_activity):
+    service, run_id, job_id, _, now = owned_activity
+    with service.db.session() as session:
+        run, job = session.get(Investigation, run_id), session.get(Job, job_id)
+        job.leased_at -= timedelta(seconds=280)
+        job.heartbeat_at = job.leased_at
+        branch = session.get(InvestigationBranch, owned_activity[3])
+        state = deepcopy(branch.checkpoint)
+        state['current_activity']['leased_at'] = iso(job.leased_at)
+        branch.checkpoint = state
+        assert activity.projection(session, run, {})['valid_for_ms'] == 20000
+        now[0] += timedelta(seconds=20)
+        assert activity.projection(session, run, {})['status'] == 'stale'
+        job.heartbeat_at = now[0]
+        assert activity.projection(session, run, {})['valid_for_ms'] == 90000
+        assert branch.checkpoint['current_activity']['expires_at'] == state['current_activity']['expires_at']
+
+
+@pytest.mark.parametrize('change, expected', [
+    ('owner', 'stale'), ('generation', 'stale'), ('lease_replaced', 'stale'), ('cancel', 'stale'),
+    ('heartbeat_missing', 'stale'), ('heartbeat_future', 'stale'), ('inflated_expiry', 'stale'),
+    ('step_changed', 'unknown'), ('invalid_duration', 'unknown'), ('invalid_lease', 'unknown'),
+    ('legacy_generation', 'unknown'), ('legacy_owner', 'unknown'), ('legacy_lease', 'unknown'),
+])
+def test_activity_requires_exact_current_operation_generation_and_live_lease(owned_activity, change, expected):
+    service, run_id, job_id, branch_id, now = owned_activity
+    with service.db.session() as session:
+        run, job = session.get(Investigation, run_id), session.get(Job, job_id)
+        branch = session.get(InvestigationBranch, branch_id)
+        state = deepcopy(branch.checkpoint)
+        if change == 'owner':
+            job.lease_owner = 'replacement-owner'
+        elif change == 'generation':
+            run.generation += 1
+        elif change == 'lease_replaced':
+            job.leased_at += timedelta(seconds=1)
+        elif change == 'cancel':
+            job.cancel_requested = True
+        elif change == 'heartbeat_missing':
+            job.heartbeat_at = None
+        elif change == 'heartbeat_future':
+            job.heartbeat_at = now[0] + timedelta(seconds=1)
+        elif change == 'inflated_expiry':
+            state['current_activity']['expires_at'] = iso(now[0] + timedelta(hours=1))
+        elif change == 'step_changed':
+            state['steps'][-1]['id'] = 'replacement-operation'
+        elif change == 'invalid_duration':
+            state['steps'][-1]['deadline_seconds'] = float('inf')
+        elif change == 'invalid_lease':
+            state['current_activity']['lease_seconds'] = 3601
+        else:
+            state['current_activity'].pop({'legacy_generation': 'generation',
+                'legacy_owner': 'lease_owner', 'legacy_lease': 'lease_seconds'}[change])
+        branch.checkpoint = state
+        assert activity.projection(session, run, {}) == {'contract': activity.CONTRACT, 'status': expected}
 
 
 @pytest.mark.parametrize('product', ['legal', 'pharma'])

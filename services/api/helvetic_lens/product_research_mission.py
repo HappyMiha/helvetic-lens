@@ -576,6 +576,13 @@ def project(session, run):
     state["knowledge"] = knowledge(session, run) if state["answer"] else None
     from .product_document_reading import projection as reading_projection
 
-    state["documents"] = [reading for branch in rows(session, InvestigationBranch, run)
+    branches = rows(session, InvestigationBranch, run)
+    active = [branch for branch in branches if branch.status in ACTIVE]
+    # Retrying an existing briefing bypasses schedule(), and its saved mission
+    # stage can still describe the previous round. Project current work without
+    # rewriting that history or interpreting a private synthesis draft.
+    if run.status in ACTIVE and not state.get("stop") and active and all(branch.phase == "brief" for branch in active):
+        state["stage"] = "synthesizing"
+    state["documents"] = [reading for branch in branches
         for reading in reading_projection(branch.checkpoint, session, run)]
     return state

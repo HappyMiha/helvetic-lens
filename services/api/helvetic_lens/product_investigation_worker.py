@@ -596,7 +596,7 @@ async def execute(service, job_id, worker):
                         research_gateway.record(service.settings, state, work)
                         check_coverage.record(state, work)
                         queries.record(session, run, branch, state, work)
-                        activity.record(run, job, state, work)
+                        activity.record(run, job, state, work, lease_seconds=service.settings.job_lease_seconds)
                         checkpoint(session, run, branch, "step_started", state)
         if not work:
             finish_or_yield(session, run, job)
