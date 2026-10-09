@@ -163,6 +163,10 @@ def routes(router, service, actor):
                     fail("This context request was already used for another change.", 409, "product_revision_conflict")
                 return current
             require_revision(row, data.expected_revision)
+            if values == current["values"]:
+                # Empty and unchanged forms are reads, not new subject history.
+                # Keep authorization, replay-key and revision checks above this.
+                return current
             before = row.domain_context_json or {}
             row.domain_context_json = {"domain": pack.domain, "pack_id": pack.id, "pack_version": pack.version,
                 "schema_id": pack.context_schema_id, "values": values, "updated_at": iso(utcnow())}

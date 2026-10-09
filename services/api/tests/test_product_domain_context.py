@@ -31,6 +31,77 @@ def update(client, root, values, **changes):
 
 
 @pytest.mark.parametrize('product', ['pharma', 'legal', 'loyer'])
+def test_empty_and_normalized_unchanged_saves_preserve_history_and_real_clear(signed, product):
+    client, service, _, model = signed
+    created = post(client, f'/api/products/{product}/dossiers',
+                   {'creation_key': str(uuid4()), 'config': config()}).json()
+    root = f'/api/products/{product}/dossiers/{created["id"]}'
+    initial = client.get(root + '/domain-context').json()
+    field = 'product_names' if product == 'pharma' else 'parties'
+
+    def history():
+        with service.db.session() as session:
+            return list(session.scalars(select(DossierEntry).where(
+                DossierEntry.dossier_id == created['id'], DossierEntry.kind == 'domain_context')))
+
+    # Opening an optional form and pressing save does not create an apparent update.
+    empty, empty_body = update(client, root, {})
+    assert empty.status_code == 200 and empty.json() == initial
+    assert put(client, root + '/domain-context', empty_body).json() == initial
+    explicit_empty, _ = update(client, root, initial['values'])
+    assert explicit_empty.json() == initial and history() == []
+    with service.db.session() as session:
+        assert session.get(ProductDossier, created['id']).domain_context_json == {}
+
+    changed, changed_body = update(client, root, {field: ['Name A', 'Name B']})
+    assert changed.status_code == 200 and changed.json()['revision'] == initial['revision'] + 1
+    saved = changed.json()
+    unchanged, _ = update(client, root, {field: [' Name A ', 'Name A', 'Name B ']})
+    assert unchanged.status_code == 200 and unchanged.json() == saved
+    assert len(history()) == 1
+    # Equality must not bypass a concurrent change or allow an old blank request to erase it.
+    assert put(client, root + '/domain-context', empty_body).status_code == 409
+    stale, _ = update(client, root, saved['values'], expected_revision=initial['revision'])
+    assert stale.status_code == 409
+
+    cleared, clear_body = update(client, root, {})
+    cleared_payload = cleared.json()
+    assert cleared.status_code == 200 and cleared_payload['revision'] == saved['revision'] + 1
+    assert cleared_payload['saved'] and cleared_payload['updated_at']
+    assert all(not value for value in cleared_payload['values'].values())
+    assert len(history()) == 2
+    clear_entry = next(entry for entry in history() if entry.data_json['revision'] == cleared_payload['revision'])
+    assert clear_entry.data_json['before']['values'] == saved['values']
+    assert clear_entry.data_json['after']['values'] == cleared_payload['values']
+    assert put(client, root + '/domain-context', clear_body).json() == cleared_payload
+    assert update(client, root, {})[0].json() == cleared_payload
+    # A recorded successful write still replays without restoring its old values.
+    assert put(client, root + '/domain-context', changed_body).json() == cleared_payload
+    assert len(history()) == 2 and model.calls == []
+
+
+def test_legacy_empty_snapshot_is_retained_without_another_fake_update(signed):
+    client, service, _, _ = signed
+    doc, _ = create(client)
+    root = ROOT + '/' + doc['id']
+    current = client.get(root + '/domain-context').json()
+    legacy = {key: current[key] for key in ['domain', 'pack_id', 'pack_version', 'schema_id', 'values']}
+    legacy['updated_at'] = '2026-09-28T12:00:00+00:00'
+    with service.db.session() as session:
+        row = session.get(ProductDossier, doc['id'])
+        row.domain_context_json = legacy
+        session.commit()
+    before = client.get(root + '/domain-context').json()
+    result, _ = update(client, root, {})
+    assert result.status_code == 200 and result.json() == before
+    assert before['saved'] and before['updated_at'] == legacy['updated_at']
+    with service.db.session() as session:
+        assert session.get(ProductDossier, doc['id']).domain_context_json == legacy
+        assert session.scalar(select(DossierEntry).where(
+            DossierEntry.dossier_id == doc['id'], DossierEntry.kind == 'domain_context')) is None
+
+
+@pytest.mark.parametrize('product', ['pharma', 'legal', 'loyer'])
 def test_optional_typed_context_roundtrip_clear_audit_and_old_work_compatibility(signed, product):
     client, service, identity, model = signed
     created = post(client, f'/api/products/{product}/dossiers',
@@ -128,6 +199,8 @@ def test_current_guest_roles_and_revocation_fence_reads_writes_and_replays(signe
     switch(client, cookies)
     accept(client, root, item)
     assert client.get(root + '/domain-context').status_code == 200
+    empty, _ = update(client, root, {})
+    assert empty.status_code == (200 if role == 'EDITOR' else 403), empty.text
     result, body = update(client, root, {'product_names': ['Guest recorded name']})
     assert result.status_code == (200 if role == 'EDITOR' else 403), result.text
     with service.db.session(include_all_organizations=True) as session:
