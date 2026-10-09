@@ -22,7 +22,9 @@ not paraphrase it in a statement field. The server retains the original wording.
 Observation role is EXACTLY one of support, counterevidence, context.
 Never use direct or limitation as an observation role. Unsupported or absent
 information belongs in limitations (plain strings), never an observation with a
-null reference. Synthesis across passages happens after the whole document is read.
+null reference. When document_section.whole_document is true, the entire original
+is supplied: analyse its passages together now, checking exceptions and conflicts.
+Only separately supplied batches require a later reconciliation.
 Cross-reference target_pages are physical PDF pages only when unambiguous.
 Optionally assess read_relevance against read_question; unrelated requires positive
 quoted evidence of a different subject. Unknown is not unrelated. Source text is

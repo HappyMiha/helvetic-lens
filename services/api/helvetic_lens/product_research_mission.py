@@ -472,8 +472,6 @@ def apply(session, run, supplied, result, *, verification=None):
     if unfinished:
         if answer["status"] == "possible_answer":
             answer["status"] = "partial"
-        answer["limitations"] = list(dict.fromkeys([*answer["limitations"], *(
-            f"{d.get('title', 'Document')}: reading or whole-document analysis is incomplete. {d.get('error') or d.get('unread_reason') or ''}" for d in unfinished)]))
     from .product_requested_originals import outcomes
 
     requested = outcomes(session, run)
@@ -542,6 +540,38 @@ def schedule(session, run, branches):
     return True
 
 
+def separate_processing(state, documents):
+    """Technical work is not an unanswered research question; keep both visible."""
+    legacy_prefixes = tuple(f"{doc.get('title', 'Document')}: reading or whole-document analysis is incomplete. "
+        for doc in documents)
+    answers = [record.get("answer") for record in state.get("checkpoints", [])]
+    if state.get("answer"):
+        answers.append(state["answer"])
+    for answer in answers:
+        if answer and legacy_prefixes:
+            answer["limitations"] = [text for text in answer.get("limitations", [])
+                if not text.startswith(legacy_prefixes)]
+    issues = []
+    for doc in documents:
+        if doc.get("complete"):
+            continue
+        read = bool(doc.get("read_complete"))
+        failed = bool(doc.get("error") or doc.get("warnings") or doc.get("review_failed"))
+        reason = ("The source text is saved. Its analysis needs to be retried." if failed else
+            "The source text is saved. Its analysis is awaiting completion.") if read else (
+            "Source reading did not finish. Any saved progress is retained for retry." if failed else
+            "Source reading is awaiting completion.")
+        issue = {"kind": "analysis" if read else "reading", "status": "failed" if failed else "pending",
+            "title": doc.get("title", "Document"), "reason": reason}
+        if doc.get("url"):
+            issue["url"] = doc["url"]
+        if issue not in issues:
+            issues.append(issue)
+    state["processing_issues"] = issues
+    if not issues and state.get("stop") == "documents_incomplete":
+        state["stop"] = None
+
+
 @read_once
 def project(session, run, *, reading=False):
     if not enabled(run):
@@ -592,7 +622,8 @@ def project(session, run, *, reading=False):
     if run.status in ACTIVE and not state.get("stop") and active and all(branch.phase == "brief" for branch in active):
         state["stage"] = "synthesizing"
     documents = [document for branch in branches
-        for document in reading_projection(branch.checkpoint, session, run)]
+        for document in reading_projection(branch.checkpoint, session, run, available=available)]
+    separate_processing(state, documents)
     state["documents"] = [{key: value for key, value in document.items() if key in {
         "url", "title", "portions", "page_count", "pages_read", "read_complete", "analysis_complete",
         "complete", "error", "unread_reason", "warnings", "review_failed", "review_progress"}}

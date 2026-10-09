@@ -421,14 +421,20 @@ async def execute(service, job_id, worker):
             invalidate_reference_reviews,
             next_document,
             refresh_duplicate_analysis,
+            refresh_single_document_analysis,
         )
         branches = rows(session, InvestigationBranch, run)
+        single_sources = None
         for candidate in branches:
             candidate_state = deepcopy(candidate.checkpoint)
             previous_sources = len(candidate_state.get("source_ids", []))
+            if single_sources is None and any(len(doc.get("source_ids", [])) == 1
+                    for doc in candidate_state.get("document_reads", {}).values()):
+                single_sources = exploration.sources(session, run)
+            single_changed = refresh_single_document_analysis(session, run, candidate_state, available=single_sources)
             duplicate_changed = refresh_duplicate_analysis(session, run, candidate_state, schedule_missing=True)
             invalidated = invalidate_reference_reviews(session, run, candidate_state)
-            if duplicate_changed or invalidated:
+            if single_changed or duplicate_changed or invalidated:
                 candidate.checkpoint = candidate_state
                 if invalidated and candidate.status == "completed":
                     candidate.status, candidate.phase = "queued", "document_review"
@@ -935,6 +941,7 @@ async def execute(service, job_id, worker):
                     if state.get("recurring_web") or work.get("research"):
                         source.snapshot = {**source.snapshot, "analysis_completed": True, "analysis_completed_at": iso(utcnow())}
                     applicability.remember(run, source, scoped)
+                    document_analysis.refresh_single_document_analysis(session, run, state, analysed_source_id=source.id)
                     next_extraction(state)
                     state["analysed"] = state.get("analysed", 0) + 1
         if failed and qualified_delivery:

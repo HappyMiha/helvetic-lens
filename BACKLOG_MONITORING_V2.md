@@ -16,7 +16,7 @@ DONE; [release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 Mission and allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: [saved reading performance scope](docs/SAVED_RESEARCH_READING.md); [prior print evidence](docs/PRODUCT_END_TO_END.md#print-the-current-research-answer).
+Question-to-dossier IN PROGRESS: [document analysis simplification](docs/SINGLE_DOCUMENT_ANALYSIS.md); [prior print evidence](docs/PRODUCT_END_TO_END.md#print-the-current-research-answer).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).
@@ -3002,7 +3002,7 @@ broader human and full-spec gates remain open.
 
 ### MV2-021 — Workspace: Impact Inbox, decisions and Impact Matrix
 
-Current scoped repair: [saved reading performance](docs/SAVED_RESEARCH_READING.md).
+Current scope: [whole-document analysis](docs/SINGLE_DOCUMENT_ANALYSIS.md).
 
 **Topic suggestions:** [scope and acceptance](docs/PRODUCT_TOPIC_SUGGESTIONS.md).
 

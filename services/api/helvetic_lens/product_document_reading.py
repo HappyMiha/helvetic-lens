@@ -1,4 +1,4 @@
-"""Complete immutable originals, then analyse all sections and reconcile them."""
+"""Read immutable originals completely, preserving progress for large documents."""
 from copy import deepcopy
 
 from . import product_research_mission as mission
@@ -46,7 +46,7 @@ def remember(session, run, state, work, result):
         "analysis_complete": False, "characters_read": previous.get("characters_read", 0) + reading["characters_read"],
         "pages_read": (reading["pages"][1] if not reading["next_cursor"] or reading["next_cursor"]["offset"] == 0
             else reading["pages"][0] - 1) if reading.get("pages") else None,
-        "unread_reason": reading.get("unread_reason") or ("Some pages could not be read." if warnings else "Section analysis and whole-document review are pending.")}
+        "unread_reason": reading.get("unread_reason") or ("Some pages could not be read." if warnings else "Document analysis is pending.")}
     if result.get("_retained_document"):
         saved["retained_document"] = result["_retained_document"]
     if work.get("retained_capture_origins"):
@@ -109,18 +109,24 @@ def failed_analysis(state):
         for doc in state.get("document_reads", {}).values()))
 
 
-def projection(state, session=None, run=None):
+def projection(state, session=None, run=None, *, available=None):
     # Parser buffers and storage keys are internal, never model or reader input.
-    from .product_document_analysis import refresh_duplicate_analysis
+    from .product_document_analysis import (
+        SINGLE_DOCUMENT_CONTRACT,
+        refresh_duplicate_analysis,
+        refresh_single_document_analysis,
+    )
 
-    projected = {"document_reads": deepcopy(state.get("document_reads", {}))}
+    projected = {key: deepcopy(state.get(key, {} if key == "document_reads" else []))
+        for key in ("document_reads", "source_ids", "failed_extract_indices")}
     if session is not None and run is not None:
+        refresh_single_document_analysis(session, run, projected, available=available)
         refresh_duplicate_analysis(session, run, projected)
     else:
         for reading in projected["document_reads"].values():
-            if reading.get("duplicate_analysis"):
+            if reading.get("duplicate_analysis") or reading.get("reconciliation", {}).get("contract") == SINGLE_DOCUMENT_CONTRACT:
                 reading.update(analysis_complete=False, complete=False,
-                    unread_reason="Current analysis of the identical original has not been checked.")
+                    unread_reason="Current document analysis has not been checked.")
                 reading.pop("reconciliation", None)
     return [{k: v for k, v in reading.items() if k not in {"retained_document", "retained_capture_origins", "buffer", "source_ids", "review_tree", "duplicate_analysis"}}
         for reading in projected["document_reads"].values()]
