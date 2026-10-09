@@ -487,7 +487,7 @@ def validate_reconsiderations(session, run, supplied, result):
     return changes, list(dependencies.values())
 
 
-def retained_reading(session, run, current):
+def retained_reading(session, run, current, *, reading=False):
     """Read-only continuity, separate from model inputs and publication payloads."""
     from . import product_exploration_progress as progress
     from . import product_research_mission as mission
@@ -512,7 +512,7 @@ def retained_reading(session, run, current):
     selected = selected or fallback
     if selected is None:
         return None
-    previous = projection(session, selected)
+    previous = projection(session, selected, reading=reading)
     if not previous or previous["status"] == "evidence_changed" or not previous["sources"]:
         return None
     if not ((previous.get("mission") or {}).get("answer") or previous.get("briefing") or (previous.get("orientation") or {}).get("briefing")
@@ -527,13 +527,14 @@ def retained_reading(session, run, current):
         "updated_at": iso(selected.updated_at), "exploration": content}
 
 
-def projection(session, run):
+def projection(session, run, *, reading=False):
     if not enabled(run):
         return None
     value = deepcopy(run.research_state["exploration"])
     from .product_research_mission import project as mission_project
+    from .product_research_mission import reading_projection
 
-    value["mission"] = mission_project(session, run)
+    value["mission"] = reading_projection(session, run) if reading else mission_project(session, run)
     value.pop("reply_fingerprint", None)
     value.pop("reply_key", None)
     value.pop("adaptive_dependencies", None)

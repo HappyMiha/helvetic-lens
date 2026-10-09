@@ -93,10 +93,10 @@ def test_direct_current_knowledge_reuses_query_and_sees_later_review_and_exclusi
         link(session, runs, ids, evidence)
         run = session.get(Investigation, runs[-1])
         before = knowledge.project.__wrapped__(session, run)
-        assert len(before["claims"]) == len(builds) == 2
+        assert len(before["claims"]) == 2 and len(builds) == 0
         builds.clear()
         current = knowledge.project(session, run)
-        assert current == before and len(builds) == 1
+        assert current == before and len(builds) == 0
         assert next(c for c in current["claims"] if c["id"] == ids[0])["later_evidence"]
 
     assert post(client, root + "/claim-reviews/review", body(item(client, root, ids[1]))).status_code == 200
@@ -116,3 +116,17 @@ def test_direct_current_knowledge_reuses_query_and_sees_later_review_and_exclusi
         assert sources[0] not in {s["id"] for group in visible["document_origins"] for s in group["sources"]}
         assert ids[0] not in {c["id"] for c in visible["claims"]}
         assert next(c for c in visible["claims"] if c["id"] == ids[1])["later_evidence"] == []
+
+
+def test_compact_saved_read_reuses_dossier_authorization_and_never_calls_models(signed):
+    client, _, doc, root, _, _, runs, _, _ = seed(signed)
+    route = root + "/investigations/" + runs[-1] + "/reading"
+    response = client.get(route)
+    assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
+    assert response.json()["view"] == "reading"
+    wrong = route.replace(doc["id"], str(uuid4()))
+    assert client.get(wrong).status_code == 404
+    assert client.get(route.replace("/pharma/", "/legal/")).status_code == 404
+    client.cookies.clear()
+    assert client.get(route).status_code == 401
+    assert signed[3].calls == []

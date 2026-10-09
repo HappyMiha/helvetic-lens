@@ -10,6 +10,7 @@ from .product_claim_review import projection as claim_review
 from .product_investigation_models import (
     ClaimChange,
     ClaimEvidence,
+    ClaimReview,
     DossierClaim,
     DossierEntity,
     Investigation,
@@ -47,9 +48,18 @@ def project(session, run):
     candidates = list(session.scalars(select(DossierClaim).where(DossierClaim.investigation_id.in_(run_ids))
         .order_by(DossierClaim.created_at.desc(), DossierClaim.id).limit(121)))
     truncated = truncated or len(candidates) > 120
+    # No human decision exists without a review row. Avoid reconstructing the
+    # entire comparison/provenance ledger just to return PROPOSED for each claim.
+    # Reviewed claims still use the exact evidence-fingerprint validity guard.
+    candidate_ids = [claim.id for claim in candidates[:120]]
+    reviewed = set(session.scalars(select(ClaimReview.claim_id).where(
+        ClaimReview.claim_id.in_(candidate_ids)).distinct()))
+    evidence_by_claim = {}
+    for evidence in session.scalars(select(ClaimEvidence).where(ClaimEvidence.claim_id.in_(candidate_ids))):
+        evidence_by_claim.setdefault(evidence.claim_id, []).append(evidence)
     claims = {}
     for claim in candidates[:120]:
-        evidence = list(session.scalars(select(ClaimEvidence).where(ClaimEvidence.claim_id == claim.id)))
+        evidence = evidence_by_claim.get(claim.id, [])
         if not evidence or any(e.source_id not in sources or not any(
                 p["passage"] == e.locator and e.quote in p["text"]
                 for p in sources[e.source_id].snapshot.get("excerpts", [])) for e in evidence):
@@ -57,7 +67,7 @@ def project(session, run):
         claims[claim.id] = {"id": claim.id, "investigation_id": claim.investigation_id,
             "statement": claim.statement, "revision": claim.revision, "status": claim.status,
             "reading_state": "superseded" if claim.status == "SUPERSEDED" else "contested" if claim.status == "CONTESTED" else "current",
-            "human_status": claim_review(session, claim)["human_status"], "later_evidence": [],
+            "human_status": claim_review(session, claim)["human_status"] if claim.id in reviewed else "PROPOSED", "later_evidence": [],
             "evidence": [{"source_id": e.source_id, "sha256": sources[e.source_id].sha256,
                 "quote": e.quote, "locator": e.locator, "relation": e.relation} for e in evidence[:6]]}
     for change in session.scalars(changes_query(run.dossier_id).where(

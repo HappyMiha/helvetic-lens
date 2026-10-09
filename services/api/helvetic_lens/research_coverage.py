@@ -26,7 +26,7 @@ def unresolved_questions(run, *, answer=None):
     return questions
 
 
-def project(session, run):
+def project(session, run, *, reading=False):
     branches = rows(session, InvestigationBranch, run)
     sources = rows(session, InvestigationSource, run)
     channels, executions, skipped_channels = [], [], []
@@ -83,8 +83,11 @@ def project(session, run):
         if source.url in candidates:
             candidates[source.url].update(source_id=source.id, read_status=state, analysis_status=analysis)
     from .product_research_mission import project as mission_projection
+
     # The mission reader owns the source/hash/quote fences for final gaps.
-    mission = mission_projection(session, run)
+    from .product_research_mission import reading_projection
+
+    mission = reading_projection(session, run) if reading else mission_projection(session, run)
     unresolved = unresolved_questions(run, answer=(mission or {}).get("answer"))
     omitted = sum(branch.checkpoint.get("candidate_counts", {}).get("outside_candidate_budget", 0) for branch in branches)
     failures = sum(e["status"] in {"unavailable", "interrupted"} for e in executions)
@@ -103,7 +106,7 @@ def project(session, run):
         "saved_evidence": {k: memory.get(k) for k in ("eligible_sources", "examined_sources", "selected_sources", "truncated", "method", "retrieval")},
         "channels": channels, "skipped_channels": skipped_channels, "sources": captured, "candidates": list(candidates.values()),
         "open_questions": unresolved, "stops": list(run.research_state.get("stops", [])),
-        "executions": executions,
+        **({} if reading else {"executions": executions}),
         "limitations": ["Coverage describes this bounded research episode, not the whole internet.",
             "Retained captures keep their original date; reuse is not a fresh source check.",
             "Empty search results and inaccessible sources do not establish absence."]}

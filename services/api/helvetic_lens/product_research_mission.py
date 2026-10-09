@@ -12,6 +12,7 @@ from .product_api import fail
 from .product_investigation_models import InvestigationBranch
 from .product_investigations import ACTIVE, citation, event, rows, scope
 from .product_operations import fingerprint
+from .research_read_view import read_once
 
 CONTRACT = "research-mission/v1"
 UNREAD_CANDIDATE_CHARACTERS = 8192
@@ -541,7 +542,8 @@ def schedule(session, run, branches):
     return True
 
 
-def project(session, run):
+@read_once
+def project(session, run, *, reading=False):
     if not enabled(run):
         return None
     from .product_requested_originals import outcomes
@@ -569,11 +571,17 @@ def project(session, run):
         if record is state["checkpoints"][-1]:
             record["answer"], _ = with_source_work(record["answer"], requested, previous_source_work)
     state["answer"] = state["checkpoints"][-1]["answer"] if state["checkpoints"] else None
+    if reading:
+        # All historical references above were validated before omitting the
+        # duplicate answers. The complete ledger remains in the full reader.
+        for record in state["checkpoints"]:
+            record.pop("answer", None)
+        state["knowledge_deferred"] = True
     state["question"] = run.question
     state.update(requested_view)
     from .product_current_knowledge import project as knowledge
 
-    state["knowledge"] = knowledge(session, run) if state["answer"] else None
+    state["knowledge"] = knowledge(session, run) if state["answer"] and not reading else None
     from .product_document_reading import projection as reading_projection
 
     branches = rows(session, InvestigationBranch, run)
@@ -583,6 +591,16 @@ def project(session, run):
     # rewriting that history or interpreting a private synthesis draft.
     if run.status in ACTIVE and not state.get("stop") and active and all(branch.phase == "brief" for branch in active):
         state["stage"] = "synthesizing"
-    state["documents"] = [reading for branch in branches
-        for reading in reading_projection(branch.checkpoint, session, run)]
+    documents = [document for branch in branches
+        for document in reading_projection(branch.checkpoint, session, run)]
+    state["documents"] = [{key: value for key, value in document.items() if key in {
+        "url", "title", "portions", "page_count", "pages_read", "read_complete", "analysis_complete",
+        "complete", "error", "unread_reason", "warnings", "review_failed", "review_progress"}}
+        for document in documents] if reading else documents
     return state
+
+
+@read_once
+def reading_projection(session, run):
+    """Reuse the checked answer once within one read-only response."""
+    return project(session, run, reading=True)

@@ -298,7 +298,7 @@ def page_result_visible(session, run):
         session, session.get(ProductDossier, run.dossier_id), trigger.source_json)
 
 
-def payload(session, run, *, include_retained=False):
+def payload(session, run, *, include_retained=False, reading=False):
     from .product_monitoring_research import trigger_for, trigger_payload
 
     trigger = trigger_for(session, run)
@@ -308,10 +308,10 @@ def payload(session, run, *, include_retained=False):
             **{key: [] for key in ("plans", "branches", "sources", "claims", "evidence", "entities", "relationships", "activity")}}
     from .research_read_view import read_view
 
-    return read_view(_readable_payload)(session, run, trigger, include_retained=include_retained)
+    return read_view(_readable_payload)(session, run, trigger, include_retained=include_retained, reading=reading)
 
 
-def _readable_payload(session, run, trigger, *, include_retained):
+def _readable_payload(session, run, trigger, *, include_retained, reading=False):
     from .product_claim_evolution import projection
     from .product_contributions import original, retryable_branches
     from .product_monitoring_outcomes import project as outcome
@@ -321,19 +321,27 @@ def _readable_payload(session, run, trigger, *, include_retained):
     from .research_coverage import project as coverage_manifest
 
     web_trigger = web_trigger_for(session, run)
-    changes = projection(session, run)
     from .product_exploration import adaptive_current
     from .product_exploration import projection as exploration_projection
     from .product_iterative_research import projection as research_projection
 
     adaptive_valid = adaptive_current(session, run)
-    exploration = exploration_projection(session, run)
+    exploration = exploration_projection(session, run, reading=reading)
     if include_retained and exploration is not None:
         from .product_exploration import retained_reading
 
-        retained = retained_reading(session, run, exploration)
+        retained = retained_reading(session, run, exploration, reading=reading)
         if retained is not None:
             exploration["retained_research"] = retained
+    if reading:
+        return {**summary(run), "view": "reading", "exploration": exploration,
+            "retry": {"available": bool(retryable_branches(session, run)) if adaptive_valid else False},
+            "coverage_manifest": coverage_manifest(session, run, reading=True) if adaptive_valid else None,
+            "branches": [{"id": b.id, "query": b.query, "status": b.status, "phase": b.phase, "reason": b.reason,
+                "error": b.checkpoint.get("error"),
+                "steps": [{"phase": step["phase"], "status": step["status"]} for step in public_steps(b.checkpoint)]}
+                for b in rows(session, InvestigationBranch, run)] if adaptive_valid else []}
+    changes = projection(session, run)
     return {**summary(run), "web_research_trigger": {
         "id": web_trigger.id, "policy_revision": web_trigger.policy_revision,
         "scheduled_for": iso(web_trigger.scheduled_for)} if web_trigger else None, "monitoring_trigger": trigger_payload(session, trigger) if trigger else None,

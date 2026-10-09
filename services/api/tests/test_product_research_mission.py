@@ -150,6 +150,36 @@ def test_question_autonomously_deepens_reads_late_document_and_returns_cited_con
     assert mission["knowledge"]["professional_context"]["facts"][0]["value"] == "version 2"
     assert mission["documents"][-1]["complete"]
     assert mission["stop"] == "available_checks_complete"
+    # Opening the dossier needs saved conclusions, not raw captures, receipt
+    # trees or another cross-run ledger reconstruction. It performs no work.
+    from helvetic_lens import product_current_knowledge as knowledge
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Opening saved reading must not rebuild knowledge or call a provider")
+
+    with monkeypatch.context() as read_only:
+        read_only.setattr(knowledge, "project", forbidden)
+        read_only.setattr(model, "complete", forbidden)
+        read_only.setattr(decision_search, "federated_retrieve", forbidden)
+        read_only.setattr(decision_sources, "safe_inspect", forbidden)
+        response = client.get(root + "/investigations/" + run["id"] + "/reading")
+    assert response.status_code == 200 and response.headers["cache-control"] == "no-store"
+    compact = response.json()
+    assert compact["view"] == "reading"
+    assert compact["revision"] == result["revision"] and compact["event_sequence"] == result["event_sequence"]
+    assert compact["retry"] == result["retry"]
+    assert not {"sources", "plans", "claims", "evidence", "activity", "research"}.intersection(compact)
+    reading = compact["exploration"]["mission"]
+    assert reading["answer"] == mission["answer"]
+    assert reading["knowledge"] is None and reading["knowledge_deferred"]
+    assert reading["checkpoints"] == [{k: v for k, v in check.items() if k != "answer"} for check in mission["checkpoints"]]
+    assert compact["exploration"]["sources"] == result["exploration"]["sources"]
+    for doc, original in zip(reading["documents"], mission["documents"], strict=True):
+        assert doc == {key: original[key] for key in doc}
+        assert doc["complete"] == original["complete"]
+        assert "reconciliation" not in doc and "section_reviews" not in doc
+    assert compact["coverage_manifest"] == {k: v for k, v in result["coverage_manifest"].items() if k != "executions"}
+    assert len(response.content) < len(json.dumps(result).encode())
     # Reader references must never escape the current allowed source namespace.
     ids = {s["id"] for s in result["sources"]}
     assert all(e["source_id"] in ids for point in mission["answer"]["points"] for e in point["evidence"])
@@ -166,6 +196,9 @@ def test_question_autonomously_deepens_reads_late_document_and_returns_cited_con
         withdrawn = exploration.projection(session, current)
         assert withdrawn["mission"]["answer"] is None
         assert withdrawn["mission"]["checkpoints"] == []
+        compact_withdrawn = exploration.projection(session, current, reading=True)
+        assert compact_withdrawn["mission"]["answer"] is None
+        assert compact_withdrawn["mission"]["checkpoints"] == []
 
 
 

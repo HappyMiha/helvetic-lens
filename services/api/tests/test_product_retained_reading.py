@@ -118,6 +118,12 @@ def test_full_typed_answer_is_retained_without_private_drafts_or_new_authority(s
     assert queued['status'] == 'queued' and queued['exploration']['mission']['answer'] is None
     assert retained['investigation_id'] == first['id']
     assert retained['exploration']['mission'] == mission
+    compact = client.get(path + '/reading')
+    assert compact.status_code == 200
+    compact_retained = compact.json()['exploration']['retained_research']
+    assert compact_retained['exploration']['mission']['answer'] == mission['answer']
+    assert compact_retained['exploration']['mission']['knowledge_deferred']
+    assert compact_retained['exploration']['sources'] == retained['exploration']['sources']
     # A later unfinished round can clear a legacy briefing while leaving a
     # checked checkpoint. Only the normal public mission projection is retained.
     with service.db.session() as session:
@@ -157,6 +163,7 @@ def test_full_typed_answer_is_retained_without_private_drafts_or_new_authority(s
     # This continuation recalled the parent's original: the existing origin ACL
     # withdraws the entire child reader before any retained projection is added.
     assert response.status_code == 404, response.text
+    assert client.get(path + '/reading').status_code == 404
     assert 'retained_research' not in response.text and 'PRIVATE UNCHECKED ANSWER' not in response.text
     with service.db.session() as session:
         parent = session.get(Investigation, first['id'])
