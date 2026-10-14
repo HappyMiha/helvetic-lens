@@ -142,6 +142,8 @@ def cleanup_operational_data(
             )
             if value
         )
+        from .feed_worker import retained_artifacts
+        referenced_artifacts.update(retained_artifacts(session))
         session.commit()
 
     storage = settings.storage_path

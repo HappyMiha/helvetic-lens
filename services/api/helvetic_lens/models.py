@@ -1815,11 +1815,15 @@ class MonitoringEvaluationEntry(Base):
 
 # Central policy used by the session boundary. Keeping this list beside the
 # models makes a newly persisted tenant-owned record difficult to forget.
+from . import feed_models  # noqa: E402
 from .business_item_models import BusinessItemWorkEvent  # noqa: E402
 from .business_monitor_models import BusinessMonitorScopeEvent  # noqa: E402
+from .feed_following_models import FeedFollow  # noqa: E402
 from .monitoring_connector_models import MonitoringConnectorConfiguration  # noqa: E402, F401
 
 ORGANIZATION_SCOPED_MODELS = (
+    *feed_models.SCOPED,
+    FeedFollow,
     product_models.PrivateDossierFollow,
     *product_investigation_models.SCOPED,
     product_retrieval_models.EvidenceVector,

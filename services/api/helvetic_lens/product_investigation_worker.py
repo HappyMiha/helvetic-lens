@@ -99,6 +99,10 @@ def seed(session, run, parent, settings):
     from .product_web_research import trigger_for as web_trigger_for
 
     research_knowledge.initialize(session, run, parent.product)
+    from . import feed_research
+
+    if feed_research.origin(run):
+        return feed_research.seed(session, run, parent, settings)
     web_trigger = web_trigger_for(session, run)
     if web_trigger:
         return web_seed(session, run, web_trigger)
@@ -872,7 +876,11 @@ async def execute(service, job_id, worker):
                         fresh = source.id not in state.get("source_ids", [])
                     else:
                         source, fresh = snapshot(session, run, {**result, "title": work["item"]["title"],
+                            **({"key": "feed:" + state["feed_update_id"]} if state.get("feed_update_id") else {}),
                             "retrieval_queries": work["item"].get("retrieval_queries", [work["query"]])}, public=True)
+                    if state.get("feed_update_id"):
+                        source.snapshot = {**source.snapshot, **{key: state[key] for key in
+                            ("feed_id", "feed_update_id", "feed_sequence", "feed_content_hash", "feed_relevance")}}
                     research_knowledge.remember_capture(run, work)
                     if work.get("research"):
                         source.snapshot = {**source.snapshot, "branch_id": branch.id, "research_question": work["query"],

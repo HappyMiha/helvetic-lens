@@ -82,6 +82,10 @@ def access(session, identity, product, dossier_id, *, write=False, action="edit"
 
 
 def worker_access(session, run, product):
+    from . import feed_research
+
+    if feed_research.origin(run):
+        return feed_research.worker_access(session, run)
     from .product_web_research import trigger_for as web_trigger_for
     from .product_web_research import worker_access as web_access
 

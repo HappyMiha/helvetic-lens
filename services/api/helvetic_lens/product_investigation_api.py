@@ -124,9 +124,11 @@ def routes(router, service, actor):
             if data.action in {"resume", "retry", "deepen"} and run.research_state.get("exploration", {}).get("continued_by"):
                 fail("This episode was continued in a newer research checkpoint.", 409)
             if data.action in {"resume", "retry", "deepen"}:
+                from .feed_research import retry_authority as feed_retry_authority
                 from .product_monitoring_research import retry_authority
                 from .product_web_research import retry_authority as web_retry_authority
 
+                feed_retry_authority(session, run, identity.user_id)
                 retry_authority(session, run)
                 web_retry_authority(session, run)
                 if data.action == "deepen" and run.research_state.get("exploration"):

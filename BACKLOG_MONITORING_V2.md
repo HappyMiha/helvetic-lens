@@ -16,7 +16,7 @@ DONE; [release commentary](BACKLOG_MONITORING_V2_RELEASE_HISTORY.md).
 
 Mission and allowance: 4742158f1950.
 Large-document reconciliation activated: dcfa85b6119a.
-Question-to-dossier IN PROGRESS: [useful research context](docs/SUBJECT_REFINEMENT.md); [prior print evidence](docs/PRODUCT_END_TO_END.md#print-the-current-research-answer).
+VERIFYING: [shared feeds and dossier monitoring](docs/SHARED_PRODUCT_FEEDS.md).
 [Scope, dependencies, source readiness and acceptance](docs/RESEARCH_MISSION.md).
 Prior source/memory/update release activated as 202f1084d523;
 [implementation evidence](docs/RESEARCH_SOURCES_MEMORY_AND_UPDATES.md).

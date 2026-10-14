@@ -34,6 +34,10 @@ celery_app.conf.update(
     task_default_queue="maintenance",
     task_routes={name: {"queue": queue} for name, queue in PERIODIC_QUEUES.items()},
     beat_schedule={
+        "schedule-product-feeds": {
+            "task": "helvetic_lens.schedule_product_feeds", "schedule": 60.0,
+            "options": {"queue": "monitoring_control"},
+        },
         "schedule-product-monitoring-research": {
             "task": "helvetic_lens.schedule_product_monitoring_research", "schedule": 60.0,
         },
@@ -176,6 +180,20 @@ def sample_monitoring_source_history():
     database = Database(settings)
     try:
         return capture(database, load_connector_settings(database, settings))
+    finally:
+        database.engine.dispose()
+
+
+@celery_app.task(name="helvetic_lens.schedule_product_feeds")
+def schedule_product_feeds():
+    from .feed_research import enqueue_pending
+    from .feed_worker import enqueue_due
+
+    database = Database(settings)
+    try:
+        collections = enqueue_due(database, settings)
+        research = enqueue_pending(database, settings)
+        return {"collections": collections, "research": research}
     finally:
         database.engine.dispose()
 

@@ -2120,6 +2120,8 @@ def create_app(
 
     def check_job_access(request: Request, job_id: str):
         job = service.job_detail(job_id)
+        if job["target_type"] == "feed":
+            raise DomainError("Use the private feed collection controls.", 404, "not_found")
         if job["target_type"] == "profile_suggestions":
             raise DomainError("Use the monitoring profile suggestion controls.", 404, "not_found")
         if job["target_type"] == "product_investigation":
@@ -2364,6 +2366,8 @@ def create_app(
     from .product_api import product_router
 
     app.include_router(product_router(service))
+    from .feed_api import feed_router
+    app.include_router(feed_router(service))
     app.include_router(legal_profiles_router(service))
     app.include_router(influence_router(service))
     app.include_router(partner_router(service))

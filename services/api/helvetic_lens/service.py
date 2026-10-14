@@ -3161,7 +3161,7 @@ class HelveticLens:
 
     def jobs(self, limit: int = 50, *, workload: str = "all", include_platform: bool = False, job_type: str | None = None, monitoring_owner_id: str | None = None):
         with self.db.session() as session:
-            statement = select(Job).where(Job.target_type.not_in({"product_investigation", "profile_suggestions"}))
+            statement = select(Job).where(Job.target_type.not_in({"product_investigation", "profile_suggestions", "feed"}))
             from .air_models import AirMonitor
             from .commute_models import CommuteMonitor
             from .hazard_models import HazardMonitor
@@ -4020,6 +4020,11 @@ class HelveticLens:
         return await self.interest_runner().schedule(event_id, locale=locale)
 
     async def execute_job(self, job_id: str, worker: str = "inline"):
+        from . import feed_worker
+        with self.db.session() as session:
+            feed_job = session.scalar(select(Job.id).where(Job.id == job_id, Job.type == feed_worker.TYPE))
+        if feed_job:
+            return await feed_worker.execute(self, job_id, worker)
         from . import profile_suggestion_jobs
         with self.db.session() as session:
             suggestion = session.scalar(select(Job.id).where(Job.id == job_id, Job.type == profile_suggestion_jobs.TYPE))
