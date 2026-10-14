@@ -182,6 +182,16 @@ def test_new_instructions_suppress_old_intent_and_enqueue_new_material_revision(
     assert "revision=2" in fake.calls[0][0][2]
 
 
+
+def test_scheduled_task_uses_the_current_clock_when_none_is_injected(db, store):
+    # The Celery beat task calls enqueue_due without a clock. The fixture intent
+    # dates from NOW, so against today's clock it is past MAX_AGE and suppressed.
+    _, _, settings = prepared(db, store)
+    assert mail.enqueue_due(db, settings, store=store)["enqueued"] == 0
+    with db.session() as session:
+        assert session.scalar(select(HazardDelivery)).state == "suppressed"
+        assert session.scalar(select(Job).where(Job.type == "hazard_email")) is None
+
 def test_scheduler_deduplicates_email_jobs_and_stopping_suppresses_pending(db, store):
     saved, _, settings = prepared(db, store)
     assert mail.enqueue_due(db, settings, now=NOW, store=store)["enqueued"] == 1

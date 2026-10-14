@@ -316,6 +316,16 @@ def test_scheduler_claims_one_attempt_and_recovers_abandoned_sends(db):
         assert session.scalar(select(RoadDelivery)).state == "uncertain"
 
 
+
+def test_scheduled_task_uses_the_current_clock_when_none_is_injected(db):
+    # The Celery beat task calls enqueue_due without a clock. The fixture intent
+    # dates from NOW, so against today's clock it is past MAX_AGE and suppressed.
+    row, _, _, settings = prepared(db)
+    assert mail.enqueue_due(db, settings)["enqueued"] == 0
+    with db.session() as session:
+        assert session.scalar(select(RoadDelivery)).state == "suppressed"
+        assert session.scalar(select(Job).where(Job.type == "road_email")) is None
+
 def test_policy_and_intent_rows_are_tenant_scoped(db):
     row, _, _, settings = prepared(db)
     with db.session() as session:

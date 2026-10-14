@@ -35,7 +35,8 @@ MAX_AGE = timedelta(days=2)
 
 
 def clock(value=None):
-    return _clock(value)
+    # Scheduled tasks run without an injected clock; tests pass a fixed one.
+    return _clock(datetime.now(UTC) if value is None else value)
 
 
 def signal_hash(event, snapshot):

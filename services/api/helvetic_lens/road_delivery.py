@@ -28,13 +28,17 @@ from .road_models import (
     RoadSourceChange,
 )
 from .road_repository import owned
-from .road_sources import _clock as clock
-from .road_sources import _encoded, _hash, require_permission
+from .road_sources import _clock, _encoded, _hash, require_permission
 from .road_sources import _utc as utc
 from .road_today import urgent
 
 MAX_BATCH = 50
 MAX_AGE = timedelta(days=2)
+
+
+def clock(value=None):
+    # Scheduled tasks run without an injected clock; tests pass a fixed one.
+    return _clock(datetime.now(UTC) if value is None else value)
 
 
 def signal_hash(session, event, snapshot):
